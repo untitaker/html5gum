@@ -33,9 +33,13 @@ assert_eq!(new_html, "<title>hello world</title>");
 It fully implements [13.2 of the WHATWG HTML
 spec](https://html.spec.whatwg.org/#parsing) and passes [html5lib's tokenizer
 test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer),
-except that this implementation requires all input to be Rust strings and
-therefore valid UTF-8. There is no charset detection or handling of invalid
-surrogates, and the relevant html5lib tests are skipped in CI.
+except that:
+
+* this implementation requires all input to be Rust strings and therefore valid
+  UTF-8. There is no charset detection or handling of invalid surrogates, and
+  the relevant html5lib tests are skipped in CI.
+
+* there's some remaining testcases to be decided on at [issue 5](https://github.com/untitaker/html5gum/issues/5).
 
 A distinguishing feature of `html5gum` is that you can bring your own token
 datastructure and hook into token creation by implementing the `Emitter` trait.
