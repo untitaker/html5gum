@@ -8,6 +8,7 @@ keywords = ["html", "html5", "whatwg", "parser", "tokenizer"]
 license = "MIT"
 repository = "https://github.com/untitaker/html5gum"
 version = "0.1.0"
+include = ["src/**/*", "LICENSE", "README.md"]
 
 [dev-dependencies]
 pretty_assertions = "1.0.0"
