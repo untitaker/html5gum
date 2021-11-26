@@ -1,6 +1,10 @@
-on: [push, pull_request]
+name: Rust
 
-name: Continuous integration
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   check:

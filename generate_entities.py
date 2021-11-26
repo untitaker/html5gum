@@ -18,7 +18,7 @@ pub struct CharRef {
     pub characters: &'static str,
 }
 
-pub fn try_read_character_reference(first_char: char, mut try_read: impl FnMut(&str) -> bool) -> Option<CharRef> {
+pub fn try_read_character_reference<E>(first_char: char, mut try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
 """)
 
     for key, value in key_and_value:
@@ -31,9 +31,9 @@ pub fn try_read_character_reference(first_char: char, mut try_read: impl FnMut(&
         first_char = key[0]
         key = key[1:]
         f.write("""
-        if first_char == '%(first_char)s' && try_read("%(key)s") {
-            return Some(CharRef { name: "%(key)s", characters: "%(characters)s" });
+        if first_char == '%(first_char)s' && try_read("%(key)s")? {
+            return Ok(Some(CharRef { name: "%(key)s", characters: "%(characters)s" }));
         }
         """ % {"key": key, "characters": characters, "first_char": first_char})
 
-    f.write(" None }");
+    f.write(" Ok(None) }");

@@ -9,15625 +9,15625 @@ pub struct CharRef {
     pub characters: &'static str,
 }
 
-pub fn try_read_character_reference(
+pub fn try_read_character_reference<E>(
     first_char: char,
-    mut try_read: impl FnMut(&str) -> bool,
-) -> Option<CharRef> {
-    if first_char == 'C' && try_read("ounterClockwiseContourIntegral;") {
-        return Some(CharRef {
+    mut try_read: impl FnMut(&str) -> Result<bool, E>,
+) -> Result<Option<CharRef>, E> {
+    if first_char == 'C' && try_read("ounterClockwiseContourIntegral;")? {
+        return Ok(Some(CharRef {
             name: "ounterClockwiseContourIntegral;",
             characters: "\u{2233}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("lockwiseContourIntegral;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("lockwiseContourIntegral;")? {
+        return Ok(Some(CharRef {
             name: "lockwiseContourIntegral;",
             characters: "\u{2232}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleLongLeftRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleLongLeftRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "oubleLongLeftRightArrow;",
             characters: "\u{27fa}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otNestedGreaterGreater;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otNestedGreaterGreater;")? {
+        return Ok(Some(CharRef {
             name: "otNestedGreaterGreater;",
             characters: "\u{2aa2}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("iacriticalDoubleAcute;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("iacriticalDoubleAcute;")? {
+        return Ok(Some(CharRef {
             name: "iacriticalDoubleAcute;",
             characters: "\u{2dd}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSquareSupersetEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSquareSupersetEqual;")? {
+        return Ok(Some(CharRef {
             name: "otSquareSupersetEqual;",
             characters: "\u{22e3}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("loseCurlyDoubleQuote;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("loseCurlyDoubleQuote;")? {
+        return Ok(Some(CharRef {
             name: "loseCurlyDoubleQuote;",
             characters: "\u{201d}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleContourIntegral;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleContourIntegral;")? {
+        return Ok(Some(CharRef {
             name: "oubleContourIntegral;",
             characters: "\u{222f}",
-        });
+        }));
     }
 
-    if first_char == 'F' && try_read("illedVerySmallSquare;") {
-        return Some(CharRef {
+    if first_char == 'F' && try_read("illedVerySmallSquare;")? {
+        return Ok(Some(CharRef {
             name: "illedVerySmallSquare;",
             characters: "\u{25aa}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("egativeVeryThinSpace;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("egativeVeryThinSpace;")? {
+        return Ok(Some(CharRef {
             name: "egativeVeryThinSpace;",
             characters: "\u{200b}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otPrecedesSlantEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otPrecedesSlantEqual;")? {
+        return Ok(Some(CharRef {
             name: "otPrecedesSlantEqual;",
             characters: "\u{22e0}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otRightTriangleEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otRightTriangleEqual;")? {
+        return Ok(Some(CharRef {
             name: "otRightTriangleEqual;",
             characters: "\u{22ed}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSucceedsSlantEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSucceedsSlantEqual;")? {
+        return Ok(Some(CharRef {
             name: "otSucceedsSlantEqual;",
             characters: "\u{22e1}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("apitalDifferentialD;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("apitalDifferentialD;")? {
+        return Ok(Some(CharRef {
             name: "apitalDifferentialD;",
             characters: "\u{2145}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleLeftRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleLeftRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "oubleLeftRightArrow;",
             characters: "\u{21d4}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleLongRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleLongRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "oubleLongRightArrow;",
             characters: "\u{27f9}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("mptyVerySmallSquare;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("mptyVerySmallSquare;")? {
+        return Ok(Some(CharRef {
             name: "mptyVerySmallSquare;",
             characters: "\u{25ab}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("estedGreaterGreater;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("estedGreaterGreater;")? {
+        return Ok(Some(CharRef {
             name: "estedGreaterGreater;",
             characters: "\u{226b}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otDoubleVerticalBar;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otDoubleVerticalBar;")? {
+        return Ok(Some(CharRef {
             name: "otDoubleVerticalBar;",
             characters: "\u{2226}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otGreaterSlantEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otGreaterSlantEqual;")? {
+        return Ok(Some(CharRef {
             name: "otGreaterSlantEqual;",
             characters: "\u{2a7e}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otLeftTriangleEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otLeftTriangleEqual;")? {
+        return Ok(Some(CharRef {
             name: "otLeftTriangleEqual;",
             characters: "\u{22ec}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSquareSubsetEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSquareSubsetEqual;")? {
+        return Ok(Some(CharRef {
             name: "otSquareSubsetEqual;",
             characters: "\u{22e2}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("penCurlyDoubleQuote;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("penCurlyDoubleQuote;")? {
+        return Ok(Some(CharRef {
             name: "penCurlyDoubleQuote;",
             characters: "\u{201c}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("everseUpEquilibrium;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("everseUpEquilibrium;")? {
+        return Ok(Some(CharRef {
             name: "everseUpEquilibrium;",
             characters: "\u{296f}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleLongLeftArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleLongLeftArrow;")? {
+        return Ok(Some(CharRef {
             name: "oubleLongLeftArrow;",
             characters: "\u{27f8}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownLeftRightVector;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownLeftRightVector;")? {
+        return Ok(Some(CharRef {
             name: "ownLeftRightVector;",
             characters: "\u{2950}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftArrowRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftArrowRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "eftArrowRightArrow;",
             characters: "\u{21c6}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("egativeMediumSpace;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("egativeMediumSpace;")? {
+        return Ok(Some(CharRef {
             name: "egativeMediumSpace;",
             characters: "\u{200b}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otGreaterFullEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otGreaterFullEqual;")? {
+        return Ok(Some(CharRef {
             name: "otGreaterFullEqual;",
             characters: "\u{2267}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otRightTriangleBar;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otRightTriangleBar;")? {
+        return Ok(Some(CharRef {
             name: "otRightTriangleBar;",
             characters: "\u{29d0}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightArrowLeftArrow;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightArrowLeftArrow;")? {
+        return Ok(Some(CharRef {
             name: "ightArrowLeftArrow;",
             characters: "\u{21c4}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("quareSupersetEqual;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("quareSupersetEqual;")? {
+        return Ok(Some(CharRef {
             name: "quareSupersetEqual;",
             characters: "\u{2292}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftrightsquigarrow;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftrightsquigarrow;")? {
+        return Ok(Some(CharRef {
             name: "eftrightsquigarrow;",
             characters: "\u{21ad}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownRightTeeVector;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownRightTeeVector;")? {
+        return Ok(Some(CharRef {
             name: "ownRightTeeVector;",
             characters: "\u{295f}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownRightVectorBar;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownRightVectorBar;")? {
+        return Ok(Some(CharRef {
             name: "ownRightVectorBar;",
             characters: "\u{2957}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("ongLeftRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("ongLeftRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "ongLeftRightArrow;",
             characters: "\u{27f7}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("ongleftrightarrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("ongleftrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "ongleftrightarrow;",
             characters: "\u{27fa}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("egativeThickSpace;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("egativeThickSpace;")? {
+        return Ok(Some(CharRef {
             name: "egativeThickSpace;",
             characters: "\u{200b}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otLeftTriangleBar;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otLeftTriangleBar;")? {
+        return Ok(Some(CharRef {
             name: "otLeftTriangleBar;",
             characters: "\u{29cf}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("recedesSlantEqual;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("recedesSlantEqual;")? {
+        return Ok(Some(CharRef {
             name: "recedesSlantEqual;",
             characters: "\u{227c}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("everseEquilibrium;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("everseEquilibrium;")? {
+        return Ok(Some(CharRef {
             name: "everseEquilibrium;",
             characters: "\u{21cb}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightDoubleBracket;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightDoubleBracket;")? {
+        return Ok(Some(CharRef {
             name: "ightDoubleBracket;",
             characters: "\u{27e7}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightDownTeeVector;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightDownTeeVector;")? {
+        return Ok(Some(CharRef {
             name: "ightDownTeeVector;",
             characters: "\u{295d}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightDownVectorBar;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightDownVectorBar;")? {
+        return Ok(Some(CharRef {
             name: "ightDownVectorBar;",
             characters: "\u{2955}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightTriangleEqual;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightTriangleEqual;")? {
+        return Ok(Some(CharRef {
             name: "ightTriangleEqual;",
             characters: "\u{22b5}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("quareIntersection;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("quareIntersection;")? {
+        return Ok(Some(CharRef {
             name: "quareIntersection;",
             characters: "\u{2293}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("ucceedsSlantEqual;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("ucceedsSlantEqual;")? {
+        return Ok(Some(CharRef {
             name: "ucceedsSlantEqual;",
             characters: "\u{227d}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lacktriangleright;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lacktriangleright;")? {
+        return Ok(Some(CharRef {
             name: "lacktriangleright;",
             characters: "\u{25b8}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ongleftrightarrow;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ongleftrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "ongleftrightarrow;",
             characters: "\u{27f7}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleUpDownArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleUpDownArrow;")? {
+        return Ok(Some(CharRef {
             name: "oubleUpDownArrow;",
             characters: "\u{21d5}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleVerticalBar;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleVerticalBar;")? {
+        return Ok(Some(CharRef {
             name: "oubleVerticalBar;",
             characters: "\u{2225}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownLeftTeeVector;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownLeftTeeVector;")? {
+        return Ok(Some(CharRef {
             name: "ownLeftTeeVector;",
             characters: "\u{295e}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownLeftVectorBar;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownLeftVectorBar;")? {
+        return Ok(Some(CharRef {
             name: "ownLeftVectorBar;",
             characters: "\u{2956}",
-        });
+        }));
     }
 
-    if first_char == 'F' && try_read("illedSmallSquare;") {
-        return Some(CharRef {
+    if first_char == 'F' && try_read("illedSmallSquare;")? {
+        return Ok(Some(CharRef {
             name: "illedSmallSquare;",
             characters: "\u{25fc}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("reaterSlantEqual;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("reaterSlantEqual;")? {
+        return Ok(Some(CharRef {
             name: "reaterSlantEqual;",
             characters: "\u{2a7e}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftDoubleBracket;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftDoubleBracket;")? {
+        return Ok(Some(CharRef {
             name: "eftDoubleBracket;",
             characters: "\u{27e6}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftDownTeeVector;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftDownTeeVector;")? {
+        return Ok(Some(CharRef {
             name: "eftDownTeeVector;",
             characters: "\u{2961}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftDownVectorBar;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftDownVectorBar;")? {
+        return Ok(Some(CharRef {
             name: "eftDownVectorBar;",
             characters: "\u{2959}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftTriangleEqual;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftTriangleEqual;")? {
+        return Ok(Some(CharRef {
             name: "eftTriangleEqual;",
             characters: "\u{22b4}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("egativeThinSpace;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("egativeThinSpace;")? {
+        return Ok(Some(CharRef {
             name: "egativeThinSpace;",
             characters: "\u{200b}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otGreaterGreater;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otGreaterGreater;")? {
+        return Ok(Some(CharRef {
             name: "otGreaterGreater;",
             characters: "\u{226b}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otLessSlantEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otLessSlantEqual;")? {
+        return Ok(Some(CharRef {
             name: "otLessSlantEqual;",
             characters: "\u{2a7d}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otNestedLessLess;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otNestedLessLess;")? {
+        return Ok(Some(CharRef {
             name: "otNestedLessLess;",
             characters: "\u{2aa1}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otReverseElement;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otReverseElement;")? {
+        return Ok(Some(CharRef {
             name: "otReverseElement;",
             characters: "\u{220c}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSquareSuperset;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSquareSuperset;")? {
+        return Ok(Some(CharRef {
             name: "otSquareSuperset;",
             characters: "\u{2290}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otTildeFullEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otTildeFullEqual;")? {
+        return Ok(Some(CharRef {
             name: "otTildeFullEqual;",
             characters: "\u{2247}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightAngleBracket;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightAngleBracket;")? {
+        return Ok(Some(CharRef {
             name: "ightAngleBracket;",
             characters: "\u{27e9}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightUpDownVector;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightUpDownVector;")? {
+        return Ok(Some(CharRef {
             name: "ightUpDownVector;",
             characters: "\u{294f}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("quareSubsetEqual;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("quareSubsetEqual;")? {
+        return Ok(Some(CharRef {
             name: "quareSubsetEqual;",
             characters: "\u{2291}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("erticalSeparator;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("erticalSeparator;")? {
+        return Ok(Some(CharRef {
             name: "erticalSeparator;",
             characters: "\u{2758}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lacktriangledown;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lacktriangledown;")? {
+        return Ok(Some(CharRef {
             name: "lacktriangledown;",
             characters: "\u{25be}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lacktriangleleft;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lacktriangleleft;")? {
+        return Ok(Some(CharRef {
             name: "lacktriangleleft;",
             characters: "\u{25c2}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftrightharpoons;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftrightharpoons;")? {
+        return Ok(Some(CharRef {
             name: "eftrightharpoons;",
             characters: "\u{21cb}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ightleftharpoons;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ightleftharpoons;")? {
+        return Ok(Some(CharRef {
             name: "ightleftharpoons;",
             characters: "\u{21cc}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("woheadrightarrow;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("woheadrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "woheadrightarrow;",
             characters: "\u{21a0}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("iacriticalAcute;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("iacriticalAcute;")? {
+        return Ok(Some(CharRef {
             name: "iacriticalAcute;",
             characters: "\u{b4}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("iacriticalGrave;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("iacriticalGrave;")? {
+        return Ok(Some(CharRef {
             name: "iacriticalGrave;",
             characters: "\u{60}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("iacriticalTilde;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("iacriticalTilde;")? {
+        return Ok(Some(CharRef {
             name: "iacriticalTilde;",
             characters: "\u{2dc}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "oubleRightArrow;",
             characters: "\u{21d2}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownArrowUpArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownArrowUpArrow;")? {
+        return Ok(Some(CharRef {
             name: "ownArrowUpArrow;",
             characters: "\u{21f5}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("mptySmallSquare;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("mptySmallSquare;")? {
+        return Ok(Some(CharRef {
             name: "mptySmallSquare;",
             characters: "\u{25fb}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("reaterEqualLess;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("reaterEqualLess;")? {
+        return Ok(Some(CharRef {
             name: "reaterEqualLess;",
             characters: "\u{22db}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("reaterFullEqual;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("reaterFullEqual;")? {
+        return Ok(Some(CharRef {
             name: "reaterFullEqual;",
             characters: "\u{2267}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftAngleBracket;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftAngleBracket;")? {
+        return Ok(Some(CharRef {
             name: "eftAngleBracket;",
             characters: "\u{27e8}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftUpDownVector;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftUpDownVector;")? {
+        return Ok(Some(CharRef {
             name: "eftUpDownVector;",
             characters: "\u{2951}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("essEqualGreater;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("essEqualGreater;")? {
+        return Ok(Some(CharRef {
             name: "essEqualGreater;",
             characters: "\u{22da}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("onBreakingSpace;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("onBreakingSpace;")? {
+        return Ok(Some(CharRef {
             name: "onBreakingSpace;",
             characters: "\u{a0}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otPrecedesEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otPrecedesEqual;")? {
+        return Ok(Some(CharRef {
             name: "otPrecedesEqual;",
             characters: "\u{2aaf}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otRightTriangle;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otRightTriangle;")? {
+        return Ok(Some(CharRef {
             name: "otRightTriangle;",
             characters: "\u{22eb}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSucceedsEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSucceedsEqual;")? {
+        return Ok(Some(CharRef {
             name: "otSucceedsEqual;",
             characters: "\u{2ab0}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSucceedsTilde;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSucceedsTilde;")? {
+        return Ok(Some(CharRef {
             name: "otSucceedsTilde;",
             characters: "\u{227f}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSupersetEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSupersetEqual;")? {
+        return Ok(Some(CharRef {
             name: "otSupersetEqual;",
             characters: "\u{2289}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightTriangleBar;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightTriangleBar;")? {
+        return Ok(Some(CharRef {
             name: "ightTriangleBar;",
             characters: "\u{29d0}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightUpTeeVector;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightUpTeeVector;")? {
+        return Ok(Some(CharRef {
             name: "ightUpTeeVector;",
             characters: "\u{295c}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightUpVectorBar;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightUpVectorBar;")? {
+        return Ok(Some(CharRef {
             name: "ightUpVectorBar;",
             characters: "\u{2954}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("nderParenthesis;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("nderParenthesis;")? {
+        return Ok(Some(CharRef {
             name: "nderParenthesis;",
             characters: "\u{23dd}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pArrowDownArrow;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pArrowDownArrow;")? {
+        return Ok(Some(CharRef {
             name: "pArrowDownArrow;",
             characters: "\u{21c5}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("irclearrowright;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("irclearrowright;")? {
+        return Ok(Some(CharRef {
             name: "irclearrowright;",
             characters: "\u{21bb}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ownharpoonright;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ownharpoonright;")? {
+        return Ok(Some(CharRef {
             name: "ownharpoonright;",
             characters: "\u{21c2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("trianglerighteq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("trianglerighteq;")? {
+        return Ok(Some(CharRef {
             name: "trianglerighteq;",
             characters: "\u{22ed}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ightharpoondown;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ightharpoondown;")? {
+        return Ok(Some(CharRef {
             name: "ightharpoondown;",
             characters: "\u{21c1}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ightrightarrows;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ightrightarrows;")? {
+        return Ok(Some(CharRef {
             name: "ightrightarrows;",
             characters: "\u{21c9}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("woheadleftarrow;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("woheadleftarrow;")? {
+        return Ok(Some(CharRef {
             name: "woheadleftarrow;",
             characters: "\u{219e}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("artriangleright;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("artriangleright;")? {
+        return Ok(Some(CharRef {
             name: "artriangleright;",
             characters: "\u{22b3}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("loseCurlyQuote;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("loseCurlyQuote;")? {
+        return Ok(Some(CharRef {
             name: "loseCurlyQuote;",
             characters: "\u{2019}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("ontourIntegral;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("ontourIntegral;")? {
+        return Ok(Some(CharRef {
             name: "ontourIntegral;",
             characters: "\u{222e}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleDownArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleDownArrow;")? {
+        return Ok(Some(CharRef {
             name: "oubleDownArrow;",
             characters: "\u{21d3}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleLeftArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleLeftArrow;")? {
+        return Ok(Some(CharRef {
             name: "oubleLeftArrow;",
             characters: "\u{21d0}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownRightVector;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownRightVector;")? {
+        return Ok(Some(CharRef {
             name: "ownRightVector;",
             characters: "\u{21c1}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftRightVector;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftRightVector;")? {
+        return Ok(Some(CharRef {
             name: "eftRightVector;",
             characters: "\u{294e}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftTriangleBar;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftTriangleBar;")? {
+        return Ok(Some(CharRef {
             name: "eftTriangleBar;",
             characters: "\u{29cf}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftUpTeeVector;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftUpTeeVector;")? {
+        return Ok(Some(CharRef {
             name: "eftUpTeeVector;",
             characters: "\u{2960}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftUpVectorBar;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftUpVectorBar;")? {
+        return Ok(Some(CharRef {
             name: "eftUpVectorBar;",
             characters: "\u{2958}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("owerRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("owerRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "owerRightArrow;",
             characters: "\u{2198}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otGreaterEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otGreaterEqual;")? {
+        return Ok(Some(CharRef {
             name: "otGreaterEqual;",
             characters: "\u{2271}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otGreaterTilde;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otGreaterTilde;")? {
+        return Ok(Some(CharRef {
             name: "otGreaterTilde;",
             characters: "\u{2275}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otHumpDownHump;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otHumpDownHump;")? {
+        return Ok(Some(CharRef {
             name: "otHumpDownHump;",
             characters: "\u{224e}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otLeftTriangle;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otLeftTriangle;")? {
+        return Ok(Some(CharRef {
             name: "otLeftTriangle;",
             characters: "\u{22ea}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSquareSubset;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSquareSubset;")? {
+        return Ok(Some(CharRef {
             name: "otSquareSubset;",
             characters: "\u{228f}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("verParenthesis;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("verParenthesis;")? {
+        return Ok(Some(CharRef {
             name: "verParenthesis;",
             characters: "\u{23dc}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightDownVector;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightDownVector;")? {
+        return Ok(Some(CharRef {
             name: "ightDownVector;",
             characters: "\u{21c2}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("hortRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("hortRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "hortRightArrow;",
             characters: "\u{2192}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pperRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pperRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "pperRightArrow;",
             characters: "\u{2197}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igtriangledown;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igtriangledown;")? {
+        return Ok(Some(CharRef {
             name: "igtriangledown;",
             characters: "\u{25bd}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("irclearrowleft;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("irclearrowleft;")? {
+        return Ok(Some(CharRef {
             name: "irclearrowleft;",
             characters: "\u{21ba}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urvearrowright;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urvearrowright;")? {
+        return Ok(Some(CharRef {
             name: "urvearrowright;",
             characters: "\u{21b7}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ownharpoonleft;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ownharpoonleft;")? {
+        return Ok(Some(CharRef {
             name: "ownharpoonleft;",
             characters: "\u{21c3}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftharpoondown;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftharpoondown;")? {
+        return Ok(Some(CharRef {
             name: "eftharpoondown;",
             characters: "\u{21bd}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftrightarrows;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftrightarrows;")? {
+        return Ok(Some(CharRef {
             name: "eftrightarrows;",
             characters: "\u{21c6}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Leftrightarrow;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Leftrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "Leftrightarrow;",
             characters: "\u{21ce}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("leftrightarrow;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("leftrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "leftrightarrow;",
             characters: "\u{21ae}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("trianglelefteq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("trianglelefteq;")? {
+        return Ok(Some(CharRef {
             name: "trianglelefteq;",
             characters: "\u{22ec}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ightleftarrows;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ightleftarrows;")? {
+        return Ok(Some(CharRef {
             name: "ightleftarrows;",
             characters: "\u{21c4}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ightsquigarrow;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ightsquigarrow;")? {
+        return Ok(Some(CharRef {
             name: "ightsquigarrow;",
             characters: "\u{219d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ightthreetimes;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ightthreetimes;")? {
+        return Ok(Some(CharRef {
             name: "ightthreetimes;",
             characters: "\u{22cc}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("traightepsilon;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("traightepsilon;")? {
+        return Ok(Some(CharRef {
             name: "traightepsilon;",
             characters: "\u{3f5}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("rianglerighteq;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("rianglerighteq;")? {
+        return Ok(Some(CharRef {
             name: "rianglerighteq;",
             characters: "\u{22b5}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("artriangleleft;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("artriangleleft;")? {
+        return Ok(Some(CharRef {
             name: "artriangleleft;",
             characters: "\u{22b2}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("iacriticalDot;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("iacriticalDot;")? {
+        return Ok(Some(CharRef {
             name: "iacriticalDot;",
             characters: "\u{2d9}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleRightTee;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleRightTee;")? {
+        return Ok(Some(CharRef {
             name: "oubleRightTee;",
             characters: "\u{22a8}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownLeftVector;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownLeftVector;")? {
+        return Ok(Some(CharRef {
             name: "ownLeftVector;",
             characters: "\u{21bd}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("reaterGreater;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("reaterGreater;")? {
+        return Ok(Some(CharRef {
             name: "reaterGreater;",
             characters: "\u{2aa2}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("orizontalLine;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("orizontalLine;")? {
+        return Ok(Some(CharRef {
             name: "orizontalLine;",
             characters: "\u{2500}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("nvisibleComma;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("nvisibleComma;")? {
+        return Ok(Some(CharRef {
             name: "nvisibleComma;",
             characters: "\u{2063}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("nvisibleTimes;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("nvisibleTimes;")? {
+        return Ok(Some(CharRef {
             name: "nvisibleTimes;",
             characters: "\u{2062}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftDownVector;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftDownVector;")? {
+        return Ok(Some(CharRef {
             name: "eftDownVector;",
             characters: "\u{21c3}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "eftRightArrow;",
             characters: "\u{2194}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftrightarrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "eftrightarrow;",
             characters: "\u{21d4}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("essSlantEqual;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("essSlantEqual;")? {
+        return Ok(Some(CharRef {
             name: "essSlantEqual;",
             characters: "\u{2a7d}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("ongRightArrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("ongRightArrow;")? {
+        return Ok(Some(CharRef {
             name: "ongRightArrow;",
             characters: "\u{27f6}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("ongrightarrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("ongrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "ongrightarrow;",
             characters: "\u{27f9}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("owerLeftArrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("owerLeftArrow;")? {
+        return Ok(Some(CharRef {
             name: "owerLeftArrow;",
             characters: "\u{2199}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("estedLessLess;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("estedLessLess;")? {
+        return Ok(Some(CharRef {
             name: "estedLessLess;",
             characters: "\u{226a}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otGreaterLess;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otGreaterLess;")? {
+        return Ok(Some(CharRef {
             name: "otGreaterLess;",
             characters: "\u{2279}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otLessGreater;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otLessGreater;")? {
+        return Ok(Some(CharRef {
             name: "otLessGreater;",
             characters: "\u{2278}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSubsetEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSubsetEqual;")? {
+        return Ok(Some(CharRef {
             name: "otSubsetEqual;",
             characters: "\u{2288}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otVerticalBar;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otVerticalBar;")? {
+        return Ok(Some(CharRef {
             name: "otVerticalBar;",
             characters: "\u{2224}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("penCurlyQuote;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("penCurlyQuote;")? {
+        return Ok(Some(CharRef {
             name: "penCurlyQuote;",
             characters: "\u{2018}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("everseElement;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("everseElement;")? {
+        return Ok(Some(CharRef {
             name: "everseElement;",
             characters: "\u{220b}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightTeeVector;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightTeeVector;")? {
+        return Ok(Some(CharRef {
             name: "ightTeeVector;",
             characters: "\u{295b}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightVectorBar;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightVectorBar;")? {
+        return Ok(Some(CharRef {
             name: "ightVectorBar;",
             characters: "\u{2953}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("hortDownArrow;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("hortDownArrow;")? {
+        return Ok(Some(CharRef {
             name: "hortDownArrow;",
             characters: "\u{2193}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("hortLeftArrow;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("hortLeftArrow;")? {
+        return Ok(Some(CharRef {
             name: "hortLeftArrow;",
             characters: "\u{2190}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("quareSuperset;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("quareSuperset;")? {
+        return Ok(Some(CharRef {
             name: "quareSuperset;",
             characters: "\u{2290}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("ildeFullEqual;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("ildeFullEqual;")? {
+        return Ok(Some(CharRef {
             name: "ildeFullEqual;",
             characters: "\u{2245}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pperLeftArrow;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pperLeftArrow;")? {
+        return Ok(Some(CharRef {
             name: "pperLeftArrow;",
             characters: "\u{2196}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("eroWidthSpace;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("eroWidthSpace;")? {
+        return Ok(Some(CharRef {
             name: "eroWidthSpace;",
             characters: "\u{200b}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urvearrowleft;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urvearrowleft;")? {
+        return Ok(Some(CharRef {
             name: "urvearrowleft;",
             characters: "\u{21b6}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("oublebarwedge;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("oublebarwedge;")? {
+        return Ok(Some(CharRef {
             name: "oublebarwedge;",
             characters: "\u{2306}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("owndownarrows;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("owndownarrows;")? {
+        return Ok(Some(CharRef {
             name: "owndownarrows;",
             characters: "\u{21ca}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("ookrightarrow;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("ookrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "ookrightarrow;",
             characters: "\u{21aa}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftleftarrows;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftleftarrows;")? {
+        return Ok(Some(CharRef {
             name: "eftleftarrows;",
             characters: "\u{21c7}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftrightarrow;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "eftrightarrow;",
             characters: "\u{2194}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftthreetimes;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftthreetimes;")? {
+        return Ok(Some(CharRef {
             name: "eftthreetimes;",
             characters: "\u{22cb}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ongrightarrow;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ongrightarrow;")? {
+        return Ok(Some(CharRef {
             name: "ongrightarrow;",
             characters: "\u{27f6}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ooparrowright;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ooparrowright;")? {
+        return Ok(Some(CharRef {
             name: "ooparrowright;",
             characters: "\u{21ac}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("shortparallel;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("shortparallel;")? {
+        return Ok(Some(CharRef {
             name: "shortparallel;",
             characters: "\u{2226}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("triangleright;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("triangleright;")? {
+        return Ok(Some(CharRef {
             name: "triangleright;",
             characters: "\u{22eb}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ightarrowtail;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ightarrowtail;")? {
+        return Ok(Some(CharRef {
             name: "ightarrowtail;",
             characters: "\u{21a3}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ightharpoonup;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ightharpoonup;")? {
+        return Ok(Some(CharRef {
             name: "ightharpoonup;",
             characters: "\u{21c0}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("rianglelefteq;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("rianglelefteq;")? {
+        return Ok(Some(CharRef {
             name: "rianglelefteq;",
             characters: "\u{22b4}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("pharpoonright;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("pharpoonright;")? {
+        return Ok(Some(CharRef {
             name: "pharpoonright;",
             characters: "\u{21be}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("pplyFunction;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("pplyFunction;")? {
+        return Ok(Some(CharRef {
             name: "pplyFunction;",
             characters: "\u{2061}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ifferentialD;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ifferentialD;")? {
+        return Ok(Some(CharRef {
             name: "ifferentialD;",
             characters: "\u{2146}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleLeftTee;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleLeftTee;")? {
+        return Ok(Some(CharRef {
             name: "oubleLeftTee;",
             characters: "\u{2ae4}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleUpArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleUpArrow;")? {
+        return Ok(Some(CharRef {
             name: "oubleUpArrow;",
             characters: "\u{21d1}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftTeeVector;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftTeeVector;")? {
+        return Ok(Some(CharRef {
             name: "eftTeeVector;",
             characters: "\u{295a}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftVectorBar;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftVectorBar;")? {
+        return Ok(Some(CharRef {
             name: "eftVectorBar;",
             characters: "\u{2952}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("essFullEqual;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("essFullEqual;")? {
+        return Ok(Some(CharRef {
             name: "essFullEqual;",
             characters: "\u{2266}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("ongLeftArrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("ongLeftArrow;")? {
+        return Ok(Some(CharRef {
             name: "ongLeftArrow;",
             characters: "\u{27f5}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("ongleftarrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("ongleftarrow;")? {
+        return Ok(Some(CharRef {
             name: "ongleftarrow;",
             characters: "\u{27f8}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otEqualTilde;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otEqualTilde;")? {
+        return Ok(Some(CharRef {
             name: "otEqualTilde;",
             characters: "\u{2242}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otTildeEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otTildeEqual;")? {
+        return Ok(Some(CharRef {
             name: "otTildeEqual;",
             characters: "\u{2244}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otTildeTilde;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otTildeTilde;")? {
+        return Ok(Some(CharRef {
             name: "otTildeTilde;",
             characters: "\u{2249}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("oincareplane;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("oincareplane;")? {
+        return Ok(Some(CharRef {
             name: "oincareplane;",
             characters: "\u{210c}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("recedesEqual;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("recedesEqual;")? {
+        return Ok(Some(CharRef {
             name: "recedesEqual;",
             characters: "\u{2aaf}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("recedesTilde;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("recedesTilde;")? {
+        return Ok(Some(CharRef {
             name: "recedesTilde;",
             characters: "\u{227e}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightArrowBar;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightArrowBar;")? {
+        return Ok(Some(CharRef {
             name: "ightArrowBar;",
             characters: "\u{21e5}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightTeeArrow;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightTeeArrow;")? {
+        return Ok(Some(CharRef {
             name: "ightTeeArrow;",
             characters: "\u{21a6}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightTriangle;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightTriangle;")? {
+        return Ok(Some(CharRef {
             name: "ightTriangle;",
             characters: "\u{22b3}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightUpVector;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightUpVector;")? {
+        return Ok(Some(CharRef {
             name: "ightUpVector;",
             characters: "\u{21be}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("ucceedsEqual;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("ucceedsEqual;")? {
+        return Ok(Some(CharRef {
             name: "ucceedsEqual;",
             characters: "\u{2ab0}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("ucceedsTilde;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("ucceedsTilde;")? {
+        return Ok(Some(CharRef {
             name: "ucceedsTilde;",
             characters: "\u{227f}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("upersetEqual;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("upersetEqual;")? {
+        return Ok(Some(CharRef {
             name: "upersetEqual;",
             characters: "\u{2287}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pEquilibrium;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pEquilibrium;")? {
+        return Ok(Some(CharRef {
             name: "pEquilibrium;",
             characters: "\u{296e}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("erticalTilde;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("erticalTilde;")? {
+        return Ok(Some(CharRef {
             name: "erticalTilde;",
             characters: "\u{2240}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("eryThinSpace;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("eryThinSpace;")? {
+        return Ok(Some(CharRef {
             name: "eryThinSpace;",
             characters: "\u{200a}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igtriangleup;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igtriangleup;")? {
+        return Ok(Some(CharRef {
             name: "igtriangleup;",
             characters: "\u{25b3}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lacktriangle;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lacktriangle;")? {
+        return Ok(Some(CharRef {
             name: "lacktriangle;",
             characters: "\u{25b4}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ivideontimes;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ivideontimes;")? {
+        return Ok(Some(CharRef {
             name: "ivideontimes;",
             characters: "\u{22c7}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("allingdotseq;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("allingdotseq;")? {
+        return Ok(Some(CharRef {
             name: "allingdotseq;",
             characters: "\u{2252}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("ookleftarrow;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("ookleftarrow;")? {
+        return Ok(Some(CharRef {
             name: "ookleftarrow;",
             characters: "\u{21a9}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftarrowtail;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftarrowtail;")? {
+        return Ok(Some(CharRef {
             name: "eftarrowtail;",
             characters: "\u{21a2}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftharpoonup;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftharpoonup;")? {
+        return Ok(Some(CharRef {
             name: "eftharpoonup;",
             characters: "\u{21bc}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ongleftarrow;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ongleftarrow;")? {
+        return Ok(Some(CharRef {
             name: "ongleftarrow;",
             characters: "\u{27f5}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ooparrowleft;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ooparrowleft;")? {
+        return Ok(Some(CharRef {
             name: "ooparrowleft;",
             characters: "\u{21ab}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("easuredangle;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("easuredangle;")? {
+        return Ok(Some(CharRef {
             name: "easuredangle;",
             characters: "\u{2221}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("triangleleft;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("triangleleft;")? {
+        return Ok(Some(CharRef {
             name: "triangleleft;",
             characters: "\u{22ea}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("hortparallel;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("hortparallel;")? {
+        return Ok(Some(CharRef {
             name: "hortparallel;",
             characters: "\u{2225}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("mallsetminus;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("mallsetminus;")? {
+        return Ok(Some(CharRef {
             name: "mallsetminus;",
             characters: "\u{2216}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("riangleright;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("riangleright;")? {
+        return Ok(Some(CharRef {
             name: "riangleright;",
             characters: "\u{25b9}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("pharpoonleft;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("pharpoonleft;")? {
+        return Ok(Some(CharRef {
             name: "pharpoonleft;",
             characters: "\u{21bf}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arsubsetneqq;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arsubsetneqq;")? {
+        return Ok(Some(CharRef {
             name: "arsubsetneqq;",
             characters: "\u{2acb}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arsupsetneqq;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arsupsetneqq;")? {
+        return Ok(Some(CharRef {
             name: "arsupsetneqq;",
             characters: "\u{2acc}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownArrowBar;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownArrowBar;")? {
+        return Ok(Some(CharRef {
             name: "ownArrowBar;",
             characters: "\u{2913}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownTeeArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownTeeArrow;")? {
+        return Ok(Some(CharRef {
             name: "ownTeeArrow;",
             characters: "\u{21a7}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("xponentialE;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("xponentialE;")? {
+        return Ok(Some(CharRef {
             name: "xponentialE;",
             characters: "\u{2147}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("reaterEqual;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("reaterEqual;")? {
+        return Ok(Some(CharRef {
             name: "reaterEqual;",
             characters: "\u{2265}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("reaterTilde;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("reaterTilde;")? {
+        return Ok(Some(CharRef {
             name: "reaterTilde;",
             characters: "\u{2273}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("ilbertSpace;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("ilbertSpace;")? {
+        return Ok(Some(CharRef {
             name: "ilbertSpace;",
             characters: "\u{210b}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("umpDownHump;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("umpDownHump;")? {
+        return Ok(Some(CharRef {
             name: "umpDownHump;",
             characters: "\u{224e}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("ntersection;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("ntersection;")? {
+        return Ok(Some(CharRef {
             name: "ntersection;",
             characters: "\u{22c2}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftArrowBar;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftArrowBar;")? {
+        return Ok(Some(CharRef {
             name: "eftArrowBar;",
             characters: "\u{21e4}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftTeeArrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftTeeArrow;")? {
+        return Ok(Some(CharRef {
             name: "eftTeeArrow;",
             characters: "\u{21a4}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftTriangle;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftTriangle;")? {
+        return Ok(Some(CharRef {
             name: "eftTriangle;",
             characters: "\u{22b2}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftUpVector;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftUpVector;")? {
+        return Ok(Some(CharRef {
             name: "eftUpVector;",
             characters: "\u{21bf}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otCongruent;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otCongruent;")? {
+        return Ok(Some(CharRef {
             name: "otCongruent;",
             characters: "\u{2262}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otHumpEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otHumpEqual;")? {
+        return Ok(Some(CharRef {
             name: "otHumpEqual;",
             characters: "\u{224f}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otLessEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otLessEqual;")? {
+        return Ok(Some(CharRef {
             name: "otLessEqual;",
             characters: "\u{2270}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otLessTilde;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otLessTilde;")? {
+        return Ok(Some(CharRef {
             name: "otLessTilde;",
             characters: "\u{2274}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("roportional;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("roportional;")? {
+        return Ok(Some(CharRef {
             name: "roportional;",
             characters: "\u{221d}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightCeiling;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightCeiling;")? {
+        return Ok(Some(CharRef {
             name: "ightCeiling;",
             characters: "\u{2309}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("oundImplies;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("oundImplies;")? {
+        return Ok(Some(CharRef {
             name: "oundImplies;",
             characters: "\u{2970}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("hortUpArrow;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("hortUpArrow;")? {
+        return Ok(Some(CharRef {
             name: "hortUpArrow;",
             characters: "\u{2191}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("quareSubset;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("quareSubset;")? {
+        return Ok(Some(CharRef {
             name: "quareSubset;",
             characters: "\u{228f}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("nderBracket;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("nderBracket;")? {
+        return Ok(Some(CharRef {
             name: "nderBracket;",
             characters: "\u{23b5}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("erticalLine;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("erticalLine;")? {
+        return Ok(Some(CharRef {
             name: "erticalLine;",
             characters: "\u{7c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lacklozenge;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lacklozenge;")? {
+        return Ok(Some(CharRef {
             name: "lacklozenge;",
             characters: "\u{29eb}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("xponentiale;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("xponentiale;")? {
+        return Ok(Some(CharRef {
             name: "xponentiale;",
             characters: "\u{2147}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("isingdotseq;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("isingdotseq;")? {
+        return Ok(Some(CharRef {
             name: "isingdotseq;",
             characters: "\u{2253}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("riangledown;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("riangledown;")? {
+        return Ok(Some(CharRef {
             name: "riangledown;",
             characters: "\u{25bf}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("riangleleft;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("riangleleft;")? {
+        return Ok(Some(CharRef {
             name: "riangleleft;",
             characters: "\u{25c3}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arsubsetneq;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arsubsetneq;")? {
+        return Ok(Some(CharRef {
             name: "arsubsetneq;",
             characters: "\u{228a}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arsupsetneq;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arsupsetneq;")? {
+        return Ok(Some(CharRef {
             name: "arsupsetneq;",
             characters: "\u{228b}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("ircleMinus;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("ircleMinus;")? {
+        return Ok(Some(CharRef {
             name: "ircleMinus;",
             characters: "\u{2296}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("ircleTimes;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("ircleTimes;")? {
+        return Ok(Some(CharRef {
             name: "ircleTimes;",
             characters: "\u{2297}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("quilibrium;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("quilibrium;")? {
+        return Ok(Some(CharRef {
             name: "quilibrium;",
             characters: "\u{21cc}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("reaterLess;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("reaterLess;")? {
+        return Ok(Some(CharRef {
             name: "reaterLess;",
             characters: "\u{2277}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftCeiling;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftCeiling;")? {
+        return Ok(Some(CharRef {
             name: "eftCeiling;",
             characters: "\u{2308}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("essGreater;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("essGreater;")? {
+        return Ok(Some(CharRef {
             name: "essGreater;",
             characters: "\u{2276}",
-        });
+        }));
     }
 
-    if first_char == 'M' && try_read("ediumSpace;") {
-        return Some(CharRef {
+    if first_char == 'M' && try_read("ediumSpace;")? {
+        return Ok(Some(CharRef {
             name: "ediumSpace;",
             characters: "\u{205f}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otLessLess;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otLessLess;")? {
+        return Ok(Some(CharRef {
             name: "otLessLess;",
             characters: "\u{226a}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otPrecedes;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otPrecedes;")? {
+        return Ok(Some(CharRef {
             name: "otPrecedes;",
             characters: "\u{2280}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSucceeds;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSucceeds;")? {
+        return Ok(Some(CharRef {
             name: "otSucceeds;",
             characters: "\u{2281}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSuperset;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSuperset;")? {
+        return Ok(Some(CharRef {
             name: "otSuperset;",
             characters: "\u{2283}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("verBracket;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("verBracket;")? {
+        return Ok(Some(CharRef {
             name: "verBracket;",
             characters: "\u{23b4}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightVector;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightVector;")? {
+        return Ok(Some(CharRef {
             name: "ightVector;",
             characters: "\u{21c0}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("rightarrow;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("rightarrow;")? {
+        return Ok(Some(CharRef {
             name: "rightarrow;",
             characters: "\u{21db}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("uleDelayed;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("uleDelayed;")? {
+        return Ok(Some(CharRef {
             name: "uleDelayed;",
             characters: "\u{29f4}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("mallCircle;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("mallCircle;")? {
+        return Ok(Some(CharRef {
             name: "mallCircle;",
             characters: "\u{2218}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("quareUnion;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("quareUnion;")? {
+        return Ok(Some(CharRef {
             name: "quareUnion;",
             characters: "\u{2294}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("ubsetEqual;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("ubsetEqual;")? {
+        return Ok(Some(CharRef {
             name: "ubsetEqual;",
             characters: "\u{2286}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pDownArrow;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pDownArrow;")? {
+        return Ok(Some(CharRef {
             name: "pDownArrow;",
             characters: "\u{2195}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pdownarrow;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pdownarrow;")? {
+        return Ok(Some(CharRef {
             name: "pdownarrow;",
             characters: "\u{21d5}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("erticalBar;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("erticalBar;")? {
+        return Ok(Some(CharRef {
             name: "erticalBar;",
             characters: "\u{2223}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ackepsilon;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ackepsilon;")? {
+        return Ok(Some(CharRef {
             name: "ackepsilon;",
             characters: "\u{3f6}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lacksquare;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lacksquare;")? {
+        return Ok(Some(CharRef {
             name: "lacksquare;",
             characters: "\u{25aa}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ircledcirc;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ircledcirc;")? {
+        return Ok(Some(CharRef {
             name: "ircledcirc;",
             characters: "\u{229a}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ircleddash;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ircleddash;")? {
+        return Ok(Some(CharRef {
             name: "ircleddash;",
             characters: "\u{229d}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urlyeqprec;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urlyeqprec;")? {
+        return Ok(Some(CharRef {
             name: "urlyeqprec;",
             characters: "\u{22de}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urlyeqsucc;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urlyeqsucc;")? {
+        return Ok(Some(CharRef {
             name: "urlyeqsucc;",
             characters: "\u{22df}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("iamondsuit;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("iamondsuit;")? {
+        return Ok(Some(CharRef {
             name: "iamondsuit;",
             characters: "\u{2666}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("qslantless;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("qslantless;")? {
+        return Ok(Some(CharRef {
             name: "qslantless;",
             characters: "\u{2a95}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("xpectation;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("xpectation;")? {
+        return Ok(Some(CharRef {
             name: "xpectation;",
             characters: "\u{2130}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Rightarrow;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Rightarrow;")? {
+        return Ok(Some(CharRef {
             name: "Rightarrow;",
             characters: "\u{21cf}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("rightarrow;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("rightarrow;")? {
+        return Ok(Some(CharRef {
             name: "rightarrow;",
             characters: "\u{219b}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("reccurlyeq;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("reccurlyeq;")? {
+        return Ok(Some(CharRef {
             name: "reccurlyeq;",
             characters: "\u{227c}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("recnapprox;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("recnapprox;")? {
+        return Ok(Some(CharRef {
             name: "recnapprox;",
             characters: "\u{2ab9}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("uaternions;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("uaternions;")? {
+        return Ok(Some(CharRef {
             name: "uaternions;",
             characters: "\u{210d}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("traightphi;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("traightphi;")? {
+        return Ok(Some(CharRef {
             name: "traightphi;",
             characters: "\u{3d5}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ucccurlyeq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ucccurlyeq;")? {
+        return Ok(Some(CharRef {
             name: "ucccurlyeq;",
             characters: "\u{227d}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("uccnapprox;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("uccnapprox;")? {
+        return Ok(Some(CharRef {
             name: "uccnapprox;",
             characters: "\u{2aba}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("hickapprox;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("hickapprox;")? {
+        return Ok(Some(CharRef {
             name: "hickapprox;",
             characters: "\u{2248}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("pdownarrow;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("pdownarrow;")? {
+        return Ok(Some(CharRef {
             name: "pdownarrow;",
             characters: "\u{2195}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("ernoullis;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("ernoullis;")? {
+        return Ok(Some(CharRef {
             name: "ernoullis;",
             characters: "\u{212c}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("irclePlus;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("irclePlus;")? {
+        return Ok(Some(CharRef {
             name: "irclePlus;",
             characters: "\u{2295}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("qualTilde;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("qualTilde;")? {
+        return Ok(Some(CharRef {
             name: "qualTilde;",
             characters: "\u{2242}",
-        });
+        }));
     }
 
-    if first_char == 'F' && try_read("ouriertrf;") {
-        return Some(CharRef {
+    if first_char == 'F' && try_read("ouriertrf;")? {
+        return Ok(Some(CharRef {
             name: "ouriertrf;",
             characters: "\u{2131}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("maginaryI;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("maginaryI;")? {
+        return Ok(Some(CharRef {
             name: "maginaryI;",
             characters: "\u{2148}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("aplacetrf;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("aplacetrf;")? {
+        return Ok(Some(CharRef {
             name: "aplacetrf;",
             characters: "\u{2112}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftVector;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftVector;")? {
+        return Ok(Some(CharRef {
             name: "eftVector;",
             characters: "\u{21bc}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("leftarrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("leftarrow;")? {
+        return Ok(Some(CharRef {
             name: "leftarrow;",
             characters: "\u{21da}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otElement;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otElement;")? {
+        return Ok(Some(CharRef {
             name: "otElement;",
             characters: "\u{2209}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otGreater;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otGreater;")? {
+        return Ok(Some(CharRef {
             name: "otGreater;",
             characters: "\u{226f}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("roportion;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("roportion;")? {
+        return Ok(Some(CharRef {
             name: "roportion;",
             characters: "\u{2237}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightArrow;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightArrow;")? {
+        return Ok(Some(CharRef {
             name: "ightArrow;",
             characters: "\u{2192}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightFloor;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightFloor;")? {
+        return Ok(Some(CharRef {
             name: "ightFloor;",
             characters: "\u{230b}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightarrow;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightarrow;")? {
+        return Ok(Some(CharRef {
             name: "ightarrow;",
             characters: "\u{21d2}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("hickSpace;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("hickSpace;")? {
+        return Ok(Some(CharRef {
             name: "hickSpace;",
             characters: "\u{205f}\u{200a}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("ildeEqual;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("ildeEqual;")? {
+        return Ok(Some(CharRef {
             name: "ildeEqual;",
             characters: "\u{2243}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("ildeTilde;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("ildeTilde;")? {
+        return Ok(Some(CharRef {
             name: "ildeTilde;",
             characters: "\u{2248}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("nderBrace;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("nderBrace;")? {
+        return Ok(Some(CharRef {
             name: "nderBrace;",
             characters: "\u{23df}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pArrowBar;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pArrowBar;")? {
+        return Ok(Some(CharRef {
             name: "pArrowBar;",
             characters: "\u{2912}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pTeeArrow;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pTeeArrow;")? {
+        return Ok(Some(CharRef {
             name: "pTeeArrow;",
             characters: "\u{21a5}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ircledast;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ircledast;")? {
+        return Ok(Some(CharRef {
             name: "ircledast;",
             characters: "\u{229b}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("omplement;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("omplement;")? {
+        return Ok(Some(CharRef {
             name: "omplement;",
             characters: "\u{2201}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urlywedge;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urlywedge;")? {
+        return Ok(Some(CharRef {
             name: "urlywedge;",
             characters: "\u{22cf}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("qslantgtr;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("qslantgtr;")? {
+        return Ok(Some(CharRef {
             name: "qslantgtr;",
             characters: "\u{2a96}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("treqqless;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("treqqless;")? {
+        return Ok(Some(CharRef {
             name: "treqqless;",
             characters: "\u{2a8c}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("essapprox;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("essapprox;")? {
+        return Ok(Some(CharRef {
             name: "essapprox;",
             characters: "\u{2a85}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("esseqqgtr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("esseqqgtr;")? {
+        return Ok(Some(CharRef {
             name: "esseqqgtr;",
             characters: "\u{2a8b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("moustache;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("moustache;")? {
+        return Ok(Some(CharRef {
             name: "moustache;",
             characters: "\u{23b0}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ongmapsto;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ongmapsto;")? {
+        return Ok(Some(CharRef {
             name: "ongmapsto;",
             characters: "\u{27fc}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("apstodown;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("apstodown;")? {
+        return Ok(Some(CharRef {
             name: "apstodown;",
             characters: "\u{21a7}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("apstoleft;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("apstoleft;")? {
+        return Ok(Some(CharRef {
             name: "apstoleft;",
             characters: "\u{21a4}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Leftarrow;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Leftarrow;")? {
+        return Ok(Some(CharRef {
             name: "Leftarrow;",
             characters: "\u{21cd}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("leftarrow;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("leftarrow;")? {
+        return Ok(Some(CharRef {
             name: "leftarrow;",
             characters: "\u{219a}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("subseteqq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("subseteqq;")? {
+        return Ok(Some(CharRef {
             name: "subseteqq;",
             characters: "\u{2ac5}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("supseteqq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("supseteqq;")? {
+        return Ok(Some(CharRef {
             name: "supseteqq;",
             characters: "\u{2ac6}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("recapprox;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("recapprox;")? {
+        return Ok(Some(CharRef {
             name: "recapprox;",
             characters: "\u{2ab7}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ightarrow;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ightarrow;")? {
+        return Ok(Some(CharRef {
             name: "ightarrow;",
             characters: "\u{2192}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("moustache;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("moustache;")? {
+        return Ok(Some(CharRef {
             name: "moustache;",
             characters: "\u{23b1}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qsubseteq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qsubseteq;")? {
+        return Ok(Some(CharRef {
             name: "qsubseteq;",
             characters: "\u{2291}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qsupseteq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qsupseteq;")? {
+        return Ok(Some(CharRef {
             name: "qsupseteq;",
             characters: "\u{2292}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubsetneqq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubsetneqq;")? {
+        return Ok(Some(CharRef {
             name: "ubsetneqq;",
             characters: "\u{2acb}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("uccapprox;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("uccapprox;")? {
+        return Ok(Some(CharRef {
             name: "uccapprox;",
             characters: "\u{2ab8}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upsetneqq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upsetneqq;")? {
+        return Ok(Some(CharRef {
             name: "upsetneqq;",
             characters: "\u{2acc}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("puparrows;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("puparrows;")? {
+        return Ok(Some(CharRef {
             name: "puparrows;",
             characters: "\u{21c8}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arepsilon;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arepsilon;")? {
+        return Ok(Some(CharRef {
             name: "arepsilon;",
             characters: "\u{3f5}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arnothing;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arnothing;")? {
+        return Ok(Some(CharRef {
             name: "arnothing;",
             characters: "\u{2205}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("ackslash;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("ackslash;")? {
+        return Ok(Some(CharRef {
             name: "ackslash;",
             characters: "\u{2216}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("enterDot;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("enterDot;")? {
+        return Ok(Some(CharRef {
             name: "enterDot;",
             characters: "\u{b7}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("ircleDot;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("ircleDot;")? {
+        return Ok(Some(CharRef {
             name: "ircleDot;",
             characters: "\u{2299}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("ongruent;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("ongruent;")? {
+        return Ok(Some(CharRef {
             name: "ongruent;",
             characters: "\u{2261}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("oproduct;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("oproduct;")? {
+        return Ok(Some(CharRef {
             name: "oproduct;",
             characters: "\u{2210}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("oubleDot;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("oubleDot;")? {
+        return Ok(Some(CharRef {
             name: "oubleDot;",
             characters: "\u{a8}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownArrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownArrow;")? {
+        return Ok(Some(CharRef {
             name: "ownArrow;",
             characters: "\u{2193}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownBreve;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownBreve;")? {
+        return Ok(Some(CharRef {
             name: "ownBreve;",
             characters: "\u{311}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownarrow;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownarrow;")? {
+        return Ok(Some(CharRef {
             name: "ownarrow;",
             characters: "\u{21d3}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("umpEqual;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("umpEqual;")? {
+        return Ok(Some(CharRef {
             name: "umpEqual;",
             characters: "\u{224f}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftArrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftArrow;")? {
+        return Ok(Some(CharRef {
             name: "eftArrow;",
             characters: "\u{2190}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftFloor;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftFloor;")? {
+        return Ok(Some(CharRef {
             name: "eftFloor;",
             characters: "\u{230a}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftarrow;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftarrow;")? {
+        return Ok(Some(CharRef {
             name: "eftarrow;",
             characters: "\u{21d0}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("essTilde;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("essTilde;")? {
+        return Ok(Some(CharRef {
             name: "essTilde;",
             characters: "\u{2272}",
-        });
+        }));
     }
 
-    if first_char == 'M' && try_read("ellintrf;") {
-        return Some(CharRef {
+    if first_char == 'M' && try_read("ellintrf;")? {
+        return Ok(Some(CharRef {
             name: "ellintrf;",
             characters: "\u{2133}",
-        });
+        }));
     }
 
-    if first_char == 'M' && try_read("inusPlus;") {
-        return Some(CharRef {
+    if first_char == 'M' && try_read("inusPlus;")? {
+        return Ok(Some(CharRef {
             name: "inusPlus;",
             characters: "\u{2213}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otCupCap;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otCupCap;")? {
+        return Ok(Some(CharRef {
             name: "otCupCap;",
             characters: "\u{226d}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otExists;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otExists;")? {
+        return Ok(Some(CharRef {
             name: "otExists;",
             characters: "\u{2204}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otSubset;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otSubset;")? {
+        return Ok(Some(CharRef {
             name: "otSubset;",
             characters: "\u{2282}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("verBrace;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("verBrace;")? {
+        return Ok(Some(CharRef {
             name: "verBrace;",
             characters: "\u{23de}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("lusMinus;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("lusMinus;")? {
+        return Ok(Some(CharRef {
             name: "lusMinus;",
             characters: "\u{b1}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("herefore;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("herefore;")? {
+        return Ok(Some(CharRef {
             name: "herefore;",
             characters: "\u{2234}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("hinSpace;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("hinSpace;")? {
+        return Ok(Some(CharRef {
             name: "hinSpace;",
             characters: "\u{2009}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("ripleDot;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("ripleDot;")? {
+        return Ok(Some(CharRef {
             name: "ripleDot;",
             characters: "\u{20db}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("nionPlus;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("nionPlus;")? {
+        return Ok(Some(CharRef {
             name: "nionPlus;",
             characters: "\u{228e}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ackprime;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ackprime;")? {
+        return Ok(Some(CharRef {
             name: "ackprime;",
             characters: "\u{2035}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("acksimeq;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("acksimeq;")? {
+        return Ok(Some(CharRef {
             name: "acksimeq;",
             characters: "\u{22cd}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igotimes;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igotimes;")? {
+        return Ok(Some(CharRef {
             name: "igotimes;",
             characters: "\u{2a02}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("enterdot;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("enterdot;")? {
+        return Ok(Some(CharRef {
             name: "enterdot;",
             characters: "\u{b7}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("heckmark;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("heckmark;")? {
+        return Ok(Some(CharRef {
             name: "heckmark;",
             characters: "\u{2713}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("omplexes;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("omplexes;")? {
+        return Ok(Some(CharRef {
             name: "omplexes;",
             characters: "\u{2102}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("otsquare;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("otsquare;")? {
+        return Ok(Some(CharRef {
             name: "otsquare;",
             characters: "\u{22a1}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ownarrow;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ownarrow;")? {
+        return Ok(Some(CharRef {
             name: "ownarrow;",
             characters: "\u{2193}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("trapprox;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("trapprox;")? {
+        return Ok(Some(CharRef {
             name: "trapprox;",
             characters: "\u{2a86}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("treqless;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("treqless;")? {
+        return Ok(Some(CharRef {
             name: "treqless;",
             characters: "\u{22db}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("vertneqq;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("vertneqq;")? {
+        return Ok(Some(CharRef {
             name: "vertneqq;",
             characters: "\u{2269}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("eartsuit;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("eartsuit;")? {
+        return Ok(Some(CharRef {
             name: "eartsuit;",
             characters: "\u{2665}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eftarrow;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eftarrow;")? {
+        return Ok(Some(CharRef {
             name: "eftarrow;",
             characters: "\u{2190}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("esseqgtr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("esseqgtr;")? {
+        return Ok(Some(CharRef {
             name: "esseqgtr;",
             characters: "\u{22da}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("vertneqq;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("vertneqq;")? {
+        return Ok(Some(CharRef {
             name: "vertneqq;",
             characters: "\u{2268}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("geqslant;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("geqslant;")? {
+        return Ok(Some(CharRef {
             name: "geqslant;",
             characters: "\u{2a7e}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("leqslant;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("leqslant;")? {
+        return Ok(Some(CharRef {
             name: "leqslant;",
             characters: "\u{2a7d}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("parallel;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("parallel;")? {
+        return Ok(Some(CharRef {
             name: "parallel;",
             characters: "\u{2226}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("shortmid;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("shortmid;")? {
+        return Ok(Some(CharRef {
             name: "shortmid;",
             characters: "\u{2224}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("subseteq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("subseteq;")? {
+        return Ok(Some(CharRef {
             name: "subseteq;",
             characters: "\u{2288}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("supseteq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("supseteq;")? {
+        return Ok(Some(CharRef {
             name: "supseteq;",
             characters: "\u{2289}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("itchfork;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("itchfork;")? {
+        return Ok(Some(CharRef {
             name: "itchfork;",
             characters: "\u{22d4}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ationals;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ationals;")? {
+        return Ok(Some(CharRef {
             name: "ationals;",
             characters: "\u{211a}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("padesuit;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("padesuit;")? {
+        return Ok(Some(CharRef {
             name: "padesuit;",
             characters: "\u{2660}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubseteqq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubseteqq;")? {
+        return Ok(Some(CharRef {
             name: "ubseteqq;",
             characters: "\u{2ac5}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubsetneq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubsetneq;")? {
+        return Ok(Some(CharRef {
             name: "ubsetneq;",
             characters: "\u{228a}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upseteqq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upseteqq;")? {
+        return Ok(Some(CharRef {
             name: "upseteqq;",
             characters: "\u{2ac6}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upsetneq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upsetneq;")? {
+        return Ok(Some(CharRef {
             name: "upsetneq;",
             characters: "\u{228b}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("herefore;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("herefore;")? {
+        return Ok(Some(CharRef {
             name: "herefore;",
             characters: "\u{2234}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("riangleq;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("riangleq;")? {
+        return Ok(Some(CharRef {
             name: "riangleq;",
             characters: "\u{225c}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arpropto;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arpropto;")? {
+        return Ok(Some(CharRef {
             name: "arpropto;",
             characters: "\u{221d}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("Dotrahd;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("Dotrahd;")? {
+        return Ok(Some(CharRef {
             name: "Dotrahd;",
             characters: "\u{2911}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("otEqual;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("otEqual;")? {
+        return Ok(Some(CharRef {
             name: "otEqual;",
             characters: "\u{2250}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("ntegral;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("ntegral;")? {
+        return Ok(Some(CharRef {
             name: "ntegral;",
             characters: "\u{222b}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("essLess;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("essLess;")? {
+        return Ok(Some(CharRef {
             name: "essLess;",
             characters: "\u{2aa1}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otEqual;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otEqual;")? {
+        return Ok(Some(CharRef {
             name: "otEqual;",
             characters: "\u{2260}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otTilde;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otTilde;")? {
+        return Ok(Some(CharRef {
             name: "otTilde;",
             characters: "\u{2241}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("artialD;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("artialD;")? {
+        return Ok(Some(CharRef {
             name: "artialD;",
             characters: "\u{2202}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("recedes;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("recedes;")? {
+        return Ok(Some(CharRef {
             name: "recedes;",
             characters: "\u{227a}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ightTee;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ightTee;")? {
+        return Ok(Some(CharRef {
             name: "ightTee;",
             characters: "\u{22a2}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("ucceeds;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("ucceeds;")? {
+        return Ok(Some(CharRef {
             name: "ucceeds;",
             characters: "\u{227b}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("uchThat;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("uchThat;")? {
+        return Ok(Some(CharRef {
             name: "uchThat;",
             characters: "\u{220b}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("uperset;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("uperset;")? {
+        return Ok(Some(CharRef {
             name: "uperset;",
             characters: "\u{2283}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("arrocir;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("arrocir;")? {
+        return Ok(Some(CharRef {
             name: "arrocir;",
             characters: "\u{2949}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("nderBar;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("nderBar;")? {
+        return Ok(Some(CharRef {
             name: "nderBar;",
             characters: "\u{5f}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ndslope;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ndslope;")? {
+        return Ok(Some(CharRef {
             name: "ndslope;",
             characters: "\u{2a58}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngmsdaa;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngmsdaa;")? {
+        return Ok(Some(CharRef {
             name: "ngmsdaa;",
             characters: "\u{29a8}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngmsdab;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngmsdab;")? {
+        return Ok(Some(CharRef {
             name: "ngmsdab;",
             characters: "\u{29a9}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngmsdac;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngmsdac;")? {
+        return Ok(Some(CharRef {
             name: "ngmsdac;",
             characters: "\u{29aa}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngmsdad;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngmsdad;")? {
+        return Ok(Some(CharRef {
             name: "ngmsdad;",
             characters: "\u{29ab}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngmsdae;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngmsdae;")? {
+        return Ok(Some(CharRef {
             name: "ngmsdae;",
             characters: "\u{29ac}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngmsdaf;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngmsdaf;")? {
+        return Ok(Some(CharRef {
             name: "ngmsdaf;",
             characters: "\u{29ad}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngmsdag;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngmsdag;")? {
+        return Ok(Some(CharRef {
             name: "ngmsdag;",
             characters: "\u{29ae}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngmsdah;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngmsdah;")? {
+        return Ok(Some(CharRef {
             name: "ngmsdah;",
             characters: "\u{29af}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngrtvbd;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngrtvbd;")? {
+        return Ok(Some(CharRef {
             name: "ngrtvbd;",
             characters: "\u{299d}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("pproxeq;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("pproxeq;")? {
+        return Ok(Some(CharRef {
             name: "pproxeq;",
             characters: "\u{224a}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("wconint;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("wconint;")? {
+        return Ok(Some(CharRef {
             name: "wconint;",
             characters: "\u{2233}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ackcong;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ackcong;")? {
+        return Ok(Some(CharRef {
             name: "ackcong;",
             characters: "\u{224c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("arwedge;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("arwedge;")? {
+        return Ok(Some(CharRef {
             name: "arwedge;",
             characters: "\u{2305}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("brktbrk;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("brktbrk;")? {
+        return Ok(Some(CharRef {
             name: "brktbrk;",
             characters: "\u{23b6}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igoplus;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igoplus;")? {
+        return Ok(Some(CharRef {
             name: "igoplus;",
             characters: "\u{2a01}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igsqcup;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igsqcup;")? {
+        return Ok(Some(CharRef {
             name: "igsqcup;",
             characters: "\u{2a06}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("iguplus;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("iguplus;")? {
+        return Ok(Some(CharRef {
             name: "iguplus;",
             characters: "\u{2a04}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igwedge;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igwedge;")? {
+        return Ok(Some(CharRef {
             name: "igwedge;",
             characters: "\u{22c0}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxminus;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxminus;")? {
+        return Ok(Some(CharRef {
             name: "oxminus;",
             characters: "\u{229f}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxtimes;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxtimes;")? {
+        return Ok(Some(CharRef {
             name: "oxtimes;",
             characters: "\u{22a0}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("solhsub;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("solhsub;")? {
+        return Ok(Some(CharRef {
             name: "solhsub;",
             characters: "\u{27c8}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("apbrcup;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("apbrcup;")? {
+        return Ok(Some(CharRef {
             name: "apbrcup;",
             characters: "\u{2a49}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ircledR;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ircledR;")? {
+        return Ok(Some(CharRef {
             name: "ircledR;",
             characters: "\u{ae}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ircledS;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ircledS;")? {
+        return Ok(Some(CharRef {
             name: "ircledS;",
             characters: "\u{24c8}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("irfnint;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("irfnint;")? {
+        return Ok(Some(CharRef {
             name: "irfnint;",
             characters: "\u{2a10}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("lubsuit;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("lubsuit;")? {
+        return Ok(Some(CharRef {
             name: "lubsuit;",
             characters: "\u{2663}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("upbrcap;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("upbrcap;")? {
+        return Ok(Some(CharRef {
             name: "upbrcap;",
             characters: "\u{2a48}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urlyvee;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urlyvee;")? {
+        return Ok(Some(CharRef {
             name: "urlyvee;",
             characters: "\u{22ce}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("wconint;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("wconint;")? {
+        return Ok(Some(CharRef {
             name: "wconint;",
             characters: "\u{2232}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("oteqdot;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("oteqdot;")? {
+        return Ok(Some(CharRef {
             name: "oteqdot;",
             characters: "\u{2251}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("otminus;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("otminus;")? {
+        return Ok(Some(CharRef {
             name: "otminus;",
             characters: "\u{2238}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("rbkarow;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("rbkarow;")? {
+        return Ok(Some(CharRef {
             name: "rbkarow;",
             characters: "\u{2910}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("zigrarr;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("zigrarr;")? {
+        return Ok(Some(CharRef {
             name: "zigrarr;",
             characters: "\u{27ff}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("linters;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("linters;")? {
+        return Ok(Some(CharRef {
             name: "linters;",
             characters: "\u{23e7}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("mptyset;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("mptyset;")? {
+        return Ok(Some(CharRef {
             name: "mptyset;",
             characters: "\u{2205}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("qvparsl;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("qvparsl;")? {
+        return Ok(Some(CharRef {
             name: "qvparsl;",
             characters: "\u{29e5}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("partint;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("partint;")? {
+        return Ok(Some(CharRef {
             name: "partint;",
             characters: "\u{2a0d}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("eqslant;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("eqslant;")? {
+        return Ok(Some(CharRef {
             name: "eqslant;",
             characters: "\u{2a7e}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("esdotol;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("esdotol;")? {
+        return Ok(Some(CharRef {
             name: "esdotol;",
             characters: "\u{2a84}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("napprox;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("napprox;")? {
+        return Ok(Some(CharRef {
             name: "napprox;",
             characters: "\u{2a8a}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("ksearow;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("ksearow;")? {
+        return Ok(Some(CharRef {
             name: "ksearow;",
             characters: "\u{2925}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("kswarow;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("kswarow;")? {
+        return Ok(Some(CharRef {
             name: "kswarow;",
             characters: "\u{2926}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("magline;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("magline;")? {
+        return Ok(Some(CharRef {
             name: "magline;",
             characters: "\u{2110}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("magpart;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("magpart;")? {
+        return Ok(Some(CharRef {
             name: "magpart;",
             characters: "\u{2111}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("nfintie;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("nfintie;")? {
+        return Ok(Some(CharRef {
             name: "nfintie;",
             characters: "\u{29dd}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ntegers;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ntegers;")? {
+        return Ok(Some(CharRef {
             name: "ntegers;",
             characters: "\u{2124}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ntercal;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ntercal;")? {
+        return Ok(Some(CharRef {
             name: "ntercal;",
             characters: "\u{22ba}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ntlarhk;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ntlarhk;")? {
+        return Ok(Some(CharRef {
             name: "ntlarhk;",
             characters: "\u{2a17}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("aemptyv;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("aemptyv;")? {
+        return Ok(Some(CharRef {
             name: "aemptyv;",
             characters: "\u{29b4}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("drushar;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("drushar;")? {
+        return Ok(Some(CharRef {
             name: "drushar;",
             characters: "\u{294b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eqslant;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eqslant;")? {
+        return Ok(Some(CharRef {
             name: "eqslant;",
             characters: "\u{2a7d}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("esdotor;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("esdotor;")? {
+        return Ok(Some(CharRef {
             name: "esdotor;",
             characters: "\u{2a83}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("lcorner;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("lcorner;")? {
+        return Ok(Some(CharRef {
             name: "lcorner;",
             characters: "\u{231e}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("napprox;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("napprox;")? {
+        return Ok(Some(CharRef {
             name: "napprox;",
             characters: "\u{2a89}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("rcorner;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("rcorner;")? {
+        return Ok(Some(CharRef {
             name: "rcorner;",
             characters: "\u{231f}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("urdshar;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("urdshar;")? {
+        return Ok(Some(CharRef {
             name: "urdshar;",
             characters: "\u{294a}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("apstoup;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("apstoup;")? {
+        return Ok(Some(CharRef {
             name: "apstoup;",
             characters: "\u{21a5}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("ultimap;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("ultimap;")? {
+        return Ok(Some(CharRef {
             name: "ultimap;",
             characters: "\u{22b8}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("aturals;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("aturals;")? {
+        return Ok(Some(CharRef {
             name: "aturals;",
             characters: "\u{2115}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("congdot;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("congdot;")? {
+        return Ok(Some(CharRef {
             name: "congdot;",
             characters: "\u{2a6d}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otindot;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otindot;")? {
+        return Ok(Some(CharRef {
             name: "otindot;",
             characters: "\u{22f5}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("timesas;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("timesas;")? {
+        return Ok(Some(CharRef {
             name: "timesas;",
             characters: "\u{2a36}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("arallel;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("arallel;")? {
+        return Ok(Some(CharRef {
             name: "arallel;",
             characters: "\u{2225}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lusacir;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lusacir;")? {
+        return Ok(Some(CharRef {
             name: "lusacir;",
             characters: "\u{2a23}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ointint;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ointint;")? {
+        return Ok(Some(CharRef {
             name: "ointint;",
             characters: "\u{2a15}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("recneqq;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("recneqq;")? {
+        return Ok(Some(CharRef {
             name: "recneqq;",
             characters: "\u{2ab5}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("recnsim;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("recnsim;")? {
+        return Ok(Some(CharRef {
             name: "recnsim;",
             characters: "\u{22e8}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rofalar;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rofalar;")? {
+        return Ok(Some(CharRef {
             name: "rofalar;",
             characters: "\u{232e}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rofline;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rofline;")? {
+        return Ok(Some(CharRef {
             name: "rofline;",
             characters: "\u{2312}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rofsurf;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rofsurf;")? {
+        return Ok(Some(CharRef {
             name: "rofsurf;",
             characters: "\u{2313}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("aemptyv;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("aemptyv;")? {
+        return Ok(Some(CharRef {
             name: "aemptyv;",
             characters: "\u{29b3}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ealpart;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ealpart;")? {
+        return Ok(Some(CharRef {
             name: "ealpart;",
             characters: "\u{211c}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ppolint;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ppolint;")? {
+        return Ok(Some(CharRef {
             name: "ppolint;",
             characters: "\u{2a12}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("triltri;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("triltri;")? {
+        return Ok(Some(CharRef {
             name: "triltri;",
             characters: "\u{29ce}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("cpolint;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("cpolint;")? {
+        return Ok(Some(CharRef {
             name: "cpolint;",
             characters: "\u{2a13}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("etminus;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("etminus;")? {
+        return Ok(Some(CharRef {
             name: "etminus;",
             characters: "\u{2216}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("hortmid;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("hortmid;")? {
+        return Ok(Some(CharRef {
             name: "hortmid;",
             characters: "\u{2223}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("meparsl;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("meparsl;")? {
+        return Ok(Some(CharRef {
             name: "meparsl;",
             characters: "\u{29e4}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qsubset;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qsubset;")? {
+        return Ok(Some(CharRef {
             name: "qsubset;",
             characters: "\u{228f}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qsupset;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qsupset;")? {
+        return Ok(Some(CharRef {
             name: "qsupset;",
             characters: "\u{2290}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubseteq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubseteq;")? {
+        return Ok(Some(CharRef {
             name: "ubseteq;",
             characters: "\u{2286}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("uccneqq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("uccneqq;")? {
+        return Ok(Some(CharRef {
             name: "uccneqq;",
             characters: "\u{2ab6}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("uccnsim;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("uccnsim;")? {
+        return Ok(Some(CharRef {
             name: "uccnsim;",
             characters: "\u{22e9}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upseteq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upseteq;")? {
+        return Ok(Some(CharRef {
             name: "upseteq;",
             characters: "\u{2287}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("hetasym;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("hetasym;")? {
+        return Ok(Some(CharRef {
             name: "hetasym;",
             characters: "\u{3d1}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("hicksim;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("hicksim;")? {
+        return Ok(Some(CharRef {
             name: "hicksim;",
             characters: "\u{223c}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("imesbar;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("imesbar;")? {
+        return Ok(Some(CharRef {
             name: "imesbar;",
             characters: "\u{2a31}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("riangle;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("riangle;")? {
+        return Ok(Some(CharRef {
             name: "riangle;",
             characters: "\u{25b5}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("riminus;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("riminus;")? {
+        return Ok(Some(CharRef {
             name: "riminus;",
             characters: "\u{2a3a}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("rpezium;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("rpezium;")? {
+        return Ok(Some(CharRef {
             name: "rpezium;",
             characters: "\u{23e2}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("lcorner;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("lcorner;")? {
+        return Ok(Some(CharRef {
             name: "lcorner;",
             characters: "\u{231c}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("rcorner;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("rcorner;")? {
+        return Ok(Some(CharRef {
             name: "rcorner;",
             characters: "\u{231d}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arkappa;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arkappa;")? {
+        return Ok(Some(CharRef {
             name: "arkappa;",
             characters: "\u{3f0}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arsigma;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arsigma;")? {
+        return Ok(Some(CharRef {
             name: "arsigma;",
             characters: "\u{3c2}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("artheta;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("artheta;")? {
+        return Ok(Some(CharRef {
             name: "artheta;",
             characters: "\u{3d1}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("ecause;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("ecause;")? {
+        return Ok(Some(CharRef {
             name: "ecause;",
             characters: "\u{2235}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("ayleys;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("ayleys;")? {
+        return Ok(Some(CharRef {
             name: "ayleys;",
             characters: "\u{212d}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("conint;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("conint;")? {
+        return Ok(Some(CharRef {
             name: "conint;",
             characters: "\u{2230}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("edilla;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("edilla;")? {
+        return Ok(Some(CharRef {
             name: "edilla;",
             characters: "\u{b8}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("iamond;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("iamond;")? {
+        return Ok(Some(CharRef {
             name: "iamond;",
             characters: "\u{22c4}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ownTee;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ownTee;")? {
+        return Ok(Some(CharRef {
             name: "ownTee;",
             characters: "\u{22a4}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("lement;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("lement;")? {
+        return Ok(Some(CharRef {
             name: "lement;",
             characters: "\u{2208}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("psilon;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("psilon;")? {
+        return Ok(Some(CharRef {
             name: "psilon;",
             characters: "\u{395}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("mplies;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("mplies;")? {
+        return Ok(Some(CharRef {
             name: "mplies;",
             characters: "\u{21d2}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("eftTee;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("eftTee;")? {
+        return Ok(Some(CharRef {
             name: "eftTee;",
             characters: "\u{22a3}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("ewLine;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("ewLine;")? {
+        return Ok(Some(CharRef {
             name: "ewLine;",
             characters: "\u{a}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("oBreak;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("oBreak;")? {
+        return Ok(Some(CharRef {
             name: "oBreak;",
             characters: "\u{2060}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("otLess;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("otLess;")? {
+        return Ok(Some(CharRef {
             name: "otLess;",
             characters: "\u{226e}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("micron;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("micron;")? {
+        return Ok(Some(CharRef {
             name: "micron;",
             characters: "\u{39f}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("verBar;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("verBar;")? {
+        return Ok(Some(CharRef {
             name: "verBar;",
             characters: "\u{203e}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("roduct;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("roduct;")? {
+        return Ok(Some(CharRef {
             name: "roduct;",
             characters: "\u{220f}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pArrow;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pArrow;")? {
+        return Ok(Some(CharRef {
             name: "pArrow;",
             characters: "\u{2191}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("parrow;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("parrow;")? {
+        return Ok(Some(CharRef {
             name: "parrow;",
             characters: "\u{21d1}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("psilon;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("psilon;")? {
+        return Ok(Some(CharRef {
             name: "psilon;",
             characters: "\u{3a5}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("lefsym;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("lefsym;")? {
+        return Ok(Some(CharRef {
             name: "lefsym;",
             characters: "\u{2135}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngrtvb;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngrtvb;")? {
+        return Ok(Some(CharRef {
             name: "ngrtvb;",
             characters: "\u{22be}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngzarr;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngzarr;")? {
+        return Ok(Some(CharRef {
             name: "ngzarr;",
             characters: "\u{237c}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("sympeq;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("sympeq;")? {
+        return Ok(Some(CharRef {
             name: "sympeq;",
             characters: "\u{224d}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("acksim;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("acksim;")? {
+        return Ok(Some(CharRef {
             name: "acksim;",
             characters: "\u{223d}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ecause;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ecause;")? {
+        return Ok(Some(CharRef {
             name: "ecause;",
             characters: "\u{2235}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("emptyv;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("emptyv;")? {
+        return Ok(Some(CharRef {
             name: "emptyv;",
             characters: "\u{29b0}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("etween;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("etween;")? {
+        return Ok(Some(CharRef {
             name: "etween;",
             characters: "\u{226c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igcirc;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igcirc;")? {
+        return Ok(Some(CharRef {
             name: "igcirc;",
             characters: "\u{25ef}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igodot;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igodot;")? {
+        return Ok(Some(CharRef {
             name: "igodot;",
             characters: "\u{2a00}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igstar;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igstar;")? {
+        return Ok(Some(CharRef {
             name: "igstar;",
             characters: "\u{2605}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("nequiv;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("nequiv;")? {
+        return Ok(Some(CharRef {
             name: "nequiv;",
             characters: "\u{2261}\u{20e5}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxplus;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxplus;")? {
+        return Ok(Some(CharRef {
             name: "oxplus;",
             characters: "\u{229e}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("cupssm;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("cupssm;")? {
+        return Ok(Some(CharRef {
             name: "cupssm;",
             characters: "\u{2a50}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("emptyv;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("emptyv;")? {
+        return Ok(Some(CharRef {
             name: "emptyv;",
             characters: "\u{29b2}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("irscir;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("irscir;")? {
+        return Ok(Some(CharRef {
             name: "irscir;",
             characters: "\u{29c2}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("oloneq;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("oloneq;")? {
+        return Ok(Some(CharRef {
             name: "oloneq;",
             characters: "\u{2254}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ongdot;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ongdot;")? {
+        return Ok(Some(CharRef {
             name: "ongdot;",
             characters: "\u{2a6d}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("udarrl;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("udarrl;")? {
+        return Ok(Some(CharRef {
             name: "udarrl;",
             characters: "\u{2938}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("udarrr;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("udarrr;")? {
+        return Ok(Some(CharRef {
             name: "udarrr;",
             characters: "\u{2935}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ularrp;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ularrp;")? {
+        return Ok(Some(CharRef {
             name: "ularrp;",
             characters: "\u{293d}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urarrm;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urarrm;")? {
+        return Ok(Some(CharRef {
             name: "urarrm;",
             characters: "\u{293c}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("bkarow;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("bkarow;")? {
+        return Ok(Some(CharRef {
             name: "bkarow;",
             characters: "\u{290f}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("dagger;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("dagger;")? {
+        return Ok(Some(CharRef {
             name: "dagger;",
             characters: "\u{2021}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("dotseq;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("dotseq;")? {
+        return Ok(Some(CharRef {
             name: "dotseq;",
             characters: "\u{2a77}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("emptyv;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("emptyv;")? {
+        return Ok(Some(CharRef {
             name: "emptyv;",
             characters: "\u{29b1}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("iamond;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("iamond;")? {
+        return Ok(Some(CharRef {
             name: "iamond;",
             characters: "\u{22c4}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("igamma;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("igamma;")? {
+        return Ok(Some(CharRef {
             name: "igamma;",
             characters: "\u{3dd}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("otplus;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("otplus;")? {
+        return Ok(Some(CharRef {
             name: "otplus;",
             characters: "\u{2214}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("wangle;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("wangle;")? {
+        return Ok(Some(CharRef {
             name: "wangle;",
             characters: "\u{29a6}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("psilon;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("psilon;")? {
+        return Ok(Some(CharRef {
             name: "psilon;",
             characters: "\u{3b5}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("qcolon;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("qcolon;")? {
+        return Ok(Some(CharRef {
             name: "qcolon;",
             characters: "\u{2255}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("quivDD;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("quivDD;")? {
+        return Ok(Some(CharRef {
             name: "quivDD;",
             characters: "\u{2a78}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("esdoto;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("esdoto;")? {
+        return Ok(Some(CharRef {
             name: "esdoto;",
             characters: "\u{2a82}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("tquest;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("tquest;")? {
+        return Ok(Some(CharRef {
             name: "tquest;",
             characters: "\u{2a7c}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("trless;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("trless;")? {
+        return Ok(Some(CharRef {
             name: "trless;",
             characters: "\u{2277}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("arrcir;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("arrcir;")? {
+        return Ok(Some(CharRef {
             name: "arrcir;",
             characters: "\u{2948}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ntprod;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ntprod;")? {
+        return Ok(Some(CharRef {
             name: "ntprod;",
             characters: "\u{2a3c}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("sindot;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("sindot;")? {
+        return Ok(Some(CharRef {
             name: "sindot;",
             characters: "\u{22f5}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("arrbfs;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("arrbfs;")? {
+        return Ok(Some(CharRef {
             name: "arrbfs;",
             characters: "\u{291f}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("arrsim;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("arrsim;")? {
+        return Ok(Some(CharRef {
             name: "arrsim;",
             characters: "\u{2973}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("brksld;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("brksld;")? {
+        return Ok(Some(CharRef {
             name: "brksld;",
             characters: "\u{298f}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("brkslu;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("brkslu;")? {
+        return Ok(Some(CharRef {
             name: "brkslu;",
             characters: "\u{298d}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("drdhar;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("drdhar;")? {
+        return Ok(Some(CharRef {
             name: "drdhar;",
             characters: "\u{2967}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("esdoto;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("esdoto;")? {
+        return Ok(Some(CharRef {
             name: "esdoto;",
             characters: "\u{2a81}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("essdot;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("essdot;")? {
+        return Ok(Some(CharRef {
             name: "essdot;",
             characters: "\u{22d6}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("essgtr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("essgtr;")? {
+        return Ok(Some(CharRef {
             name: "essgtr;",
             characters: "\u{2276}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("esssim;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("esssim;")? {
+        return Ok(Some(CharRef {
             name: "esssim;",
             characters: "\u{2272}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("otimes;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("otimes;")? {
+        return Ok(Some(CharRef {
             name: "otimes;",
             characters: "\u{2a34}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ozenge;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ozenge;")? {
+        return Ok(Some(CharRef {
             name: "ozenge;",
             characters: "\u{25ca}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("tquest;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("tquest;")? {
+        return Ok(Some(CharRef {
             name: "tquest;",
             characters: "\u{2a7b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("uruhar;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("uruhar;")? {
+        return Ok(Some(CharRef {
             name: "uruhar;",
             characters: "\u{2966}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("altese;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("altese;")? {
+        return Ok(Some(CharRef {
             name: "altese;",
             characters: "\u{2720}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("inusdu;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("inusdu;")? {
+        return Ok(Some(CharRef {
             name: "inusdu;",
             characters: "\u{2a2a}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("approx;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("approx;")? {
+        return Ok(Some(CharRef {
             name: "approx;",
             characters: "\u{2249}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("atural;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("atural;")? {
+        return Ok(Some(CharRef {
             name: "atural;",
             characters: "\u{266e}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("earrow;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("earrow;")? {
+        return Ok(Some(CharRef {
             name: "earrow;",
             characters: "\u{2197}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("exists;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("exists;")? {
+        return Ok(Some(CharRef {
             name: "exists;",
             characters: "\u{2204}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otinva;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otinva;")? {
+        return Ok(Some(CharRef {
             name: "otinva;",
             characters: "\u{2209}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otinvb;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otinvb;")? {
+        return Ok(Some(CharRef {
             name: "otinvb;",
             characters: "\u{22f7}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otinvc;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otinvc;")? {
+        return Ok(Some(CharRef {
             name: "otinvc;",
             characters: "\u{22f6}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otniva;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otniva;")? {
+        return Ok(Some(CharRef {
             name: "otniva;",
             characters: "\u{220c}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otnivb;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otnivb;")? {
+        return Ok(Some(CharRef {
             name: "otnivb;",
             characters: "\u{22fe}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otnivc;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otnivc;")? {
+        return Ok(Some(CharRef {
             name: "otnivc;",
             characters: "\u{22fd}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("polint;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("polint;")? {
+        return Ok(Some(CharRef {
             name: "polint;",
             characters: "\u{2a14}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("preceq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("preceq;")? {
+        return Ok(Some(CharRef {
             name: "preceq;",
             characters: "\u{2aaf}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sqsube;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sqsube;")? {
+        return Ok(Some(CharRef {
             name: "sqsube;",
             characters: "\u{22e2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sqsupe;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sqsupe;")? {
+        return Ok(Some(CharRef {
             name: "sqsupe;",
             characters: "\u{22e3}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("subset;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("subset;")? {
+        return Ok(Some(CharRef {
             name: "subset;",
             characters: "\u{2282}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("succeq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("succeq;")? {
+        return Ok(Some(CharRef {
             name: "succeq;",
             characters: "\u{2ab0}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("supset;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("supset;")? {
+        return Ok(Some(CharRef {
             name: "supset;",
             characters: "\u{2283}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vinfin;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vinfin;")? {
+        return Ok(Some(CharRef {
             name: "vinfin;",
             characters: "\u{29de}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vltrie;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vltrie;")? {
+        return Ok(Some(CharRef {
             name: "vltrie;",
             characters: "\u{22b4}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vrtrie;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vrtrie;")? {
+        return Ok(Some(CharRef {
             name: "vrtrie;",
             characters: "\u{22b5}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("warrow;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("warrow;")? {
+        return Ok(Some(CharRef {
             name: "warrow;",
             characters: "\u{2196}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("lcross;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("lcross;")? {
+        return Ok(Some(CharRef {
             name: "lcross;",
             characters: "\u{29bb}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("micron;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("micron;")? {
+        return Ok(Some(CharRef {
             name: "micron;",
             characters: "\u{3bf}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rderof;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rderof;")? {
+        return Ok(Some(CharRef {
             name: "rderof;",
             characters: "\u{2134}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rslope;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rslope;")? {
+        return Ok(Some(CharRef {
             name: "rslope;",
             characters: "\u{2a57}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ertenk;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ertenk;")? {
+        return Ok(Some(CharRef {
             name: "ertenk;",
             characters: "\u{2031}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lanckh;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lanckh;")? {
+        return Ok(Some(CharRef {
             name: "lanckh;",
             characters: "\u{210e}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("luscir;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("luscir;")? {
+        return Ok(Some(CharRef {
             name: "luscir;",
             characters: "\u{2a22}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lussim;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lussim;")? {
+        return Ok(Some(CharRef {
             name: "lussim;",
             characters: "\u{2a26}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lustwo;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lustwo;")? {
+        return Ok(Some(CharRef {
             name: "lustwo;",
             characters: "\u{2a27}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("recsim;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("recsim;")? {
+        return Ok(Some(CharRef {
             name: "recsim;",
             characters: "\u{227e}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("uatint;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("uatint;")? {
+        return Ok(Some(CharRef {
             name: "uatint;",
             characters: "\u{2a16}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("uesteq;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("uesteq;")? {
+        return Ok(Some(CharRef {
             name: "uesteq;",
             characters: "\u{225f}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrbfs;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrbfs;")? {
+        return Ok(Some(CharRef {
             name: "arrbfs;",
             characters: "\u{2920}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrsim;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrsim;")? {
+        return Ok(Some(CharRef {
             name: "arrsim;",
             characters: "\u{2974}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("brksld;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("brksld;")? {
+        return Ok(Some(CharRef {
             name: "brksld;",
             characters: "\u{298e}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("brkslu;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("brkslu;")? {
+        return Ok(Some(CharRef {
             name: "brkslu;",
             characters: "\u{2990}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("dldhar;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("dldhar;")? {
+        return Ok(Some(CharRef {
             name: "dldhar;",
             characters: "\u{2969}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ealine;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ealine;")? {
+        return Ok(Some(CharRef {
             name: "ealine;",
             characters: "\u{211b}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("otimes;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("otimes;")? {
+        return Ok(Some(CharRef {
             name: "otimes;",
             characters: "\u{2a35}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("uluhar;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("uluhar;")? {
+        return Ok(Some(CharRef {
             name: "uluhar;",
             characters: "\u{2968}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("earrow;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("earrow;")? {
+        return Ok(Some(CharRef {
             name: "earrow;",
             characters: "\u{2198}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("implus;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("implus;")? {
+        return Ok(Some(CharRef {
             name: "implus;",
             characters: "\u{2a24}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("imrarr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("imrarr;")? {
+        return Ok(Some(CharRef {
             name: "imrarr;",
             characters: "\u{2972}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubedot;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubedot;")? {
+        return Ok(Some(CharRef {
             name: "ubedot;",
             characters: "\u{2ac3}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubmult;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubmult;")? {
+        return Ok(Some(CharRef {
             name: "ubmult;",
             characters: "\u{2ac1}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubplus;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubplus;")? {
+        return Ok(Some(CharRef {
             name: "ubplus;",
             characters: "\u{2abf}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubrarr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubrarr;")? {
+        return Ok(Some(CharRef {
             name: "ubrarr;",
             characters: "\u{2979}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("uccsim;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("uccsim;")? {
+        return Ok(Some(CharRef {
             name: "uccsim;",
             characters: "\u{227f}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("updsub;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("updsub;")? {
+        return Ok(Some(CharRef {
             name: "updsub;",
             characters: "\u{2ad8}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upedot;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upedot;")? {
+        return Ok(Some(CharRef {
             name: "upedot;",
             characters: "\u{2ac4}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("uphsol;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("uphsol;")? {
+        return Ok(Some(CharRef {
             name: "uphsol;",
             characters: "\u{27c9}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("uphsub;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("uphsub;")? {
+        return Ok(Some(CharRef {
             name: "uphsub;",
             characters: "\u{2ad7}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("uplarr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("uplarr;")? {
+        return Ok(Some(CharRef {
             name: "uplarr;",
             characters: "\u{297b}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upmult;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upmult;")? {
+        return Ok(Some(CharRef {
             name: "upmult;",
             characters: "\u{2ac2}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upplus;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upplus;")? {
+        return Ok(Some(CharRef {
             name: "upplus;",
             characters: "\u{2ac0}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("warrow;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("warrow;")? {
+        return Ok(Some(CharRef {
             name: "warrow;",
             characters: "\u{2199}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("opfork;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("opfork;")? {
+        return Ok(Some(CharRef {
             name: "opfork;",
             characters: "\u{2ada}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("riplus;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("riplus;")? {
+        return Ok(Some(CharRef {
             name: "riplus;",
             characters: "\u{2a39}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("ritime;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("ritime;")? {
+        return Ok(Some(CharRef {
             name: "ritime;",
             characters: "\u{2a3b}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("parrow;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("parrow;")? {
+        return Ok(Some(CharRef {
             name: "parrow;",
             characters: "\u{2191}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("psilon;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("psilon;")? {
+        return Ok(Some(CharRef {
             name: "psilon;",
             characters: "\u{3c5}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("wangle;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("wangle;")? {
+        return Ok(Some(CharRef {
             name: "wangle;",
             characters: "\u{29a7}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("zigzag;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("zigzag;")? {
+        return Ok(Some(CharRef {
             name: "zigzag;",
             characters: "\u{299a}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("igrarr;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("igrarr;")? {
+        return Ok(Some(CharRef {
             name: "igrarr;",
             characters: "\u{21dd}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{c1}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("breve;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("breve;")? {
+        return Ok(Some(CharRef {
             name: "breve;",
             characters: "\u{102}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{c0}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("ssign;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("ssign;")? {
+        return Ok(Some(CharRef {
             name: "ssign;",
             characters: "\u{2254}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{c3}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("arwed;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("arwed;")? {
+        return Ok(Some(CharRef {
             name: "arwed;",
             characters: "\u{2306}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("umpeq;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("umpeq;")? {
+        return Ok(Some(CharRef {
             name: "umpeq;",
             characters: "\u{224e}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{106}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{10c}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{c7}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("olone;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("olone;")? {
+        return Ok(Some(CharRef {
             name: "olone;",
             characters: "\u{2a74}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("onint;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("onint;")? {
+        return Ok(Some(CharRef {
             name: "onint;",
             characters: "\u{222f}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("upCap;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("upCap;")? {
+        return Ok(Some(CharRef {
             name: "upCap;",
             characters: "\u{224d}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("agger;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("agger;")? {
+        return Ok(Some(CharRef {
             name: "agger;",
             characters: "\u{2021}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{10e}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("otDot;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("otDot;")? {
+        return Ok(Some(CharRef {
             name: "otDot;",
             characters: "\u{20dc}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("strok;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("strok;")? {
+        return Ok(Some(CharRef {
             name: "strok;",
             characters: "\u{110}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{c9}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{11a}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{c8}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("xists;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("xists;")? {
+        return Ok(Some(CharRef {
             name: "xists;",
             characters: "\u{2203}",
-        });
+        }));
     }
 
-    if first_char == 'F' && try_read("orAll;") {
-        return Some(CharRef {
+    if first_char == 'F' && try_read("orAll;")? {
+        return Ok(Some(CharRef {
             name: "orAll;",
             characters: "\u{2200}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("ammad;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("ammad;")? {
+        return Ok(Some(CharRef {
             name: "ammad;",
             characters: "\u{3dc}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("breve;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("breve;")? {
+        return Ok(Some(CharRef {
             name: "breve;",
             characters: "\u{11e}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{122}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("ARDcy;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("ARDcy;")? {
+        return Ok(Some(CharRef {
             name: "ARDcy;",
             characters: "\u{42a}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("strok;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("strok;")? {
+        return Ok(Some(CharRef {
             name: "strok;",
             characters: "\u{126}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{cd}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{cc}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{128}",
-        });
+        }));
     }
 
-    if first_char == 'J' && try_read("sercy;") {
-        return Some(CharRef {
+    if first_char == 'J' && try_read("sercy;")? {
+        return Ok(Some(CharRef {
             name: "sercy;",
             characters: "\u{408}",
-        });
+        }));
     }
 
-    if first_char == 'K' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'K' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{136}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{139}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("ambda;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("ambda;")? {
+        return Ok(Some(CharRef {
             name: "ambda;",
             characters: "\u{39b}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{13d}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{13b}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("midot;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("midot;")? {
+        return Ok(Some(CharRef {
             name: "midot;",
             characters: "\u{13f}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("strok;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("strok;")? {
+        return Ok(Some(CharRef {
             name: "strok;",
             characters: "\u{141}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{143}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{147}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{145}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{d1}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{d3}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("dblac;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("dblac;")? {
+        return Ok(Some(CharRef {
             name: "dblac;",
             characters: "\u{150}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{d2}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("slash;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("slash;")? {
+        return Ok(Some(CharRef {
             name: "slash;",
             characters: "\u{d8}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{d5}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("times;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("times;")? {
+        return Ok(Some(CharRef {
             name: "times;",
             characters: "\u{2a37}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{154}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("arrtl;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("arrtl;")? {
+        return Ok(Some(CharRef {
             name: "arrtl;",
             characters: "\u{2916}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{158}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{156}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("HCHcy;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("HCHcy;")? {
+        return Ok(Some(CharRef {
             name: "HCHcy;",
             characters: "\u{429}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("OFTcy;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("OFTcy;")? {
+        return Ok(Some(CharRef {
             name: "OFTcy;",
             characters: "\u{42c}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{15a}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{160}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{15e}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("quare;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("quare;")? {
+        return Ok(Some(CharRef {
             name: "quare;",
             characters: "\u{25a1}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("ubset;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("ubset;")? {
+        return Ok(Some(CharRef {
             name: "ubset;",
             characters: "\u{22d0}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("upset;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("upset;")? {
+        return Ok(Some(CharRef {
             name: "upset;",
             characters: "\u{22d1}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{164}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{162}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("strok;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("strok;")? {
+        return Ok(Some(CharRef {
             name: "strok;",
             characters: "\u{166}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{da}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("breve;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("breve;")? {
+        return Ok(Some(CharRef {
             name: "breve;",
             characters: "\u{16c}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("dblac;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("dblac;")? {
+        return Ok(Some(CharRef {
             name: "dblac;",
             characters: "\u{170}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{d9}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{168}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("dashl;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("dashl;")? {
+        return Ok(Some(CharRef {
             name: "dashl;",
             characters: "\u{2ae6}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("erbar;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("erbar;")? {
+        return Ok(Some(CharRef {
             name: "erbar;",
             characters: "\u{2016}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("vdash;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("vdash;")? {
+        return Ok(Some(CharRef {
             name: "vdash;",
             characters: "\u{22aa}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{dd}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{179}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{17d}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{e1}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("breve;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("breve;")? {
+        return Ok(Some(CharRef {
             name: "breve;",
             characters: "\u{103}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{e0}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ndand;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ndand;")? {
+        return Ok(Some(CharRef {
             name: "ndand;",
             characters: "\u{2a55}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngmsd;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngmsd;")? {
+        return Ok(Some(CharRef {
             name: "ngmsd;",
             characters: "\u{2221}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngsph;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngsph;")? {
+        return Ok(Some(CharRef {
             name: "ngsph;",
             characters: "\u{2222}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("pacir;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("pacir;")? {
+        return Ok(Some(CharRef {
             name: "pacir;",
             characters: "\u{2a6f}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("pprox;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("pprox;")? {
+        return Ok(Some(CharRef {
             name: "pprox;",
             characters: "\u{2248}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{e3}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("arvee;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("arvee;")? {
+        return Ok(Some(CharRef {
             name: "arvee;",
             characters: "\u{22bd}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("arwed;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("arwed;")? {
+        return Ok(Some(CharRef {
             name: "arwed;",
             characters: "\u{2305}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ecaus;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ecaus;")? {
+        return Ok(Some(CharRef {
             name: "ecaus;",
             characters: "\u{2235}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ernou;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ernou;")? {
+        return Ok(Some(CharRef {
             name: "ernou;",
             characters: "\u{212c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igcap;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igcap;")? {
+        return Ok(Some(CharRef {
             name: "igcap;",
             characters: "\u{22c2}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igcup;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igcup;")? {
+        return Ok(Some(CharRef {
             name: "igcup;",
             characters: "\u{22c3}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("igvee;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("igvee;")? {
+        return Ok(Some(CharRef {
             name: "igvee;",
             characters: "\u{22c1}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("karow;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("karow;")? {
+        return Ok(Some(CharRef {
             name: "karow;",
             characters: "\u{290d}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ottom;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ottom;")? {
+        return Ok(Some(CharRef {
             name: "ottom;",
             characters: "\u{22a5}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("owtie;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("owtie;")? {
+        return Ok(Some(CharRef {
             name: "owtie;",
             characters: "\u{22c8}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxbox;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxbox;")? {
+        return Ok(Some(CharRef {
             name: "oxbox;",
             characters: "\u{29c9}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("prime;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("prime;")? {
+        return Ok(Some(CharRef {
             name: "prime;",
             characters: "\u{2035}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("rvbar;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("rvbar;")? {
+        return Ok(Some(CharRef {
             name: "rvbar;",
             characters: "\u{a6}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ullet;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ullet;")? {
+        return Ok(Some(CharRef {
             name: "ullet;",
             characters: "\u{2022}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("umpeq;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("umpeq;")? {
+        return Ok(Some(CharRef {
             name: "umpeq;",
             characters: "\u{224f}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{107}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("apand;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("apand;")? {
+        return Ok(Some(CharRef {
             name: "apand;",
             characters: "\u{2a44}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("apcap;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("apcap;")? {
+        return Ok(Some(CharRef {
             name: "apcap;",
             characters: "\u{2a4b}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("apcup;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("apcup;")? {
+        return Ok(Some(CharRef {
             name: "apcup;",
             characters: "\u{2a47}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("apdot;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("apdot;")? {
+        return Ok(Some(CharRef {
             name: "apdot;",
             characters: "\u{2a40}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{10d}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{e7}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("irceq;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("irceq;")? {
+        return Ok(Some(CharRef {
             name: "irceq;",
             characters: "\u{2257}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("irmid;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("irmid;")? {
+        return Ok(Some(CharRef {
             name: "irmid;",
             characters: "\u{2aef}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("olone;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("olone;")? {
+        return Ok(Some(CharRef {
             name: "olone;",
             characters: "\u{2254}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ommat;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ommat;")? {
+        return Ok(Some(CharRef {
             name: "ommat;",
             characters: "\u{40}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ompfn;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ompfn;")? {
+        return Ok(Some(CharRef {
             name: "ompfn;",
             characters: "\u{2218}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("onint;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("onint;")? {
+        return Ok(Some(CharRef {
             name: "onint;",
             characters: "\u{222e}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("oprod;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("oprod;")? {
+        return Ok(Some(CharRef {
             name: "oprod;",
             characters: "\u{2210}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("opysr;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("opysr;")? {
+        return Ok(Some(CharRef {
             name: "opysr;",
             characters: "\u{2117}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ularr;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ularr;")? {
+        return Ok(Some(CharRef {
             name: "ularr;",
             characters: "\u{21b6}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("upcap;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("upcap;")? {
+        return Ok(Some(CharRef {
             name: "upcap;",
             characters: "\u{2a46}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("upcup;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("upcup;")? {
+        return Ok(Some(CharRef {
             name: "upcup;",
             characters: "\u{2a4a}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("updot;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("updot;")? {
+        return Ok(Some(CharRef {
             name: "updot;",
             characters: "\u{228d}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urarr;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urarr;")? {
+        return Ok(Some(CharRef {
             name: "urarr;",
             characters: "\u{21b7}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urren;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urren;")? {
+        return Ok(Some(CharRef {
             name: "urren;",
             characters: "\u{a4}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ylcty;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ylcty;")? {
+        return Ok(Some(CharRef {
             name: "ylcty;",
             characters: "\u{232d}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("agger;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("agger;")? {
+        return Ok(Some(CharRef {
             name: "agger;",
             characters: "\u{2020}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("aleth;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("aleth;")? {
+        return Ok(Some(CharRef {
             name: "aleth;",
             characters: "\u{2138}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{10f}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("fisht;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("fisht;")? {
+        return Ok(Some(CharRef {
             name: "fisht;",
             characters: "\u{297f}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ivide;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ivide;")? {
+        return Ok(Some(CharRef {
             name: "ivide;",
             characters: "\u{f7}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ivonx;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ivonx;")? {
+        return Ok(Some(CharRef {
             name: "ivonx;",
             characters: "\u{22c7}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("lcorn;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("lcorn;")? {
+        return Ok(Some(CharRef {
             name: "lcorn;",
             characters: "\u{231e}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("lcrop;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("lcrop;")? {
+        return Ok(Some(CharRef {
             name: "lcrop;",
             characters: "\u{230d}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ollar;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ollar;")? {
+        return Ok(Some(CharRef {
             name: "ollar;",
             characters: "\u{24}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("rcorn;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("rcorn;")? {
+        return Ok(Some(CharRef {
             name: "rcorn;",
             characters: "\u{231f}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("rcrop;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("rcrop;")? {
+        return Ok(Some(CharRef {
             name: "rcrop;",
             characters: "\u{230c}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("strok;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("strok;")? {
+        return Ok(Some(CharRef {
             name: "strok;",
             characters: "\u{111}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{e9}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("aster;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("aster;")? {
+        return Ok(Some(CharRef {
             name: "aster;",
             characters: "\u{2a6e}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{11b}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("colon;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("colon;")? {
+        return Ok(Some(CharRef {
             name: "colon;",
             characters: "\u{2255}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{e8}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("gsdot;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("gsdot;")? {
+        return Ok(Some(CharRef {
             name: "gsdot;",
             characters: "\u{2a98}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("lsdot;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("lsdot;")? {
+        return Ok(Some(CharRef {
             name: "lsdot;",
             characters: "\u{2a97}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("mptyv;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("mptyv;")? {
+        return Ok(Some(CharRef {
             name: "mptyv;",
             characters: "\u{2205}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("msp13;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("msp13;")? {
+        return Ok(Some(CharRef {
             name: "msp13;",
             characters: "\u{2004}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("msp14;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("msp14;")? {
+        return Ok(Some(CharRef {
             name: "msp14;",
             characters: "\u{2005}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("parsl;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("parsl;")? {
+        return Ok(Some(CharRef {
             name: "parsl;",
             characters: "\u{29e3}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("qcirc;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("qcirc;")? {
+        return Ok(Some(CharRef {
             name: "qcirc;",
             characters: "\u{2256}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("quals;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("quals;")? {
+        return Ok(Some(CharRef {
             name: "quals;",
             characters: "\u{3d}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("quest;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("quest;")? {
+        return Ok(Some(CharRef {
             name: "quest;",
             characters: "\u{225f}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("emale;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("emale;")? {
+        return Ok(Some(CharRef {
             name: "emale;",
             characters: "\u{2640}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("filig;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("filig;")? {
+        return Ok(Some(CharRef {
             name: "filig;",
             characters: "\u{fb03}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("fllig;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("fllig;")? {
+        return Ok(Some(CharRef {
             name: "fllig;",
             characters: "\u{fb04}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("orall;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("orall;")? {
+        return Ok(Some(CharRef {
             name: "orall;",
             characters: "\u{2200}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac12;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac12;")? {
+        return Ok(Some(CharRef {
             name: "rac12;",
             characters: "\u{bd}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac13;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac13;")? {
+        return Ok(Some(CharRef {
             name: "rac13;",
             characters: "\u{2153}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac14;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac14;")? {
+        return Ok(Some(CharRef {
             name: "rac14;",
             characters: "\u{bc}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac15;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac15;")? {
+        return Ok(Some(CharRef {
             name: "rac15;",
             characters: "\u{2155}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac16;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac16;")? {
+        return Ok(Some(CharRef {
             name: "rac16;",
             characters: "\u{2159}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac18;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac18;")? {
+        return Ok(Some(CharRef {
             name: "rac18;",
             characters: "\u{215b}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac23;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac23;")? {
+        return Ok(Some(CharRef {
             name: "rac23;",
             characters: "\u{2154}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac25;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac25;")? {
+        return Ok(Some(CharRef {
             name: "rac25;",
             characters: "\u{2156}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac34;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac34;")? {
+        return Ok(Some(CharRef {
             name: "rac34;",
             characters: "\u{be}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac35;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac35;")? {
+        return Ok(Some(CharRef {
             name: "rac35;",
             characters: "\u{2157}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac38;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac38;")? {
+        return Ok(Some(CharRef {
             name: "rac38;",
             characters: "\u{215c}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac45;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac45;")? {
+        return Ok(Some(CharRef {
             name: "rac45;",
             characters: "\u{2158}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac56;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac56;")? {
+        return Ok(Some(CharRef {
             name: "rac56;",
             characters: "\u{215a}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac58;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac58;")? {
+        return Ok(Some(CharRef {
             name: "rac58;",
             characters: "\u{215d}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac78;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac78;")? {
+        return Ok(Some(CharRef {
             name: "rac78;",
             characters: "\u{215e}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{1f5}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("ammad;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("ammad;")? {
+        return Ok(Some(CharRef {
             name: "ammad;",
             characters: "\u{3dd}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("breve;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("breve;")? {
+        return Ok(Some(CharRef {
             name: "breve;",
             characters: "\u{11f}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("esdot;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("esdot;")? {
+        return Ok(Some(CharRef {
             name: "esdot;",
             characters: "\u{2a80}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("esles;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("esles;")? {
+        return Ok(Some(CharRef {
             name: "esles;",
             characters: "\u{2a94}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("tlPar;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("tlPar;")? {
+        return Ok(Some(CharRef {
             name: "tlPar;",
             characters: "\u{2995}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("trarr;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("trarr;")? {
+        return Ok(Some(CharRef {
             name: "trarr;",
             characters: "\u{2978}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("trdot;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("trdot;")? {
+        return Ok(Some(CharRef {
             name: "trdot;",
             characters: "\u{22d7}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("trsim;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("trsim;")? {
+        return Ok(Some(CharRef {
             name: "trsim;",
             characters: "\u{2273}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("airsp;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("airsp;")? {
+        return Ok(Some(CharRef {
             name: "airsp;",
             characters: "\u{200a}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("amilt;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("amilt;")? {
+        return Ok(Some(CharRef {
             name: "amilt;",
             characters: "\u{210b}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("ardcy;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("ardcy;")? {
+        return Ok(Some(CharRef {
             name: "ardcy;",
             characters: "\u{44a}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("earts;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("earts;")? {
+        return Ok(Some(CharRef {
             name: "earts;",
             characters: "\u{2665}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("ellip;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("ellip;")? {
+        return Ok(Some(CharRef {
             name: "ellip;",
             characters: "\u{2026}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("ercon;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("ercon;")? {
+        return Ok(Some(CharRef {
             name: "ercon;",
             characters: "\u{22b9}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("omtht;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("omtht;")? {
+        return Ok(Some(CharRef {
             name: "omtht;",
             characters: "\u{223b}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("orbar;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("orbar;")? {
+        return Ok(Some(CharRef {
             name: "orbar;",
             characters: "\u{2015}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("slash;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("slash;")? {
+        return Ok(Some(CharRef {
             name: "slash;",
             characters: "\u{210f}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("strok;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("strok;")? {
+        return Ok(Some(CharRef {
             name: "strok;",
             characters: "\u{127}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("ybull;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("ybull;")? {
+        return Ok(Some(CharRef {
             name: "ybull;",
             characters: "\u{2043}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("yphen;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("yphen;")? {
+        return Ok(Some(CharRef {
             name: "yphen;",
             characters: "\u{2010}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{ed}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{ec}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("iiint;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("iiint;")? {
+        return Ok(Some(CharRef {
             name: "iiint;",
             characters: "\u{2a0c}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("infin;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("infin;")? {
+        return Ok(Some(CharRef {
             name: "infin;",
             characters: "\u{29dc}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ncare;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ncare;")? {
+        return Ok(Some(CharRef {
             name: "ncare;",
             characters: "\u{2105}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("nodot;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("nodot;")? {
+        return Ok(Some(CharRef {
             name: "nodot;",
             characters: "\u{131}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ntcal;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ntcal;")? {
+        return Ok(Some(CharRef {
             name: "ntcal;",
             characters: "\u{22ba}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("quest;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("quest;")? {
+        return Ok(Some(CharRef {
             name: "quest;",
             characters: "\u{bf}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("sinsv;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("sinsv;")? {
+        return Ok(Some(CharRef {
             name: "sinsv;",
             characters: "\u{22f3}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{129}",
-        });
+        }));
     }
 
-    if first_char == 'j' && try_read("sercy;") {
-        return Some(CharRef {
+    if first_char == 'j' && try_read("sercy;")? {
+        return Ok(Some(CharRef {
             name: "sercy;",
             characters: "\u{458}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("appav;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("appav;")? {
+        return Ok(Some(CharRef {
             name: "appav;",
             characters: "\u{3f0}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{137}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("green;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("green;")? {
+        return Ok(Some(CharRef {
             name: "green;",
             characters: "\u{138}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("Atail;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("Atail;")? {
+        return Ok(Some(CharRef {
             name: "Atail;",
             characters: "\u{291b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{13a}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("agran;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("agran;")? {
+        return Ok(Some(CharRef {
             name: "agran;",
             characters: "\u{2112}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ambda;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ambda;")? {
+        return Ok(Some(CharRef {
             name: "ambda;",
             characters: "\u{3bb}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("angle;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("angle;")? {
+        return Ok(Some(CharRef {
             name: "angle;",
             characters: "\u{27e8}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("arrfs;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("arrfs;")? {
+        return Ok(Some(CharRef {
             name: "arrfs;",
             characters: "\u{291d}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("arrhk;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("arrhk;")? {
+        return Ok(Some(CharRef {
             name: "arrhk;",
             characters: "\u{21a9}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("arrlp;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("arrlp;")? {
+        return Ok(Some(CharRef {
             name: "arrlp;",
             characters: "\u{21ab}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("arrpl;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("arrpl;")? {
+        return Ok(Some(CharRef {
             name: "arrpl;",
             characters: "\u{2939}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("arrtl;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("arrtl;")? {
+        return Ok(Some(CharRef {
             name: "arrtl;",
             characters: "\u{21a2}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("atail;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("atail;")? {
+        return Ok(Some(CharRef {
             name: "atail;",
             characters: "\u{2919}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("brace;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("brace;")? {
+        return Ok(Some(CharRef {
             name: "brace;",
             characters: "\u{7b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("brack;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("brack;")? {
+        return Ok(Some(CharRef {
             name: "brack;",
             characters: "\u{5b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{13e}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{13c}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("dquor;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("dquor;")? {
+        return Ok(Some(CharRef {
             name: "dquor;",
             characters: "\u{201e}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("esdot;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("esdot;")? {
+        return Ok(Some(CharRef {
             name: "esdot;",
             characters: "\u{2a7f}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("esges;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("esges;")? {
+        return Ok(Some(CharRef {
             name: "esges;",
             characters: "\u{2a93}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("fisht;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("fisht;")? {
+        return Ok(Some(CharRef {
             name: "fisht;",
             characters: "\u{297c}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("floor;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("floor;")? {
+        return Ok(Some(CharRef {
             name: "floor;",
             characters: "\u{230a}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("harul;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("harul;")? {
+        return Ok(Some(CharRef {
             name: "harul;",
             characters: "\u{296a}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("lhard;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("lhard;")? {
+        return Ok(Some(CharRef {
             name: "lhard;",
             characters: "\u{296b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("midot;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("midot;")? {
+        return Ok(Some(CharRef {
             name: "midot;",
             characters: "\u{140}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("moust;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("moust;")? {
+        return Ok(Some(CharRef {
             name: "moust;",
             characters: "\u{23b0}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("oplus;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("oplus;")? {
+        return Ok(Some(CharRef {
             name: "oplus;",
             characters: "\u{2a2d}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("owast;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("owast;")? {
+        return Ok(Some(CharRef {
             name: "owast;",
             characters: "\u{2217}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("owbar;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("owbar;")? {
+        return Ok(Some(CharRef {
             name: "owbar;",
             characters: "\u{5f}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("parlt;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("parlt;")? {
+        return Ok(Some(CharRef {
             name: "parlt;",
             characters: "\u{2993}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("rhard;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("rhard;")? {
+        return Ok(Some(CharRef {
             name: "rhard;",
             characters: "\u{296d}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("saquo;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("saquo;")? {
+        return Ok(Some(CharRef {
             name: "saquo;",
             characters: "\u{2039}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("squor;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("squor;")? {
+        return Ok(Some(CharRef {
             name: "squor;",
             characters: "\u{201a}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("strok;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("strok;")? {
+        return Ok(Some(CharRef {
             name: "strok;",
             characters: "\u{142}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("three;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("three;")? {
+        return Ok(Some(CharRef {
             name: "three;",
             characters: "\u{22cb}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("times;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("times;")? {
+        return Ok(Some(CharRef {
             name: "times;",
             characters: "\u{22c9}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("tlarr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("tlarr;")? {
+        return Ok(Some(CharRef {
             name: "tlarr;",
             characters: "\u{2976}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("trPar;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("trPar;")? {
+        return Ok(Some(CharRef {
             name: "trPar;",
             characters: "\u{2996}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("apsto;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("apsto;")? {
+        return Ok(Some(CharRef {
             name: "apsto;",
             characters: "\u{21a6}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("arker;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("arker;")? {
+        return Ok(Some(CharRef {
             name: "arker;",
             characters: "\u{25ae}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("comma;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("comma;")? {
+        return Ok(Some(CharRef {
             name: "comma;",
             characters: "\u{2a29}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("idast;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("idast;")? {
+        return Ok(Some(CharRef {
             name: "idast;",
             characters: "\u{2a}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("idcir;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("idcir;")? {
+        return Ok(Some(CharRef {
             name: "idcir;",
             characters: "\u{2af0}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("iddot;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("iddot;")? {
+        return Ok(Some(CharRef {
             name: "iddot;",
             characters: "\u{b7}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("inusb;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("inusb;")? {
+        return Ok(Some(CharRef {
             name: "inusb;",
             characters: "\u{229f}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("inusd;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("inusd;")? {
+        return Ok(Some(CharRef {
             name: "inusd;",
             characters: "\u{2238}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("nplus;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("nplus;")? {
+        return Ok(Some(CharRef {
             name: "nplus;",
             characters: "\u{2213}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("odels;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("odels;")? {
+        return Ok(Some(CharRef {
             name: "odels;",
             characters: "\u{22a7}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("stpos;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("stpos;")? {
+        return Ok(Some(CharRef {
             name: "stpos;",
             characters: "\u{223e}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("VDash;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("VDash;")? {
+        return Ok(Some(CharRef {
             name: "VDash;",
             characters: "\u{22af}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Vdash;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Vdash;")? {
+        return Ok(Some(CharRef {
             name: "Vdash;",
             characters: "\u{22ae}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{144}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("bumpe;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("bumpe;")? {
+        return Ok(Some(CharRef {
             name: "bumpe;",
             characters: "\u{224f}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{148}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{146}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("earhk;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("earhk;")? {
+        return Ok(Some(CharRef {
             name: "earhk;",
             characters: "\u{2924}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("equiv;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("equiv;")? {
+        return Ok(Some(CharRef {
             name: "equiv;",
             characters: "\u{2262}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("esear;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("esear;")? {
+        return Ok(Some(CharRef {
             name: "esear;",
             characters: "\u{2928}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("exist;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("exist;")? {
+        return Ok(Some(CharRef {
             name: "exist;",
             characters: "\u{2204}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("ltrie;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("ltrie;")? {
+        return Ok(Some(CharRef {
             name: "ltrie;",
             characters: "\u{22ec}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otinE;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otinE;")? {
+        return Ok(Some(CharRef {
             name: "otinE;",
             characters: "\u{22f9}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("parsl;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("parsl;")? {
+        return Ok(Some(CharRef {
             name: "parsl;",
             characters: "\u{2afd}\u{20e5}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("prcue;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("prcue;")? {
+        return Ok(Some(CharRef {
             name: "prcue;",
             characters: "\u{22e0}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("rarrc;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("rarrc;")? {
+        return Ok(Some(CharRef {
             name: "rarrc;",
             characters: "\u{2933}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("rarrw;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("rarrw;")? {
+        return Ok(Some(CharRef {
             name: "rarrw;",
             characters: "\u{219d}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("rtrie;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("rtrie;")? {
+        return Ok(Some(CharRef {
             name: "rtrie;",
             characters: "\u{22ed}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sccue;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sccue;")? {
+        return Ok(Some(CharRef {
             name: "sccue;",
             characters: "\u{22e1}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("simeq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("simeq;")? {
+        return Ok(Some(CharRef {
             name: "simeq;",
             characters: "\u{2244}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{f1}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("umero;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("umero;")? {
+        return Ok(Some(CharRef {
             name: "umero;",
             characters: "\u{2116}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vDash;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vDash;")? {
+        return Ok(Some(CharRef {
             name: "vDash;",
             characters: "\u{22ad}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vHarr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vHarr;")? {
+        return Ok(Some(CharRef {
             name: "vHarr;",
             characters: "\u{2904}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vdash;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vdash;")? {
+        return Ok(Some(CharRef {
             name: "vdash;",
             characters: "\u{22ac}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vlArr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vlArr;")? {
+        return Ok(Some(CharRef {
             name: "vlArr;",
             characters: "\u{2902}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vrArr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vrArr;")? {
+        return Ok(Some(CharRef {
             name: "vrArr;",
             characters: "\u{2903}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("warhk;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("warhk;")? {
+        return Ok(Some(CharRef {
             name: "warhk;",
             characters: "\u{2923}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("wnear;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("wnear;")? {
+        return Ok(Some(CharRef {
             name: "wnear;",
             characters: "\u{2927}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{f3}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("dblac;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("dblac;")? {
+        return Ok(Some(CharRef {
             name: "dblac;",
             characters: "\u{151}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("dsold;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("dsold;")? {
+        return Ok(Some(CharRef {
             name: "dsold;",
             characters: "\u{29bc}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{f2}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("minus;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("minus;")? {
+        return Ok(Some(CharRef {
             name: "minus;",
             characters: "\u{2296}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rigof;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rigof;")? {
+        return Ok(Some(CharRef {
             name: "rigof;",
             characters: "\u{22b6}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("slash;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("slash;")? {
+        return Ok(Some(CharRef {
             name: "slash;",
             characters: "\u{f8}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{f5}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("times;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("times;")? {
+        return Ok(Some(CharRef {
             name: "times;",
             characters: "\u{2297}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("arsim;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("arsim;")? {
+        return Ok(Some(CharRef {
             name: "arsim;",
             characters: "\u{2af3}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ercnt;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ercnt;")? {
+        return Ok(Some(CharRef {
             name: "ercnt;",
             characters: "\u{25}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("eriod;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("eriod;")? {
+        return Ok(Some(CharRef {
             name: "eriod;",
             characters: "\u{2e}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ermil;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ermil;")? {
+        return Ok(Some(CharRef {
             name: "ermil;",
             characters: "\u{2030}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("hmmat;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("hmmat;")? {
+        return Ok(Some(CharRef {
             name: "hmmat;",
             characters: "\u{2133}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lanck;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lanck;")? {
+        return Ok(Some(CharRef {
             name: "lanck;",
             characters: "\u{210f}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lankv;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lankv;")? {
+        return Ok(Some(CharRef {
             name: "lankv;",
             characters: "\u{210f}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lusdo;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lusdo;")? {
+        return Ok(Some(CharRef {
             name: "lusdo;",
             characters: "\u{2214}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lusdu;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lusdu;")? {
+        return Ok(Some(CharRef {
             name: "lusdu;",
             characters: "\u{2a25}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lusmn;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lusmn;")? {
+        return Ok(Some(CharRef {
             name: "lusmn;",
             characters: "\u{b1}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("receq;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("receq;")? {
+        return Ok(Some(CharRef {
             name: "receq;",
             characters: "\u{2aaf}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rimes;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rimes;")? {
+        return Ok(Some(CharRef {
             name: "rimes;",
             characters: "\u{2119}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rnsim;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rnsim;")? {
+        return Ok(Some(CharRef {
             name: "rnsim;",
             characters: "\u{22e8}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ropto;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ropto;")? {
+        return Ok(Some(CharRef {
             name: "ropto;",
             characters: "\u{221d}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rurel;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rurel;")? {
+        return Ok(Some(CharRef {
             name: "rurel;",
             characters: "\u{22b0}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("uncsp;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("uncsp;")? {
+        return Ok(Some(CharRef {
             name: "uncsp;",
             characters: "\u{2008}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("prime;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("prime;")? {
+        return Ok(Some(CharRef {
             name: "prime;",
             characters: "\u{2057}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("Atail;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("Atail;")? {
+        return Ok(Some(CharRef {
             name: "Atail;",
             characters: "\u{291c}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{155}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("angle;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("angle;")? {
+        return Ok(Some(CharRef {
             name: "angle;",
             characters: "\u{27e9}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrap;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrap;")? {
+        return Ok(Some(CharRef {
             name: "arrap;",
             characters: "\u{2975}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrfs;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrfs;")? {
+        return Ok(Some(CharRef {
             name: "arrfs;",
             characters: "\u{291e}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrhk;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrhk;")? {
+        return Ok(Some(CharRef {
             name: "arrhk;",
             characters: "\u{21aa}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrlp;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrlp;")? {
+        return Ok(Some(CharRef {
             name: "arrlp;",
             characters: "\u{21ac}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrpl;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrpl;")? {
+        return Ok(Some(CharRef {
             name: "arrpl;",
             characters: "\u{2945}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrtl;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrtl;")? {
+        return Ok(Some(CharRef {
             name: "arrtl;",
             characters: "\u{21a3}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("atail;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("atail;")? {
+        return Ok(Some(CharRef {
             name: "atail;",
             characters: "\u{291a}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("brace;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("brace;")? {
+        return Ok(Some(CharRef {
             name: "brace;",
             characters: "\u{7d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("brack;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("brack;")? {
+        return Ok(Some(CharRef {
             name: "brack;",
             characters: "\u{5d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{159}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{157}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("dquor;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("dquor;")? {
+        return Ok(Some(CharRef {
             name: "dquor;",
             characters: "\u{201d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("fisht;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("fisht;")? {
+        return Ok(Some(CharRef {
             name: "fisht;",
             characters: "\u{297d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("floor;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("floor;")? {
+        return Ok(Some(CharRef {
             name: "floor;",
             characters: "\u{230b}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("harul;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("harul;")? {
+        return Ok(Some(CharRef {
             name: "harul;",
             characters: "\u{296c}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("moust;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("moust;")? {
+        return Ok(Some(CharRef {
             name: "moust;",
             characters: "\u{23b1}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("oplus;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("oplus;")? {
+        return Ok(Some(CharRef {
             name: "oplus;",
             characters: "\u{2a2e}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("pargt;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("pargt;")? {
+        return Ok(Some(CharRef {
             name: "pargt;",
             characters: "\u{2994}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("saquo;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("saquo;")? {
+        return Ok(Some(CharRef {
             name: "saquo;",
             characters: "\u{203a}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("squor;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("squor;")? {
+        return Ok(Some(CharRef {
             name: "squor;",
             characters: "\u{2019}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("three;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("three;")? {
+        return Ok(Some(CharRef {
             name: "three;",
             characters: "\u{22cc}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("times;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("times;")? {
+        return Ok(Some(CharRef {
             name: "times;",
             characters: "\u{22ca}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{15b}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{161}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{15f}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("cnsim;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("cnsim;")? {
+        return Ok(Some(CharRef {
             name: "cnsim;",
             characters: "\u{22e9}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("earhk;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("earhk;")? {
+        return Ok(Some(CharRef {
             name: "earhk;",
             characters: "\u{2925}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("eswar;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("eswar;")? {
+        return Ok(Some(CharRef {
             name: "eswar;",
             characters: "\u{2929}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("frown;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("frown;")? {
+        return Ok(Some(CharRef {
             name: "frown;",
             characters: "\u{2322}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("hchcy;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("hchcy;")? {
+        return Ok(Some(CharRef {
             name: "hchcy;",
             characters: "\u{449}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("igmaf;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("igmaf;")? {
+        return Ok(Some(CharRef {
             name: "igmaf;",
             characters: "\u{3c2}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("igmav;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("igmav;")? {
+        return Ok(Some(CharRef {
             name: "igmav;",
             characters: "\u{3c2}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("imdot;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("imdot;")? {
+        return Ok(Some(CharRef {
             name: "imdot;",
             characters: "\u{2a6a}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("mashp;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("mashp;")? {
+        return Ok(Some(CharRef {
             name: "mashp;",
             characters: "\u{2a33}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("oftcy;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("oftcy;")? {
+        return Ok(Some(CharRef {
             name: "oftcy;",
             characters: "\u{44c}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("olbar;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("olbar;")? {
+        return Ok(Some(CharRef {
             name: "olbar;",
             characters: "\u{233f}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("pades;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("pades;")? {
+        return Ok(Some(CharRef {
             name: "pades;",
             characters: "\u{2660}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qcaps;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qcaps;")? {
+        return Ok(Some(CharRef {
             name: "qcaps;",
             characters: "\u{2293}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qcups;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qcups;")? {
+        return Ok(Some(CharRef {
             name: "qcups;",
             characters: "\u{2294}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qsube;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qsube;")? {
+        return Ok(Some(CharRef {
             name: "qsube;",
             characters: "\u{2291}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qsupe;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qsupe;")? {
+        return Ok(Some(CharRef {
             name: "qsupe;",
             characters: "\u{2292}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("quare;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("quare;")? {
+        return Ok(Some(CharRef {
             name: "quare;",
             characters: "\u{25a1}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("quarf;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("quarf;")? {
+        return Ok(Some(CharRef {
             name: "quarf;",
             characters: "\u{25aa}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("setmn;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("setmn;")? {
+        return Ok(Some(CharRef {
             name: "setmn;",
             characters: "\u{2216}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("smile;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("smile;")? {
+        return Ok(Some(CharRef {
             name: "smile;",
             characters: "\u{2323}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("starf;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("starf;")? {
+        return Ok(Some(CharRef {
             name: "starf;",
             characters: "\u{22c6}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubdot;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubdot;")? {
+        return Ok(Some(CharRef {
             name: "ubdot;",
             characters: "\u{2abd}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubset;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubset;")? {
+        return Ok(Some(CharRef {
             name: "ubset;",
             characters: "\u{2282}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubsim;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubsim;")? {
+        return Ok(Some(CharRef {
             name: "ubsim;",
             characters: "\u{2ac7}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubsub;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubsub;")? {
+        return Ok(Some(CharRef {
             name: "ubsub;",
             characters: "\u{2ad5}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubsup;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubsup;")? {
+        return Ok(Some(CharRef {
             name: "ubsup;",
             characters: "\u{2ad3}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ucceq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ucceq;")? {
+        return Ok(Some(CharRef {
             name: "ucceq;",
             characters: "\u{2ab0}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("updot;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("updot;")? {
+        return Ok(Some(CharRef {
             name: "updot;",
             characters: "\u{2abe}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upset;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upset;")? {
+        return Ok(Some(CharRef {
             name: "upset;",
             characters: "\u{2283}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upsim;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upsim;")? {
+        return Ok(Some(CharRef {
             name: "upsim;",
             characters: "\u{2ac8}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upsub;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upsub;")? {
+        return Ok(Some(CharRef {
             name: "upsub;",
             characters: "\u{2ad4}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upsup;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upsup;")? {
+        return Ok(Some(CharRef {
             name: "upsup;",
             characters: "\u{2ad6}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("warhk;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("warhk;")? {
+        return Ok(Some(CharRef {
             name: "warhk;",
             characters: "\u{2926}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("wnwar;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("wnwar;")? {
+        return Ok(Some(CharRef {
             name: "wnwar;",
             characters: "\u{292a}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("arget;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("arget;")? {
+        return Ok(Some(CharRef {
             name: "arget;",
             characters: "\u{2316}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{165}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("cedil;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("cedil;")? {
+        return Ok(Some(CharRef {
             name: "cedil;",
             characters: "\u{163}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("elrec;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("elrec;")? {
+        return Ok(Some(CharRef {
             name: "elrec;",
             characters: "\u{2315}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("here4;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("here4;")? {
+        return Ok(Some(CharRef {
             name: "here4;",
             characters: "\u{2234}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("hetav;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("hetav;")? {
+        return Ok(Some(CharRef {
             name: "hetav;",
             characters: "\u{3d1}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("hinsp;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("hinsp;")? {
+        return Ok(Some(CharRef {
             name: "hinsp;",
             characters: "\u{2009}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("hksim;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("hksim;")? {
+        return Ok(Some(CharRef {
             name: "hksim;",
             characters: "\u{223c}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("imesb;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("imesb;")? {
+        return Ok(Some(CharRef {
             name: "imesb;",
             characters: "\u{22a0}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("imesd;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("imesd;")? {
+        return Ok(Some(CharRef {
             name: "imesd;",
             characters: "\u{2a30}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("opbot;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("opbot;")? {
+        return Ok(Some(CharRef {
             name: "opbot;",
             characters: "\u{2336}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("opcir;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("opcir;")? {
+        return Ok(Some(CharRef {
             name: "opcir;",
             characters: "\u{2af1}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("prime;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("prime;")? {
+        return Ok(Some(CharRef {
             name: "prime;",
             characters: "\u{2034}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("ridot;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("ridot;")? {
+        return Ok(Some(CharRef {
             name: "ridot;",
             characters: "\u{25ec}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("strok;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("strok;")? {
+        return Ok(Some(CharRef {
             name: "strok;",
             characters: "\u{167}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{fa}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("breve;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("breve;")? {
+        return Ok(Some(CharRef {
             name: "breve;",
             characters: "\u{16d}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("dblac;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("dblac;")? {
+        return Ok(Some(CharRef {
             name: "dblac;",
             characters: "\u{171}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("fisht;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("fisht;")? {
+        return Ok(Some(CharRef {
             name: "fisht;",
             characters: "\u{297e}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("grave;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("grave;")? {
+        return Ok(Some(CharRef {
             name: "grave;",
             characters: "\u{f9}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("lcorn;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("lcorn;")? {
+        return Ok(Some(CharRef {
             name: "lcorn;",
             characters: "\u{231c}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("lcrop;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("lcrop;")? {
+        return Ok(Some(CharRef {
             name: "lcrop;",
             characters: "\u{230f}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("rcorn;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("rcorn;")? {
+        return Ok(Some(CharRef {
             name: "rcorn;",
             characters: "\u{231d}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("rcrop;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("rcrop;")? {
+        return Ok(Some(CharRef {
             name: "rcrop;",
             characters: "\u{230e}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("tilde;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("tilde;")? {
+        return Ok(Some(CharRef {
             name: "tilde;",
             characters: "\u{169}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("angrt;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("angrt;")? {
+        return Ok(Some(CharRef {
             name: "angrt;",
             characters: "\u{299c}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arphi;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arphi;")? {
+        return Ok(Some(CharRef {
             name: "arphi;",
             characters: "\u{3d5}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arrho;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arrho;")? {
+        return Ok(Some(CharRef {
             name: "arrho;",
             characters: "\u{3f1}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("eebar;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("eebar;")? {
+        return Ok(Some(CharRef {
             name: "eebar;",
             characters: "\u{22bb}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("ellip;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("ellip;")? {
+        return Ok(Some(CharRef {
             name: "ellip;",
             characters: "\u{22ee}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("erbar;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("erbar;")? {
+        return Ok(Some(CharRef {
             name: "erbar;",
             characters: "\u{7c}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("subnE;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("subnE;")? {
+        return Ok(Some(CharRef {
             name: "subnE;",
             characters: "\u{2acb}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("subne;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("subne;")? {
+        return Ok(Some(CharRef {
             name: "subne;",
             characters: "\u{228a}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("supnE;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("supnE;")? {
+        return Ok(Some(CharRef {
             name: "supnE;",
             characters: "\u{2acc}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("supne;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("supne;")? {
+        return Ok(Some(CharRef {
             name: "supne;",
             characters: "\u{228b}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("edbar;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("edbar;")? {
+        return Ok(Some(CharRef {
             name: "edbar;",
             characters: "\u{2a5f}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("edgeq;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("edgeq;")? {
+        return Ok(Some(CharRef {
             name: "edgeq;",
             characters: "\u{2259}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("eierp;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("eierp;")? {
+        return Ok(Some(CharRef {
             name: "eierp;",
             characters: "\u{2118}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("reath;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("reath;")? {
+        return Ok(Some(CharRef {
             name: "reath;",
             characters: "\u{2240}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("oplus;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("oplus;")? {
+        return Ok(Some(CharRef {
             name: "oplus;",
             characters: "\u{2a01}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("otime;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("otime;")? {
+        return Ok(Some(CharRef {
             name: "otime;",
             characters: "\u{2a02}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("sqcup;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("sqcup;")? {
+        return Ok(Some(CharRef {
             name: "sqcup;",
             characters: "\u{2a06}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("uplus;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("uplus;")? {
+        return Ok(Some(CharRef {
             name: "uplus;",
             characters: "\u{2a04}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("wedge;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("wedge;")? {
+        return Ok(Some(CharRef {
             name: "wedge;",
             characters: "\u{22c0}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{fd}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("acute;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("acute;")? {
+        return Ok(Some(CharRef {
             name: "acute;",
             characters: "\u{17a}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("caron;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("caron;")? {
+        return Ok(Some(CharRef {
             name: "caron;",
             characters: "\u{17e}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("eetrf;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("eetrf;")? {
+        return Ok(Some(CharRef {
             name: "eetrf;",
             characters: "\u{2128}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("Elig;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("Elig;")? {
+        return Ok(Some(CharRef {
             name: "Elig;",
             characters: "\u{c6}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{c1}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{c2}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{c0}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("lpha;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("lpha;")? {
+        return Ok(Some(CharRef {
             name: "lpha;",
             characters: "\u{391}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{100}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("ogon;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("ogon;")? {
+        return Ok(Some(CharRef {
             name: "ogon;",
             characters: "\u{104}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("ring;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("ring;")? {
+        return Ok(Some(CharRef {
             name: "ring;",
             characters: "\u{c5}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("tilde") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("tilde")? {
+        return Ok(Some(CharRef {
             name: "tilde",
             characters: "\u{c3}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("reve;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("reve;")? {
+        return Ok(Some(CharRef {
             name: "reve;",
             characters: "\u{2d8}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("cedil") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("cedil")? {
+        return Ok(Some(CharRef {
             name: "cedil",
             characters: "\u{c7}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{108}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("olon;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("olon;")? {
+        return Ok(Some(CharRef {
             name: "olon;",
             characters: "\u{2237}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("ross;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("ross;")? {
+        return Ok(Some(CharRef {
             name: "ross;",
             characters: "\u{2a2f}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ashv;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ashv;")? {
+        return Ok(Some(CharRef {
             name: "ashv;",
             characters: "\u{2ae4}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("elta;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("elta;")? {
+        return Ok(Some(CharRef {
             name: "elta;",
             characters: "\u{394}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{c9}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{ca}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{c8}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{112}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("ogon;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("ogon;")? {
+        return Ok(Some(CharRef {
             name: "ogon;",
             characters: "\u{118}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("qual;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("qual;")? {
+        return Ok(Some(CharRef {
             name: "qual;",
             characters: "\u{2a75}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("amma;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("amma;")? {
+        return Ok(Some(CharRef {
             name: "amma;",
             characters: "\u{393}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{11c}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("acek;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("acek;")? {
+        return Ok(Some(CharRef {
             name: "acek;",
             characters: "\u{2c7}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{124}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("Jlig;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("Jlig;")? {
+        return Ok(Some(CharRef {
             name: "Jlig;",
             characters: "\u{132}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{cd}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{ce}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{cc}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{12a}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("ogon;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("ogon;")? {
+        return Ok(Some(CharRef {
             name: "ogon;",
             characters: "\u{12e}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("ukcy;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("ukcy;")? {
+        return Ok(Some(CharRef {
             name: "ukcy;",
             characters: "\u{406}",
-        });
+        }));
     }
 
-    if first_char == 'J' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'J' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{134}",
-        });
+        }));
     }
 
-    if first_char == 'J' && try_read("ukcy;") {
-        return Some(CharRef {
+    if first_char == 'J' && try_read("ukcy;")? {
+        return Ok(Some(CharRef {
             name: "ukcy;",
             characters: "\u{404}",
-        });
+        }));
     }
 
-    if first_char == 'K' && try_read("appa;") {
-        return Some(CharRef {
+    if first_char == 'K' && try_read("appa;")? {
+        return Ok(Some(CharRef {
             name: "appa;",
             characters: "\u{39a}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("tilde") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("tilde")? {
+        return Ok(Some(CharRef {
             name: "tilde",
             characters: "\u{d1}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("Elig;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("Elig;")? {
+        return Ok(Some(CharRef {
             name: "Elig;",
             characters: "\u{152}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{d3}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{d4}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{d2}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{14c}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("mega;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("mega;")? {
+        return Ok(Some(CharRef {
             name: "mega;",
             characters: "\u{3a9}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("slash") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("slash")? {
+        return Ok(Some(CharRef {
             name: "slash",
             characters: "\u{d8}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("tilde") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("tilde")? {
+        return Ok(Some(CharRef {
             name: "tilde",
             characters: "\u{d5}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("rime;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("rime;")? {
+        return Ok(Some(CharRef {
             name: "rime;",
             characters: "\u{2033}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("Barr;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("Barr;")? {
+        return Ok(Some(CharRef {
             name: "Barr;",
             characters: "\u{2910}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{15c}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("igma;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("igma;")? {
+        return Ok(Some(CharRef {
             name: "igma;",
             characters: "\u{3a3}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("HORN;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("HORN;")? {
+        return Ok(Some(CharRef {
             name: "HORN;",
             characters: "\u{de}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("RADE;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("RADE;")? {
+        return Ok(Some(CharRef {
             name: "RADE;",
             characters: "\u{2122}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("SHcy;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("SHcy;")? {
+        return Ok(Some(CharRef {
             name: "SHcy;",
             characters: "\u{40b}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("heta;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("heta;")? {
+        return Ok(Some(CharRef {
             name: "heta;",
             characters: "\u{398}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("ilde;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("ilde;")? {
+        return Ok(Some(CharRef {
             name: "ilde;",
             characters: "\u{223c}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{da}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("brcy;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("brcy;")? {
+        return Ok(Some(CharRef {
             name: "brcy;",
             characters: "\u{40e}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{db}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{d9}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{16a}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("nion;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("nion;")? {
+        return Ok(Some(CharRef {
             name: "nion;",
             characters: "\u{22c3}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("ogon;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("ogon;")? {
+        return Ok(Some(CharRef {
             name: "ogon;",
             characters: "\u{172}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("pTee;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("pTee;")? {
+        return Ok(Some(CharRef {
             name: "pTee;",
             characters: "\u{22a5}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("ring;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("ring;")? {
+        return Ok(Some(CharRef {
             name: "ring;",
             characters: "\u{16e}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("Dash;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("Dash;")? {
+        return Ok(Some(CharRef {
             name: "Dash;",
             characters: "\u{22ab}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("dash;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("dash;")? {
+        return Ok(Some(CharRef {
             name: "dash;",
             characters: "\u{22a9}",
-        });
+        }));
     }
 
-    if first_char == 'W' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'W' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{174}",
-        });
+        }));
     }
 
-    if first_char == 'W' && try_read("edge;") {
-        return Some(CharRef {
+    if first_char == 'W' && try_read("edge;")? {
+        return Ok(Some(CharRef {
             name: "edge;",
             characters: "\u{22c0}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{dd}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{176}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{e1}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{e2}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("cute;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("cute;")? {
+        return Ok(Some(CharRef {
             name: "cute;",
             characters: "\u{b4}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("elig;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("elig;")? {
+        return Ok(Some(CharRef {
             name: "elig;",
             characters: "\u{e6}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{e0}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("leph;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("leph;")? {
+        return Ok(Some(CharRef {
             name: "leph;",
             characters: "\u{2135}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("lpha;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("lpha;")? {
+        return Ok(Some(CharRef {
             name: "lpha;",
             characters: "\u{3b1}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{101}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("malg;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("malg;")? {
+        return Ok(Some(CharRef {
             name: "malg;",
             characters: "\u{2a3f}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngle;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngle;")? {
+        return Ok(Some(CharRef {
             name: "ngle;",
             characters: "\u{2220}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngrt;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngrt;")? {
+        return Ok(Some(CharRef {
             name: "ngrt;",
             characters: "\u{221f}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ngst;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ngst;")? {
+        return Ok(Some(CharRef {
             name: "ngst;",
             characters: "\u{c5}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ogon;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ogon;")? {
+        return Ok(Some(CharRef {
             name: "ogon;",
             characters: "\u{105}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ring;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ring;")? {
+        return Ok(Some(CharRef {
             name: "ring;",
             characters: "\u{e5}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("symp;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("symp;")? {
+        return Ok(Some(CharRef {
             name: "symp;",
             characters: "\u{2248}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("tilde") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("tilde")? {
+        return Ok(Some(CharRef {
             name: "tilde",
             characters: "\u{e3}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("wint;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("wint;")? {
+        return Ok(Some(CharRef {
             name: "wint;",
             characters: "\u{2a11}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("cong;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("cong;")? {
+        return Ok(Some(CharRef {
             name: "cong;",
             characters: "\u{224c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("dquo;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("dquo;")? {
+        return Ok(Some(CharRef {
             name: "dquo;",
             characters: "\u{201e}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("epsi;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("epsi;")? {
+        return Ok(Some(CharRef {
             name: "epsi;",
             characters: "\u{3f6}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lank;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lank;")? {
+        return Ok(Some(CharRef {
             name: "lank;",
             characters: "\u{2423}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lk12;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lk12;")? {
+        return Ok(Some(CharRef {
             name: "lk12;",
             characters: "\u{2592}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lk14;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lk14;")? {
+        return Ok(Some(CharRef {
             name: "lk14;",
             characters: "\u{2591}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lk34;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lk34;")? {
+        return Ok(Some(CharRef {
             name: "lk34;",
             characters: "\u{2593}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("lock;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("lock;")? {
+        return Ok(Some(CharRef {
             name: "lock;",
             characters: "\u{2588}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxDL;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxDL;")? {
+        return Ok(Some(CharRef {
             name: "oxDL;",
             characters: "\u{2557}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxDR;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxDR;")? {
+        return Ok(Some(CharRef {
             name: "oxDR;",
             characters: "\u{2554}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxDl;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxDl;")? {
+        return Ok(Some(CharRef {
             name: "oxDl;",
             characters: "\u{2556}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxDr;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxDr;")? {
+        return Ok(Some(CharRef {
             name: "oxDr;",
             characters: "\u{2553}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxHD;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxHD;")? {
+        return Ok(Some(CharRef {
             name: "oxHD;",
             characters: "\u{2566}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxHU;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxHU;")? {
+        return Ok(Some(CharRef {
             name: "oxHU;",
             characters: "\u{2569}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxHd;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxHd;")? {
+        return Ok(Some(CharRef {
             name: "oxHd;",
             characters: "\u{2564}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxHu;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxHu;")? {
+        return Ok(Some(CharRef {
             name: "oxHu;",
             characters: "\u{2567}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxUL;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxUL;")? {
+        return Ok(Some(CharRef {
             name: "oxUL;",
             characters: "\u{255d}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxUR;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxUR;")? {
+        return Ok(Some(CharRef {
             name: "oxUR;",
             characters: "\u{255a}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxUl;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxUl;")? {
+        return Ok(Some(CharRef {
             name: "oxUl;",
             characters: "\u{255c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxUr;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxUr;")? {
+        return Ok(Some(CharRef {
             name: "oxUr;",
             characters: "\u{2559}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxVH;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxVH;")? {
+        return Ok(Some(CharRef {
             name: "oxVH;",
             characters: "\u{256c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxVL;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxVL;")? {
+        return Ok(Some(CharRef {
             name: "oxVL;",
             characters: "\u{2563}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxVR;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxVR;")? {
+        return Ok(Some(CharRef {
             name: "oxVR;",
             characters: "\u{2560}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxVh;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxVh;")? {
+        return Ok(Some(CharRef {
             name: "oxVh;",
             characters: "\u{256b}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxVl;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxVl;")? {
+        return Ok(Some(CharRef {
             name: "oxVl;",
             characters: "\u{2562}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxVr;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxVr;")? {
+        return Ok(Some(CharRef {
             name: "oxVr;",
             characters: "\u{255f}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxdL;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxdL;")? {
+        return Ok(Some(CharRef {
             name: "oxdL;",
             characters: "\u{2555}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxdR;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxdR;")? {
+        return Ok(Some(CharRef {
             name: "oxdR;",
             characters: "\u{2552}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxdl;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxdl;")? {
+        return Ok(Some(CharRef {
             name: "oxdl;",
             characters: "\u{2510}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxdr;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxdr;")? {
+        return Ok(Some(CharRef {
             name: "oxdr;",
             characters: "\u{250c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxhD;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxhD;")? {
+        return Ok(Some(CharRef {
             name: "oxhD;",
             characters: "\u{2565}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxhU;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxhU;")? {
+        return Ok(Some(CharRef {
             name: "oxhU;",
             characters: "\u{2568}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxhd;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxhd;")? {
+        return Ok(Some(CharRef {
             name: "oxhd;",
             characters: "\u{252c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxhu;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxhu;")? {
+        return Ok(Some(CharRef {
             name: "oxhu;",
             characters: "\u{2534}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxuL;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxuL;")? {
+        return Ok(Some(CharRef {
             name: "oxuL;",
             characters: "\u{255b}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxuR;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxuR;")? {
+        return Ok(Some(CharRef {
             name: "oxuR;",
             characters: "\u{2558}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxul;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxul;")? {
+        return Ok(Some(CharRef {
             name: "oxul;",
             characters: "\u{2518}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxur;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxur;")? {
+        return Ok(Some(CharRef {
             name: "oxur;",
             characters: "\u{2514}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxvH;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxvH;")? {
+        return Ok(Some(CharRef {
             name: "oxvH;",
             characters: "\u{256a}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxvL;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxvL;")? {
+        return Ok(Some(CharRef {
             name: "oxvL;",
             characters: "\u{2561}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxvR;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxvR;")? {
+        return Ok(Some(CharRef {
             name: "oxvR;",
             characters: "\u{255e}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxvh;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxvh;")? {
+        return Ok(Some(CharRef {
             name: "oxvh;",
             characters: "\u{253c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxvl;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxvl;")? {
+        return Ok(Some(CharRef {
             name: "oxvl;",
             characters: "\u{2524}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxvr;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxvr;")? {
+        return Ok(Some(CharRef {
             name: "oxvr;",
             characters: "\u{251c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("reve;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("reve;")? {
+        return Ok(Some(CharRef {
             name: "reve;",
             characters: "\u{2d8}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("rvbar") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("rvbar")? {
+        return Ok(Some(CharRef {
             name: "rvbar",
             characters: "\u{a6}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("semi;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("semi;")? {
+        return Ok(Some(CharRef {
             name: "semi;",
             characters: "\u{204f}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("sime;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("sime;")? {
+        return Ok(Some(CharRef {
             name: "sime;",
             characters: "\u{22cd}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("solb;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("solb;")? {
+        return Ok(Some(CharRef {
             name: "solb;",
             characters: "\u{29c5}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("umpE;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("umpE;")? {
+        return Ok(Some(CharRef {
             name: "umpE;",
             characters: "\u{2aae}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("umpe;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("umpe;")? {
+        return Ok(Some(CharRef {
             name: "umpe;",
             characters: "\u{224f}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("aret;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("aret;")? {
+        return Ok(Some(CharRef {
             name: "aret;",
             characters: "\u{2041}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("aron;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("aron;")? {
+        return Ok(Some(CharRef {
             name: "aron;",
             characters: "\u{2c7}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("caps;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("caps;")? {
+        return Ok(Some(CharRef {
             name: "caps;",
             characters: "\u{2a4d}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("cedil") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("cedil")? {
+        return Ok(Some(CharRef {
             name: "cedil",
             characters: "\u{e7}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{109}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("cups;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("cups;")? {
+        return Ok(Some(CharRef {
             name: "cups;",
             characters: "\u{2a4c}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("edil;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("edil;")? {
+        return Ok(Some(CharRef {
             name: "edil;",
             characters: "\u{b8}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("heck;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("heck;")? {
+        return Ok(Some(CharRef {
             name: "heck;",
             characters: "\u{2713}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("lubs;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("lubs;")? {
+        return Ok(Some(CharRef {
             name: "lubs;",
             characters: "\u{2663}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("olon;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("olon;")? {
+        return Ok(Some(CharRef {
             name: "olon;",
             characters: "\u{3a}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("omma;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("omma;")? {
+        return Ok(Some(CharRef {
             name: "omma;",
             characters: "\u{2c}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("rarr;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("rarr;")? {
+        return Ok(Some(CharRef {
             name: "rarr;",
             characters: "\u{21b5}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ross;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ross;")? {
+        return Ok(Some(CharRef {
             name: "ross;",
             characters: "\u{2717}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("sube;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("sube;")? {
+        return Ok(Some(CharRef {
             name: "sube;",
             characters: "\u{2ad1}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("supe;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("supe;")? {
+        return Ok(Some(CharRef {
             name: "supe;",
             characters: "\u{2ad2}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("tdot;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("tdot;")? {
+        return Ok(Some(CharRef {
             name: "tdot;",
             characters: "\u{22ef}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("uepr;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("uepr;")? {
+        return Ok(Some(CharRef {
             name: "uepr;",
             characters: "\u{22de}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("uesc;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("uesc;")? {
+        return Ok(Some(CharRef {
             name: "uesc;",
             characters: "\u{22df}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("upor;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("upor;")? {
+        return Ok(Some(CharRef {
             name: "upor;",
             characters: "\u{2a45}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("urren") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("urren")? {
+        return Ok(Some(CharRef {
             name: "urren",
             characters: "\u{a4}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("uvee;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("uvee;")? {
+        return Ok(Some(CharRef {
             name: "uvee;",
             characters: "\u{22ce}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("uwed;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("uwed;")? {
+        return Ok(Some(CharRef {
             name: "uwed;",
             characters: "\u{22cf}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("wint;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("wint;")? {
+        return Ok(Some(CharRef {
             name: "wint;",
             characters: "\u{2231}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ashv;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ashv;")? {
+        return Ok(Some(CharRef {
             name: "ashv;",
             characters: "\u{22a3}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("blac;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("blac;")? {
+        return Ok(Some(CharRef {
             name: "blac;",
             characters: "\u{2dd}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("darr;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("darr;")? {
+        return Ok(Some(CharRef {
             name: "darr;",
             characters: "\u{21ca}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("elta;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("elta;")? {
+        return Ok(Some(CharRef {
             name: "elta;",
             characters: "\u{3b4}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("harl;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("harl;")? {
+        return Ok(Some(CharRef {
             name: "harl;",
             characters: "\u{21c3}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("harr;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("harr;")? {
+        return Ok(Some(CharRef {
             name: "harr;",
             characters: "\u{21c2}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("iams;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("iams;")? {
+        return Ok(Some(CharRef {
             name: "iams;",
             characters: "\u{2666}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("isin;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("isin;")? {
+        return Ok(Some(CharRef {
             name: "isin;",
             characters: "\u{22f2}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ivide") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ivide")? {
+        return Ok(Some(CharRef {
             name: "ivide",
             characters: "\u{f7}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("oteq;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("oteq;")? {
+        return Ok(Some(CharRef {
             name: "oteq;",
             characters: "\u{2250}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("tdot;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("tdot;")? {
+        return Ok(Some(CharRef {
             name: "tdot;",
             characters: "\u{22f1}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("trif;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("trif;")? {
+        return Ok(Some(CharRef {
             name: "trif;",
             characters: "\u{25be}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("uarr;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("uarr;")? {
+        return Ok(Some(CharRef {
             name: "uarr;",
             characters: "\u{21f5}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("uhar;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("uhar;")? {
+        return Ok(Some(CharRef {
             name: "uhar;",
             characters: "\u{296f}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("DDot;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("DDot;")? {
+        return Ok(Some(CharRef {
             name: "DDot;",
             characters: "\u{2a77}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{e9}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{ea}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("fDot;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("fDot;")? {
+        return Ok(Some(CharRef {
             name: "fDot;",
             characters: "\u{2252}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{e8}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{113}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("mpty;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("mpty;")? {
+        return Ok(Some(CharRef {
             name: "mpty;",
             characters: "\u{2205}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("ogon;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("ogon;")? {
+        return Ok(Some(CharRef {
             name: "ogon;",
             characters: "\u{119}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("plus;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("plus;")? {
+        return Ok(Some(CharRef {
             name: "plus;",
             characters: "\u{2a71}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("psiv;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("psiv;")? {
+        return Ok(Some(CharRef {
             name: "psiv;",
             characters: "\u{3f5}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("qsim;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("qsim;")? {
+        return Ok(Some(CharRef {
             name: "qsim;",
             characters: "\u{2242}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("quiv;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("quiv;")? {
+        return Ok(Some(CharRef {
             name: "quiv;",
             characters: "\u{2261}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("rDot;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("rDot;")? {
+        return Ok(Some(CharRef {
             name: "rDot;",
             characters: "\u{2253}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("rarr;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("rarr;")? {
+        return Ok(Some(CharRef {
             name: "rarr;",
             characters: "\u{2971}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("sdot;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("sdot;")? {
+        return Ok(Some(CharRef {
             name: "sdot;",
             characters: "\u{2250}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("xist;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("xist;")? {
+        return Ok(Some(CharRef {
             name: "xist;",
             characters: "\u{2203}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("flig;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("flig;")? {
+        return Ok(Some(CharRef {
             name: "flig;",
             characters: "\u{fb00}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("ilig;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("ilig;")? {
+        return Ok(Some(CharRef {
             name: "ilig;",
             characters: "\u{fb01}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("jlig;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("jlig;")? {
+        return Ok(Some(CharRef {
             name: "jlig;",
             characters: "\u{66}\u{6a}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("llig;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("llig;")? {
+        return Ok(Some(CharRef {
             name: "llig;",
             characters: "\u{fb02}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("ltns;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("ltns;")? {
+        return Ok(Some(CharRef {
             name: "ltns;",
             characters: "\u{25b1}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("orkv;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("orkv;")? {
+        return Ok(Some(CharRef {
             name: "orkv;",
             characters: "\u{2ad9}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac12") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac12")? {
+        return Ok(Some(CharRef {
             name: "rac12",
             characters: "\u{bd}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac14") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac14")? {
+        return Ok(Some(CharRef {
             name: "rac14",
             characters: "\u{bc}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rac34") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rac34")? {
+        return Ok(Some(CharRef {
             name: "rac34",
             characters: "\u{be}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rasl;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rasl;")? {
+        return Ok(Some(CharRef {
             name: "rasl;",
             characters: "\u{2044}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("rown;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("rown;")? {
+        return Ok(Some(CharRef {
             name: "rown;",
             characters: "\u{2322}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("amma;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("amma;")? {
+        return Ok(Some(CharRef {
             name: "amma;",
             characters: "\u{3b3}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{11d}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("escc;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("escc;")? {
+        return Ok(Some(CharRef {
             name: "escc;",
             characters: "\u{2aa9}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("imel;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("imel;")? {
+        return Ok(Some(CharRef {
             name: "imel;",
             characters: "\u{2137}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("neqq;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("neqq;")? {
+        return Ok(Some(CharRef {
             name: "neqq;",
             characters: "\u{2269}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("nsim;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("nsim;")? {
+        return Ok(Some(CharRef {
             name: "nsim;",
             characters: "\u{22e7}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("rave;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("rave;")? {
+        return Ok(Some(CharRef {
             name: "rave;",
             characters: "\u{60}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("sime;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("sime;")? {
+        return Ok(Some(CharRef {
             name: "sime;",
             characters: "\u{2a8e}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("siml;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("siml;")? {
+        return Ok(Some(CharRef {
             name: "siml;",
             characters: "\u{2a90}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("tcir;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("tcir;")? {
+        return Ok(Some(CharRef {
             name: "tcir;",
             characters: "\u{2a7a}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("tdot;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("tdot;")? {
+        return Ok(Some(CharRef {
             name: "tdot;",
             characters: "\u{22d7}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("arrw;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("arrw;")? {
+        return Ok(Some(CharRef {
             name: "arrw;",
             characters: "\u{21ad}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{125}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("oarr;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("oarr;")? {
+        return Ok(Some(CharRef {
             name: "oarr;",
             characters: "\u{21ff}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{ed}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{ee}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("excl;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("excl;")? {
+        return Ok(Some(CharRef {
             name: "excl;",
             characters: "\u{a1}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{ec}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("iint;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("iint;")? {
+        return Ok(Some(CharRef {
             name: "iint;",
             characters: "\u{222d}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("iota;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("iota;")? {
+        return Ok(Some(CharRef {
             name: "iota;",
             characters: "\u{2129}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("jlig;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("jlig;")? {
+        return Ok(Some(CharRef {
             name: "jlig;",
             characters: "\u{133}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{12b}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("mage;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("mage;")? {
+        return Ok(Some(CharRef {
             name: "mage;",
             characters: "\u{2111}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("math;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("math;")? {
+        return Ok(Some(CharRef {
             name: "math;",
             characters: "\u{131}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("mped;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("mped;")? {
+        return Ok(Some(CharRef {
             name: "mped;",
             characters: "\u{1b5}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("nfin;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("nfin;")? {
+        return Ok(Some(CharRef {
             name: "nfin;",
             characters: "\u{221e}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ogon;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ogon;")? {
+        return Ok(Some(CharRef {
             name: "ogon;",
             characters: "\u{12f}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("prod;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("prod;")? {
+        return Ok(Some(CharRef {
             name: "prod;",
             characters: "\u{2a3c}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("quest") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("quest")? {
+        return Ok(Some(CharRef {
             name: "quest",
             characters: "\u{bf}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("sinE;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("sinE;")? {
+        return Ok(Some(CharRef {
             name: "sinE;",
             characters: "\u{22f9}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("sins;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("sins;")? {
+        return Ok(Some(CharRef {
             name: "sins;",
             characters: "\u{22f4}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("sinv;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("sinv;")? {
+        return Ok(Some(CharRef {
             name: "sinv;",
             characters: "\u{2208}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ukcy;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ukcy;")? {
+        return Ok(Some(CharRef {
             name: "ukcy;",
             characters: "\u{456}",
-        });
+        }));
     }
 
-    if first_char == 'j' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'j' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{135}",
-        });
+        }));
     }
 
-    if first_char == 'j' && try_read("math;") {
-        return Some(CharRef {
+    if first_char == 'j' && try_read("math;")? {
+        return Ok(Some(CharRef {
             name: "math;",
             characters: "\u{237}",
-        });
+        }));
     }
 
-    if first_char == 'j' && try_read("ukcy;") {
-        return Some(CharRef {
+    if first_char == 'j' && try_read("ukcy;")? {
+        return Ok(Some(CharRef {
             name: "ukcy;",
             characters: "\u{454}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("appa;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("appa;")? {
+        return Ok(Some(CharRef {
             name: "appa;",
             characters: "\u{3ba}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("Aarr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("Aarr;")? {
+        return Ok(Some(CharRef {
             name: "Aarr;",
             characters: "\u{21da}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("Barr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("Barr;")? {
+        return Ok(Some(CharRef {
             name: "Barr;",
             characters: "\u{290e}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("angd;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("angd;")? {
+        return Ok(Some(CharRef {
             name: "angd;",
             characters: "\u{2991}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("aquo;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("aquo;")? {
+        return Ok(Some(CharRef {
             name: "aquo;",
             characters: "\u{ab}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("arrb;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("arrb;")? {
+        return Ok(Some(CharRef {
             name: "arrb;",
             characters: "\u{21e4}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ates;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ates;")? {
+        return Ok(Some(CharRef {
             name: "ates;",
             characters: "\u{2aad}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("barr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("barr;")? {
+        return Ok(Some(CharRef {
             name: "barr;",
             characters: "\u{290c}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("bbrk;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("bbrk;")? {
+        return Ok(Some(CharRef {
             name: "bbrk;",
             characters: "\u{2772}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("brke;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("brke;")? {
+        return Ok(Some(CharRef {
             name: "brke;",
             characters: "\u{298b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ceil;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ceil;")? {
+        return Ok(Some(CharRef {
             name: "ceil;",
             characters: "\u{2308}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("dquo;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("dquo;")? {
+        return Ok(Some(CharRef {
             name: "dquo;",
             characters: "\u{201c}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("escc;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("escc;")? {
+        return Ok(Some(CharRef {
             name: "escc;",
             characters: "\u{2aa8}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("hard;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("hard;")? {
+        return Ok(Some(CharRef {
             name: "hard;",
             characters: "\u{21bd}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("haru;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("haru;")? {
+        return Ok(Some(CharRef {
             name: "haru;",
             characters: "\u{21bc}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("hblk;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("hblk;")? {
+        return Ok(Some(CharRef {
             name: "hblk;",
             characters: "\u{2584}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("larr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("larr;")? {
+        return Ok(Some(CharRef {
             name: "larr;",
             characters: "\u{21c7}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ltri;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ltri;")? {
+        return Ok(Some(CharRef {
             name: "ltri;",
             characters: "\u{25fa}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("neqq;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("neqq;")? {
+        return Ok(Some(CharRef {
             name: "neqq;",
             characters: "\u{2268}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("nsim;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("nsim;")? {
+        return Ok(Some(CharRef {
             name: "nsim;",
             characters: "\u{22e6}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("oang;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("oang;")? {
+        return Ok(Some(CharRef {
             name: "oang;",
             characters: "\u{27ec}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("oarr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("oarr;")? {
+        return Ok(Some(CharRef {
             name: "oarr;",
             characters: "\u{21fd}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("obrk;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("obrk;")? {
+        return Ok(Some(CharRef {
             name: "obrk;",
             characters: "\u{27e6}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("opar;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("opar;")? {
+        return Ok(Some(CharRef {
             name: "opar;",
             characters: "\u{2985}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("rarr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("rarr;")? {
+        return Ok(Some(CharRef {
             name: "rarr;",
             characters: "\u{21c6}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("rhar;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("rhar;")? {
+        return Ok(Some(CharRef {
             name: "rhar;",
             characters: "\u{21cb}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("rtri;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("rtri;")? {
+        return Ok(Some(CharRef {
             name: "rtri;",
             characters: "\u{22bf}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("sime;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("sime;")? {
+        return Ok(Some(CharRef {
             name: "sime;",
             characters: "\u{2a8d}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("simg;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("simg;")? {
+        return Ok(Some(CharRef {
             name: "simg;",
             characters: "\u{2a8f}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("squo;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("squo;")? {
+        return Ok(Some(CharRef {
             name: "squo;",
             characters: "\u{2018}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("tcir;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("tcir;")? {
+        return Ok(Some(CharRef {
             name: "tcir;",
             characters: "\u{2a79}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("tdot;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("tdot;")? {
+        return Ok(Some(CharRef {
             name: "tdot;",
             characters: "\u{22d6}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("trie;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("trie;")? {
+        return Ok(Some(CharRef {
             name: "trie;",
             characters: "\u{22b4}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("trif;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("trif;")? {
+        return Ok(Some(CharRef {
             name: "trif;",
             characters: "\u{25c2}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("DDot;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("DDot;")? {
+        return Ok(Some(CharRef {
             name: "DDot;",
             characters: "\u{223a}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("dash;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("dash;")? {
+        return Ok(Some(CharRef {
             name: "dash;",
             characters: "\u{2014}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("icro;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("icro;")? {
+        return Ok(Some(CharRef {
             name: "icro;",
             characters: "\u{b5}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("iddot") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("iddot")? {
+        return Ok(Some(CharRef {
             name: "iddot",
             characters: "\u{b7}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("inus;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("inus;")? {
+        return Ok(Some(CharRef {
             name: "inus;",
             characters: "\u{2212}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("umap;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("umap;")? {
+        return Ok(Some(CharRef {
             name: "umap;",
             characters: "\u{22b8}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("abla;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("abla;")? {
+        return Ok(Some(CharRef {
             name: "abla;",
             characters: "\u{2207}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("apid;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("apid;")? {
+        return Ok(Some(CharRef {
             name: "apid;",
             characters: "\u{224b}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("apos;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("apos;")? {
+        return Ok(Some(CharRef {
             name: "apos;",
             characters: "\u{149}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("atur;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("atur;")? {
+        return Ok(Some(CharRef {
             name: "atur;",
             characters: "\u{266e}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("bump;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("bump;")? {
+        return Ok(Some(CharRef {
             name: "bump;",
             characters: "\u{224e}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("cong;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("cong;")? {
+        return Ok(Some(CharRef {
             name: "cong;",
             characters: "\u{2247}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("dash;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("dash;")? {
+        return Ok(Some(CharRef {
             name: "dash;",
             characters: "\u{2013}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("eArr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("eArr;")? {
+        return Ok(Some(CharRef {
             name: "eArr;",
             characters: "\u{21d7}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("earr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("earr;")? {
+        return Ok(Some(CharRef {
             name: "earr;",
             characters: "\u{2197}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("edot;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("edot;")? {
+        return Ok(Some(CharRef {
             name: "edot;",
             characters: "\u{2250}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("esim;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("esim;")? {
+        return Ok(Some(CharRef {
             name: "esim;",
             characters: "\u{2242}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("geqq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("geqq;")? {
+        return Ok(Some(CharRef {
             name: "geqq;",
             characters: "\u{2267}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("gsim;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("gsim;")? {
+        return Ok(Some(CharRef {
             name: "gsim;",
             characters: "\u{2275}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("hArr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("hArr;")? {
+        return Ok(Some(CharRef {
             name: "hArr;",
             characters: "\u{21ce}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("harr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("harr;")? {
+        return Ok(Some(CharRef {
             name: "harr;",
             characters: "\u{21ae}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("hpar;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("hpar;")? {
+        return Ok(Some(CharRef {
             name: "hpar;",
             characters: "\u{2af2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("lArr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("lArr;")? {
+        return Ok(Some(CharRef {
             name: "lArr;",
             characters: "\u{21cd}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("larr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("larr;")? {
+        return Ok(Some(CharRef {
             name: "larr;",
             characters: "\u{219a}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("leqq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("leqq;")? {
+        return Ok(Some(CharRef {
             name: "leqq;",
             characters: "\u{2266}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("less;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("less;")? {
+        return Ok(Some(CharRef {
             name: "less;",
             characters: "\u{226e}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("lsim;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("lsim;")? {
+        return Ok(Some(CharRef {
             name: "lsim;",
             characters: "\u{2274}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("ltri;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("ltri;")? {
+        return Ok(Some(CharRef {
             name: "ltri;",
             characters: "\u{22ea}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otin;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otin;")? {
+        return Ok(Some(CharRef {
             name: "otin;",
             characters: "\u{2209}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("otni;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("otni;")? {
+        return Ok(Some(CharRef {
             name: "otni;",
             characters: "\u{220c}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("part;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("part;")? {
+        return Ok(Some(CharRef {
             name: "part;",
             characters: "\u{2202}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("prec;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("prec;")? {
+        return Ok(Some(CharRef {
             name: "prec;",
             characters: "\u{2280}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("rArr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("rArr;")? {
+        return Ok(Some(CharRef {
             name: "rArr;",
             characters: "\u{21cf}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("rarr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("rarr;")? {
+        return Ok(Some(CharRef {
             name: "rarr;",
             characters: "\u{219b}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("rtri;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("rtri;")? {
+        return Ok(Some(CharRef {
             name: "rtri;",
             characters: "\u{22eb}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sime;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sime;")? {
+        return Ok(Some(CharRef {
             name: "sime;",
             characters: "\u{2244}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("smid;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("smid;")? {
+        return Ok(Some(CharRef {
             name: "smid;",
             characters: "\u{2224}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("spar;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("spar;")? {
+        return Ok(Some(CharRef {
             name: "spar;",
             characters: "\u{2226}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("subE;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("subE;")? {
+        return Ok(Some(CharRef {
             name: "subE;",
             characters: "\u{2ac5}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sube;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sube;")? {
+        return Ok(Some(CharRef {
             name: "sube;",
             characters: "\u{2288}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("succ;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("succ;")? {
+        return Ok(Some(CharRef {
             name: "succ;",
             characters: "\u{2281}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("supE;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("supE;")? {
+        return Ok(Some(CharRef {
             name: "supE;",
             characters: "\u{2ac6}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("supe;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("supe;")? {
+        return Ok(Some(CharRef {
             name: "supe;",
             characters: "\u{2289}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("tilde") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("tilde")? {
+        return Ok(Some(CharRef {
             name: "tilde",
             characters: "\u{f1}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("umsp;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("umsp;")? {
+        return Ok(Some(CharRef {
             name: "umsp;",
             characters: "\u{2007}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vsim;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vsim;")? {
+        return Ok(Some(CharRef {
             name: "vsim;",
             characters: "\u{223c}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("wArr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("wArr;")? {
+        return Ok(Some(CharRef {
             name: "wArr;",
             characters: "\u{21d6}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("warr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("warr;")? {
+        return Ok(Some(CharRef {
             name: "warr;",
             characters: "\u{2196}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{f3}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{f4}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("dash;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("dash;")? {
+        return Ok(Some(CharRef {
             name: "dash;",
             characters: "\u{229d}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("elig;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("elig;")? {
+        return Ok(Some(CharRef {
             name: "elig;",
             characters: "\u{153}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("fcir;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("fcir;")? {
+        return Ok(Some(CharRef {
             name: "fcir;",
             characters: "\u{29bf}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{f2}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("hbar;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("hbar;")? {
+        return Ok(Some(CharRef {
             name: "hbar;",
             characters: "\u{29b5}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("larr;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("larr;")? {
+        return Ok(Some(CharRef {
             name: "larr;",
             characters: "\u{21ba}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("lcir;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("lcir;")? {
+        return Ok(Some(CharRef {
             name: "lcir;",
             characters: "\u{29be}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("line;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("line;")? {
+        return Ok(Some(CharRef {
             name: "line;",
             characters: "\u{203e}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{14d}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("mega;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("mega;")? {
+        return Ok(Some(CharRef {
             name: "mega;",
             characters: "\u{3c9}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("perp;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("perp;")? {
+        return Ok(Some(CharRef {
             name: "perp;",
             characters: "\u{29b9}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("plus;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("plus;")? {
+        return Ok(Some(CharRef {
             name: "plus;",
             characters: "\u{2295}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rarr;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rarr;")? {
+        return Ok(Some(CharRef {
             name: "rarr;",
             characters: "\u{21bb}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rder;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rder;")? {
+        return Ok(Some(CharRef {
             name: "rder;",
             characters: "\u{2134}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("slash") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("slash")? {
+        return Ok(Some(CharRef {
             name: "slash",
             characters: "\u{f8}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("tilde") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("tilde")? {
+        return Ok(Some(CharRef {
             name: "tilde",
             characters: "\u{f5}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("vbar;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("vbar;")? {
+        return Ok(Some(CharRef {
             name: "vbar;",
             characters: "\u{233d}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("arsl;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("arsl;")? {
+        return Ok(Some(CharRef {
             name: "arsl;",
             characters: "\u{2afd}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("hone;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("hone;")? {
+        return Ok(Some(CharRef {
             name: "hone;",
             characters: "\u{260e}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lusb;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lusb;")? {
+        return Ok(Some(CharRef {
             name: "lusb;",
             characters: "\u{229e}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("luse;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("luse;")? {
+        return Ok(Some(CharRef {
             name: "luse;",
             characters: "\u{2a72}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lusmn") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lusmn")? {
+        return Ok(Some(CharRef {
             name: "lusmn",
             characters: "\u{b1}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ound;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ound;")? {
+        return Ok(Some(CharRef {
             name: "ound;",
             characters: "\u{a3}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rcue;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rcue;")? {
+        return Ok(Some(CharRef {
             name: "rcue;",
             characters: "\u{227c}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rime;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rime;")? {
+        return Ok(Some(CharRef {
             name: "rime;",
             characters: "\u{2032}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rnap;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rnap;")? {
+        return Ok(Some(CharRef {
             name: "rnap;",
             characters: "\u{2ab9}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rsim;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rsim;")? {
+        return Ok(Some(CharRef {
             name: "rsim;",
             characters: "\u{227e}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("uest;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("uest;")? {
+        return Ok(Some(CharRef {
             name: "uest;",
             characters: "\u{3f}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("Aarr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("Aarr;")? {
+        return Ok(Some(CharRef {
             name: "Aarr;",
             characters: "\u{21db}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("Barr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("Barr;")? {
+        return Ok(Some(CharRef {
             name: "Barr;",
             characters: "\u{290f}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("adic;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("adic;")? {
+        return Ok(Some(CharRef {
             name: "adic;",
             characters: "\u{221a}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("angd;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("angd;")? {
+        return Ok(Some(CharRef {
             name: "angd;",
             characters: "\u{2992}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ange;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ange;")? {
+        return Ok(Some(CharRef {
             name: "ange;",
             characters: "\u{29a5}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("aquo;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("aquo;")? {
+        return Ok(Some(CharRef {
             name: "aquo;",
             characters: "\u{bb}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrb;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrb;")? {
+        return Ok(Some(CharRef {
             name: "arrb;",
             characters: "\u{21e5}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrc;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrc;")? {
+        return Ok(Some(CharRef {
             name: "arrc;",
             characters: "\u{2933}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arrw;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arrw;")? {
+        return Ok(Some(CharRef {
             name: "arrw;",
             characters: "\u{219d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("atio;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("atio;")? {
+        return Ok(Some(CharRef {
             name: "atio;",
             characters: "\u{2236}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("barr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("barr;")? {
+        return Ok(Some(CharRef {
             name: "barr;",
             characters: "\u{290d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("bbrk;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("bbrk;")? {
+        return Ok(Some(CharRef {
             name: "bbrk;",
             characters: "\u{2773}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("brke;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("brke;")? {
+        return Ok(Some(CharRef {
             name: "brke;",
             characters: "\u{298c}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ceil;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ceil;")? {
+        return Ok(Some(CharRef {
             name: "ceil;",
             characters: "\u{2309}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("dquo;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("dquo;")? {
+        return Ok(Some(CharRef {
             name: "dquo;",
             characters: "\u{201d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("eals;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("eals;")? {
+        return Ok(Some(CharRef {
             name: "eals;",
             characters: "\u{211d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("hard;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("hard;")? {
+        return Ok(Some(CharRef {
             name: "hard;",
             characters: "\u{21c1}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("haru;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("haru;")? {
+        return Ok(Some(CharRef {
             name: "haru;",
             characters: "\u{21c0}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("larr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("larr;")? {
+        return Ok(Some(CharRef {
             name: "larr;",
             characters: "\u{21c4}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("lhar;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("lhar;")? {
+        return Ok(Some(CharRef {
             name: "lhar;",
             characters: "\u{21cc}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("nmid;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("nmid;")? {
+        return Ok(Some(CharRef {
             name: "nmid;",
             characters: "\u{2aee}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("oang;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("oang;")? {
+        return Ok(Some(CharRef {
             name: "oang;",
             characters: "\u{27ed}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("oarr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("oarr;")? {
+        return Ok(Some(CharRef {
             name: "oarr;",
             characters: "\u{21fe}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("obrk;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("obrk;")? {
+        return Ok(Some(CharRef {
             name: "obrk;",
             characters: "\u{27e7}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("opar;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("opar;")? {
+        return Ok(Some(CharRef {
             name: "opar;",
             characters: "\u{2986}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("rarr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("rarr;")? {
+        return Ok(Some(CharRef {
             name: "rarr;",
             characters: "\u{21c9}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("squo;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("squo;")? {
+        return Ok(Some(CharRef {
             name: "squo;",
             characters: "\u{2019}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("trie;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("trie;")? {
+        return Ok(Some(CharRef {
             name: "trie;",
             characters: "\u{22b5}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("trif;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("trif;")? {
+        return Ok(Some(CharRef {
             name: "trif;",
             characters: "\u{25b8}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("bquo;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("bquo;")? {
+        return Ok(Some(CharRef {
             name: "bquo;",
             characters: "\u{201a}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ccue;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ccue;")? {
+        return Ok(Some(CharRef {
             name: "ccue;",
             characters: "\u{227d}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{15d}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("cnap;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("cnap;")? {
+        return Ok(Some(CharRef {
             name: "cnap;",
             characters: "\u{2aba}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("csim;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("csim;")? {
+        return Ok(Some(CharRef {
             name: "csim;",
             characters: "\u{227f}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("dotb;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("dotb;")? {
+        return Ok(Some(CharRef {
             name: "dotb;",
             characters: "\u{22a1}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("dote;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("dote;")? {
+        return Ok(Some(CharRef {
             name: "dote;",
             characters: "\u{2a66}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("eArr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("eArr;")? {
+        return Ok(Some(CharRef {
             name: "eArr;",
             characters: "\u{21d8}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("earr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("earr;")? {
+        return Ok(Some(CharRef {
             name: "earr;",
             characters: "\u{2198}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("etmn;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("etmn;")? {
+        return Ok(Some(CharRef {
             name: "etmn;",
             characters: "\u{2216}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("harp;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("harp;")? {
+        return Ok(Some(CharRef {
             name: "harp;",
             characters: "\u{266f}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("igma;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("igma;")? {
+        return Ok(Some(CharRef {
             name: "igma;",
             characters: "\u{3c3}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("imeq;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("imeq;")? {
+        return Ok(Some(CharRef {
             name: "imeq;",
             characters: "\u{2243}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("imgE;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("imgE;")? {
+        return Ok(Some(CharRef {
             name: "imgE;",
             characters: "\u{2aa0}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("imlE;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("imlE;")? {
+        return Ok(Some(CharRef {
             name: "imlE;",
             characters: "\u{2a9f}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("imne;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("imne;")? {
+        return Ok(Some(CharRef {
             name: "imne;",
             characters: "\u{2246}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("larr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("larr;")? {
+        return Ok(Some(CharRef {
             name: "larr;",
             characters: "\u{2190}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("mile;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("mile;")? {
+        return Ok(Some(CharRef {
             name: "mile;",
             characters: "\u{2323}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("mtes;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("mtes;")? {
+        return Ok(Some(CharRef {
             name: "mtes;",
             characters: "\u{2aac}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qcap;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qcap;")? {
+        return Ok(Some(CharRef {
             name: "qcap;",
             characters: "\u{2293}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qcup;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qcup;")? {
+        return Ok(Some(CharRef {
             name: "qcup;",
             characters: "\u{2294}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qsub;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qsub;")? {
+        return Ok(Some(CharRef {
             name: "qsub;",
             characters: "\u{228f}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qsup;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qsup;")? {
+        return Ok(Some(CharRef {
             name: "qsup;",
             characters: "\u{2290}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("rarr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("rarr;")? {
+        return Ok(Some(CharRef {
             name: "rarr;",
             characters: "\u{2192}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("tarf;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("tarf;")? {
+        return Ok(Some(CharRef {
             name: "tarf;",
             characters: "\u{2605}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("trns;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("trns;")? {
+        return Ok(Some(CharRef {
             name: "trns;",
             characters: "\u{af}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubnE;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubnE;")? {
+        return Ok(Some(CharRef {
             name: "ubnE;",
             characters: "\u{2acb}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubne;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubne;")? {
+        return Ok(Some(CharRef {
             name: "ubne;",
             characters: "\u{228a}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upnE;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upnE;")? {
+        return Ok(Some(CharRef {
             name: "upnE;",
             characters: "\u{2acc}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upne;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upne;")? {
+        return Ok(Some(CharRef {
             name: "upne;",
             characters: "\u{228b}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("wArr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("wArr;")? {
+        return Ok(Some(CharRef {
             name: "wArr;",
             characters: "\u{21d9}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("warr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("warr;")? {
+        return Ok(Some(CharRef {
             name: "warr;",
             characters: "\u{2199}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("zlig;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("zlig;")? {
+        return Ok(Some(CharRef {
             name: "zlig;",
             characters: "\u{df}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("heta;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("heta;")? {
+        return Ok(Some(CharRef {
             name: "heta;",
             characters: "\u{3b8}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("hkap;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("hkap;")? {
+        return Ok(Some(CharRef {
             name: "hkap;",
             characters: "\u{2248}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("horn;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("horn;")? {
+        return Ok(Some(CharRef {
             name: "horn;",
             characters: "\u{fe}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("ilde;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("ilde;")? {
+        return Ok(Some(CharRef {
             name: "ilde;",
             characters: "\u{2dc}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("imes;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("imes;")? {
+        return Ok(Some(CharRef {
             name: "imes;",
             characters: "\u{d7}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("rade;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("rade;")? {
+        return Ok(Some(CharRef {
             name: "rade;",
             characters: "\u{2122}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("risb;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("risb;")? {
+        return Ok(Some(CharRef {
             name: "risb;",
             characters: "\u{29cd}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("shcy;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("shcy;")? {
+        return Ok(Some(CharRef {
             name: "shcy;",
             characters: "\u{45b}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("wixt;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("wixt;")? {
+        return Ok(Some(CharRef {
             name: "wixt;",
             characters: "\u{226c}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{fa}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("brcy;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("brcy;")? {
+        return Ok(Some(CharRef {
             name: "brcy;",
             characters: "\u{45e}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{fb}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("darr;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("darr;")? {
+        return Ok(Some(CharRef {
             name: "darr;",
             characters: "\u{21c5}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("dhar;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("dhar;")? {
+        return Ok(Some(CharRef {
             name: "dhar;",
             characters: "\u{296e}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("grave") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("grave")? {
+        return Ok(Some(CharRef {
             name: "grave",
             characters: "\u{f9}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("harl;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("harl;")? {
+        return Ok(Some(CharRef {
             name: "harl;",
             characters: "\u{21bf}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("harr;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("harr;")? {
+        return Ok(Some(CharRef {
             name: "harr;",
             characters: "\u{21be}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("hblk;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("hblk;")? {
+        return Ok(Some(CharRef {
             name: "hblk;",
             characters: "\u{2580}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("ltri;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("ltri;")? {
+        return Ok(Some(CharRef {
             name: "ltri;",
             characters: "\u{25f8}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("macr;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("macr;")? {
+        return Ok(Some(CharRef {
             name: "macr;",
             characters: "\u{16b}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("ogon;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("ogon;")? {
+        return Ok(Some(CharRef {
             name: "ogon;",
             characters: "\u{173}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("plus;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("plus;")? {
+        return Ok(Some(CharRef {
             name: "plus;",
             characters: "\u{228e}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("psih;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("psih;")? {
+        return Ok(Some(CharRef {
             name: "psih;",
             characters: "\u{3d2}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("ring;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("ring;")? {
+        return Ok(Some(CharRef {
             name: "ring;",
             characters: "\u{16f}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("rtri;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("rtri;")? {
+        return Ok(Some(CharRef {
             name: "rtri;",
             characters: "\u{25f9}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("tdot;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("tdot;")? {
+        return Ok(Some(CharRef {
             name: "tdot;",
             characters: "\u{22f0}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("trif;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("trif;")? {
+        return Ok(Some(CharRef {
             name: "trif;",
             characters: "\u{25b4}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("uarr;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("uarr;")? {
+        return Ok(Some(CharRef {
             name: "uarr;",
             characters: "\u{21c8}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("Barv;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("Barv;")? {
+        return Ok(Some(CharRef {
             name: "Barv;",
             characters: "\u{2ae9}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("Dash;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("Dash;")? {
+        return Ok(Some(CharRef {
             name: "Dash;",
             characters: "\u{22a8}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arpi;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arpi;")? {
+        return Ok(Some(CharRef {
             name: "arpi;",
             characters: "\u{3d6}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("dash;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("dash;")? {
+        return Ok(Some(CharRef {
             name: "dash;",
             characters: "\u{22a2}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("eeeq;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("eeeq;")? {
+        return Ok(Some(CharRef {
             name: "eeeq;",
             characters: "\u{225a}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("ltri;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("ltri;")? {
+        return Ok(Some(CharRef {
             name: "ltri;",
             characters: "\u{22b2}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("nsub;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("nsub;")? {
+        return Ok(Some(CharRef {
             name: "nsub;",
             characters: "\u{2282}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("nsup;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("nsup;")? {
+        return Ok(Some(CharRef {
             name: "nsup;",
             characters: "\u{2283}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("prop;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("prop;")? {
+        return Ok(Some(CharRef {
             name: "prop;",
             characters: "\u{221d}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("rtri;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("rtri;")? {
+        return Ok(Some(CharRef {
             name: "rtri;",
             characters: "\u{22b3}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{175}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("edge;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("edge;")? {
+        return Ok(Some(CharRef {
             name: "edge;",
             characters: "\u{2227}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{25ef}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("dtri;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("dtri;")? {
+        return Ok(Some(CharRef {
             name: "dtri;",
             characters: "\u{25bd}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("hArr;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("hArr;")? {
+        return Ok(Some(CharRef {
             name: "hArr;",
             characters: "\u{27fa}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("harr;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("harr;")? {
+        return Ok(Some(CharRef {
             name: "harr;",
             characters: "\u{27f7}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("lArr;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("lArr;")? {
+        return Ok(Some(CharRef {
             name: "lArr;",
             characters: "\u{27f8}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("larr;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("larr;")? {
+        return Ok(Some(CharRef {
             name: "larr;",
             characters: "\u{27f5}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("odot;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("odot;")? {
+        return Ok(Some(CharRef {
             name: "odot;",
             characters: "\u{2a00}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("rArr;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("rArr;")? {
+        return Ok(Some(CharRef {
             name: "rArr;",
             characters: "\u{27f9}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("rarr;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("rarr;")? {
+        return Ok(Some(CharRef {
             name: "rarr;",
             characters: "\u{27f6}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("utri;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("utri;")? {
+        return Ok(Some(CharRef {
             name: "utri;",
             characters: "\u{25b3}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("acute") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("acute")? {
+        return Ok(Some(CharRef {
             name: "acute",
             characters: "\u{fd}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("circ;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("circ;")? {
+        return Ok(Some(CharRef {
             name: "circ;",
             characters: "\u{177}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("Elig") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("Elig")? {
+        return Ok(Some(CharRef {
             name: "Elig",
             characters: "\u{c6}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{c2}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d538}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("ring") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("ring")? {
+        return Ok(Some(CharRef {
             name: "ring",
             characters: "\u{c5}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d49c}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{c4}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("arv;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("arv;")? {
+        return Ok(Some(CharRef {
             name: "arv;",
             characters: "\u{2ae7}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("eta;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("eta;")? {
+        return Ok(Some(CharRef {
             name: "eta;",
             characters: "\u{392}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d539}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{212c}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("Hcy;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("Hcy;")? {
+        return Ok(Some(CharRef {
             name: "Hcy;",
             characters: "\u{427}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("OPY;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("OPY;")? {
+        return Ok(Some(CharRef {
             name: "OPY;",
             characters: "\u{a9}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{10a}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{2102}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d49e}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("Jcy;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("Jcy;")? {
+        return Ok(Some(CharRef {
             name: "Jcy;",
             characters: "\u{402}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("Scy;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("Scy;")? {
+        return Ok(Some(CharRef {
             name: "Scy;",
             characters: "\u{405}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("Zcy;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("Zcy;")? {
+        return Ok(Some(CharRef {
             name: "Zcy;",
             characters: "\u{40f}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{21a1}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d53b}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d49f}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{ca}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{116}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d53c}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{2130}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("sim;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("sim;")? {
+        return Ok(Some(CharRef {
             name: "sim;",
             characters: "\u{2a73}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{cb}",
-        });
+        }));
     }
 
-    if first_char == 'F' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'F' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d53d}",
-        });
+        }));
     }
 
-    if first_char == 'F' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'F' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{2131}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("Jcy;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("Jcy;")? {
+        return Ok(Some(CharRef {
             name: "Jcy;",
             characters: "\u{403}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{120}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d53e}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4a2}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{210d}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{210b}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("Ecy;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("Ecy;")? {
+        return Ok(Some(CharRef {
             name: "Ecy;",
             characters: "\u{415}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("Ocy;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("Ocy;")? {
+        return Ok(Some(CharRef {
             name: "Ocy;",
             characters: "\u{401}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{ce}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{130}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d540}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("ota;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("ota;")? {
+        return Ok(Some(CharRef {
             name: "ota;",
             characters: "\u{399}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{2110}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{cf}",
-        });
+        }));
     }
 
-    if first_char == 'J' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'J' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d541}",
-        });
+        }));
     }
 
-    if first_char == 'J' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'J' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4a5}",
-        });
+        }));
     }
 
-    if first_char == 'K' && try_read("Hcy;") {
-        return Some(CharRef {
+    if first_char == 'K' && try_read("Hcy;")? {
+        return Ok(Some(CharRef {
             name: "Hcy;",
             characters: "\u{425}",
-        });
+        }));
     }
 
-    if first_char == 'K' && try_read("Jcy;") {
-        return Some(CharRef {
+    if first_char == 'K' && try_read("Jcy;")? {
+        return Ok(Some(CharRef {
             name: "Jcy;",
             characters: "\u{40c}",
-        });
+        }));
     }
 
-    if first_char == 'K' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'K' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d542}",
-        });
+        }));
     }
 
-    if first_char == 'K' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'K' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4a6}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("Jcy;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("Jcy;")? {
+        return Ok(Some(CharRef {
             name: "Jcy;",
             characters: "\u{409}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("ang;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("ang;")? {
+        return Ok(Some(CharRef {
             name: "ang;",
             characters: "\u{27ea}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{219e}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d543}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{2112}",
-        });
+        }));
     }
 
-    if first_char == 'M' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'M' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d544}",
-        });
+        }));
     }
 
-    if first_char == 'M' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'M' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{2133}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("Jcy;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("Jcy;")? {
+        return Ok(Some(CharRef {
             name: "Jcy;",
             characters: "\u{40a}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{2115}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4a9}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{d4}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d546}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4aa}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{d6}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{2119}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4ab}",
-        });
+        }));
     }
 
-    if first_char == 'Q' && try_read("UOT;") {
-        return Some(CharRef {
+    if first_char == 'Q' && try_read("UOT;")? {
+        return Ok(Some(CharRef {
             name: "UOT;",
             characters: "\u{22}",
-        });
+        }));
     }
 
-    if first_char == 'Q' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'Q' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{211a}",
-        });
+        }));
     }
 
-    if first_char == 'Q' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'Q' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4ac}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ang;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ang;")? {
+        return Ok(Some(CharRef {
             name: "ang;",
             characters: "\u{27eb}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{21a0}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{211d}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{211b}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("Hcy;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("Hcy;")? {
+        return Ok(Some(CharRef {
             name: "Hcy;",
             characters: "\u{428}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d54a}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("qrt;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("qrt;")? {
+        return Ok(Some(CharRef {
             name: "qrt;",
             characters: "\u{221a}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4ae}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("tar;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("tar;")? {
+        return Ok(Some(CharRef {
             name: "tar;",
             characters: "\u{22c6}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("HORN") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("HORN")? {
+        return Ok(Some(CharRef {
             name: "HORN",
             characters: "\u{de}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("Scy;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("Scy;")? {
+        return Ok(Some(CharRef {
             name: "Scy;",
             characters: "\u{426}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d54b}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4af}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{219f}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{db}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d54c}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("psi;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("psi;")? {
+        return Ok(Some(CharRef {
             name: "psi;",
             characters: "\u{3d2}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b0}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{dc}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("bar;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("bar;")? {
+        return Ok(Some(CharRef {
             name: "bar;",
             characters: "\u{2aeb}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("ert;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("ert;")? {
+        return Ok(Some(CharRef {
             name: "ert;",
             characters: "\u{2016}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d54d}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b1}",
-        });
+        }));
     }
 
-    if first_char == 'W' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'W' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d54e}",
-        });
+        }));
     }
 
-    if first_char == 'W' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'W' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b2}",
-        });
+        }));
     }
 
-    if first_char == 'X' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'X' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d54f}",
-        });
+        }));
     }
 
-    if first_char == 'X' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'X' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b3}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("Acy;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("Acy;")? {
+        return Ok(Some(CharRef {
             name: "Acy;",
             characters: "\u{42f}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("Icy;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("Icy;")? {
+        return Ok(Some(CharRef {
             name: "Icy;",
             characters: "\u{407}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("Ucy;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("Ucy;")? {
+        return Ok(Some(CharRef {
             name: "Ucy;",
             characters: "\u{42e}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d550}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b4}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{178}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("Hcy;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("Hcy;")? {
+        return Ok(Some(CharRef {
             name: "Hcy;",
             characters: "\u{416}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{17b}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("eta;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("eta;")? {
+        return Ok(Some(CharRef {
             name: "eta;",
             characters: "\u{396}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{2124}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b5}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{e2}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("cute") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("cute")? {
+        return Ok(Some(CharRef {
             name: "cute",
             characters: "\u{b4}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("elig") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("elig")? {
+        return Ok(Some(CharRef {
             name: "elig",
             characters: "\u{e6}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ndd;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ndd;")? {
+        return Ok(Some(CharRef {
             name: "ndd;",
             characters: "\u{2a5c}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ndv;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ndv;")? {
+        return Ok(Some(CharRef {
             name: "ndv;",
             characters: "\u{2a5a}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("nge;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("nge;")? {
+        return Ok(Some(CharRef {
             name: "nge;",
             characters: "\u{29a4}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d552}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("pid;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("pid;")? {
+        return Ok(Some(CharRef {
             name: "pid;",
             characters: "\u{224b}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("pos;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("pos;")? {
+        return Ok(Some(CharRef {
             name: "pos;",
             characters: "\u{27}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ring") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ring")? {
+        return Ok(Some(CharRef {
             name: "ring",
             characters: "\u{e5}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b6}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{e4}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("Not;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("Not;")? {
+        return Ok(Some(CharRef {
             name: "Not;",
             characters: "\u{2aed}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("brk;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("brk;")? {
+        return Ok(Some(CharRef {
             name: "brk;",
             characters: "\u{23b5}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("eta;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("eta;")? {
+        return Ok(Some(CharRef {
             name: "eta;",
             characters: "\u{3b2}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("eth;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("eth;")? {
+        return Ok(Some(CharRef {
             name: "eth;",
             characters: "\u{2136}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("not;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("not;")? {
+        return Ok(Some(CharRef {
             name: "not;",
             characters: "\u{2310}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d553}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxH;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxH;")? {
+        return Ok(Some(CharRef {
             name: "oxH;",
             characters: "\u{2550}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxV;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxV;")? {
+        return Ok(Some(CharRef {
             name: "oxV;",
             characters: "\u{2551}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxh;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxh;")? {
+        return Ok(Some(CharRef {
             name: "oxh;",
             characters: "\u{2500}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("oxv;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("oxv;")? {
+        return Ok(Some(CharRef {
             name: "oxv;",
             characters: "\u{2502}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b7}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("sim;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("sim;")? {
+        return Ok(Some(CharRef {
             name: "sim;",
             characters: "\u{223d}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("sol;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("sol;")? {
+        return Ok(Some(CharRef {
             name: "sol;",
             characters: "\u{5c}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ull;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ull;")? {
+        return Ok(Some(CharRef {
             name: "ull;",
             characters: "\u{2022}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ump;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ump;")? {
+        return Ok(Some(CharRef {
             name: "ump;",
             characters: "\u{224e}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("aps;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("aps;")? {
+        return Ok(Some(CharRef {
             name: "aps;",
             characters: "\u{2229}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{10b}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("edil") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("edil")? {
+        return Ok(Some(CharRef {
             name: "edil",
             characters: "\u{b8}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ent;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ent;")? {
+        return Ok(Some(CharRef {
             name: "ent;",
             characters: "\u{a2}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("hcy;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("hcy;")? {
+        return Ok(Some(CharRef {
             name: "hcy;",
             characters: "\u{447}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("irE;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("irE;")? {
+        return Ok(Some(CharRef {
             name: "irE;",
             characters: "\u{29c3}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("irc;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("irc;")? {
+        return Ok(Some(CharRef {
             name: "irc;",
             characters: "\u{2c6}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ire;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ire;")? {
+        return Ok(Some(CharRef {
             name: "ire;",
             characters: "\u{2257}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("omp;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("omp;")? {
+        return Ok(Some(CharRef {
             name: "omp;",
             characters: "\u{2201}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ong;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ong;")? {
+        return Ok(Some(CharRef {
             name: "ong;",
             characters: "\u{2245}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d554}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("opy;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("opy;")? {
+        return Ok(Some(CharRef {
             name: "opy;",
             characters: "\u{a9}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b8}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("sub;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("sub;")? {
+        return Ok(Some(CharRef {
             name: "sub;",
             characters: "\u{2acf}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("sup;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("sup;")? {
+        return Ok(Some(CharRef {
             name: "sup;",
             characters: "\u{2ad0}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ups;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ups;")? {
+        return Ok(Some(CharRef {
             name: "ups;",
             characters: "\u{222a}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("Arr;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("Arr;")? {
+        return Ok(Some(CharRef {
             name: "Arr;",
             characters: "\u{21d3}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("Har;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("Har;")? {
+        return Ok(Some(CharRef {
             name: "Har;",
             characters: "\u{2965}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{2193}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ash;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ash;")? {
+        return Ok(Some(CharRef {
             name: "ash;",
             characters: "\u{2010}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("iam;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("iam;")? {
+        return Ok(Some(CharRef {
             name: "iam;",
             characters: "\u{22c4}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("jcy;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("jcy;")? {
+        return Ok(Some(CharRef {
             name: "jcy;",
             characters: "\u{452}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d555}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4b9}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("scy;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("scy;")? {
+        return Ok(Some(CharRef {
             name: "scy;",
             characters: "\u{455}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("sol;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("sol;")? {
+        return Ok(Some(CharRef {
             name: "sol;",
             characters: "\u{29f6}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("tri;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("tri;")? {
+        return Ok(Some(CharRef {
             name: "tri;",
             characters: "\u{25bf}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("zcy;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("zcy;")? {
+        return Ok(Some(CharRef {
             name: "zcy;",
             characters: "\u{45f}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("Dot;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("Dot;")? {
+        return Ok(Some(CharRef {
             name: "Dot;",
             characters: "\u{2251}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("cir;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("cir;")? {
+        return Ok(Some(CharRef {
             name: "cir;",
             characters: "\u{2256}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{ea}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{117}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("msp;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("msp;")? {
+        return Ok(Some(CharRef {
             name: "msp;",
             characters: "\u{2003}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("nsp;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("nsp;")? {
+        return Ok(Some(CharRef {
             name: "nsp;",
             characters: "\u{2002}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d556}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("par;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("par;")? {
+        return Ok(Some(CharRef {
             name: "par;",
             characters: "\u{22d5}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("psi;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("psi;")? {
+        return Ok(Some(CharRef {
             name: "psi;",
             characters: "\u{3b5}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{212f}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("sim;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("sim;")? {
+        return Ok(Some(CharRef {
             name: "sim;",
             characters: "\u{2242}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{eb}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("uro;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("uro;")? {
+        return Ok(Some(CharRef {
             name: "uro;",
             characters: "\u{20ac}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("xcl;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("xcl;")? {
+        return Ok(Some(CharRef {
             name: "xcl;",
             characters: "\u{21}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("lat;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("lat;")? {
+        return Ok(Some(CharRef {
             name: "lat;",
             characters: "\u{266d}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("nof;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("nof;")? {
+        return Ok(Some(CharRef {
             name: "nof;",
             characters: "\u{192}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d557}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("ork;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("ork;")? {
+        return Ok(Some(CharRef {
             name: "ork;",
             characters: "\u{22d4}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4bb}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{121}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("eqq;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("eqq;")? {
+        return Ok(Some(CharRef {
             name: "eqq;",
             characters: "\u{2267}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("esl;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("esl;")? {
+        return Ok(Some(CharRef {
             name: "esl;",
             characters: "\u{22db}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("jcy;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("jcy;")? {
+        return Ok(Some(CharRef {
             name: "jcy;",
             characters: "\u{453}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("nap;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("nap;")? {
+        return Ok(Some(CharRef {
             name: "nap;",
             characters: "\u{2a8a}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("neq;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("neq;")? {
+        return Ok(Some(CharRef {
             name: "neq;",
             characters: "\u{2a88}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d558}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{210a}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("sim;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("sim;")? {
+        return Ok(Some(CharRef {
             name: "sim;",
             characters: "\u{2273}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("tcc;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("tcc;")? {
+        return Ok(Some(CharRef {
             name: "tcc;",
             characters: "\u{2aa7}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("vnE;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("vnE;")? {
+        return Ok(Some(CharRef {
             name: "vnE;",
             characters: "\u{2269}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("Arr;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("Arr;")? {
+        return Ok(Some(CharRef {
             name: "Arr;",
             characters: "\u{21d4}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("alf;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("alf;")? {
+        return Ok(Some(CharRef {
             name: "alf;",
             characters: "\u{bd}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{2194}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("bar;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("bar;")? {
+        return Ok(Some(CharRef {
             name: "bar;",
             characters: "\u{210f}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d559}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4bd}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{ee}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ecy;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ecy;")? {
+        return Ok(Some(CharRef {
             name: "ecy;",
             characters: "\u{435}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("excl") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("excl")? {
+        return Ok(Some(CharRef {
             name: "excl",
             characters: "\u{a1}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("mof;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("mof;")? {
+        return Ok(Some(CharRef {
             name: "mof;",
             characters: "\u{22b7}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ocy;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ocy;")? {
+        return Ok(Some(CharRef {
             name: "ocy;",
             characters: "\u{451}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d55a}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ota;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ota;")? {
+        return Ok(Some(CharRef {
             name: "ota;",
             characters: "\u{3b9}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4be}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("sin;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("sin;")? {
+        return Ok(Some(CharRef {
             name: "sin;",
             characters: "\u{2208}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{ef}",
-        });
+        }));
     }
 
-    if first_char == 'j' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'j' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d55b}",
-        });
+        }));
     }
 
-    if first_char == 'j' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'j' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4bf}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("hcy;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("hcy;")? {
+        return Ok(Some(CharRef {
             name: "hcy;",
             characters: "\u{445}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("jcy;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("jcy;")? {
+        return Ok(Some(CharRef {
             name: "jcy;",
             characters: "\u{45c}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d55c}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4c0}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("Arr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("Arr;")? {
+        return Ok(Some(CharRef {
             name: "Arr;",
             characters: "\u{21d0}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("Har;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("Har;")? {
+        return Ok(Some(CharRef {
             name: "Har;",
             characters: "\u{2962}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ang;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ang;")? {
+        return Ok(Some(CharRef {
             name: "ang;",
             characters: "\u{27e8}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("aquo") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("aquo")? {
+        return Ok(Some(CharRef {
             name: "aquo",
             characters: "\u{ab}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{2190}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ate;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ate;")? {
+        return Ok(Some(CharRef {
             name: "ate;",
             characters: "\u{2aad}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("cub;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("cub;")? {
+        return Ok(Some(CharRef {
             name: "cub;",
             characters: "\u{7b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("dca;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("dca;")? {
+        return Ok(Some(CharRef {
             name: "dca;",
             characters: "\u{2936}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("dsh;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("dsh;")? {
+        return Ok(Some(CharRef {
             name: "dsh;",
             characters: "\u{21b2}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eqq;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eqq;")? {
+        return Ok(Some(CharRef {
             name: "eqq;",
             characters: "\u{2266}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("esg;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("esg;")? {
+        return Ok(Some(CharRef {
             name: "esg;",
             characters: "\u{22da}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("jcy;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("jcy;")? {
+        return Ok(Some(CharRef {
             name: "jcy;",
             characters: "\u{459}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("nap;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("nap;")? {
+        return Ok(Some(CharRef {
             name: "nap;",
             characters: "\u{2a89}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("neq;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("neq;")? {
+        return Ok(Some(CharRef {
             name: "neq;",
             characters: "\u{2a87}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d55d}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ozf;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ozf;")? {
+        return Ok(Some(CharRef {
             name: "ozf;",
             characters: "\u{29eb}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("par;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("par;")? {
+        return Ok(Some(CharRef {
             name: "par;",
             characters: "\u{28}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4c1}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("sim;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("sim;")? {
+        return Ok(Some(CharRef {
             name: "sim;",
             characters: "\u{2272}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("sqb;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("sqb;")? {
+        return Ok(Some(CharRef {
             name: "sqb;",
             characters: "\u{5b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("tcc;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("tcc;")? {
+        return Ok(Some(CharRef {
             name: "tcc;",
             characters: "\u{2aa6}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("tri;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("tri;")? {
+        return Ok(Some(CharRef {
             name: "tri;",
             characters: "\u{25c3}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("vnE;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("vnE;")? {
+        return Ok(Some(CharRef {
             name: "vnE;",
             characters: "\u{2268}\u{fe00}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("acr;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("acr;")? {
+        return Ok(Some(CharRef {
             name: "acr;",
             characters: "\u{af}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("ale;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("ale;")? {
+        return Ok(Some(CharRef {
             name: "ale;",
             characters: "\u{2642}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("alt;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("alt;")? {
+        return Ok(Some(CharRef {
             name: "alt;",
             characters: "\u{2720}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("icro") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("icro")? {
+        return Ok(Some(CharRef {
             name: "icro",
             characters: "\u{b5}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("lcp;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("lcp;")? {
+        return Ok(Some(CharRef {
             name: "lcp;",
             characters: "\u{2adb}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("ldr;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("ldr;")? {
+        return Ok(Some(CharRef {
             name: "ldr;",
             characters: "\u{2026}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d55e}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4c2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Gtv;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Gtv;")? {
+        return Ok(Some(CharRef {
             name: "Gtv;",
             characters: "\u{226b}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Ltv;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Ltv;")? {
+        return Ok(Some(CharRef {
             name: "Ltv;",
             characters: "\u{226a}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("ang;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("ang;")? {
+        return Ok(Some(CharRef {
             name: "ang;",
             characters: "\u{2220}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("apE;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("apE;")? {
+        return Ok(Some(CharRef {
             name: "apE;",
             characters: "\u{2a70}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("bsp;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("bsp;")? {
+        return Ok(Some(CharRef {
             name: "bsp;",
             characters: "\u{a0}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("cap;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("cap;")? {
+        return Ok(Some(CharRef {
             name: "cap;",
             characters: "\u{2a43}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("cup;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("cup;")? {
+        return Ok(Some(CharRef {
             name: "cup;",
             characters: "\u{2a42}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("geq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("geq;")? {
+        return Ok(Some(CharRef {
             name: "geq;",
             characters: "\u{2271}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("ges;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("ges;")? {
+        return Ok(Some(CharRef {
             name: "ges;",
             characters: "\u{2a7e}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("gtr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("gtr;")? {
+        return Ok(Some(CharRef {
             name: "gtr;",
             characters: "\u{226f}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("isd;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("isd;")? {
+        return Ok(Some(CharRef {
             name: "isd;",
             characters: "\u{22fa}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("jcy;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("jcy;")? {
+        return Ok(Some(CharRef {
             name: "jcy;",
             characters: "\u{45a}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("ldr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("ldr;")? {
+        return Ok(Some(CharRef {
             name: "ldr;",
             characters: "\u{2025}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("leq;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("leq;")? {
+        return Ok(Some(CharRef {
             name: "leq;",
             characters: "\u{2270}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("les;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("les;")? {
+        return Ok(Some(CharRef {
             name: "les;",
             characters: "\u{2a7d}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("mid;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("mid;")? {
+        return Ok(Some(CharRef {
             name: "mid;",
             characters: "\u{2224}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d55f}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("par;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("par;")? {
+        return Ok(Some(CharRef {
             name: "par;",
             characters: "\u{2226}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("pre;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("pre;")? {
+        return Ok(Some(CharRef {
             name: "pre;",
             characters: "\u{2aaf}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sce;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sce;")? {
+        return Ok(Some(CharRef {
             name: "sce;",
             characters: "\u{2ab0}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4c3}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sim;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sim;")? {
+        return Ok(Some(CharRef {
             name: "sim;",
             characters: "\u{2241}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sub;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sub;")? {
+        return Ok(Some(CharRef {
             name: "sub;",
             characters: "\u{2284}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sup;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sup;")? {
+        return Ok(Some(CharRef {
             name: "sup;",
             characters: "\u{2285}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("tgl;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("tgl;")? {
+        return Ok(Some(CharRef {
             name: "tgl;",
             characters: "\u{2279}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("tlg;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("tlg;")? {
+        return Ok(Some(CharRef {
             name: "tlg;",
             characters: "\u{2278}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vap;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vap;")? {
+        return Ok(Some(CharRef {
             name: "vap;",
             characters: "\u{224d}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vge;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vge;")? {
+        return Ok(Some(CharRef {
             name: "vge;",
             characters: "\u{2265}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vgt;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vgt;")? {
+        return Ok(Some(CharRef {
             name: "vgt;",
             characters: "\u{3e}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vle;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vle;")? {
+        return Ok(Some(CharRef {
             name: "vle;",
             characters: "\u{2264}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("vlt;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("vlt;")? {
+        return Ok(Some(CharRef {
             name: "vlt;",
             characters: "\u{3c}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("ast;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("ast;")? {
+        return Ok(Some(CharRef {
             name: "ast;",
             characters: "\u{229b}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("cir;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("cir;")? {
+        return Ok(Some(CharRef {
             name: "cir;",
             characters: "\u{229a}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{f4}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("div;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("div;")? {
+        return Ok(Some(CharRef {
             name: "div;",
             characters: "\u{2a38}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{2299}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("gon;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("gon;")? {
+        return Ok(Some(CharRef {
             name: "gon;",
             characters: "\u{2db}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("int;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("int;")? {
+        return Ok(Some(CharRef {
             name: "int;",
             characters: "\u{222e}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("mid;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("mid;")? {
+        return Ok(Some(CharRef {
             name: "mid;",
             characters: "\u{29b6}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d560}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("par;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("par;")? {
+        return Ok(Some(CharRef {
             name: "par;",
             characters: "\u{29b7}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rdf;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rdf;")? {
+        return Ok(Some(CharRef {
             name: "rdf;",
             characters: "\u{aa}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rdm;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rdm;")? {
+        return Ok(Some(CharRef {
             name: "rdm;",
             characters: "\u{ba}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("ror;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("ror;")? {
+        return Ok(Some(CharRef {
             name: "ror;",
             characters: "\u{2a56}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{2134}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("sol;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("sol;")? {
+        return Ok(Some(CharRef {
             name: "sol;",
             characters: "\u{2298}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{f6}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ara;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ara;")? {
+        return Ok(Some(CharRef {
             name: "ara;",
             characters: "\u{b6}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("art;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("art;")? {
+        return Ok(Some(CharRef {
             name: "art;",
             characters: "\u{2202}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("erp;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("erp;")? {
+        return Ok(Some(CharRef {
             name: "erp;",
             characters: "\u{22a5}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("hiv;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("hiv;")? {
+        return Ok(Some(CharRef {
             name: "hiv;",
             characters: "\u{3d5}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("lus;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("lus;")? {
+        return Ok(Some(CharRef {
             name: "lus;",
             characters: "\u{2b}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d561}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ound") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ound")? {
+        return Ok(Some(CharRef {
             name: "ound",
             characters: "\u{a3}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rap;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rap;")? {
+        return Ok(Some(CharRef {
             name: "rap;",
             characters: "\u{2ab7}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rec;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rec;")? {
+        return Ok(Some(CharRef {
             name: "rec;",
             characters: "\u{227a}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rnE;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rnE;")? {
+        return Ok(Some(CharRef {
             name: "rnE;",
             characters: "\u{2ab5}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rod;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rod;")? {
+        return Ok(Some(CharRef {
             name: "rod;",
             characters: "\u{220f}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rop;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rop;")? {
+        return Ok(Some(CharRef {
             name: "rop;",
             characters: "\u{221d}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4c5}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("int;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("int;")? {
+        return Ok(Some(CharRef {
             name: "int;",
             characters: "\u{2a0c}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d562}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4c6}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("uot;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("uot;")? {
+        return Ok(Some(CharRef {
             name: "uot;",
             characters: "\u{22}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("Arr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("Arr;")? {
+        return Ok(Some(CharRef {
             name: "Arr;",
             characters: "\u{21d2}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("Har;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("Har;")? {
+        return Ok(Some(CharRef {
             name: "Har;",
             characters: "\u{2964}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ace;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ace;")? {
+        return Ok(Some(CharRef {
             name: "ace;",
             characters: "\u{223d}\u{331}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ang;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ang;")? {
+        return Ok(Some(CharRef {
             name: "ang;",
             characters: "\u{27e9}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("aquo") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("aquo")? {
+        return Ok(Some(CharRef {
             name: "aquo",
             characters: "\u{bb}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{2192}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("cub;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("cub;")? {
+        return Ok(Some(CharRef {
             name: "cub;",
             characters: "\u{7d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("dca;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("dca;")? {
+        return Ok(Some(CharRef {
             name: "dca;",
             characters: "\u{2937}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("dsh;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("dsh;")? {
+        return Ok(Some(CharRef {
             name: "dsh;",
             characters: "\u{21b3}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("eal;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("eal;")? {
+        return Ok(Some(CharRef {
             name: "eal;",
             characters: "\u{211c}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ect;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ect;")? {
+        return Ok(Some(CharRef {
             name: "ect;",
             characters: "\u{25ad}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("hov;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("hov;")? {
+        return Ok(Some(CharRef {
             name: "hov;",
             characters: "\u{3f1}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ing;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ing;")? {
+        return Ok(Some(CharRef {
             name: "ing;",
             characters: "\u{2da}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d563}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("par;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("par;")? {
+        return Ok(Some(CharRef {
             name: "par;",
             characters: "\u{29}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4c7}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("sqb;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("sqb;")? {
+        return Ok(Some(CharRef {
             name: "sqb;",
             characters: "\u{5d}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("tri;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("tri;")? {
+        return Ok(Some(CharRef {
             name: "tri;",
             characters: "\u{25b9}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("cap;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("cap;")? {
+        return Ok(Some(CharRef {
             name: "cap;",
             characters: "\u{2ab8}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("cnE;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("cnE;")? {
+        return Ok(Some(CharRef {
             name: "cnE;",
             characters: "\u{2ab6}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{22c5}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ect;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ect;")? {
+        return Ok(Some(CharRef {
             name: "ect;",
             characters: "\u{a7}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("emi;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("emi;")? {
+        return Ok(Some(CharRef {
             name: "emi;",
             characters: "\u{3b}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ext;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ext;")? {
+        return Ok(Some(CharRef {
             name: "ext;",
             characters: "\u{2736}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("hcy;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("hcy;")? {
+        return Ok(Some(CharRef {
             name: "hcy;",
             characters: "\u{448}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ime;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ime;")? {
+        return Ok(Some(CharRef {
             name: "ime;",
             characters: "\u{2243}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("img;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("img;")? {
+        return Ok(Some(CharRef {
             name: "img;",
             characters: "\u{2a9e}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("iml;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("iml;")? {
+        return Ok(Some(CharRef {
             name: "iml;",
             characters: "\u{2a9d}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("mid;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("mid;")? {
+        return Ok(Some(CharRef {
             name: "mid;",
             characters: "\u{2223}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("mte;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("mte;")? {
+        return Ok(Some(CharRef {
             name: "mte;",
             characters: "\u{2aac}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("olb;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("olb;")? {
+        return Ok(Some(CharRef {
             name: "olb;",
             characters: "\u{29c4}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d564}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("par;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("par;")? {
+        return Ok(Some(CharRef {
             name: "par;",
             characters: "\u{2225}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("quf;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("quf;")? {
+        return Ok(Some(CharRef {
             name: "quf;",
             characters: "\u{25aa}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4c8}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("tar;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("tar;")? {
+        return Ok(Some(CharRef {
             name: "tar;",
             characters: "\u{2606}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ubE;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ubE;")? {
+        return Ok(Some(CharRef {
             name: "ubE;",
             characters: "\u{2ac5}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ube;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ube;")? {
+        return Ok(Some(CharRef {
             name: "ube;",
             characters: "\u{2286}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ucc;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ucc;")? {
+        return Ok(Some(CharRef {
             name: "ucc;",
             characters: "\u{227b}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ung;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ung;")? {
+        return Ok(Some(CharRef {
             name: "ung;",
             characters: "\u{266a}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("up1;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("up1;")? {
+        return Ok(Some(CharRef {
             name: "up1;",
             characters: "\u{b9}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("up2;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("up2;")? {
+        return Ok(Some(CharRef {
             name: "up2;",
             characters: "\u{b2}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("up3;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("up3;")? {
+        return Ok(Some(CharRef {
             name: "up3;",
             characters: "\u{b3}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upE;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upE;")? {
+        return Ok(Some(CharRef {
             name: "upE;",
             characters: "\u{2ac6}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("upe;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("upe;")? {
+        return Ok(Some(CharRef {
             name: "upe;",
             characters: "\u{2287}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("zlig") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("zlig")? {
+        return Ok(Some(CharRef {
             name: "zlig",
             characters: "\u{df}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("brk;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("brk;")? {
+        return Ok(Some(CharRef {
             name: "brk;",
             characters: "\u{23b4}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{20db}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("horn") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("horn")? {
+        return Ok(Some(CharRef {
             name: "horn",
             characters: "\u{fe}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("imes") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("imes")? {
+        return Ok(Some(CharRef {
             name: "imes",
             characters: "\u{d7}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("int;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("int;")? {
+        return Ok(Some(CharRef {
             name: "int;",
             characters: "\u{222d}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("oea;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("oea;")? {
+        return Ok(Some(CharRef {
             name: "oea;",
             characters: "\u{2928}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d565}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("osa;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("osa;")? {
+        return Ok(Some(CharRef {
             name: "osa;",
             characters: "\u{2929}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("rie;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("rie;")? {
+        return Ok(Some(CharRef {
             name: "rie;",
             characters: "\u{225c}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4c9}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("scy;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("scy;")? {
+        return Ok(Some(CharRef {
             name: "scy;",
             characters: "\u{446}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("Arr;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("Arr;")? {
+        return Ok(Some(CharRef {
             name: "Arr;",
             characters: "\u{21d1}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("Har;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("Har;")? {
+        return Ok(Some(CharRef {
             name: "Har;",
             characters: "\u{2963}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{2191}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("circ") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("circ")? {
+        return Ok(Some(CharRef {
             name: "circ",
             characters: "\u{fb}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d566}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("psi;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("psi;")? {
+        return Ok(Some(CharRef {
             name: "psi;",
             characters: "\u{3c5}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4ca}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("tri;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("tri;")? {
+        return Ok(Some(CharRef {
             name: "tri;",
             characters: "\u{25b5}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{fc}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("Arr;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("Arr;")? {
+        return Ok(Some(CharRef {
             name: "Arr;",
             characters: "\u{21d5}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("Bar;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("Bar;")? {
+        return Ok(Some(CharRef {
             name: "Bar;",
             characters: "\u{2ae8}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("arr;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("arr;")? {
+        return Ok(Some(CharRef {
             name: "arr;",
             characters: "\u{2195}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("ert;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("ert;")? {
+        return Ok(Some(CharRef {
             name: "ert;",
             characters: "\u{7c}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d567}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4cb}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d568}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4cc}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("cap;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("cap;")? {
+        return Ok(Some(CharRef {
             name: "cap;",
             characters: "\u{22c2}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("cup;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("cup;")? {
+        return Ok(Some(CharRef {
             name: "cup;",
             characters: "\u{22c3}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("map;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("map;")? {
+        return Ok(Some(CharRef {
             name: "map;",
             characters: "\u{27fc}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("nis;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("nis;")? {
+        return Ok(Some(CharRef {
             name: "nis;",
             characters: "\u{22fb}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d569}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4cd}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("vee;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("vee;")? {
+        return Ok(Some(CharRef {
             name: "vee;",
             characters: "\u{22c1}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("acy;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("acy;")? {
+        return Ok(Some(CharRef {
             name: "acy;",
             characters: "\u{44f}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("icy;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("icy;")? {
+        return Ok(Some(CharRef {
             name: "icy;",
             characters: "\u{457}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d56a}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4ce}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("ucy;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("ucy;")? {
+        return Ok(Some(CharRef {
             name: "ucy;",
             characters: "\u{44e}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("uml;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("uml;")? {
+        return Ok(Some(CharRef {
             name: "uml;",
             characters: "\u{ff}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("dot;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("dot;")? {
+        return Ok(Some(CharRef {
             name: "dot;",
             characters: "\u{17c}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("eta;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("eta;")? {
+        return Ok(Some(CharRef {
             name: "eta;",
             characters: "\u{3b6}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("hcy;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("hcy;")? {
+        return Ok(Some(CharRef {
             name: "hcy;",
             characters: "\u{436}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("opf;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("opf;")? {
+        return Ok(Some(CharRef {
             name: "opf;",
             characters: "\u{1d56b}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("scr;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("scr;")? {
+        return Ok(Some(CharRef {
             name: "scr;",
             characters: "\u{1d4cf}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("wnj;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("wnj;")? {
+        return Ok(Some(CharRef {
             name: "wnj;",
             characters: "\u{200c}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("MP;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("MP;")? {
+        return Ok(Some(CharRef {
             name: "MP;",
             characters: "\u{26}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{410}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d504}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("nd;") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("nd;")? {
+        return Ok(Some(CharRef {
             name: "nd;",
             characters: "\u{2a53}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{c4}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{411}",
-        });
+        }));
     }
 
-    if first_char == 'B' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'B' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d505}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("OPY") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("OPY")? {
+        return Ok(Some(CharRef {
             name: "OPY",
             characters: "\u{a9}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("ap;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("ap;")? {
+        return Ok(Some(CharRef {
             name: "ap;",
             characters: "\u{22d2}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{212d}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("hi;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("hi;")? {
+        return Ok(Some(CharRef {
             name: "hi;",
             characters: "\u{3a7}",
-        });
+        }));
     }
 
-    if first_char == 'C' && try_read("up;") {
-        return Some(CharRef {
+    if first_char == 'C' && try_read("up;")? {
+        return Ok(Some(CharRef {
             name: "up;",
             characters: "\u{22d3}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{414}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("el;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("el;")? {
+        return Ok(Some(CharRef {
             name: "el;",
             characters: "\u{2207}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d507}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("ot;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("ot;")? {
+        return Ok(Some(CharRef {
             name: "ot;",
             characters: "\u{a8}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("NG;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("NG;")? {
+        return Ok(Some(CharRef {
             name: "NG;",
             characters: "\u{14a}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("TH;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("TH;")? {
+        return Ok(Some(CharRef {
             name: "TH;",
             characters: "\u{d0}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{42d}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d508}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("ta;") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("ta;")? {
+        return Ok(Some(CharRef {
             name: "ta;",
             characters: "\u{397}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{cb}",
-        });
+        }));
     }
 
-    if first_char == 'F' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'F' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{424}",
-        });
+        }));
     }
 
-    if first_char == 'F' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'F' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d509}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{413}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d50a}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("at;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("at;")? {
+        return Ok(Some(CharRef {
             name: "at;",
             characters: "\u{5e}",
-        });
+        }));
     }
 
-    if first_char == 'H' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'H' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{210c}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{418}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{2111}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("nt;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("nt;")? {
+        return Ok(Some(CharRef {
             name: "nt;",
             characters: "\u{222c}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{cf}",
-        });
+        }));
     }
 
-    if first_char == 'J' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'J' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{419}",
-        });
+        }));
     }
 
-    if first_char == 'J' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'J' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d50d}",
-        });
+        }));
     }
 
-    if first_char == 'K' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'K' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{41a}",
-        });
+        }));
     }
 
-    if first_char == 'K' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'K' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d50e}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{41b}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d50f}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("sh;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("sh;")? {
+        return Ok(Some(CharRef {
             name: "sh;",
             characters: "\u{21b0}",
-        });
+        }));
     }
 
-    if first_char == 'M' && try_read("ap;") {
-        return Some(CharRef {
+    if first_char == 'M' && try_read("ap;")? {
+        return Ok(Some(CharRef {
             name: "ap;",
             characters: "\u{2905}",
-        });
+        }));
     }
 
-    if first_char == 'M' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'M' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{41c}",
-        });
+        }));
     }
 
-    if first_char == 'M' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'M' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d510}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{41d}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d511}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("ot;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("ot;")? {
+        return Ok(Some(CharRef {
             name: "ot;",
             characters: "\u{2aec}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{41e}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d512}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{d6}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{41f}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d513}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("hi;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("hi;")? {
+        return Ok(Some(CharRef {
             name: "hi;",
             characters: "\u{3a6}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("si;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("si;")? {
+        return Ok(Some(CharRef {
             name: "si;",
             characters: "\u{3a8}",
-        });
+        }));
     }
 
-    if first_char == 'Q' && try_read("UOT") {
-        return Some(CharRef {
+    if first_char == 'Q' && try_read("UOT")? {
+        return Ok(Some(CharRef {
             name: "UOT",
             characters: "\u{22}",
-        });
+        }));
     }
 
-    if first_char == 'Q' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'Q' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d514}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("EG;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("EG;")? {
+        return Ok(Some(CharRef {
             name: "EG;",
             characters: "\u{ae}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{420}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{211c}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("ho;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("ho;")? {
+        return Ok(Some(CharRef {
             name: "ho;",
             characters: "\u{3a1}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("sh;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("sh;")? {
+        return Ok(Some(CharRef {
             name: "sh;",
             characters: "\u{21b1}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{421}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d516}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("ub;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("ub;")? {
+        return Ok(Some(CharRef {
             name: "ub;",
             characters: "\u{22d0}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("um;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("um;")? {
+        return Ok(Some(CharRef {
             name: "um;",
             characters: "\u{2211}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("up;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("up;")? {
+        return Ok(Some(CharRef {
             name: "up;",
             characters: "\u{22d1}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("ab;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("ab;")? {
+        return Ok(Some(CharRef {
             name: "ab;",
             characters: "\u{9}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("au;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("au;")? {
+        return Ok(Some(CharRef {
             name: "au;",
             characters: "\u{3a4}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{422}",
-        });
+        }));
     }
 
-    if first_char == 'T' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'T' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d517}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{423}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d518}",
-        });
+        }));
     }
 
-    if first_char == 'U' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'U' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{dc}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{412}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("ee;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("ee;")? {
+        return Ok(Some(CharRef {
             name: "ee;",
             characters: "\u{22c1}",
-        });
+        }));
     }
 
-    if first_char == 'V' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'V' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d519}",
-        });
+        }));
     }
 
-    if first_char == 'W' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'W' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d51a}",
-        });
+        }));
     }
 
-    if first_char == 'X' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'X' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d51b}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{42b}",
-        });
+        }));
     }
 
-    if first_char == 'Y' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'Y' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d51c}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{417}",
-        });
+        }));
     }
 
-    if first_char == 'Z' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'Z' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{2128}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("cE;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("cE;")? {
+        return Ok(Some(CharRef {
             name: "cE;",
             characters: "\u{223e}\u{333}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("cd;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("cd;")? {
+        return Ok(Some(CharRef {
             name: "cd;",
             characters: "\u{223f}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{430}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d51e}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("mp;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("mp;")? {
+        return Ok(Some(CharRef {
             name: "mp;",
             characters: "\u{26}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("nd;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("nd;")? {
+        return Ok(Some(CharRef {
             name: "nd;",
             characters: "\u{2227}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("ng;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("ng;")? {
+        return Ok(Some(CharRef {
             name: "ng;",
             characters: "\u{2220}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("pE;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("pE;")? {
+        return Ok(Some(CharRef {
             name: "pE;",
             characters: "\u{2a70}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("pe;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("pe;")? {
+        return Ok(Some(CharRef {
             name: "pe;",
             characters: "\u{224a}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("st;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("st;")? {
+        return Ok(Some(CharRef {
             name: "st;",
             characters: "\u{2a}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{e4}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{431}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d51f}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ne;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ne;")? {
+        return Ok(Some(CharRef {
             name: "ne;",
             characters: "\u{3d}\u{20e5}",
-        });
+        }));
     }
 
-    if first_char == 'b' && try_read("ot;") {
-        return Some(CharRef {
+    if first_char == 'b' && try_read("ot;")? {
+        return Ok(Some(CharRef {
             name: "ot;",
             characters: "\u{22a5}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ap;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ap;")? {
+        return Ok(Some(CharRef {
             name: "ap;",
             characters: "\u{2229}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ent") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ent")? {
+        return Ok(Some(CharRef {
             name: "ent",
             characters: "\u{a2}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d520}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("hi;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("hi;")? {
+        return Ok(Some(CharRef {
             name: "hi;",
             characters: "\u{3c7}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("ir;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("ir;")? {
+        return Ok(Some(CharRef {
             name: "ir;",
             characters: "\u{25cb}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("opy") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("opy")? {
+        return Ok(Some(CharRef {
             name: "opy",
             characters: "\u{a9}",
-        });
+        }));
     }
 
-    if first_char == 'c' && try_read("up;") {
-        return Some(CharRef {
+    if first_char == 'c' && try_read("up;")? {
+        return Ok(Some(CharRef {
             name: "up;",
             characters: "\u{222a}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{434}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("eg;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("eg;")? {
+        return Ok(Some(CharRef {
             name: "eg;",
             characters: "\u{b0}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d521}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ie;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ie;")? {
+        return Ok(Some(CharRef {
             name: "ie;",
             characters: "\u{a8}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("iv;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("iv;")? {
+        return Ok(Some(CharRef {
             name: "iv;",
             characters: "\u{f7}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("ot;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("ot;")? {
+        return Ok(Some(CharRef {
             name: "ot;",
             characters: "\u{2d9}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{44d}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d522}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("gs;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("gs;")? {
+        return Ok(Some(CharRef {
             name: "gs;",
             characters: "\u{2a96}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("ll;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("ll;")? {
+        return Ok(Some(CharRef {
             name: "ll;",
             characters: "\u{2113}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("ls;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("ls;")? {
+        return Ok(Some(CharRef {
             name: "ls;",
             characters: "\u{2a95}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("ng;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("ng;")? {
+        return Ok(Some(CharRef {
             name: "ng;",
             characters: "\u{14b}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("ta;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("ta;")? {
+        return Ok(Some(CharRef {
             name: "ta;",
             characters: "\u{3b7}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("th;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("th;")? {
+        return Ok(Some(CharRef {
             name: "th;",
             characters: "\u{f0}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{eb}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{444}",
-        });
+        }));
     }
 
-    if first_char == 'f' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'f' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d523}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("El;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("El;")? {
+        return Ok(Some(CharRef {
             name: "El;",
             characters: "\u{2a8c}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("ap;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("ap;")? {
+        return Ok(Some(CharRef {
             name: "ap;",
             characters: "\u{2a86}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{433}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("el;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("el;")? {
+        return Ok(Some(CharRef {
             name: "el;",
             characters: "\u{22db}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("eq;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("eq;")? {
+        return Ok(Some(CharRef {
             name: "eq;",
             characters: "\u{2265}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("es;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("es;")? {
+        return Ok(Some(CharRef {
             name: "es;",
             characters: "\u{2a7e}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d524}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("gg;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("gg;")? {
+        return Ok(Some(CharRef {
             name: "gg;",
             characters: "\u{22d9}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("lE;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("lE;")? {
+        return Ok(Some(CharRef {
             name: "lE;",
             characters: "\u{2a92}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("la;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("la;")? {
+        return Ok(Some(CharRef {
             name: "la;",
             characters: "\u{2aa5}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("lj;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("lj;")? {
+        return Ok(Some(CharRef {
             name: "lj;",
             characters: "\u{2aa4}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("nE;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("nE;")? {
+        return Ok(Some(CharRef {
             name: "nE;",
             characters: "\u{2269}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("ne;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("ne;")? {
+        return Ok(Some(CharRef {
             name: "ne;",
             characters: "\u{2a88}",
-        });
+        }));
     }
 
-    if first_char == 'h' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'h' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d525}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{438}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("ff;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("ff;")? {
+        return Ok(Some(CharRef {
             name: "ff;",
             characters: "\u{21d4}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d526}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("nt;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("nt;")? {
+        return Ok(Some(CharRef {
             name: "nt;",
             characters: "\u{222b}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{ef}",
-        });
+        }));
     }
 
-    if first_char == 'j' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'j' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{439}",
-        });
+        }));
     }
 
-    if first_char == 'j' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'j' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d527}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{43a}",
-        });
+        }));
     }
 
-    if first_char == 'k' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'k' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d528}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("Eg;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("Eg;")? {
+        return Ok(Some(CharRef {
             name: "Eg;",
             characters: "\u{2a8b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ap;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ap;")? {
+        return Ok(Some(CharRef {
             name: "ap;",
             characters: "\u{2a85}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("at;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("at;")? {
+        return Ok(Some(CharRef {
             name: "at;",
             characters: "\u{2aab}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{43b}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eg;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eg;")? {
+        return Ok(Some(CharRef {
             name: "eg;",
             characters: "\u{22da}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("eq;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("eq;")? {
+        return Ok(Some(CharRef {
             name: "eq;",
             characters: "\u{2264}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("es;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("es;")? {
+        return Ok(Some(CharRef {
             name: "es;",
             characters: "\u{2a7d}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d529}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("gE;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("gE;")? {
+        return Ok(Some(CharRef {
             name: "gE;",
             characters: "\u{2a91}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("nE;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("nE;")? {
+        return Ok(Some(CharRef {
             name: "nE;",
             characters: "\u{2268}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("ne;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("ne;")? {
+        return Ok(Some(CharRef {
             name: "ne;",
             characters: "\u{2a87}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("oz;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("oz;")? {
+        return Ok(Some(CharRef {
             name: "oz;",
             characters: "\u{25ca}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("rm;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("rm;")? {
+        return Ok(Some(CharRef {
             name: "rm;",
             characters: "\u{200e}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("sh;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("sh;")? {
+        return Ok(Some(CharRef {
             name: "sh;",
             characters: "\u{21b0}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("acr") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("acr")? {
+        return Ok(Some(CharRef {
             name: "acr",
             characters: "\u{af}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("ap;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("ap;")? {
+        return Ok(Some(CharRef {
             name: "ap;",
             characters: "\u{21a6}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{43c}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d52a}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("ho;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("ho;")? {
+        return Ok(Some(CharRef {
             name: "ho;",
             characters: "\u{2127}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("id;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("id;")? {
+        return Ok(Some(CharRef {
             name: "id;",
             characters: "\u{2223}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Gg;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Gg;")? {
+        return Ok(Some(CharRef {
             name: "Gg;",
             characters: "\u{22d9}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Gt;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Gt;")? {
+        return Ok(Some(CharRef {
             name: "Gt;",
             characters: "\u{226b}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Ll;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Ll;")? {
+        return Ok(Some(CharRef {
             name: "Ll;",
             characters: "\u{22d8}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("Lt;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("Lt;")? {
+        return Ok(Some(CharRef {
             name: "Lt;",
             characters: "\u{226a}\u{20d2}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("ap;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("ap;")? {
+        return Ok(Some(CharRef {
             name: "ap;",
             characters: "\u{2249}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("bsp") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("bsp")? {
+        return Ok(Some(CharRef {
             name: "bsp",
             characters: "\u{a0}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{43d}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d52b}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("gE;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("gE;")? {
+        return Ok(Some(CharRef {
             name: "gE;",
             characters: "\u{2267}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("ge;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("ge;")? {
+        return Ok(Some(CharRef {
             name: "ge;",
             characters: "\u{2271}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("gt;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("gt;")? {
+        return Ok(Some(CharRef {
             name: "gt;",
             characters: "\u{226f}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("is;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("is;")? {
+        return Ok(Some(CharRef {
             name: "is;",
             characters: "\u{22fc}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("iv;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("iv;")? {
+        return Ok(Some(CharRef {
             name: "iv;",
             characters: "\u{220b}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("lE;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("lE;")? {
+        return Ok(Some(CharRef {
             name: "lE;",
             characters: "\u{2266}\u{338}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("le;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("le;")? {
+        return Ok(Some(CharRef {
             name: "le;",
             characters: "\u{2270}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("lt;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("lt;")? {
+        return Ok(Some(CharRef {
             name: "lt;",
             characters: "\u{226e}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("ot;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("ot;")? {
+        return Ok(Some(CharRef {
             name: "ot;",
             characters: "\u{ac}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("pr;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("pr;")? {
+        return Ok(Some(CharRef {
             name: "pr;",
             characters: "\u{2280}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("sc;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("sc;")? {
+        return Ok(Some(CharRef {
             name: "sc;",
             characters: "\u{2281}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("um;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("um;")? {
+        return Ok(Some(CharRef {
             name: "um;",
             characters: "\u{23}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{43e}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d52c}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("gt;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("gt;")? {
+        return Ok(Some(CharRef {
             name: "gt;",
             characters: "\u{29c1}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("hm;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("hm;")? {
+        return Ok(Some(CharRef {
             name: "hm;",
             characters: "\u{3a9}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("lt;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("lt;")? {
+        return Ok(Some(CharRef {
             name: "lt;",
             characters: "\u{29c0}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rd;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rd;")? {
+        return Ok(Some(CharRef {
             name: "rd;",
             characters: "\u{2a5d}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rdf") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rdf")? {
+        return Ok(Some(CharRef {
             name: "rdf",
             characters: "\u{aa}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rdm") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rdm")? {
+        return Ok(Some(CharRef {
             name: "rdm",
             characters: "\u{ba}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("rv;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("rv;")? {
+        return Ok(Some(CharRef {
             name: "rv;",
             characters: "\u{2a5b}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{f6}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ar;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ar;")? {
+        return Ok(Some(CharRef {
             name: "ar;",
             characters: "\u{2225}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("ara") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("ara")? {
+        return Ok(Some(CharRef {
             name: "ara",
             characters: "\u{b6}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{43f}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d52d}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("hi;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("hi;")? {
+        return Ok(Some(CharRef {
             name: "hi;",
             characters: "\u{3c6}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("iv;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("iv;")? {
+        return Ok(Some(CharRef {
             name: "iv;",
             characters: "\u{3d6}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("rE;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("rE;")? {
+        return Ok(Some(CharRef {
             name: "rE;",
             characters: "\u{2ab3}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("re;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("re;")? {
+        return Ok(Some(CharRef {
             name: "re;",
             characters: "\u{2aaf}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("si;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("si;")? {
+        return Ok(Some(CharRef {
             name: "si;",
             characters: "\u{3c8}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d52e}",
-        });
+        }));
     }
 
-    if first_char == 'q' && try_read("uot") {
-        return Some(CharRef {
+    if first_char == 'q' && try_read("uot")? {
+        return Ok(Some(CharRef {
             name: "uot",
             characters: "\u{22}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{440}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("eg;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("eg;")? {
+        return Ok(Some(CharRef {
             name: "eg;",
             characters: "\u{ae}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d52f}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("ho;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("ho;")? {
+        return Ok(Some(CharRef {
             name: "ho;",
             characters: "\u{3c1}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("lm;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("lm;")? {
+        return Ok(Some(CharRef {
             name: "lm;",
             characters: "\u{200f}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("sh;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("sh;")? {
+        return Ok(Some(CharRef {
             name: "sh;",
             characters: "\u{21b1}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("cE;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("cE;")? {
+        return Ok(Some(CharRef {
             name: "cE;",
             characters: "\u{2ab4}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ce;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ce;")? {
+        return Ok(Some(CharRef {
             name: "ce;",
             characters: "\u{2ab0}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{441}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ect") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ect")? {
+        return Ok(Some(CharRef {
             name: "ect",
             characters: "\u{a7}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d530}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("hy;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("hy;")? {
+        return Ok(Some(CharRef {
             name: "hy;",
             characters: "\u{ad}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("im;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("im;")? {
+        return Ok(Some(CharRef {
             name: "im;",
             characters: "\u{223c}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("mt;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("mt;")? {
+        return Ok(Some(CharRef {
             name: "mt;",
             characters: "\u{2aaa}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ol;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ol;")? {
+        return Ok(Some(CharRef {
             name: "ol;",
             characters: "\u{2f}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("qu;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("qu;")? {
+        return Ok(Some(CharRef {
             name: "qu;",
             characters: "\u{25a1}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("ub;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("ub;")? {
+        return Ok(Some(CharRef {
             name: "ub;",
             characters: "\u{2282}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("um;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("um;")? {
+        return Ok(Some(CharRef {
             name: "um;",
             characters: "\u{2211}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("up1") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("up1")? {
+        return Ok(Some(CharRef {
             name: "up1",
             characters: "\u{b9}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("up2") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("up2")? {
+        return Ok(Some(CharRef {
             name: "up2",
             characters: "\u{b2}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("up3") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("up3")? {
+        return Ok(Some(CharRef {
             name: "up3",
             characters: "\u{b3}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("up;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("up;")? {
+        return Ok(Some(CharRef {
             name: "up;",
             characters: "\u{2283}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("au;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("au;")? {
+        return Ok(Some(CharRef {
             name: "au;",
             characters: "\u{3c4}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{442}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d531}",
-        });
+        }));
     }
 
-    if first_char == 't' && try_read("op;") {
-        return Some(CharRef {
+    if first_char == 't' && try_read("op;")? {
+        return Ok(Some(CharRef {
             name: "op;",
             characters: "\u{22a4}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{443}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d532}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("ml;") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("ml;")? {
+        return Ok(Some(CharRef {
             name: "ml;",
             characters: "\u{a8}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{fc}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{432}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("ee;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("ee;")? {
+        return Ok(Some(CharRef {
             name: "ee;",
             characters: "\u{2228}",
-        });
+        }));
     }
 
-    if first_char == 'v' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'v' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d533}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d534}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d535}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{44b}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("en;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("en;")? {
+        return Ok(Some(CharRef {
             name: "en;",
             characters: "\u{a5}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d536}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("uml") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("uml")? {
+        return Ok(Some(CharRef {
             name: "uml",
             characters: "\u{ff}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("cy;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("cy;")? {
+        return Ok(Some(CharRef {
             name: "cy;",
             characters: "\u{437}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("fr;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("fr;")? {
+        return Ok(Some(CharRef {
             name: "fr;",
             characters: "\u{1d537}",
-        });
+        }));
     }
 
-    if first_char == 'z' && try_read("wj;") {
-        return Some(CharRef {
+    if first_char == 'z' && try_read("wj;")? {
+        return Ok(Some(CharRef {
             name: "wj;",
             characters: "\u{200d}",
-        });
+        }));
     }
 
-    if first_char == 'A' && try_read("MP") {
-        return Some(CharRef {
+    if first_char == 'A' && try_read("MP")? {
+        return Ok(Some(CharRef {
             name: "MP",
             characters: "\u{26}",
-        });
+        }));
     }
 
-    if first_char == 'D' && try_read("D;") {
-        return Some(CharRef {
+    if first_char == 'D' && try_read("D;")? {
+        return Ok(Some(CharRef {
             name: "D;",
             characters: "\u{2145}",
-        });
+        }));
     }
 
-    if first_char == 'E' && try_read("TH") {
-        return Some(CharRef {
+    if first_char == 'E' && try_read("TH")? {
+        return Ok(Some(CharRef {
             name: "TH",
             characters: "\u{d0}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("T;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("T;")? {
+        return Ok(Some(CharRef {
             name: "T;",
             characters: "\u{3e}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("g;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("g;")? {
+        return Ok(Some(CharRef {
             name: "g;",
             characters: "\u{22d9}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("t;") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("t;")? {
+        return Ok(Some(CharRef {
             name: "t;",
             characters: "\u{226b}",
-        });
+        }));
     }
 
-    if first_char == 'I' && try_read("m;") {
-        return Some(CharRef {
+    if first_char == 'I' && try_read("m;")? {
+        return Ok(Some(CharRef {
             name: "m;",
             characters: "\u{2111}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("T;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("T;")? {
+        return Ok(Some(CharRef {
             name: "T;",
             characters: "\u{3c}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("l;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("l;")? {
+        return Ok(Some(CharRef {
             name: "l;",
             characters: "\u{22d8}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("t;") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("t;")? {
+        return Ok(Some(CharRef {
             name: "t;",
             characters: "\u{226a}",
-        });
+        }));
     }
 
-    if first_char == 'M' && try_read("u;") {
-        return Some(CharRef {
+    if first_char == 'M' && try_read("u;")? {
+        return Ok(Some(CharRef {
             name: "u;",
             characters: "\u{39c}",
-        });
+        }));
     }
 
-    if first_char == 'N' && try_read("u;") {
-        return Some(CharRef {
+    if first_char == 'N' && try_read("u;")? {
+        return Ok(Some(CharRef {
             name: "u;",
             characters: "\u{39d}",
-        });
+        }));
     }
 
-    if first_char == 'O' && try_read("r;") {
-        return Some(CharRef {
+    if first_char == 'O' && try_read("r;")? {
+        return Ok(Some(CharRef {
             name: "r;",
             characters: "\u{2a54}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("i;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("i;")? {
+        return Ok(Some(CharRef {
             name: "i;",
             characters: "\u{3a0}",
-        });
+        }));
     }
 
-    if first_char == 'P' && try_read("r;") {
-        return Some(CharRef {
+    if first_char == 'P' && try_read("r;")? {
+        return Ok(Some(CharRef {
             name: "r;",
             characters: "\u{2abb}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("EG") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("EG")? {
+        return Ok(Some(CharRef {
             name: "EG",
             characters: "\u{ae}",
-        });
+        }));
     }
 
-    if first_char == 'R' && try_read("e;") {
-        return Some(CharRef {
+    if first_char == 'R' && try_read("e;")? {
+        return Ok(Some(CharRef {
             name: "e;",
             characters: "\u{211c}",
-        });
+        }));
     }
 
-    if first_char == 'S' && try_read("c;") {
-        return Some(CharRef {
+    if first_char == 'S' && try_read("c;")? {
+        return Ok(Some(CharRef {
             name: "c;",
             characters: "\u{2abc}",
-        });
+        }));
     }
 
-    if first_char == 'X' && try_read("i;") {
-        return Some(CharRef {
+    if first_char == 'X' && try_read("i;")? {
+        return Ok(Some(CharRef {
             name: "i;",
             characters: "\u{39e}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("c;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("c;")? {
+        return Ok(Some(CharRef {
             name: "c;",
             characters: "\u{223e}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("f;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("f;")? {
+        return Ok(Some(CharRef {
             name: "f;",
             characters: "\u{2061}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("mp") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("mp")? {
+        return Ok(Some(CharRef {
             name: "mp",
             characters: "\u{26}",
-        });
+        }));
     }
 
-    if first_char == 'a' && try_read("p;") {
-        return Some(CharRef {
+    if first_char == 'a' && try_read("p;")? {
+        return Ok(Some(CharRef {
             name: "p;",
             characters: "\u{2248}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("d;") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("d;")? {
+        return Ok(Some(CharRef {
             name: "d;",
             characters: "\u{2146}",
-        });
+        }));
     }
 
-    if first_char == 'd' && try_read("eg") {
-        return Some(CharRef {
+    if first_char == 'd' && try_read("eg")? {
+        return Ok(Some(CharRef {
             name: "eg",
             characters: "\u{b0}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("e;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("e;")? {
+        return Ok(Some(CharRef {
             name: "e;",
             characters: "\u{2147}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("g;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("g;")? {
+        return Ok(Some(CharRef {
             name: "g;",
             characters: "\u{2a9a}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("l;") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("l;")? {
+        return Ok(Some(CharRef {
             name: "l;",
             characters: "\u{2a99}",
-        });
+        }));
     }
 
-    if first_char == 'e' && try_read("th") {
-        return Some(CharRef {
+    if first_char == 'e' && try_read("th")? {
+        return Ok(Some(CharRef {
             name: "th",
             characters: "\u{f0}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("E;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("E;")? {
+        return Ok(Some(CharRef {
             name: "E;",
             characters: "\u{2267}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("e;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("e;")? {
+        return Ok(Some(CharRef {
             name: "e;",
             characters: "\u{2265}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("g;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("g;")? {
+        return Ok(Some(CharRef {
             name: "g;",
             characters: "\u{226b}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("l;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("l;")? {
+        return Ok(Some(CharRef {
             name: "l;",
             characters: "\u{2277}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("t;") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("t;")? {
+        return Ok(Some(CharRef {
             name: "t;",
             characters: "\u{3e}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("c;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("c;")? {
+        return Ok(Some(CharRef {
             name: "c;",
             characters: "\u{2063}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("i;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("i;")? {
+        return Ok(Some(CharRef {
             name: "i;",
             characters: "\u{2148}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("n;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("n;")? {
+        return Ok(Some(CharRef {
             name: "n;",
             characters: "\u{2208}",
-        });
+        }));
     }
 
-    if first_char == 'i' && try_read("t;") {
-        return Some(CharRef {
+    if first_char == 'i' && try_read("t;")? {
+        return Ok(Some(CharRef {
             name: "t;",
             characters: "\u{2062}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("E;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("E;")? {
+        return Ok(Some(CharRef {
             name: "E;",
             characters: "\u{2266}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("e;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("e;")? {
+        return Ok(Some(CharRef {
             name: "e;",
             characters: "\u{2264}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("g;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("g;")? {
+        return Ok(Some(CharRef {
             name: "g;",
             characters: "\u{2276}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("l;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("l;")? {
+        return Ok(Some(CharRef {
             name: "l;",
             characters: "\u{226a}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("t;") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("t;")? {
+        return Ok(Some(CharRef {
             name: "t;",
             characters: "\u{3c}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("p;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("p;")? {
+        return Ok(Some(CharRef {
             name: "p;",
             characters: "\u{2213}",
-        });
+        }));
     }
 
-    if first_char == 'm' && try_read("u;") {
-        return Some(CharRef {
+    if first_char == 'm' && try_read("u;")? {
+        return Ok(Some(CharRef {
             name: "u;",
             characters: "\u{3bc}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("e;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("e;")? {
+        return Ok(Some(CharRef {
             name: "e;",
             characters: "\u{2260}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("i;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("i;")? {
+        return Ok(Some(CharRef {
             name: "i;",
             characters: "\u{220b}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("ot") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("ot")? {
+        return Ok(Some(CharRef {
             name: "ot",
             characters: "\u{ac}",
-        });
+        }));
     }
 
-    if first_char == 'n' && try_read("u;") {
-        return Some(CharRef {
+    if first_char == 'n' && try_read("u;")? {
+        return Ok(Some(CharRef {
             name: "u;",
             characters: "\u{3bd}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("S;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("S;")? {
+        return Ok(Some(CharRef {
             name: "S;",
             characters: "\u{24c8}",
-        });
+        }));
     }
 
-    if first_char == 'o' && try_read("r;") {
-        return Some(CharRef {
+    if first_char == 'o' && try_read("r;")? {
+        return Ok(Some(CharRef {
             name: "r;",
             characters: "\u{2228}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("i;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("i;")? {
+        return Ok(Some(CharRef {
             name: "i;",
             characters: "\u{3c0}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("m;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("m;")? {
+        return Ok(Some(CharRef {
             name: "m;",
             characters: "\u{b1}",
-        });
+        }));
     }
 
-    if first_char == 'p' && try_read("r;") {
-        return Some(CharRef {
+    if first_char == 'p' && try_read("r;")? {
+        return Ok(Some(CharRef {
             name: "r;",
             characters: "\u{227a}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("eg") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("eg")? {
+        return Ok(Some(CharRef {
             name: "eg",
             characters: "\u{ae}",
-        });
+        }));
     }
 
-    if first_char == 'r' && try_read("x;") {
-        return Some(CharRef {
+    if first_char == 'r' && try_read("x;")? {
+        return Ok(Some(CharRef {
             name: "x;",
             characters: "\u{211e}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("c;") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("c;")? {
+        return Ok(Some(CharRef {
             name: "c;",
             characters: "\u{227b}",
-        });
+        }));
     }
 
-    if first_char == 's' && try_read("hy") {
-        return Some(CharRef {
+    if first_char == 's' && try_read("hy")? {
+        return Ok(Some(CharRef {
             name: "hy",
             characters: "\u{ad}",
-        });
+        }));
     }
 
-    if first_char == 'u' && try_read("ml") {
-        return Some(CharRef {
+    if first_char == 'u' && try_read("ml")? {
+        return Ok(Some(CharRef {
             name: "ml",
             characters: "\u{a8}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("p;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("p;")? {
+        return Ok(Some(CharRef {
             name: "p;",
             characters: "\u{2118}",
-        });
+        }));
     }
 
-    if first_char == 'w' && try_read("r;") {
-        return Some(CharRef {
+    if first_char == 'w' && try_read("r;")? {
+        return Ok(Some(CharRef {
             name: "r;",
             characters: "\u{2240}",
-        });
+        }));
     }
 
-    if first_char == 'x' && try_read("i;") {
-        return Some(CharRef {
+    if first_char == 'x' && try_read("i;")? {
+        return Ok(Some(CharRef {
             name: "i;",
             characters: "\u{3be}",
-        });
+        }));
     }
 
-    if first_char == 'y' && try_read("en") {
-        return Some(CharRef {
+    if first_char == 'y' && try_read("en")? {
+        return Ok(Some(CharRef {
             name: "en",
             characters: "\u{a5}",
-        });
+        }));
     }
 
-    if first_char == 'G' && try_read("T") {
-        return Some(CharRef {
+    if first_char == 'G' && try_read("T")? {
+        return Ok(Some(CharRef {
             name: "T",
             characters: "\u{3e}",
-        });
+        }));
     }
 
-    if first_char == 'L' && try_read("T") {
-        return Some(CharRef {
+    if first_char == 'L' && try_read("T")? {
+        return Ok(Some(CharRef {
             name: "T",
             characters: "\u{3c}",
-        });
+        }));
     }
 
-    if first_char == 'g' && try_read("t") {
-        return Some(CharRef {
+    if first_char == 'g' && try_read("t")? {
+        return Ok(Some(CharRef {
             name: "t",
             characters: "\u{3e}",
-        });
+        }));
     }
 
-    if first_char == 'l' && try_read("t") {
-        return Some(CharRef {
+    if first_char == 'l' && try_read("t")? {
+        return Ok(Some(CharRef {
             name: "t",
             characters: "\u{3c}",
-        });
+        }));
     }
-    None
+    Ok(None)
 }

@@ -12,7 +12,7 @@ use html5gum::{Tokenizer, Token};
 let html = "<title   >hello world</title>";
 let mut new_html = String::new();
 
-for token in Tokenizer::new(html) {
+for token in Tokenizer::new(html).infallible() {
     match token {
         Token::StartTag(tag) => {
             write!(new_html, "<{}>", tag.name).unwrap();
