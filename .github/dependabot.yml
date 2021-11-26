@@ -12,7 +12,7 @@ updates:
   open-pull-requests-limit: 10
   
 - package-ecosystem: gitsubmodule
-  directory: "/tests/html5lib-tests"
+  directory: "/"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
