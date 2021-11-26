@@ -211,8 +211,8 @@ impl<R: BufRead> Reader for BufReadReader<R> {
     }
 
     fn try_read_string(&mut self, s1: &str, case_sensitive: bool) -> Result<bool, Self::Error> {
-        debug_assert!(!s1.contains("\r"));
-        debug_assert!(!s1.contains("\n"));
+        debug_assert!(!s1.contains('\r'));
+        debug_assert!(!s1.contains('\n'));
 
         if let Some(s2) = self.get_remaining_line()?.get(..s1.len()) {
             if s1 == s2 || (!case_sensitive && s1.eq_ignore_ascii_case(s2)) {
