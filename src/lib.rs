@@ -29,6 +29,37 @@ macro_rules! ctostr {
     };
 }
 
+// this is a stack that can hold 0 to 2 Ts
+#[derive(Debug, Default)]
+struct Stack2<T: Copy>(Option<(T, Option<T>)>);
+
+impl<T: Copy> Stack2<T> {
+    #[inline]
+    fn push(&mut self, c: T) {
+        self.0 = match self.0 {
+            None => Some((c, None)),
+            Some((c1, None)) => Some((c1, Some(c))),
+            Some((_c1, Some(_c2))) => panic!("stack full!"),
+        }
+    }
+
+    #[inline]
+    fn pop(&mut self) -> Option<T> {
+        let (new_self, rv) = match self.0 {
+            Some((c1, Some(c2))) => (Some((c1, None)), Some(c2)),
+            Some((c1, None)) => (None, Some(c1)),
+            None => (None, None),
+        };
+        self.0 = new_self;
+        rv
+    }
+
+    #[inline]
+    fn is_empty(&self) -> bool {
+        matches!(self.0, None)
+    }
+}
+
 /// A HTML tokenizer. See crate-level docs for basic usage.
 pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
     eof: bool,
@@ -36,7 +67,7 @@ pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
     emitter: E,
     temporary_buffer: String,
     reader: R,
-    to_reconsume: Option<Option<char>>,
+    to_reconsume: Stack2<Option<char>>,
     character_reference_code: u32,
     return_state: Option<State>,
 }
@@ -65,7 +96,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
             state: State::Data,
             emitter,
             temporary_buffer: String::new(),
-            to_reconsume: None,
+            to_reconsume: Stack2::default(),
             reader: input.to_reader(),
             character_reference_code: 0,
             return_state: None,
@@ -98,7 +129,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
 
     #[inline]
     fn unread_char(&mut self, c: Option<char>) {
-        self.to_reconsume = Some(c);
+        self.to_reconsume.push(c);
     }
 
     #[inline]
@@ -122,19 +153,30 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     }
 
     fn read_char(&mut self) -> Option<char> {
-        if let Some(c) = self.to_reconsume.take() {
-            return c;
+        let (mut c, reconsumed) = match self.to_reconsume.pop() {
+            Some(c) => (c?, true),
+            None => (self.reader.read_char()?, false),
+        };
+
+        if c == '\r' {
+            c = '\n';
+            let c2 = self.reader.read_char();
+            if c2 != Some('\n') {
+                self.unread_char(c2);
+            }
         }
 
-        let c = self.reader.read_char()?;
-        self.validate_char(c);
+        if !reconsumed {
+            self.validate_char(c);
+        }
+
         Some(c)
     }
 
     #[inline]
     fn try_read_string(&mut self, s: &str, case_sensitive: bool) -> bool {
         debug_assert!(!s.is_empty());
-        debug_assert!(self.to_reconsume.is_none());
+        debug_assert!(self.to_reconsume.is_empty());
         self.reader.try_read_string(s, case_sensitive)
     }
 
