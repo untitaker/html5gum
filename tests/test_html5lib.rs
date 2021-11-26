@@ -1,4 +1,4 @@
-use html5gum::{Doctype, EndTag, Error, Reader, StartTag, State, StringReader, Token, Tokenizer};
+use html5gum::{Doctype, EndTag, Error, Reader, StartTag, State, Token, Tokenizer};
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
@@ -230,8 +230,17 @@ fn run_test(fname: &str, test_i: usize, mut test: Test) {
             test_i,
             &test,
             state.0,
-            Tokenizer::<StringReader>::new(&test.input),
+            Tokenizer::new(&test.input),
             "string",
+        );
+
+        run_test_inner(
+            fname,
+            test_i,
+            &test,
+            state.0,
+            Tokenizer::new(BufReader::new(test.input.as_bytes())),
+            "bufread",
         );
     }
 }
@@ -256,6 +265,8 @@ fn run_test_inner<R: Reader>(
     let mut actual_errors = Vec::new();
 
     for token in tokenizer {
+        let token = token.unwrap();
+
         if let Token::Error(e) = token {
             actual_errors.push(ParseError {
                 code: ParseErrorInner(e),
