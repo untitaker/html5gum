@@ -1918,10 +1918,11 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
                 let c = self.read_char()?;
 
                 let char_ref = match c {
-                    Some(x) => 
-                        entities::try_read_character_reference(x, |x| self.try_read_string(x, true))
-                            ?.map(|char_ref| (x, char_ref)),
-                    
+                    Some(x) => entities::try_read_character_reference(x, |x| {
+                        self.try_read_string(x, true)
+                    })?
+                    .map(|char_ref| (x, char_ref)),
+
                     None => None,
                 };
 
