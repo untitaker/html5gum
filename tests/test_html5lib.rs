@@ -184,7 +184,7 @@ fn test_tokenizer_file(resource_name: &str) {
 
     if matches!(
         fname,
-        // We don't have the test harness for this test, TODO
+        // We don't implement "Coercing an HTML DOM into an infoset" section
         "xmlViolation.test" |
         // Our parser does not operate on bytes, the input isn't valid Rust &str
         "unicodeCharsProblematic.test"

@@ -158,7 +158,8 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
         let mut chars = s.chars();
         while let Some(c) = self.to_reconsume.pop() {
             if let (Some(x), Some(x2)) = (c, chars.next()) {
-                if x == x2 || (!case_sensitive && x.to_ascii_lowercase() == x2.to_ascii_lowercase()) {
+                if x == x2 || (!case_sensitive && x.to_ascii_lowercase() == x2.to_ascii_lowercase())
+                {
                     s = &s[x.len_utf8()..];
                     continue;
                 }
