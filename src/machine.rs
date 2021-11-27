@@ -1,15 +1,9 @@
 use crate::entities::try_read_character_reference;
 use crate::utils::{
-    ascii_digit_pat, control_pat, noncharacter_pat, surrogate_pat, whitespace_pat, ControlToken,
-    State,
+    ascii_digit_pat, control_pat, ctostr, noncharacter_pat, surrogate_pat, whitespace_pat,
+    ControlToken, State,
 };
 use crate::{Emitter, Error, Reader, Tokenizer};
-
-macro_rules! ctostr {
-    ($c:expr) => {
-        &*$c.encode_utf8(&mut [0; 4])
-    };
-}
 
 // Note: This is not implemented as a method on Tokenizer because there's fields on Tokenizer that
 // should not be available in this method, such as Tokenizer.to_reconsume or the Reader instance

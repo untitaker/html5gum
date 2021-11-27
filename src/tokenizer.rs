@@ -3,7 +3,7 @@ use crate::utils::{control_pat, noncharacter_pat, surrogate_pat, ControlToken, S
 use crate::{DefaultEmitter, Emitter, Error, Never, Readable, Reader};
 
 // this is a stack that can hold 0 to 2 Ts
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 struct Stack2<T: Copy>(Option<(T, Option<T>)>);
 
 impl<T: Copy> Stack2<T> {
@@ -25,11 +25,6 @@ impl<T: Copy> Stack2<T> {
         };
         self.0 = new_self;
         rv
-    }
-
-    #[inline]
-    fn is_empty(&self) -> bool {
-        matches!(self.0, None)
     }
 }
 
@@ -154,11 +149,25 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     #[inline]
     pub(crate) fn try_read_string(
         &mut self,
-        s: &str,
+        mut s: &str,
         case_sensitive: bool,
     ) -> Result<bool, R::Error> {
         debug_assert!(!s.is_empty());
-        debug_assert!(self.to_reconsume.is_empty());
+
+        let to_reconsume_bak = self.to_reconsume;
+        let mut chars = s.chars();
+        while let Some(c) = self.to_reconsume.pop() {
+            if let (Some(x), Some(x2)) = (c, chars.next()) {
+                if x == x2 || (!case_sensitive && x.to_ascii_lowercase() == x2.to_ascii_lowercase()) {
+                    s = &s[x.len_utf8()..];
+                    continue;
+                }
+            }
+
+            self.to_reconsume = to_reconsume_bak;
+            return Ok(false);
+        }
+
         self.reader.try_read_string(s, case_sensitive)
     }
 

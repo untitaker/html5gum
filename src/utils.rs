@@ -162,3 +162,11 @@ pub enum ControlToken {
     Eof,
     Continue,
 }
+
+macro_rules! ctostr {
+    ($c:expr) => {
+        &*$c.encode_utf8(&mut [0; 4])
+    };
+}
+
+pub(crate) use ctostr;
