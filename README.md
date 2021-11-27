@@ -48,8 +48,8 @@ test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer). S
 * `html5gum` **does not** generally qualify as a browser-grade HTML *parser* as
   per the WHATWG spec. This can change in the future.
 
-With those caveats in mind, `html5gum` can pretty much parse any syntactical
-mess that browsers can, because that's what a tokenizer does.
+With those caveats in mind, `html5gum` can pretty much ~parse~ _tokenize_
+anything that browsers can.
 
 ## The `Emitter` trait
 
