@@ -32,13 +32,11 @@ assert_eq!(new_html, "<title>hello world</title>");
 
 It fully implements [13.2.5 of the WHATWG HTML
 spec](https://html.spec.whatwg.org/#tokenization), i.e. is able to tokenize HTML documents and passes [html5lib's tokenizer
-test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer). Most importantly it does not:
+test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer), with the following exceptions:
 
 * [Implement charset detection.](https://html.spec.whatwg.org/#determining-the-character-encoding) This implementation requires all input to be
   Rust strings and therefore valid UTF-8.
-
 * [Correct mis-nested tags](https://html.spec.whatwg.org/#an-introduction-to-error-handling-and-strange-cases-in-the-parser)
-
 * Generally qualify as a complete HTML *parser* as per the WHATWG spec (yet).
 
 A distinguishing feature of `html5gum` is that you can bring your own token
