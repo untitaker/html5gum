@@ -36,7 +36,7 @@ test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer), w
 
 * html5gum **does not** [implement charset detection.](https://html.spec.whatwg.org/#determining-the-character-encoding) This implementation requires all input to be
   Rust strings and therefore valid UTF-8.
-* html5gum **does not** [correct mis-nested tags](https://html.spec.whatwg.org/#an-introduction-to-error-handling-and-strange-cases-in-the-parser)
+* html5gum **does not** [correct mis-nested tags.](https://html.spec.whatwg.org/#an-introduction-to-error-handling-and-strange-cases-in-the-parser)
 * html5gum **does not** generally qualify as a browser-grade HTML *parser* as per the WHATWG spec. This can change in the future.
 
 A distinguishing feature of `html5gum` is that you can bring your own token
