@@ -34,10 +34,17 @@ It fully implements [13.2.5 of the WHATWG HTML
 spec](https://html.spec.whatwg.org/#tokenization), i.e. is able to tokenize HTML documents and passes [html5lib's tokenizer
 test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer). Since it is just a tokenizer, this means:
 
-* html5gum **does not** [implement charset detection.](https://html.spec.whatwg.org/#determining-the-character-encoding) This implementation requires all input to be
-  Rust strings and therefore valid UTF-8.
-* html5gum **does not** [correct mis-nested tags.](https://html.spec.whatwg.org/#an-introduction-to-error-handling-and-strange-cases-in-the-parser)
-* html5gum **does not** generally qualify as a browser-grade HTML *parser* as per the WHATWG spec. This can change in the future.
+* html5gum **does not** [implement charset
+  detection.](https://html.spec.whatwg.org/#determining-the-character-encoding)
+  This implementation requires all input to be Rust strings and therefore valid
+  UTF-8.
+* html5gum **does not** [correct mis-nested
+  tags.](https://html.spec.whatwg.org/#an-introduction-to-error-handling-and-strange-cases-in-the-parser)
+* html5gum **does not** recognize implicitly self-closing elements like
+  `<img>`, as a tokenizer it will simply emit a start token. It does however
+  emit a self-closing tag for `<img .. />`.
+* html5gum **does not** generally qualify as a browser-grade HTML *parser* as
+  per the WHATWG spec. This can change in the future.
 
 A distinguishing feature of `html5gum` is that you can bring your own token
 datastructure and hook into token creation by implementing the `Emitter` trait.
