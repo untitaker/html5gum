@@ -262,7 +262,7 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
         }));
     }
 
-    fn init_attribute(&mut self, reader: &R) {
+    fn init_attribute_name(&mut self, reader: &R) {
         self.flush_current_attribute();
         self.current_attribute = Some((
             String::new(),
@@ -272,6 +272,12 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
             },
         ));
     }
+
+    fn init_attribute_value(&mut self, reader: &R) {
+        let current_attr = self.current_attribute.as_mut().unwrap();
+        current_attr.1.value_span = reader.get_pos() - 1..reader.get_pos() - 1;
+    }
+
     fn push_attribute_name(&mut self, s: &str) {
         let current_attr = self.current_attribute.as_mut().unwrap();
         current_attr.0.push_str(s);

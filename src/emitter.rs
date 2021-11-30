@@ -65,7 +65,7 @@ pub trait Emitter<R> {
     /// Emit the _current token_, assuming it is a tag.
     ///
     /// Also get the current attribute and append it to the to-be-emitted tag. See docstring for
-    /// [`Emitter::init_attribute`] for how duplicates should be handled.
+    /// [`Emitter::init_attribute_name`] for how duplicates should be handled.
     ///
     /// If a start tag is emitted, update the _last start tag_.
     ///
@@ -128,7 +128,12 @@ pub trait Emitter<R> {
     /// emitted.
     ///
     /// If the current token is no tag at all, this method may panic.
-    fn init_attribute(&mut self, reader: &R);
+    fn init_attribute_name(&mut self, reader: &R);
+
+    /// Called before the first push_attribute_value call.
+    ///
+    /// If there is no current attribute, this method may panic.
+    fn init_attribute_value(&mut self, #[allow(unused_variables)] reader: &R) {}
 
     /// Append a string to the current attribute's name.
     ///
@@ -368,7 +373,7 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
         }));
     }
 
-    fn init_attribute(&mut self, _reader: &R) {
+    fn init_attribute_name(&mut self, _reader: &R) {
         self.flush_current_attribute();
         self.current_attribute = Some((String::new(), String::new()));
     }

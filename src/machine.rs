@@ -694,13 +694,13 @@ pub fn consume<R: Reader, E: Emitter<R>>(
             Some('=') => {
                 slf.emitter
                     .emit_error(Error::UnexpectedEqualsSignBeforeAttributeName);
-                slf.emitter.init_attribute(&slf.reader);
+                slf.emitter.init_attribute_name(&slf.reader);
                 slf.emitter.push_attribute_name("=");
                 slf.state = State::AttributeName;
                 Ok(ControlToken::Continue)
             }
             Some(x) => {
-                slf.emitter.init_attribute(&slf.reader);
+                slf.emitter.init_attribute_name(&slf.reader);
                 slf.state = State::AttributeName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -754,7 +754,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
-                slf.emitter.init_attribute(&slf.reader);
+                slf.emitter.init_attribute_name(&slf.reader);
                 slf.state = State::AttributeName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -763,10 +763,12 @@ pub fn consume<R: Reader, E: Emitter<R>>(
         State::BeforeAttributeValue => match slf.read_char()? {
             Some(whitespace_pat!()) => Ok(ControlToken::Continue),
             Some('"') => {
+                slf.emitter.init_attribute_value(&slf.reader);
                 slf.state = State::AttributeValueDoubleQuoted;
                 Ok(ControlToken::Continue)
             }
             Some('\'') => {
+                slf.emitter.init_attribute_value(&slf.reader);
                 slf.state = State::AttributeValueSingleQuoted;
                 Ok(ControlToken::Continue)
             }
@@ -777,6 +779,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c => {
+                slf.emitter.init_attribute_value(&slf.reader);
                 slf.state = State::AttributeValueUnquoted;
                 slf.unread_char(c);
                 Ok(ControlToken::Continue)

@@ -2,10 +2,18 @@ note:
   ┌─ test.html:1:1
   │
 1 │ this is a tag: <h1>test</h1>
-  │ ^^^^^^          ^^       ^^ end tag
-  │ │               │
-  │ │               start tag
-  │ attr value
+  │                 ^^       ^^ end tag
+  │                 │
+  │                 start tag
 2 │
 3 │ tags can have attributes: <div id = foobar>
-  │                                ^^ attr name
+  │                                ^^   ^^^^^^ attr value
+  │                                │
+  │                                attr name
+4 │
+5 │ Attribute values can be quoted: <input name = 'age' type = "number">
+  │                                        ^^^^   ^^^   ^^^^   ^^^^^^ attr value
+  │                                        │      │     │
+  │                                        │      │     attr name
+  │                                        │      attr value
+  │                                        attr name
