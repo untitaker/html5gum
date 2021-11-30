@@ -143,8 +143,11 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
         self.current_characters.push_str(s);
     }
 
-    fn init_start_tag(&mut self, _reader: &R) {
-        self.current_token = Some(Token::StartTag(Default::default()));
+    fn init_start_tag(&mut self, reader: &R) {
+        self.current_token = Some(Token::StartTag(StartTag {
+            name_span: reader.get_pos()..reader.get_pos(),
+            ..Default::default()
+        }));
     }
     fn init_end_tag(&mut self, _reader: &R) {
         self.current_token = Some(Token::EndTag(Default::default()));
@@ -208,11 +211,21 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
     }
     fn push_tag_name(&mut self, s: &str) {
         match self.current_token {
-            Some(Token::StartTag(StartTag { ref mut name, .. })) => {
+            Some(Token::StartTag(StartTag {
+                ref mut name,
+                ref mut name_span,
+                ..
+            })) => {
                 name.push_str(s);
+                name_span.end += s.len();
             }
-            Some(Token::EndTag(EndTag { ref mut name, .. })) => {
+            Some(Token::EndTag(EndTag {
+                ref mut name,
+                ref mut name_span,
+                ..
+            })) => {
                 name.push_str(s);
+                name_span.end += s.len();
             }
             _ => debug_assert!(false),
         }
