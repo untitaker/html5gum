@@ -9,6 +9,7 @@ mod error;
 mod machine;
 mod never;
 mod reader;
+mod spans;
 mod tokenizer;
 mod utils;
 
