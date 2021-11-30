@@ -172,17 +172,17 @@ pub trait Emitter {
 
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
 #[derive(Default)]
-pub struct DefaultEmitter {
+pub struct DefaultEmitter<S> {
     current_characters: String,
-    current_token: Option<Token>,
+    current_token: Option<Token<S>>,
     last_start_tag: String,
     current_attribute: Option<(String, String)>,
     seen_attributes: BTreeSet<String>,
-    emitted_tokens: VecDeque<Token>,
+    emitted_tokens: VecDeque<Token<S>>,
 }
 
-impl DefaultEmitter {
-    fn emit_token(&mut self, token: Token) {
+impl DefaultEmitter<()> {
+    fn emit_token(&mut self, token: Token<()>) {
         self.flush_current_characters();
         self.emitted_tokens.push_front(token);
     }
@@ -225,8 +225,8 @@ impl DefaultEmitter {
     }
 }
 
-impl Emitter for DefaultEmitter {
-    type Token = Token;
+impl Emitter for DefaultEmitter<()> {
+    type Token = Token<()>;
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
         self.last_start_tag.clear();
@@ -416,7 +416,7 @@ impl Emitter for DefaultEmitter {
 
 /// A HTML end/close tag, such as `<p>` or `<a>`.
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct StartTag {
+pub struct StartTag<S> {
     /// Whether this tag is self-closing. If it is self-closing, no following [`EndTag`] should be
     /// expected.
     pub self_closing: bool,
@@ -429,13 +429,19 @@ pub struct StartTag {
     /// Duplicate attributes are ignored after the first one as per WHATWG spec. Implement your own
     /// [`Emitter`] to tweak this behavior.
     pub attributes: BTreeMap<String, String>,
+
+    /// The source code span of the tag name.
+    pub name_span: S,
 }
 
 /// A HTML end/close tag, such as `</p>` or `</a>`.
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct EndTag {
+pub struct EndTag<S> {
     /// The ending tag's name, such as `"p"` or `"a"`.
     pub name: String,
+
+    /// The source code span of the tag name.
+    pub name_span: S,
 }
 
 /// A doctype. Some examples:
@@ -462,11 +468,11 @@ pub struct Doctype {
 /// The token type used by default. You can define your own token type by implementing the
 /// [`crate::Emitter`] trait and using [`crate::Tokenizer::new_with_emitter`].
 #[derive(Debug, Eq, PartialEq)]
-pub enum Token {
+pub enum Token<S> {
     /// A HTML start tag.
-    StartTag(StartTag),
+    StartTag(StartTag<S>),
     /// A HTML end tag.
-    EndTag(EndTag),
+    EndTag(EndTag<S>),
     /// A literal string.
     String(String),
     /// A HTML comment.

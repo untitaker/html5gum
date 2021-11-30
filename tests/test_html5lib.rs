@@ -8,7 +8,7 @@ compile_error!(
     "integration tests need the integration-tests feature enabled. Run cargo test --all-features"
 );
 
-struct ExpectedOutputTokens(Vec<Token>);
+struct ExpectedOutputTokens(Vec<Token<()>>);
 
 impl<'de> Deserialize<'de> for ExpectedOutputTokens {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -78,19 +78,24 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
                         self_closing: false,
                         name,
                         attributes,
+                        name_span: (),
                     }),
                     OutputToken::StartTag2(_, name, attributes, self_closing) => {
                         Token::StartTag(StartTag {
                             self_closing,
                             name,
                             attributes,
+                            name_span: (),
                         })
                     }
-                    OutputToken::EndTag(_, name) => Token::EndTag(EndTag { name }),
+                    OutputToken::EndTag(_, name) => Token::EndTag(EndTag {
+                        name,
+                        name_span: (),
+                    }),
                     OutputToken::Comment(_, data) => Token::Comment(data),
                     OutputToken::Character(_, data) => Token::String(data),
                 })
-                .collect::<Vec<Token>>(),
+                .collect::<Vec<Token<()>>>(),
         ))
     }
 }

@@ -29,7 +29,7 @@ impl<T: Copy> Stack2<T> {
 }
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
-pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
+pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter<()>> {
     eof: bool,
     pub(crate) state: State,
     pub(crate) emitter: E,
