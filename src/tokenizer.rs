@@ -29,12 +29,12 @@ impl<T: Copy> Stack2<T> {
 }
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
-pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter<()>> {
+pub struct Tokenizer<R: Reader, E: Emitter<R> = DefaultEmitter<R, ()>> {
     eof: bool,
     pub(crate) state: State,
     pub(crate) emitter: E,
     pub(crate) temporary_buffer: String,
-    reader: R,
+    pub(crate) reader: R,
     to_reconsume: Stack2<Option<char>>,
     pub(crate) character_reference_code: u32,
     pub(crate) return_state: Option<State>,
@@ -53,7 +53,7 @@ impl<R: Reader> Tokenizer<R> {
     }
 }
 
-impl<R: Reader, E: Emitter> Tokenizer<R, E> {
+impl<R: Reader, E: Emitter<R>> Tokenizer<R, E> {
     /// Construct a new tokenizer from some input and a custom emitter.
     ///
     /// Use this method over [`Tokenizer::new`] when you want to have more control over string allocation for
@@ -204,7 +204,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     }
 }
 
-impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
+impl<R: Reader, E: Emitter<R>> Iterator for Tokenizer<R, E> {
     type Item = Result<E::Token, R::Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -231,9 +231,9 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
 /// `Result<Token, _>`.
 ///
 /// This is the return value of [`Tokenizer::infallible`].
-pub struct InfallibleTokenizer<R: Reader<Error = Never>, E: Emitter>(Tokenizer<R, E>);
+pub struct InfallibleTokenizer<R: Reader<Error = Never>, E: Emitter<R>>(Tokenizer<R, E>);
 
-impl<R: Reader<Error = Never>, E: Emitter> Tokenizer<R, E> {
+impl<R: Reader<Error = Never>, E: Emitter<R>> Tokenizer<R, E> {
     /// Statically assert that this iterator is infallible.
     ///
     /// Call this to get rid of error handling when parsing HTML from strings.
@@ -242,7 +242,7 @@ impl<R: Reader<Error = Never>, E: Emitter> Tokenizer<R, E> {
     }
 }
 
-impl<R: Reader<Error = Never>, E: Emitter> Iterator for InfallibleTokenizer<R, E> {
+impl<R: Reader<Error = Never>, E: Emitter<R>> Iterator for InfallibleTokenizer<R, E> {
     type Item = E::Token;
 
     fn next(&mut self) -> Option<Self::Item> {

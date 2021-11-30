@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::VecDeque;
+use std::marker::PhantomData;
 use std::mem;
 
 use crate::Error;
@@ -27,7 +28,7 @@ use crate::Error;
 ///
 /// The state machine needs to have a functional implementation of
 /// `current_is_appropriate_end_tag_token` to do correct transitions, however.
-pub trait Emitter {
+pub trait Emitter<R> {
     /// The token type emitted by this emitter. This controls what type of values the [`crate::Tokenizer`]
     /// yields when used as an iterator.
     type Token;
@@ -53,13 +54,13 @@ pub trait Emitter {
     fn emit_string(&mut self, c: &str);
 
     /// Set the _current token_ to a start tag.
-    fn init_start_tag(&mut self);
+    fn init_start_tag(&mut self, reader: &R);
 
     /// Set the _current token_ to an end tag.
-    fn init_end_tag(&mut self);
+    fn init_end_tag(&mut self, reader: &R);
 
     /// Set the _current token_ to a comment.
-    fn init_comment(&mut self);
+    fn init_comment(&mut self, reader: &R);
 
     /// Emit the _current token_, assuming it is a tag.
     ///
@@ -115,7 +116,7 @@ pub trait Emitter {
     /// * the "public identifier" should be null (different from empty)
     /// * the "system identifier" should be null (different from empty)
     /// * the "force quirks" flag should be `false`
-    fn init_doctype(&mut self);
+    fn init_doctype(&mut self, reader: &R);
 
     /// Set the _current attribute_ to a new one, starting with empty name and value strings.
     ///
@@ -127,7 +128,7 @@ pub trait Emitter {
     /// emitted.
     ///
     /// If the current token is no tag at all, this method may panic.
-    fn init_attribute(&mut self);
+    fn init_attribute(&mut self, reader: &R);
 
     /// Append a string to the current attribute's name.
     ///
@@ -171,17 +172,31 @@ pub trait Emitter {
 }
 
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
-#[derive(Default)]
-pub struct DefaultEmitter<S> {
+pub struct DefaultEmitter<R, S> {
     current_characters: String,
     current_token: Option<Token<S>>,
     last_start_tag: String,
     current_attribute: Option<(String, String)>,
     seen_attributes: BTreeSet<String>,
     emitted_tokens: VecDeque<Token<S>>,
+    reader: PhantomData<R>,
 }
 
-impl DefaultEmitter<()> {
+impl<R, S> Default for DefaultEmitter<R, S> {
+    fn default() -> Self {
+        DefaultEmitter {
+            current_characters: String::new(),
+            current_token: None,
+            last_start_tag: String::new(),
+            current_attribute: None,
+            seen_attributes: BTreeSet::new(),
+            emitted_tokens: VecDeque::new(),
+            reader: PhantomData::default(),
+        }
+    }
+}
+
+impl<R> DefaultEmitter<R, ()> {
     fn emit_token(&mut self, token: Token<()>) {
         self.flush_current_characters();
         self.emitted_tokens.push_front(token);
@@ -225,7 +240,7 @@ impl DefaultEmitter<()> {
     }
 }
 
-impl Emitter for DefaultEmitter<()> {
+impl<R> Emitter<R> for DefaultEmitter<R, ()> {
     type Token = Token<()>;
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
@@ -252,15 +267,15 @@ impl Emitter for DefaultEmitter<()> {
         self.current_characters.push_str(s);
     }
 
-    fn init_start_tag(&mut self) {
+    fn init_start_tag(&mut self, _reader: &R) {
         self.current_token = Some(Token::StartTag(Default::default()));
     }
-    fn init_end_tag(&mut self) {
+    fn init_end_tag(&mut self, _reader: &R) {
         self.current_token = Some(Token::EndTag(Default::default()));
         self.seen_attributes.clear();
     }
 
-    fn init_comment(&mut self) {
+    fn init_comment(&mut self, _reader: &R) {
         self.current_token = Some(Token::Comment(String::new()));
     }
     fn emit_current_tag(&mut self) {
@@ -340,7 +355,7 @@ impl Emitter for DefaultEmitter<()> {
             _ => debug_assert!(false),
         }
     }
-    fn init_doctype(&mut self) {
+    fn init_doctype(&mut self, _reader: &R) {
         self.current_token = Some(Token::Doctype(Doctype {
             name: String::new(),
             force_quirks: false,
@@ -349,7 +364,7 @@ impl Emitter for DefaultEmitter<()> {
         }));
     }
 
-    fn init_attribute(&mut self) {
+    fn init_attribute(&mut self, _reader: &R) {
         self.flush_current_attribute();
         self.current_attribute = Some((String::new(), String::new()));
     }

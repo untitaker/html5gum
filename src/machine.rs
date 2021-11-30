@@ -8,7 +8,9 @@ use crate::{Emitter, Error, Reader, Tokenizer};
 // Note: This is not implemented as a method on Tokenizer because there's fields on Tokenizer that
 // should not be available in this method, such as Tokenizer.to_reconsume or the Reader instance
 #[inline]
-pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<ControlToken, R::Error> {
+pub fn consume<R: Reader, E: Emitter<R>>(
+    slf: &mut Tokenizer<R, E>,
+) -> Result<ControlToken, R::Error> {
     macro_rules! mutate_character_reference {
         (* $mul:literal + $x:ident - $sub:literal) => {
             match slf
@@ -122,7 +124,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Ok(ControlToken::Continue)
             }
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_start_tag();
+                slf.emitter.init_start_tag(&slf.reader);
                 slf.state = State::TagName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -130,7 +132,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             c @ Some('?') => {
                 slf.emitter
                     .emit_error(Error::UnexpectedQuestionMarkInsteadOfTagName);
-                slf.emitter.init_comment();
+                slf.emitter.init_comment(&slf.reader);
                 slf.state = State::BogusComment;
                 slf.unread_char(c);
                 Ok(ControlToken::Continue)
@@ -151,7 +153,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::EndTagOpen => match slf.read_char()? {
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
+                slf.emitter.init_end_tag(&slf.reader);
                 slf.state = State::TagName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -169,7 +171,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             Some(x) => {
                 slf.emitter
                     .emit_error(Error::InvalidFirstCharacterOfTagName);
-                slf.emitter.init_comment();
+                slf.emitter.init_comment(&slf.reader);
                 slf.state = State::BogusComment;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -218,7 +220,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::RcDataEndTagOpen => match slf.read_char()? {
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
+                slf.emitter.init_end_tag(&slf.reader);
                 slf.state = State::RcDataEndTagName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -273,7 +275,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::RawTextEndTagOpen => match slf.read_char()? {
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
+                slf.emitter.init_end_tag(&slf.reader);
                 slf.state = State::RawTextEndTagName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -333,7 +335,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::ScriptDataEndTagOpen => match slf.read_char()? {
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
+                slf.emitter.init_end_tag(&slf.reader);
                 slf.state = State::ScriptDataEndTagName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -501,7 +503,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::ScriptDataEscapedEndTagOpen => match slf.read_char()? {
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
+                slf.emitter.init_end_tag(&slf.reader);
                 slf.state = State::ScriptDataEscapedEndTagName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -692,13 +694,13 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             Some('=') => {
                 slf.emitter
                     .emit_error(Error::UnexpectedEqualsSignBeforeAttributeName);
-                slf.emitter.init_attribute();
+                slf.emitter.init_attribute(&slf.reader);
                 slf.emitter.push_attribute_name("=");
                 slf.state = State::AttributeName;
                 Ok(ControlToken::Continue)
             }
             Some(x) => {
-                slf.emitter.init_attribute();
+                slf.emitter.init_attribute(&slf.reader);
                 slf.state = State::AttributeName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -752,7 +754,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
-                slf.emitter.init_attribute();
+                slf.emitter.init_attribute(&slf.reader);
                 slf.state = State::AttributeName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -929,7 +931,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::MarkupDeclarationOpen => match slf.read_char()? {
             Some('-') if slf.try_read_string("-", true)? => {
-                slf.emitter.init_comment();
+                slf.emitter.init_comment(&slf.reader);
                 slf.state = State::CommentStart;
                 Ok(ControlToken::Continue)
             }
@@ -946,14 +948,14 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 // let's hope that bogus comment can just sort of skip over cdata
                 slf.emitter.emit_error(Error::CdataInHtmlContent);
 
-                slf.emitter.init_comment();
+                slf.emitter.init_comment(&slf.reader);
                 slf.emitter.push_comment("[CDATA[");
                 slf.state = State::BogusComment;
                 Ok(ControlToken::Continue)
             }
             c => {
                 slf.emitter.emit_error(Error::IncorrectlyOpenedComment);
-                slf.emitter.init_comment();
+                slf.emitter.init_comment(&slf.reader);
                 slf.state = State::BogusComment;
                 slf.unread_char(c);
                 Ok(ControlToken::Continue)
@@ -1159,7 +1161,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
             None => {
                 slf.emitter.emit_error(Error::EofInDoctype);
-                slf.emitter.init_doctype();
+                slf.emitter.init_doctype(&slf.reader);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
@@ -1176,14 +1178,14 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             Some(whitespace_pat!()) => Ok(ControlToken::Continue),
             Some('\0') => {
                 slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                slf.emitter.init_doctype();
+                slf.emitter.init_doctype(&slf.reader);
                 slf.emitter.push_doctype_name("\u{fffd}");
                 slf.state = State::DoctypeName;
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
                 slf.emitter.emit_error(Error::MissingDoctypeName);
-                slf.emitter.init_doctype();
+                slf.emitter.init_doctype(&slf.reader);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
                 slf.emitter.emit_current_doctype();
@@ -1191,13 +1193,13 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
             None => {
                 slf.emitter.emit_error(Error::EofInDoctype);
-                slf.emitter.init_doctype();
+                slf.emitter.init_doctype(&slf.reader);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
-                slf.emitter.init_doctype();
+                slf.emitter.init_doctype(&slf.reader);
                 slf.emitter
                     .push_doctype_name(ctostr!(x.to_ascii_lowercase()));
                 slf.state = State::DoctypeName;
