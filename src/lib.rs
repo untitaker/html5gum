@@ -16,7 +16,7 @@ mod utils;
 #[cfg(feature = "integration-tests")]
 pub use utils::State;
 
-pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
+pub use emitter::{Attribute, DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
 pub use never::Never;
 pub use reader::{BufReadReader, Readable, Reader, StringReader};

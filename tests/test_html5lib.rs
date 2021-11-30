@@ -1,4 +1,4 @@
-use html5gum::{Doctype, EndTag, Error, Reader, StartTag, State, Token, Tokenizer};
+use html5gum::{Attribute, Doctype, EndTag, Error, Reader, StartTag, State, Token, Tokenizer};
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
@@ -77,14 +77,36 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
                     OutputToken::StartTag(_, name, attributes) => Token::StartTag(StartTag {
                         self_closing: false,
                         name,
-                        attributes,
+                        attributes: attributes
+                            .into_iter()
+                            .map(|(k, v)| {
+                                (
+                                    k,
+                                    Attribute {
+                                        value: v,
+                                        ..Default::default()
+                                    },
+                                )
+                            })
+                            .collect(),
                         name_span: (),
                     }),
                     OutputToken::StartTag2(_, name, attributes, self_closing) => {
                         Token::StartTag(StartTag {
                             self_closing,
                             name,
-                            attributes,
+                            attributes: attributes
+                                .into_iter()
+                                .map(|(k, v)| {
+                                    (
+                                        k,
+                                        Attribute {
+                                            value: v,
+                                            ..Default::default()
+                                        },
+                                    )
+                                })
+                                .collect(),
                             name_span: (),
                         })
                     }

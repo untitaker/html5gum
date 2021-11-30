@@ -29,9 +29,22 @@ fn test() {
     .infallible()
     {
         if let Token::StartTag(tag) = token {
-            labels.push(Label::primary(file_id, tag.name_span).with_message("start tag"));
+            if tag.name == "h1" {
+                labels.push(Label::primary(file_id, tag.name_span).with_message("start tag"));
+            } else {
+                for attr in tag.attributes.values() {
+                    labels.push(
+                        Label::primary(file_id, attr.name_span.clone()).with_message("attr name"),
+                    );
+                    labels.push(
+                        Label::primary(file_id, attr.value_span.clone()).with_message("attr value"),
+                    );
+                }
+            }
         } else if let Token::EndTag(tag) = token {
-            labels.push(Label::primary(file_id, tag.name_span).with_message("end tag"));
+            if tag.name == "h1" {
+                labels.push(Label::primary(file_id, tag.name_span).with_message("end tag"));
+            }
         }
     }
 

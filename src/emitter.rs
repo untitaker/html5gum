@@ -212,7 +212,11 @@ impl<R> DefaultEmitter<R, ()> {
                         .and_modify(|_| {
                             error = Some(Error::DuplicateAttribute);
                         })
-                        .or_insert(v);
+                        .or_insert(Attribute {
+                            value: v,
+                            name_span: (),
+                            value_span: (),
+                        });
 
                     if let Some(e) = error {
                         self.emit_error(e);
@@ -443,10 +447,23 @@ pub struct StartTag<S> {
     ///
     /// Duplicate attributes are ignored after the first one as per WHATWG spec. Implement your own
     /// [`Emitter`] to tweak this behavior.
-    pub attributes: BTreeMap<String, String>,
+    pub attributes: BTreeMap<String, Attribute<S>>,
 
     /// The source code span of the tag name.
     pub name_span: S,
+}
+
+/// A HTML attribute value (plus spans).
+#[derive(Debug, Default, Eq, PartialEq)]
+pub struct Attribute<S> {
+    /// The value of the attribute.
+    pub value: String,
+
+    /// The source code span of the attribute name.
+    pub name_span: S,
+
+    /// The source code span of the attribute value.
+    pub value_span: S,
 }
 
 /// A HTML end/close tag, such as `</p>` or `</a>`.

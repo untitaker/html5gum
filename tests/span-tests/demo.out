@@ -1,7 +1,11 @@
 note:
-  ┌─ test.html:1:17
+  ┌─ test.html:1:1
   │
 1 │ this is a tag: <h1>test</h1>
-  │                 ^^       ^^ end tag
-  │                 │
-  │                 start tag
+  │ ^^^^^^          ^^       ^^ end tag
+  │ │               │
+  │ │               start tag
+  │ attr value
+2 │
+3 │ tags can have attributes: <div id = foobar>
+  │                                ^^ attr name

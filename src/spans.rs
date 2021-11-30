@@ -5,7 +5,7 @@ use std::{
     mem,
 };
 
-use crate::{Doctype, Emitter, EndTag, Error, Reader, StartTag, Token};
+use crate::{Attribute, Doctype, Emitter, EndTag, Error, Reader, StartTag, Token};
 
 type Span = std::ops::Range<usize>;
 
@@ -58,7 +58,7 @@ pub struct SpanEmitter<R> {
     current_characters: String,
     current_token: Option<Token<Span>>,
     last_start_tag: String,
-    current_attribute: Option<(String, String)>,
+    current_attribute: Option<(String, Attribute<Span>)>,
     seen_attributes: BTreeSet<String>,
     emitted_tokens: VecDeque<Token<Span>>,
     reader: PhantomData<R>,
@@ -262,15 +262,25 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
         }));
     }
 
-    fn init_attribute(&mut self, _reader: &R) {
+    fn init_attribute(&mut self, reader: &R) {
         self.flush_current_attribute();
-        self.current_attribute = Some((String::new(), String::new()));
+        self.current_attribute = Some((
+            String::new(),
+            Attribute {
+                name_span: reader.get_pos() - 1..reader.get_pos() - 1,
+                ..Default::default()
+            },
+        ));
     }
     fn push_attribute_name(&mut self, s: &str) {
-        self.current_attribute.as_mut().unwrap().0.push_str(s);
+        let current_attr = self.current_attribute.as_mut().unwrap();
+        current_attr.0.push_str(s);
+        current_attr.1.name_span.end += s.len();
     }
     fn push_attribute_value(&mut self, s: &str) {
-        self.current_attribute.as_mut().unwrap().1.push_str(s);
+        let current_attr = self.current_attribute.as_mut().unwrap();
+        current_attr.1.value.push_str(s);
+        current_attr.1.value_span.end += s.len();
     }
     fn set_doctype_public_identifier(&mut self, value: &str) {
         if let Some(Token::Doctype(Doctype {
