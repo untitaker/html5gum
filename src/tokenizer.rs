@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use crate::machine;
 use crate::utils::{
     control_pat, noncharacter_pat, surrogate_pat, ControlToken, State as InternalState,
@@ -55,6 +57,40 @@ impl<R: Reader> Tokenizer<R> {
     }
 }
 
+/// The states you can set the tokenizer to.
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum State {
+    /// The [Data state](https://html.spec.whatwg.org/#data-state).
+    Data,
+    /// The [PLAINTEXT state](https://html.spec.whatwg.org/#plaintext-state).
+    PlainText,
+    /// The [RCDATA state](https://html.spec.whatwg.org/#rcdata-state).
+    RcData,
+    /// The [RAWTEXT state](https://html.spec.whatwg.org/#rawtext-state).
+    RawText,
+    /// The [Script data state](https://html.spec.whatwg.org/#script-data-state).
+    ScriptData,
+    /// The [Script data escaped state](https://html.spec.whatwg.org/#script-data-escaped-state).
+    ScriptDataEscaped,
+    /// The [Script data double escaped state](https://html.spec.whatwg.org/#script-data-double-escaped-state).
+    ScriptDataDoubleEscaped,
+}
+
+impl From<State> for InternalState {
+    fn from(state: State) -> Self {
+        match state {
+            State::Data => InternalState::Data,
+            State::PlainText => InternalState::PlainText,
+            State::RcData => InternalState::RcData,
+            State::RawText => InternalState::RawText,
+            State::ScriptData => InternalState::ScriptData,
+            State::ScriptDataEscaped => InternalState::ScriptDataEscaped,
+            State::ScriptDataDoubleEscaped => InternalState::ScriptDataDoubleEscaped,
+        }
+    }
+}
+
 impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     /// Construct a new tokenizer from some input and a custom emitter.
     ///
@@ -81,12 +117,9 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
         self.state = state;
     }
 
-    /// Set the statemachine to start/continue in [plaintext
-    /// state](https://html.spec.whatwg.org/#plaintext-state).
-    ///
-    /// This tokenizer never gets into that state naturally.
-    pub fn set_plaintext_state(&mut self) {
-        self.state = InternalState::PlainText;
+    /// Set the statemachine to start/continue in the given state.
+    pub fn set_state(&mut self, state: State) {
+        self.state = state.into();
     }
 
     /// Test-internal function to override internal state.
@@ -252,5 +285,19 @@ impl<R: Reader<Error = Never>, E: Emitter> Iterator for InfallibleTokenizer<R, E
             Ok(token) => Some(token),
             Err(e) => match e {},
         }
+    }
+}
+
+impl<R: Reader<Error = Never>, E: Emitter> Deref for InfallibleTokenizer<R, E> {
+    type Target = Tokenizer<R, E>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<R: Reader<Error = Never>, E: Emitter> DerefMut for InfallibleTokenizer<R, E> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }

@@ -19,4 +19,4 @@ pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
 pub use never::Never;
 pub use reader::{BufReadReader, Readable, Reader, StringReader};
-pub use tokenizer::{InfallibleTokenizer, Tokenizer};
+pub use tokenizer::{InfallibleTokenizer, State, Tokenizer};
