@@ -763,12 +763,12 @@ pub fn consume<R: Reader, E: Emitter<R>>(
         State::BeforeAttributeValue => match slf.read_char()? {
             Some(whitespace_pat!()) => Ok(ControlToken::Continue),
             Some('"') => {
-                slf.emitter.init_attribute_value(&slf.reader);
+                slf.emitter.init_attribute_value(&slf.reader, true);
                 slf.state = State::AttributeValueDoubleQuoted;
                 Ok(ControlToken::Continue)
             }
             Some('\'') => {
-                slf.emitter.init_attribute_value(&slf.reader);
+                slf.emitter.init_attribute_value(&slf.reader, true);
                 slf.state = State::AttributeValueSingleQuoted;
                 Ok(ControlToken::Continue)
             }
@@ -779,7 +779,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c => {
-                slf.emitter.init_attribute_value(&slf.reader);
+                slf.emitter.init_attribute_value(&slf.reader, false);
                 slf.state = State::AttributeValueUnquoted;
                 slf.unread_char(c);
                 Ok(ControlToken::Continue)

@@ -12,8 +12,8 @@ note:
   │                                attr name
 4 │
 5 │ Attribute values can be quoted: <input name = 'age' type = "number">
-  │                                        ^^^^   ^^^   ^^^^   ^^^^^^ attr value
-  │                                        │      │     │
-  │                                        │      │     attr name
-  │                                        │      attr value
+  │                                        ^^^^    ^^^  ^^^^    ^^^^^^ attr value
+  │                                        │       │    │
+  │                                        │       │    attr name
+  │                                        │       attr value
   │                                        attr name

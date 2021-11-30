@@ -273,9 +273,10 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
         ));
     }
 
-    fn init_attribute_value(&mut self, reader: &R) {
+    fn init_attribute_value(&mut self, reader: &R, quoted: bool) {
         let current_attr = self.current_attribute.as_mut().unwrap();
-        current_attr.1.value_span = reader.get_pos() - 1..reader.get_pos() - 1;
+        let offset = if quoted { 0 } else { 1 };
+        current_attr.1.value_span = reader.get_pos() - offset..reader.get_pos() - offset;
     }
 
     fn push_attribute_name(&mut self, s: &str) {

@@ -131,9 +131,11 @@ pub trait Emitter<R> {
     fn init_attribute_name(&mut self, reader: &R);
 
     /// Called before the first push_attribute_value call.
+    /// If the value is wrappend in double or single quotes `quoted` is set to true, otherwise false.
     ///
     /// If there is no current attribute, this method may panic.
-    fn init_attribute_value(&mut self, #[allow(unused_variables)] reader: &R) {}
+    #[allow(unused_variables)]
+    fn init_attribute_value(&mut self, reader: &R, quoted: bool) {}
 
     /// Append a string to the current attribute's name.
     ///
