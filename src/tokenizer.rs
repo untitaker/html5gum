@@ -87,6 +87,12 @@ impl<R: Reader, E: Emitter<R>> Tokenizer<R, E> {
         self.state = State::PlainText;
     }
 
+    /// Just a helper method for the machine.
+    #[inline]
+    pub(crate) fn emit_error(&mut self, error: Error) {
+        self.emitter.emit_error(error, &self.reader);
+    }
+
     /// Test-internal function to override internal state.
     ///
     /// Only available with the `integration-tests` feature which is not public API.
@@ -104,17 +110,16 @@ impl<R: Reader, E: Emitter<R>> Tokenizer<R, E> {
     fn validate_char(&mut self, c: char) {
         match c as u32 {
             surrogate_pat!() => {
-                self.emitter.emit_error(Error::SurrogateInInputStream);
+                self.emit_error(Error::SurrogateInInputStream);
             }
             noncharacter_pat!() => {
-                self.emitter.emit_error(Error::NoncharacterInInputStream);
+                self.emit_error(Error::NoncharacterInInputStream);
             }
             // control without whitespace or nul
             x @ control_pat!()
                 if !matches!(x, 0x0000 | 0x0009 | 0x000a | 0x000c | 0x000d | 0x0020) =>
             {
-                self.emitter
-                    .emit_error(Error::ControlCharacterInInputStream);
+                self.emit_error(Error::ControlCharacterInInputStream);
             }
             _ => (),
         }

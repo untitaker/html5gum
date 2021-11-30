@@ -1,19 +1,29 @@
 note:
-  ┌─ test.html:1:1
-  │
-1 │ this is a tag: <h1>test</h1>
-  │                 ^^       ^^ end tag
-  │                 │
-  │                 start tag
-2 │
-3 │ tags can have attributes: <div id = foobar>
-  │                                ^^   ^^^^^^ attr value
-  │                                │
-  │                                attr name
-4 │
-5 │ Attribute values can be quoted: <input name = 'age' type = "number">
-  │                                        ^^^^    ^^^  ^^^^    ^^^^^^ attr value
-  │                                        │       │    │
-  │                                        │       │    attr name
-  │                                        │       attr value
-  │                                        attr name
+   ┌─ test.html:1:17
+   │
+ 1 │ this is a tag: <h1>test</h1>
+   │                 ^^       ^^ end tag
+   │                 │
+   │                 start tag
+   ·
+ 5 │ Attribute values can be quoted: <input name = 'age' type = "number">
+   │                                        ^^^^    ^^^  ^^^^    ^^^^^^ attr value
+   │                                        │       │    │
+   │                                        │       │    attr name
+   │                                        │       attr value
+   │                                        attr name
+ 6 │
+ 7 │ But you cannot put attributes everywhere: </nope data=foobar>
+   │                                                  ^^^^ end-tag-with-attributes
+ 8 │
+ 9 │ Please mind the gap: < test
+   │                       ^ invalid-first-character-of-tag-name
+10 │
+11 │ The pirate says &arrrrr;
+   │                        ^ unknown-named-character-reference
+12 │
+13 │ Does this open two pages? <a href=foo.html href=bar.html>click me</a>
+   │                              ^^^^ duplicate-attribute
+14 │
+15 │ Do you start or do you end? </yes/>
+   │                                   ^ end-tag-with-trailing-solidus

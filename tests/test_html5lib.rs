@@ -294,9 +294,9 @@ fn run_test_inner<R: Reader>(
     for token in tokenizer {
         let token = token.unwrap();
 
-        if let Token::Error(e) = token {
+        if let Token::Error { error, .. } = token {
             actual_errors.push(ParseError {
-                code: ParseErrorInner(e),
+                code: ParseErrorInner(error),
             });
         } else {
             actual_tokens.push(token);

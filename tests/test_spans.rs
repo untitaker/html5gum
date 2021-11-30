@@ -31,7 +31,7 @@ fn test() {
         if let Token::StartTag(tag) = token {
             if tag.name == "h1" {
                 labels.push(Label::primary(file_id, tag.name_span).with_message("start tag"));
-            } else {
+            } else if tag.name == "input" {
                 for attr in tag.attributes.values() {
                     labels.push(
                         Label::primary(file_id, attr.name_span.clone()).with_message("attr name"),
@@ -45,6 +45,8 @@ fn test() {
             if tag.name == "h1" {
                 labels.push(Label::primary(file_id, tag.name_span).with_message("end tag"));
             }
+        } else if let Token::Error { error, span } = token {
+            labels.push(Label::primary(file_id, span).with_message(error.to_string()));
         }
     }
 

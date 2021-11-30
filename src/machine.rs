@@ -39,7 +39,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\0");
                 Ok(ControlToken::Continue)
             }
@@ -60,7 +60,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
@@ -76,7 +76,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
@@ -92,7 +92,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
@@ -104,7 +104,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
         },
         State::PlainText => match slf.read_char()? {
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
@@ -130,21 +130,19 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c @ Some('?') => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedQuestionMarkInsteadOfTagName);
+                slf.emit_error(Error::UnexpectedQuestionMarkInsteadOfTagName);
                 slf.emitter.init_comment(&slf.reader);
                 slf.state = State::BogusComment;
                 slf.unread_char(c);
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofBeforeTagName);
+                slf.emit_error(Error::EofBeforeTagName);
                 slf.emitter.emit_string("<");
                 Ok(ControlToken::Eof)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::InvalidFirstCharacterOfTagName);
+                slf.emit_error(Error::InvalidFirstCharacterOfTagName);
                 slf.state = State::Data;
                 slf.emitter.emit_string("<");
                 slf.unread_char(c);
@@ -159,18 +157,17 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::MissingEndTagName);
+                slf.emit_error(Error::MissingEndTagName);
                 slf.state = State::Data;
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofBeforeTagName);
+                slf.emit_error(Error::EofBeforeTagName);
                 slf.emitter.emit_string("</");
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
-                slf.emitter
-                    .emit_error(Error::InvalidFirstCharacterOfTagName);
+                slf.emit_error(Error::InvalidFirstCharacterOfTagName);
                 slf.emitter.init_comment(&slf.reader);
                 slf.state = State::BogusComment;
                 slf.unread_char(Some(x));
@@ -192,7 +189,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_tag_name("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
@@ -201,7 +198,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                slf.emit_error(Error::EofInTag);
                 Ok(ControlToken::Eof)
             }
         },
@@ -409,13 +406,12 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                slf.emit_error(Error::EofInScriptHtmlCommentLikeText);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -434,14 +430,13 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.state = State::ScriptDataEscaped;
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                slf.emit_error(Error::EofInScriptHtmlCommentLikeText);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -465,14 +460,13 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.state = State::ScriptDataEscaped;
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                slf.emit_error(Error::EofInScriptHtmlCommentLikeText);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -575,13 +569,12 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                slf.emit_error(Error::EofInScriptHtmlCommentLikeText);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -601,14 +594,13 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.state = State::ScriptDataDoubleEscaped;
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                slf.emit_error(Error::EofInScriptHtmlCommentLikeText);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -633,14 +625,13 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.state = State::ScriptDataDoubleEscaped;
                 slf.emitter.emit_string("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                slf.emit_error(Error::EofInScriptHtmlCommentLikeText);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -692,8 +683,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('=') => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedEqualsSignBeforeAttributeName);
+                slf.emit_error(Error::UnexpectedEqualsSignBeforeAttributeName);
                 slf.emitter.init_attribute_name(&slf.reader);
                 slf.emitter.push_attribute_name("=");
                 slf.state = State::AttributeName;
@@ -717,13 +707,12 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_attribute_name("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             Some(x @ '"' | x @ '\'' | x @ '<') => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedCharacterInAttributeName);
+                slf.emit_error(Error::UnexpectedCharacterInAttributeName);
                 slf.emitter
                     .push_attribute_name(ctostr!(x.to_ascii_lowercase()));
                 Ok(ControlToken::Continue)
@@ -750,7 +739,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                slf.emit_error(Error::EofInTag);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -773,7 +762,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::MissingAttributeValue);
+                slf.emit_error(Error::MissingAttributeValue);
                 slf.state = State::Data;
                 slf.emitter.emit_current_tag();
                 Ok(ControlToken::Continue)
@@ -796,12 +785,12 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_attribute_value("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                slf.emit_error(Error::EofInTag);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -820,12 +809,12 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_attribute_value("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                slf.emit_error(Error::EofInTag);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -849,18 +838,17 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_attribute_value("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             Some(x @ '"' | x @ '\'' | x @ '<' | x @ '=' | x @ '\u{60}') => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedCharacterInUnquotedAttributeValue);
+                slf.emit_error(Error::UnexpectedCharacterInUnquotedAttributeValue);
                 slf.emitter.push_attribute_value(ctostr!(x));
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                slf.emit_error(Error::EofInTag);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -883,12 +871,11 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                slf.emit_error(Error::EofInTag);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBetweenAttributes);
+                slf.emit_error(Error::MissingWhitespaceBetweenAttributes);
                 slf.state = State::BeforeAttributeName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -896,17 +883,17 @@ pub fn consume<R: Reader, E: Emitter<R>>(
         },
         State::SelfClosingStartTag => match slf.read_char()? {
             Some('>') => {
-                slf.emitter.set_self_closing();
+                slf.emitter.set_self_closing(&slf.reader);
                 slf.state = State::Data;
                 slf.emitter.emit_current_tag();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                slf.emit_error(Error::EofInTag);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
-                slf.emitter.emit_error(Error::UnexpectedSolidusInTag);
+                slf.emit_error(Error::UnexpectedSolidusInTag);
                 slf.state = State::BeforeAttributeName;
                 slf.unread_char(Some(x));
                 Ok(ControlToken::Continue)
@@ -923,7 +910,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Eof)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_comment("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
@@ -949,7 +936,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 // missing: cdata transition
                 //
                 // let's hope that bogus comment can just sort of skip over cdata
-                slf.emitter.emit_error(Error::CdataInHtmlContent);
+                slf.emit_error(Error::CdataInHtmlContent);
 
                 slf.emitter.init_comment(&slf.reader);
                 slf.emitter.push_comment("[CDATA[");
@@ -957,7 +944,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c => {
-                slf.emitter.emit_error(Error::IncorrectlyOpenedComment);
+                slf.emit_error(Error::IncorrectlyOpenedComment);
                 slf.emitter.init_comment(&slf.reader);
                 slf.state = State::BogusComment;
                 slf.unread_char(c);
@@ -970,7 +957,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::AbruptClosingOfEmptyComment);
+                slf.emit_error(Error::AbruptClosingOfEmptyComment);
                 slf.state = State::Data;
                 slf.emitter.emit_current_comment();
                 Ok(ControlToken::Continue)
@@ -987,13 +974,13 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::AbruptClosingOfEmptyComment);
+                slf.emit_error(Error::AbruptClosingOfEmptyComment);
                 slf.state = State::Data;
                 slf.emitter.emit_current_comment();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInComment);
+                slf.emit_error(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 Ok(ControlToken::Eof)
             }
@@ -1015,12 +1002,12 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_comment("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInComment);
+                slf.emit_error(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 Ok(ControlToken::Eof)
             }
@@ -1074,7 +1061,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c => {
-                slf.emitter.emit_error(Error::NestedComment);
+                slf.emit_error(Error::NestedComment);
                 slf.unread_char(c);
                 slf.state = State::CommentEnd;
                 Ok(ControlToken::Continue)
@@ -1086,7 +1073,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInComment);
+                slf.emit_error(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 Ok(ControlToken::Eof)
             }
@@ -1112,7 +1099,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInComment);
+                slf.emit_error(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 Ok(ControlToken::Eof)
             }
@@ -1133,13 +1120,13 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::IncorrectlyClosedComment);
+                slf.emit_error(Error::IncorrectlyClosedComment);
                 slf.state = State::Data;
                 slf.emitter.emit_current_comment();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInComment);
+                slf.emit_error(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 Ok(ControlToken::Eof)
             }
@@ -1163,15 +1150,14 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.init_doctype(&slf.reader);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBeforeDoctypeName);
+                slf.emit_error(Error::MissingWhitespaceBeforeDoctypeName);
                 slf.unread_char(c);
                 slf.state = State::BeforeDoctypeName;
                 Ok(ControlToken::Continue)
@@ -1180,14 +1166,14 @@ pub fn consume<R: Reader, E: Emitter<R>>(
         State::BeforeDoctypeName => match slf.read_char()? {
             Some(whitespace_pat!()) => Ok(ControlToken::Continue),
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.init_doctype(&slf.reader);
                 slf.emitter.push_doctype_name("\u{fffd}");
                 slf.state = State::DoctypeName;
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::MissingDoctypeName);
+                slf.emit_error(Error::MissingDoctypeName);
                 slf.emitter.init_doctype(&slf.reader);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
@@ -1195,7 +1181,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.init_doctype(&slf.reader);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
@@ -1220,12 +1206,12 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_doctype_name("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
@@ -1244,7 +1230,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
@@ -1258,8 +1244,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::InvalidCharacterSequenceAfterDoctypeName);
+                slf.emit_error(Error::InvalidCharacterSequenceAfterDoctypeName);
                 slf.emitter.set_force_quirks();
                 slf.unread_char(c);
                 slf.state = State::BogusDoctype;
@@ -1272,36 +1257,32 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('"') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
+                slf.emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
                 slf.emitter.set_doctype_public_identifier("");
                 slf.state = State::DoctypePublicIdentifierDoubleQuoted;
                 Ok(ControlToken::Continue)
             }
             Some('\'') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
+                slf.emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
                 slf.emitter.set_doctype_public_identifier("");
                 slf.state = State::DoctypePublicIdentifierSingleQuoted;
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypePublicIdentifier);
+                slf.emit_error(Error::MissingDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
+                slf.emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.unread_char(c);
                 slf.state = State::BogusDoctype;
@@ -1321,22 +1302,20 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypePublicIdentifier);
+                slf.emit_error(Error::MissingDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
+                slf.emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.unread_char(c);
                 slf.state = State::BogusDoctype;
@@ -1349,19 +1328,19 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_doctype_public_identifier("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
+                slf.emit_error(Error::AbruptDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
@@ -1377,19 +1356,19 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_doctype_public_identifier("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
+                slf.emit_error(Error::AbruptDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
@@ -1410,28 +1389,25 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('"') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
+                slf.emit_error(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
                 slf.emitter.set_doctype_system_identifier("");
                 slf.state = State::DoctypeSystemIdentifierDoubleQuoted;
                 Ok(ControlToken::Continue)
             }
             Some('\'') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
+                slf.emit_error(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
                 slf.emitter.set_doctype_system_identifier("");
                 slf.state = State::DoctypeSystemIdentifierSingleQuoted;
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                slf.emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.unread_char(c);
                 slf.state = State::BogusDoctype;
@@ -1456,14 +1432,13 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                slf.emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::BogusDoctype;
                 slf.unread_char(c);
@@ -1476,36 +1451,32 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('"') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
+                slf.emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
                 slf.emitter.set_doctype_system_identifier("");
                 slf.state = State::DoctypeSystemIdentifierDoubleQuoted;
                 Ok(ControlToken::Continue)
             }
             Some('\'') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
+                slf.emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
                 slf.emitter.set_doctype_system_identifier("");
                 slf.state = State::DoctypeSystemIdentifierSingleQuoted;
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypeSystemIdentifier);
+                slf.emit_error(Error::MissingDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                slf.emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::BogusDoctype;
                 slf.unread_char(c);
@@ -1525,22 +1496,20 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypeSystemIdentifier);
+                slf.emit_error(Error::MissingDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                slf.emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::BogusDoctype;
                 slf.unread_char(c);
@@ -1553,19 +1522,19 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_doctype_system_identifier("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
+                slf.emit_error(Error::AbruptDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
@@ -1581,19 +1550,19 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 slf.emitter.push_doctype_system_identifier("\u{fffd}");
                 Ok(ControlToken::Continue)
             }
             Some('>') => {
-                slf.emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
+                slf.emit_error(Error::AbruptDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.state = State::Data;
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
@@ -1611,14 +1580,13 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                slf.emit_error(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 Ok(ControlToken::Eof)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedCharacterAfterDoctypeSystemIdentifier);
+                slf.emit_error(Error::UnexpectedCharacterAfterDoctypeSystemIdentifier);
                 slf.unread_char(c);
                 slf.state = State::BogusDoctype;
                 Ok(ControlToken::Continue)
@@ -1631,7 +1599,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                slf.emit_error(Error::UnexpectedNullCharacter);
                 Ok(ControlToken::Continue)
             }
             None => {
@@ -1646,7 +1614,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInCdata);
+                slf.emit_error(Error::EofInCdata);
                 Ok(ControlToken::Eof)
             }
             Some(x) => {
@@ -1728,8 +1696,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                     Ok(ControlToken::Continue)
                 } else {
                     if char_ref_name_last_character != Some(';') {
-                        slf.emitter
-                            .emit_error(Error::MissingSemicolonAfterCharacterReference);
+                        slf.emit_error(Error::MissingSemicolonAfterCharacterReference);
                     }
 
                     slf.temporary_buffer.clear();
@@ -1756,8 +1723,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c @ Some(';') => {
-                slf.emitter
-                    .emit_error(Error::UnknownNamedCharacterReference);
+                slf.emit_error(Error::UnknownNamedCharacterReference);
                 slf.unread_char(c);
                 slf.state = slf.return_state.take().unwrap();
                 Ok(ControlToken::Continue)
@@ -1790,8 +1756,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
+                slf.emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
                 slf.flush_code_points_consumed_as_character_reference();
                 slf.unread_char(c);
                 slf.state = slf.return_state.take().unwrap();
@@ -1805,8 +1770,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
+                slf.emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
                 slf.flush_code_points_consumed_as_character_reference();
                 slf.unread_char(c);
                 slf.state = slf.return_state.take().unwrap();
@@ -1831,8 +1795,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::MissingSemicolonAfterCharacterReference);
+                slf.emit_error(Error::MissingSemicolonAfterCharacterReference);
                 slf.unread_char(c);
                 slf.state = State::NumericCharacterReferenceEnd;
                 Ok(ControlToken::Continue)
@@ -1848,8 +1811,7 @@ pub fn consume<R: Reader, E: Emitter<R>>(
                 Ok(ControlToken::Continue)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::MissingSemicolonAfterCharacterReference);
+                slf.emit_error(Error::MissingSemicolonAfterCharacterReference);
                 slf.unread_char(c);
                 slf.state = State::NumericCharacterReferenceEnd;
                 Ok(ControlToken::Continue)
@@ -1858,28 +1820,26 @@ pub fn consume<R: Reader, E: Emitter<R>>(
         State::NumericCharacterReferenceEnd => {
             match slf.character_reference_code {
                 0x00 => {
-                    slf.emitter.emit_error(Error::NullCharacterReference);
+                    slf.emit_error(Error::NullCharacterReference);
                     slf.character_reference_code = 0xfffd;
                 }
                 0x110000.. => {
-                    slf.emitter
-                        .emit_error(Error::CharacterReferenceOutsideUnicodeRange);
+                    slf.emit_error(Error::CharacterReferenceOutsideUnicodeRange);
                     slf.character_reference_code = 0xfffd;
                 }
                 surrogate_pat!() => {
-                    slf.emitter.emit_error(Error::SurrogateCharacterReference);
+                    slf.emit_error(Error::SurrogateCharacterReference);
                     slf.character_reference_code = 0xfffd;
                 }
                 // noncharacter
                 noncharacter_pat!() => {
-                    slf.emitter
-                        .emit_error(Error::NoncharacterCharacterReference);
+                    slf.emit_error(Error::NoncharacterCharacterReference);
                 }
                 // 0x000d, or a control that is not whitespace
                 x @ 0x000d | x @ control_pat!()
                     if !matches!(x, 0x0009 | 0x000a | 0x000c | 0x0020) =>
                 {
-                    slf.emitter.emit_error(Error::ControlCharacterReference);
+                    slf.emit_error(Error::ControlCharacterReference);
                     slf.character_reference_code = match x {
                         0x80 => 0x20AC, // EURO SIGN (€)
                         0x82 => 0x201A, // SINGLE LOW-9 QUOTATION MARK (‚)

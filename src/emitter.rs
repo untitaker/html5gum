@@ -44,7 +44,7 @@ pub trait Emitter<R> {
     fn emit_eof(&mut self);
 
     /// A (probably recoverable) parsing error has occured.
-    fn emit_error(&mut self, error: Error);
+    fn emit_error(&mut self, error: Error, reader: &R);
 
     /// After every state change, the tokenizer calls this method to retrieve a new token that can
     /// be returned via the tokenizer's iterator interface.
@@ -88,7 +88,7 @@ pub trait Emitter<R> {
     ///
     /// If the current token is an end tag, the emitter should emit the
     /// [`crate::Error::EndTagWithTrailingSolidus`] error.
-    fn set_self_closing(&mut self);
+    fn set_self_closing(&mut self, reader: &R);
 
     /// Assuming the _current token_ is a doctype, set its "force quirks" flag to true.
     ///
@@ -249,6 +249,13 @@ impl<R> DefaultEmitter<R, ()> {
         let s = mem::take(&mut self.current_characters);
         self.emit_token(Token::String(s));
     }
+
+    fn emit_error(&mut self, error: Error) {
+        // bypass character flushing in self.emit_token: we don't need the error location to be
+        // that exact
+        self.emitted_tokens
+            .push_front(Token::Error { error, span: () });
+    }
 }
 
 impl<R> Emitter<R> for DefaultEmitter<R, ()> {
@@ -264,10 +271,8 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
         self.flush_current_characters();
     }
 
-    fn emit_error(&mut self, error: Error) {
-        // bypass character flushing in self.emit_token: we don't need the error location to be
-        // that exact
-        self.emitted_tokens.push_front(Token::Error(error));
+    fn emit_error(&mut self, error: Error, _reader: &R) {
+        self.emit_error(error);
     }
 
     fn pop_token(&mut self) -> Option<Self::Token> {
@@ -318,7 +323,7 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
         self.emit_token(doctype);
     }
 
-    fn set_self_closing(&mut self) {
+    fn set_self_closing(&mut self, _reader: &R) {
         let tag = self.current_token.as_mut().unwrap();
         match tag {
             Token::StartTag(StartTag {
@@ -522,5 +527,10 @@ pub enum Token<S> {
     ///
     /// Can be skipped over, the tokenizer is supposed to recover from the error and continues with
     /// more tokens afterward.
-    Error(Error),
+    Error {
+        /// What kind of error occured.
+        error: Error,
+        /// The source code span of the error.
+        span: S,
+    },
 }

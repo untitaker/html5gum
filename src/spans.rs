@@ -62,6 +62,7 @@ pub struct SpanEmitter<R> {
     seen_attributes: BTreeSet<String>,
     emitted_tokens: VecDeque<Token<Span>>,
     reader: PhantomData<R>,
+    attr_in_end_tag_span: Span,
 }
 
 impl<R> Default for SpanEmitter<R> {
@@ -74,6 +75,7 @@ impl<R> Default for SpanEmitter<R> {
             seen_attributes: BTreeSet::new(),
             emitted_tokens: VecDeque::new(),
             reader: PhantomData::default(),
+            attr_in_end_tag_span: Span::default(),
         }
     }
 }
@@ -91,18 +93,19 @@ impl<R: GetPos> SpanEmitter<R> {
                     let mut error = None;
                     tag.attributes
                         .entry(k)
-                        .and_modify(|_| {
-                            error = Some(Error::DuplicateAttribute);
+                        .and_modify(|a| {
+                            error = Some((Error::DuplicateAttribute, a.name_span.clone()));
                         })
                         .or_insert(v);
 
-                    if let Some(e) = error {
-                        self.emit_error(e);
+                    if let Some((e, span)) = error {
+                        self.emit_error_span(e, span);
                     }
                 }
                 Some(Token::EndTag(_)) => {
+                    self.attr_in_end_tag_span = v.name_span.clone();
                     if !self.seen_attributes.insert(k) {
-                        self.emit_error(Error::DuplicateAttribute);
+                        self.emit_error_span(Error::DuplicateAttribute, v.name_span);
                     }
                 }
                 _ => {
@@ -120,6 +123,12 @@ impl<R: GetPos> SpanEmitter<R> {
         let s = mem::take(&mut self.current_characters);
         self.emit_token(Token::String(s));
     }
+
+    fn emit_error_span(&mut self, error: Error, span: Span) {
+        // bypass character flushing in self.emit_token: we don't need the error location to be
+        // that exact
+        self.emitted_tokens.push_front(Token::Error { error, span });
+    }
 }
 
 impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
@@ -135,10 +144,8 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
         self.flush_current_characters();
     }
 
-    fn emit_error(&mut self, error: Error) {
-        // bypass character flushing in self.emit_token: we don't need the error location to be
-        // that exact
-        self.emitted_tokens.push_front(Token::Error(error));
+    fn emit_error(&mut self, error: Error, reader: &R) {
+        self.emit_error_span(error, reader.get_pos() - 1..reader.get_pos() - 1)
     }
 
     fn pop_token(&mut self) -> Option<Self::Token> {
@@ -172,7 +179,10 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
         match token {
             Token::EndTag(_) => {
                 if !self.seen_attributes.is_empty() {
-                    self.emit_error(Error::EndTagWithAttributes);
+                    self.emit_error_span(
+                        Error::EndTagWithAttributes,
+                        self.attr_in_end_tag_span.clone(),
+                    );
                 }
                 self.seen_attributes.clear();
             }
@@ -195,7 +205,7 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
         self.emit_token(doctype);
     }
 
-    fn set_self_closing(&mut self) {
+    fn set_self_closing(&mut self, reader: &R) {
         let tag = self.current_token.as_mut().unwrap();
         match tag {
             Token::StartTag(StartTag {
@@ -205,7 +215,7 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
                 *self_closing = true;
             }
             Token::EndTag(_) => {
-                self.emit_error(Error::EndTagWithTrailingSolidus);
+                self.emit_error(Error::EndTagWithTrailingSolidus, reader);
             }
             _ => {
                 debug_assert!(false);
