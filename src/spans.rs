@@ -8,6 +8,10 @@ use crate::{Doctype, Emitter, EndTag, Error, StartTag, Token};
 
 type Span = std::ops::Range<usize>;
 
+pub trait GetPos {
+    fn get_pos(&self) -> usize;
+}
+
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
 pub struct SpanEmitter<R> {
     current_characters: String,
@@ -33,7 +37,7 @@ impl<R> Default for SpanEmitter<R> {
     }
 }
 
-impl<R> SpanEmitter<R> {
+impl<R: GetPos> SpanEmitter<R> {
     fn emit_token(&mut self, token: Token<Span>) {
         self.flush_current_characters();
         self.emitted_tokens.push_front(token);
@@ -77,7 +81,7 @@ impl<R> SpanEmitter<R> {
     }
 }
 
-impl<R> Emitter<R> for SpanEmitter<R> {
+impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
     type Token = Token<Span>;
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
