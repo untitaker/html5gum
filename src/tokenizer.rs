@@ -1,5 +1,7 @@
 use crate::machine;
-use crate::utils::{control_pat, noncharacter_pat, surrogate_pat, ControlToken, State};
+use crate::utils::{
+    control_pat, noncharacter_pat, surrogate_pat, ControlToken, State as InternalState,
+};
 use crate::{DefaultEmitter, Emitter, Error, Never, Readable, Reader};
 
 // this is a stack that can hold 0 to 2 Ts
@@ -31,13 +33,13 @@ impl<T: Copy> Stack2<T> {
 /// A HTML tokenizer. See crate-level docs for basic usage.
 pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
     eof: bool,
-    pub(crate) state: State,
+    pub(crate) state: InternalState,
     pub(crate) emitter: E,
     pub(crate) temporary_buffer: String,
     reader: R,
     to_reconsume: Stack2<Option<char>>,
     pub(crate) character_reference_code: u32,
-    pub(crate) return_state: Option<State>,
+    pub(crate) return_state: Option<InternalState>,
 }
 
 impl<R: Reader> Tokenizer<R> {
@@ -61,7 +63,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     pub fn new_with_emitter<'a, S: Readable<'a, Reader = R>>(input: S, emitter: E) -> Self {
         Tokenizer {
             eof: false,
-            state: State::Data,
+            state: InternalState::Data,
             emitter,
             temporary_buffer: String::new(),
             to_reconsume: Stack2::default(),
@@ -75,7 +77,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     ///
     /// Only available with the `integration-tests` feature which is not public API.
     #[cfg(feature = "integration-tests")]
-    pub fn set_state(&mut self, state: State) {
+    pub fn set_internal_state(&mut self, state: InternalState) {
         self.state = state;
     }
 
@@ -84,7 +86,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     ///
     /// This tokenizer never gets into that state naturally.
     pub fn set_plaintext_state(&mut self) {
-        self.state = State::PlainText;
+        self.state = InternalState::PlainText;
     }
 
     /// Test-internal function to override internal state.
@@ -176,9 +178,9 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
         matches!(
             self.return_state,
             Some(
-                State::AttributeValueDoubleQuoted
-                    | State::AttributeValueSingleQuoted
-                    | State::AttributeValueUnquoted
+                InternalState::AttributeValueDoubleQuoted
+                    | InternalState::AttributeValueSingleQuoted
+                    | InternalState::AttributeValueUnquoted
             )
         )
     }

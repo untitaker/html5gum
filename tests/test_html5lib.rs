@@ -1,4 +1,6 @@
-use html5gum::{Doctype, EndTag, Error, Reader, StartTag, State, Token, Tokenizer};
+use html5gum::{
+    Doctype, EndTag, Error, InternalState as State, Reader, StartTag, Token, Tokenizer,
+};
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
@@ -258,7 +260,7 @@ fn run_test_inner<R: Reader>(
         fname, test_i, state, tokenizer_info,
     );
     println!("description: {}", test.description);
-    tokenizer.set_state(state);
+    tokenizer.set_internal_state(state);
     tokenizer.set_last_start_tag(test.last_start_tag.as_ref().map(String::as_str));
 
     let mut actual_tokens = Vec::new();

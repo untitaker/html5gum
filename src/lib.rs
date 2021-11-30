@@ -13,7 +13,7 @@ mod tokenizer;
 mod utils;
 
 #[cfg(feature = "integration-tests")]
-pub use utils::State;
+pub use utils::State as InternalState;
 
 pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
