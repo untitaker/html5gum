@@ -4,6 +4,7 @@ use std::collections::VecDeque;
 use std::mem;
 
 use crate::Error;
+use crate::State;
 
 /// An emitter is an object providing methods to the tokenizer to produce tokens.
 ///
@@ -441,6 +442,23 @@ pub struct StartTag {
     /// Duplicate attributes are ignored after the first one as per WHATWG spec. Implement your own
     /// [`Emitter`] to tweak this behavior.
     pub attributes: BTreeMap<String, String>,
+}
+
+impl StartTag {
+    /// Returns the next tokenizer state according to
+    /// [Parsing HTML fragments](https://html.spec.whatwg.org/multipage/parsing.html#concept-frag-parse-context).
+    /// If `scripting` is set to true [`State::RawText`] is returned if this is a `<noscript>` tag,
+    /// otherwise [`State::Data`] is returned (as with any other regular tag).
+    pub fn next_state(&self, scripting: bool) -> State {
+        match self.name.as_str() {
+            "title" | "textarea" => State::RcData,
+            "style" | "xmp" | "iframe" | "noembed" | "noframes" => State::RawText,
+            "script" => State::ScriptData,
+            "noscript" if scripting => State::RawText,
+            "plaintext" => State::PlainText,
+            _other => State::Data,
+        }
+    }
 }
 
 /// A HTML end/close tag, such as `</p>` or `</a>`.
