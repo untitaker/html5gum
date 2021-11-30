@@ -1,0 +1,7 @@
+note:
+  ┌─ test.html:1:17
+  │
+1 │ this is a tag: <h1>test</h1>
+  │                 ^^       ^^ end tag
+  │                 │
+  │                 start tag

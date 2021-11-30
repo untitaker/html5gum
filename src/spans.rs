@@ -1,3 +1,4 @@
+//! Source code spans.
 use std::{
     collections::{BTreeSet, VecDeque},
     marker::PhantomData,
@@ -8,13 +9,18 @@ use crate::{Doctype, Emitter, EndTag, Error, Reader, StartTag, Token};
 
 type Span = std::ops::Range<usize>;
 
+/// A trait to be implemented by readers that track their own position.
 pub trait GetPos {
+    /// Returns the byte index of the current position.
     fn get_pos(&self) -> usize;
 }
 
-struct PosTracker<R> {
-    reader: R,
-    position: usize,
+/// Wraps a [`Reader`] so that it implements [`GetPos`].
+pub struct PosTracker<R> {
+    /// The wrapped reader.
+    pub reader: R,
+    /// The current position.
+    pub position: usize,
 }
 
 impl<R> GetPos for PosTracker<R> {
@@ -145,12 +151,15 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
 
     fn init_start_tag(&mut self, reader: &R) {
         self.current_token = Some(Token::StartTag(StartTag {
-            name_span: reader.get_pos()..reader.get_pos(),
+            name_span: reader.get_pos() - 1..reader.get_pos() - 1,
             ..Default::default()
         }));
     }
-    fn init_end_tag(&mut self, _reader: &R) {
-        self.current_token = Some(Token::EndTag(Default::default()));
+    fn init_end_tag(&mut self, reader: &R) {
+        self.current_token = Some(Token::EndTag(EndTag {
+            name_span: reader.get_pos() - 1..reader.get_pos() - 1,
+            ..Default::default()
+        }));
         self.seen_attributes.clear();
     }
 

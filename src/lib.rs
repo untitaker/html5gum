@@ -9,7 +9,7 @@ mod error;
 mod machine;
 mod never;
 mod reader;
-mod spans;
+pub mod spans;
 mod tokenizer;
 mod utils;
 
