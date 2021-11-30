@@ -6,20 +6,22 @@ use std::{
 
 use crate::{Doctype, Emitter, EndTag, Error, StartTag, Token};
 
+type Span = std::ops::Range<usize>;
+
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
-pub struct DefaultEmitter<S, R> {
+pub struct SpanEmitter<R> {
     current_characters: String,
-    current_token: Option<Token<S>>,
+    current_token: Option<Token<Span>>,
     last_start_tag: String,
     current_attribute: Option<(String, String)>,
     seen_attributes: BTreeSet<String>,
-    emitted_tokens: VecDeque<Token<S>>,
+    emitted_tokens: VecDeque<Token<Span>>,
     reader: PhantomData<R>,
 }
 
-impl<S, R> Default for DefaultEmitter<S, R> {
+impl<R> Default for SpanEmitter<R> {
     fn default() -> Self {
-        DefaultEmitter {
+        SpanEmitter {
             current_characters: String::new(),
             current_token: None,
             last_start_tag: String::new(),
@@ -31,8 +33,8 @@ impl<S, R> Default for DefaultEmitter<S, R> {
     }
 }
 
-impl<R> DefaultEmitter<(), R> {
-    fn emit_token(&mut self, token: Token<()>) {
+impl<R> SpanEmitter<R> {
+    fn emit_token(&mut self, token: Token<Span>) {
         self.flush_current_characters();
         self.emitted_tokens.push_front(token);
     }
@@ -75,8 +77,8 @@ impl<R> DefaultEmitter<(), R> {
     }
 }
 
-impl<R> Emitter<R> for DefaultEmitter<(), R> {
-    type Token = Token<()>;
+impl<R> Emitter<R> for SpanEmitter<R> {
+    type Token = Token<Span>;
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
         self.last_start_tag.clear();
