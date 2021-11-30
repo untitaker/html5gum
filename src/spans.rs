@@ -4,12 +4,47 @@ use std::{
     mem,
 };
 
-use crate::{Doctype, Emitter, EndTag, Error, StartTag, Token};
+use crate::{Doctype, Emitter, EndTag, Error, Reader, StartTag, Token};
 
 type Span = std::ops::Range<usize>;
 
 pub trait GetPos {
     fn get_pos(&self) -> usize;
+}
+
+struct PosTracker<R> {
+    reader: R,
+    position: usize,
+}
+
+impl<R> GetPos for PosTracker<R> {
+    fn get_pos(&self) -> usize {
+        self.position
+    }
+}
+
+impl<R: Reader> Reader for PosTracker<R> {
+    type Error = R::Error;
+
+    fn read_char(&mut self) -> Result<Option<char>, Self::Error> {
+        match self.reader.read_char()? {
+            Some(char) => {
+                self.position += char.len_utf8();
+                Ok(Some(char))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn try_read_string(&mut self, s: &str, case_sensitive: bool) -> Result<bool, Self::Error> {
+        match self.reader.try_read_string(s, case_sensitive)? {
+            true => {
+                self.position += s.len();
+                Ok(true)
+            }
+            false => Ok(false),
+        }
+    }
 }
 
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
