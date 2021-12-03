@@ -183,7 +183,7 @@ pub struct DefaultEmitter<R, S> {
     current_characters: String,
     current_token: Option<Token<S>>,
     last_start_tag: String,
-    current_attribute: Option<(String, String)>,
+    current_attribute: Option<(String, Attribute<S>)>,
     seen_attributes: BTreeSet<String>,
     emitted_tokens: VecDeque<Token<S>>,
     reader: PhantomData<R>,
@@ -219,11 +219,7 @@ impl<R> DefaultEmitter<R, ()> {
                         .and_modify(|_| {
                             error = Some(Error::DuplicateAttribute);
                         })
-                        .or_insert(Attribute {
-                            value: v,
-                            name_span: (),
-                            value_span: (),
-                        });
+                        .or_insert(v);
 
                     if let Some(e) = error {
                         self.emit_error(e);
@@ -382,13 +378,13 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
 
     fn init_attribute_name(&mut self, _reader: &R) {
         self.flush_current_attribute();
-        self.current_attribute = Some((String::new(), String::new()));
+        self.current_attribute = Some((String::new(), Attribute::default()));
     }
     fn push_attribute_name(&mut self, s: &str) {
         self.current_attribute.as_mut().unwrap().0.push_str(s);
     }
     fn push_attribute_value(&mut self, s: &str) {
-        self.current_attribute.as_mut().unwrap().1.push_str(s);
+        self.current_attribute.as_mut().unwrap().1.value.push_str(s);
     }
     fn set_doctype_public_identifier(&mut self, value: &str) {
         if let Some(Token::Doctype(Doctype {
