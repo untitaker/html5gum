@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
 
 #[cfg(not(feature = "integration-tests"))]
 compile_error!(
-    "integration tests need the integration-tests feature enabled. Run cargo tests --all-features"
+    "integration tests need the integration-tests feature enabled. Run cargo test --all-features"
 );
 
 struct ExpectedOutputTokens(Vec<Token>);
