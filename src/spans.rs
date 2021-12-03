@@ -62,7 +62,7 @@ pub struct SpanEmitter<R> {
     seen_attributes: BTreeSet<String>,
     emitted_tokens: VecDeque<Token<Span>>,
     reader: PhantomData<R>,
-    attr_in_end_tag_span: Span,
+    attr_in_end_tag_span: Option<Span>,
 }
 
 impl<R> Default for SpanEmitter<R> {
@@ -75,7 +75,7 @@ impl<R> Default for SpanEmitter<R> {
             seen_attributes: BTreeSet::new(),
             emitted_tokens: VecDeque::new(),
             reader: PhantomData::default(),
-            attr_in_end_tag_span: Span::default(),
+            attr_in_end_tag_span: None,
         }
     }
 }
@@ -98,7 +98,7 @@ impl<R: GetPos> SpanEmitter<R> {
                     }
                 },
                 Some(Token::EndTag(_)) => {
-                    self.attr_in_end_tag_span = v.name_span.clone();
+                    self.attr_in_end_tag_span = Some(v.name_span.clone());
                     if !self.seen_attributes.insert(k) {
                         self.emit_error_span(Error::DuplicateAttribute, v.name_span);
                     }
@@ -174,10 +174,8 @@ impl<R: GetPos> Emitter<R> for SpanEmitter<R> {
         match token {
             Token::EndTag(_) => {
                 if !self.seen_attributes.is_empty() {
-                    self.emit_error_span(
-                        Error::EndTagWithAttributes,
-                        self.attr_in_end_tag_span.clone(),
-                    );
+                    let span = self.attr_in_end_tag_span.take().unwrap();
+                    self.emit_error_span(Error::EndTagWithAttributes, span);
                 }
                 self.seen_attributes.clear();
             }
