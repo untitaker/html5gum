@@ -23,7 +23,7 @@ note:
    │                        ^ unknown-named-character-reference
 12 │
 13 │ Does this open two pages? <a href=foo.html href=bar.html>click me</a>
-   │                              ^^^^ duplicate-attribute
+   │                                            ^^^^ duplicate-attribute
 14 │
 15 │ Do you start or do you end? </yes/>
    │                                   ^ end-tag-with-trailing-solidus

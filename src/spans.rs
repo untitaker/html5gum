@@ -93,9 +93,8 @@ impl<R: GetPos> SpanEmitter<R> {
                     Entry::Vacant(vacant) => {
                         vacant.insert(v);
                     }
-                    Entry::Occupied(occupied) => {
-                        let span = occupied.get().name_span.clone();
-                        self.emit_error_span(Error::DuplicateAttribute, span);
+                    Entry::Occupied(_) => {
+                        self.emit_error_span(Error::DuplicateAttribute, v.name_span);
                     }
                 },
                 Some(Token::EndTag(_)) => {
