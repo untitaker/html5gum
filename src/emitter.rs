@@ -171,6 +171,7 @@ pub trait Emitter {
 }
 
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
+#[derive(Default)]
 pub struct DefaultEmitter {
     current_characters: String,
     current_token: Option<Token>,
@@ -178,19 +179,6 @@ pub struct DefaultEmitter {
     current_attribute: Option<(String, String)>,
     seen_attributes: BTreeSet<String>,
     emitted_tokens: VecDeque<Token>,
-}
-
-impl Default for DefaultEmitter {
-    fn default() -> Self {
-        DefaultEmitter {
-            current_characters: String::new(),
-            current_token: None,
-            last_start_tag: String::new(),
-            current_attribute: None,
-            seen_attributes: BTreeSet::new(),
-            emitted_tokens: VecDeque::new(),
-        }
-    }
 }
 
 impl DefaultEmitter {
