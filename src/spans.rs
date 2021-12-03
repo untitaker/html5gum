@@ -1,6 +1,6 @@
 //! Source code spans.
 use std::{
-    collections::{BTreeSet, VecDeque},
+    collections::{btree_map::Entry, BTreeSet, VecDeque},
     marker::PhantomData,
     mem,
 };
@@ -89,19 +89,15 @@ impl<R: GetPos> SpanEmitter<R> {
     fn flush_current_attribute(&mut self) {
         if let Some((k, v)) = self.current_attribute.take() {
             match self.current_token {
-                Some(Token::StartTag(ref mut tag)) => {
-                    let mut error = None;
-                    tag.attributes
-                        .entry(k)
-                        .and_modify(|a| {
-                            error = Some((Error::DuplicateAttribute, a.name_span.clone()));
-                        })
-                        .or_insert(v);
-
-                    if let Some((e, span)) = error {
-                        self.emit_error_span(e, span);
+                Some(Token::StartTag(ref mut tag)) => match tag.attributes.entry(k) {
+                    Entry::Vacant(vacant) => {
+                        vacant.insert(v);
                     }
-                }
+                    Entry::Occupied(occupied) => {
+                        let span = occupied.get().name_span.clone();
+                        self.emit_error_span(Error::DuplicateAttribute, span);
+                    }
+                },
                 Some(Token::EndTag(_)) => {
                     self.attr_in_end_tag_span = v.name_span.clone();
                     if !self.seen_attributes.insert(k) {

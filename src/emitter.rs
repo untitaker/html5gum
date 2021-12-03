@@ -1,3 +1,4 @@
+use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::VecDeque;
@@ -212,19 +213,14 @@ impl<R> DefaultEmitter<R, ()> {
     fn flush_current_attribute(&mut self) {
         if let Some((k, v)) = self.current_attribute.take() {
             match self.current_token {
-                Some(Token::StartTag(ref mut tag)) => {
-                    let mut error = None;
-                    tag.attributes
-                        .entry(k)
-                        .and_modify(|_| {
-                            error = Some(Error::DuplicateAttribute);
-                        })
-                        .or_insert(v);
-
-                    if let Some(e) = error {
-                        self.emit_error(e);
+                Some(Token::StartTag(ref mut tag)) => match tag.attributes.entry(k) {
+                    Entry::Vacant(vacant) => {
+                        vacant.insert(v);
                     }
-                }
+                    Entry::Occupied(_) => {
+                        self.emit_error(Error::DuplicateAttribute);
+                    }
+                },
                 Some(Token::EndTag(_)) => {
                     if !self.seen_attributes.insert(k) {
                         self.emit_error(Error::DuplicateAttribute);
