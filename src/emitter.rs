@@ -218,12 +218,12 @@ impl<R> DefaultEmitter<R, ()> {
                         vacant.insert(v);
                     }
                     Entry::Occupied(_) => {
-                        self.emit_error(Error::DuplicateAttribute);
+                        self.push_error(Error::DuplicateAttribute);
                     }
                 },
                 Some(Token::EndTag(_)) => {
                     if !self.seen_attributes.insert(k) {
-                        self.emit_error(Error::DuplicateAttribute);
+                        self.push_error(Error::DuplicateAttribute);
                     }
                 }
                 _ => {
@@ -242,7 +242,7 @@ impl<R> DefaultEmitter<R, ()> {
         self.emit_token(Token::String(s));
     }
 
-    fn emit_error(&mut self, error: Error) {
+    fn push_error(&mut self, error: Error) {
         // bypass character flushing in self.emit_token: we don't need the error location to be
         // that exact
         self.emitted_tokens
@@ -264,7 +264,7 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
     }
 
     fn emit_error(&mut self, error: Error, _reader: &R) {
-        self.emit_error(error);
+        self.push_error(error);
     }
 
     fn pop_token(&mut self) -> Option<Self::Token> {
@@ -292,7 +292,7 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
         match token {
             Token::EndTag(_) => {
                 if !self.seen_attributes.is_empty() {
-                    self.emit_error(Error::EndTagWithAttributes);
+                    self.push_error(Error::EndTagWithAttributes);
                 }
                 self.seen_attributes.clear();
             }
@@ -325,7 +325,7 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
                 *self_closing = true;
             }
             Token::EndTag(_) => {
-                self.emit_error(Error::EndTagWithTrailingSolidus);
+                self.push_error(Error::EndTagWithTrailingSolidus);
             }
             _ => {
                 debug_assert!(false);
