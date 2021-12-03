@@ -1,4 +1,4 @@
-use std::include_str;
+use std::{include_str, ops::Range};
 
 use codespan_reporting::{
     self,
@@ -6,10 +6,7 @@ use codespan_reporting::{
     files::SimpleFiles,
     term::{self, termcolor::Buffer},
 };
-use html5gum::{
-    spans::{PosTracker, SpanEmitter},
-    Readable, Token, Tokenizer,
-};
+use html5gum::{spans::PosTracker, DefaultEmitter, Readable, StringReader, Token, Tokenizer};
 
 #[test]
 fn test() {
@@ -24,7 +21,7 @@ fn test() {
             reader: html.to_reader(),
             position: 0,
         },
-        SpanEmitter::default(),
+        DefaultEmitter::<PosTracker<StringReader>, Range<usize>>::default(),
     )
     .infallible()
     {

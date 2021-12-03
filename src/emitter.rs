@@ -5,6 +5,7 @@ use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::mem;
 
+use crate::spans::Span;
 use crate::Error;
 
 /// An emitter is an object providing methods to the tokenizer to produce tokens.
@@ -188,6 +189,7 @@ pub struct DefaultEmitter<R, S> {
     seen_attributes: BTreeSet<String>,
     emitted_tokens: VecDeque<Token<S>>,
     reader: PhantomData<R>,
+    attr_in_end_tag_span: Option<S>,
 }
 
 impl<R, S> Default for DefaultEmitter<R, S> {
@@ -200,12 +202,13 @@ impl<R, S> Default for DefaultEmitter<R, S> {
             seen_attributes: BTreeSet::new(),
             emitted_tokens: VecDeque::new(),
             reader: PhantomData::default(),
+            attr_in_end_tag_span: None,
         }
     }
 }
 
-impl<R> DefaultEmitter<R, ()> {
-    fn emit_token(&mut self, token: Token<()>) {
+impl<R, S: Span<R>> DefaultEmitter<R, S> {
+    fn emit_token(&mut self, token: Token<S>) {
         self.flush_current_characters();
         self.emitted_tokens.push_front(token);
     }
@@ -218,12 +221,13 @@ impl<R> DefaultEmitter<R, ()> {
                         vacant.insert(v);
                     }
                     Entry::Occupied(_) => {
-                        self.push_error(Error::DuplicateAttribute);
+                        self.push_error(Error::DuplicateAttribute, v.name_span);
                     }
                 },
                 Some(Token::EndTag(_)) => {
+                    self.attr_in_end_tag_span = Some(v.name_span.clone());
                     if !self.seen_attributes.insert(k) {
-                        self.push_error(Error::DuplicateAttribute);
+                        self.push_error(Error::DuplicateAttribute, v.name_span);
                     }
                 }
                 _ => {
@@ -242,16 +246,15 @@ impl<R> DefaultEmitter<R, ()> {
         self.emit_token(Token::String(s));
     }
 
-    fn push_error(&mut self, error: Error) {
+    fn push_error(&mut self, error: Error, span: S) {
         // bypass character flushing in self.emit_token: we don't need the error location to be
         // that exact
-        self.emitted_tokens
-            .push_front(Token::Error { error, span: () });
+        self.emitted_tokens.push_front(Token::Error { error, span });
     }
 }
 
-impl<R> Emitter<R> for DefaultEmitter<R, ()> {
-    type Token = Token<()>;
+impl<R, S: Span<R>> Emitter<R> for DefaultEmitter<R, S> {
+    type Token = Token<S>;
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
         self.last_start_tag.clear();
@@ -263,8 +266,8 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
         self.flush_current_characters();
     }
 
-    fn emit_error(&mut self, error: Error, _reader: &R) {
-        self.push_error(error);
+    fn emit_error(&mut self, error: Error, reader: &R) {
+        self.push_error(error, S::from_reader(reader));
     }
 
     fn pop_token(&mut self) -> Option<Self::Token> {
@@ -275,11 +278,17 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
         self.current_characters.push_str(s);
     }
 
-    fn init_start_tag(&mut self, _reader: &R) {
-        self.current_token = Some(Token::StartTag(Default::default()));
+    fn init_start_tag(&mut self, reader: &R) {
+        self.current_token = Some(Token::StartTag(StartTag {
+            name_span: S::from_reader(reader),
+            ..Default::default()
+        }));
     }
-    fn init_end_tag(&mut self, _reader: &R) {
-        self.current_token = Some(Token::EndTag(Default::default()));
+    fn init_end_tag(&mut self, reader: &R) {
+        self.current_token = Some(Token::EndTag(EndTag {
+            name_span: S::from_reader(reader),
+            ..Default::default()
+        }));
         self.seen_attributes.clear();
     }
 
@@ -292,7 +301,8 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
         match token {
             Token::EndTag(_) => {
                 if !self.seen_attributes.is_empty() {
-                    self.push_error(Error::EndTagWithAttributes);
+                    let span = self.attr_in_end_tag_span.take().unwrap();
+                    self.push_error(Error::EndTagWithAttributes, span);
                 }
                 self.seen_attributes.clear();
             }
@@ -315,7 +325,7 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
         self.emit_token(doctype);
     }
 
-    fn set_self_closing(&mut self, _reader: &R) {
+    fn set_self_closing(&mut self, reader: &R) {
         let tag = self.current_token.as_mut().unwrap();
         match tag {
             Token::StartTag(StartTag {
@@ -325,7 +335,7 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
                 *self_closing = true;
             }
             Token::EndTag(_) => {
-                self.push_error(Error::EndTagWithTrailingSolidus);
+                self.emit_error(Error::EndTagWithTrailingSolidus, reader);
             }
             _ => {
                 debug_assert!(false);
@@ -340,11 +350,21 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
     }
     fn push_tag_name(&mut self, s: &str) {
         match self.current_token {
-            Some(Token::StartTag(StartTag { ref mut name, .. })) => {
+            Some(Token::StartTag(StartTag {
+                ref mut name,
+                ref mut name_span,
+                ..
+            })) => {
                 name.push_str(s);
+                name_span.push_str(s);
             }
-            Some(Token::EndTag(EndTag { ref mut name, .. })) => {
+            Some(Token::EndTag(EndTag {
+                ref mut name,
+                ref mut name_span,
+                ..
+            })) => {
                 name.push_str(s);
+                name_span.push_str(s);
             }
             _ => debug_assert!(false),
         }
@@ -372,15 +392,30 @@ impl<R> Emitter<R> for DefaultEmitter<R, ()> {
         }));
     }
 
-    fn init_attribute_name(&mut self, _reader: &R) {
+    fn init_attribute_name(&mut self, reader: &R) {
         self.flush_current_attribute();
-        self.current_attribute = Some((String::new(), Attribute::default()));
+        self.current_attribute = Some((
+            String::new(),
+            Attribute {
+                name_span: S::from_reader(reader),
+                ..Default::default()
+            },
+        ));
     }
+    fn init_attribute_value(&mut self, reader: &R, quoted: bool) {
+        self.current_attribute.as_mut().unwrap().1.value_span =
+            S::from_reader_with_offset(reader, quoted as usize);
+    }
+
     fn push_attribute_name(&mut self, s: &str) {
-        self.current_attribute.as_mut().unwrap().0.push_str(s);
+        let current_attr = self.current_attribute.as_mut().unwrap();
+        current_attr.0.push_str(s);
+        current_attr.1.name_span.push_str(s);
     }
     fn push_attribute_value(&mut self, s: &str) {
-        self.current_attribute.as_mut().unwrap().1.value.push_str(s);
+        let current_attr = self.current_attribute.as_mut().unwrap();
+        current_attr.1.value.push_str(s);
+        current_attr.1.value_span.push_str(s);
     }
     fn set_doctype_public_identifier(&mut self, value: &str) {
         if let Some(Token::Doctype(Doctype {
