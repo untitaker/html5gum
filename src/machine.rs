@@ -326,7 +326,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
             c => {
                 slf.emitter.emit_string("<");
-                slf.state = State::Data;
+                slf.state = State::ScriptData;
                 slf.unread_char(c);
                 Ok(ControlToken::Continue)
             }
