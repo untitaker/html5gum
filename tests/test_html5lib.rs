@@ -277,14 +277,7 @@ fn run_test_inner<R: Reader>(
     }
 
     assert_eq!(test.output.0, actual_tokens);
-
-    if !matches!(
-        (fname, test_i),
-        // TODO: html5lib-tests bug?
-        ("test3.test", 79)
-    ) {
-        assert_eq!(test.errors, actual_errors);
-    }
+    assert_eq!(test.errors, actual_errors);
 }
 
 /// Implements the escape sequences described in the tokenizer tests of html5lib-tests (and nothing
