@@ -7,7 +7,7 @@ readme = "README.md"
 keywords = ["html", "html5", "whatwg", "parser", "tokenizer"]
 license = "MIT"
 repository = "https://github.com/untitaker/html5gum"
-version = "0.2.1"
+version = "0.2.2"
 include = ["src/**/*", "LICENSE", "README.md"]
 
 [dev-dependencies]
