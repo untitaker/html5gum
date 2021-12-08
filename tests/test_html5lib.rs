@@ -169,7 +169,6 @@ impl<'de> Deserialize<'de> for ParseErrorInner {
 #[serde(rename_all = "camelCase")]
 struct ParseError {
     code: ParseErrorInner,
-    // TODO: lineno and column?
 }
 
 #[derive(Deserialize)]
