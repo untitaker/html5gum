@@ -1,0 +1,37 @@
+use crate::utils::State;
+use crate::Emitter;
+
+pub(crate) struct MachineHelper {
+    pub temporary_buffer: String,
+    pub character_reference_code: u32,
+    pub state: State,
+    pub return_state: Option<State>,
+}
+
+impl MachineHelper {
+    pub(crate) fn is_consumed_as_part_of_an_attribute(&self) -> bool {
+        matches!(
+            self.return_state,
+            Some(
+                State::AttributeValueDoubleQuoted
+                    | State::AttributeValueSingleQuoted
+                    | State::AttributeValueUnquoted
+            )
+        )
+    }
+    pub(crate) fn flush_code_points_consumed_as_character_reference<E: Emitter>(
+        &mut self,
+        emitter: &mut E,
+    ) {
+        if self.is_consumed_as_part_of_an_attribute() {
+            emitter.push_attribute_value(&self.temporary_buffer);
+            self.temporary_buffer.clear();
+        } else {
+            self.flush_buffer_characters(emitter);
+        }
+    }
+    pub(crate) fn flush_buffer_characters<E: Emitter>(&mut self, emitter: &mut E) {
+        emitter.emit_string(&self.temporary_buffer);
+        self.temporary_buffer.clear();
+    }
+}

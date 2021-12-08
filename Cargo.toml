@@ -17,5 +17,12 @@ serde_json = "1.0.71"
 test-generator = "0.3.0"
 
 [features]
+# By default the memchr feature is active. Disabling it will leave you with a
+# HTML parser written in 100% safe Rust.
+default = ["memchr"]
+
 # Feature used by integration tests in tests/ to get access to library internals.
 integration-tests = []
+
+[dependencies]
+memchr = { version = "2.4.1", optional = true }
