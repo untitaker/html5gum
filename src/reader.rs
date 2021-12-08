@@ -2,7 +2,6 @@ use crate::utils::ctostr;
 use crate::Never;
 use std::io::{self, BufRead, BufReader, Read};
 
-
 /// An object that provides characters to the tokenizer.
 ///
 /// See [`crate::Tokenizer::new`] for more information.
@@ -310,7 +309,10 @@ impl<R: BufRead> Reader for BufReadReader<R> {
         Ok(false)
     }
 
-    fn read_until<F, V>(&mut self, needle: &[char], mut read_cb: F) -> Result<V, Self::Error> where F: FnMut(Option<&str>) -> V {
+    fn read_until<F, V>(&mut self, needle: &[char], mut read_cb: F) -> Result<V, Self::Error>
+    where
+        F: FnMut(Option<&str>) -> V,
+    {
         let line = self.get_remaining_line()?;
         let rv;
         if !line.is_empty() {
@@ -324,7 +326,7 @@ impl<R: BufRead> Reader for BufReadReader<R> {
                     self.line_pos += needle_pos;
                 }
             } else {
-                rv = Ok(read_cb(Some(&line)));
+                rv = Ok(read_cb(Some(line)));
                 self.line_pos += line.len();
             }
         } else {
@@ -348,9 +350,14 @@ fn fast_find(needle: &[char], haystack: &str) -> Option<usize> {
     #[cfg(feature = "memchr")]
     if needle.iter().all(|x| x.is_ascii()) {
         if needle.len() == 3 {
-            return memchr::memchr3(needle[0] as u8 , needle[1] as u8, needle[2] as u8, haystack.as_bytes());
+            return memchr::memchr3(
+                needle[0] as u8,
+                needle[1] as u8,
+                needle[2] as u8,
+                haystack.as_bytes(),
+            );
         } else if needle.len() == 2 {
-            return memchr::memchr2(needle[0] as u8 , needle[1] as u8, haystack.as_bytes());
+            return memchr::memchr2(needle[0] as u8, needle[1] as u8, haystack.as_bytes());
         } else if needle.len() == 1 {
             return memchr::memchr(needle[0] as u8, haystack.as_bytes());
         }

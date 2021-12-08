@@ -1352,9 +1352,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::BeforeDoctypeName => Ok({
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
-                Some(whitespace_pat!()) => {
-                    ControlToken::Continue
-                }
+                Some(whitespace_pat!()) => ControlToken::Continue,
                 Some('\0') => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.init_doctype();
