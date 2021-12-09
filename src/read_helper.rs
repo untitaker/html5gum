@@ -215,10 +215,10 @@ macro_rules! produce_needle {
     (($($acc:tt)*); , $($rest:tt)*) => {
         $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
     };
-    (($($acc:tt)*); => $($rest:tt)*) => {
+    (($($acc:tt)*); => $garbage:expr, $($rest:tt)*) => {
         $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
     };
-    (($($acc:tt)*); { $($garbage:tt)* } $($rest:tt)*) => {
+    (($($acc:tt)*); => { $($garbage:tt)* } $($rest:tt)*) => {
         $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
     };
     (($($acc:tt)*); ( $($pattern:tt)* ) $($rest:tt)*) => {

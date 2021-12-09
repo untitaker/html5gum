@@ -1847,9 +1847,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     emitter.emit_current_doctype();
                     ControlToken::Eof
                 }
-                Some(_xs) => {
-                    ControlToken::Continue
-                }
+                Some(_xs) => ControlToken::Continue,
             }
         ),
         State::CdataSection => fast_read_char!(
