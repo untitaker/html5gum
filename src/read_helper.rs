@@ -253,13 +253,13 @@ macro_rules! produce_needle {
 ///
 /// fn after<R: Reader>(slf: &mut Tokenizer<R>) {
 ///     fast_read_char!(slf, emitter, match READ_CHAR {
-///         (Some("<")) => {
+///         Some("<") => {
 ///             todo!()
 ///         }
-///         (Some(x)) => {
+///         Some(x) => {
 ///             todo!()
 ///         }
-///         (None) => {
+///         None => {
 ///             todo!()
 ///         }
 ///     })
