@@ -34,7 +34,10 @@ impl<R: Reader, E: Emitter<Token = Token>> html5ever::tokenizer::TokenSink for T
         reference_token: html5ever::tokenizer::Token,
         _line_number: u64,
     ) -> TokenSinkResult<Self::Handle> {
-        if matches!(reference_token, Token2::NullCharacterToken | Token2::ParseError(_) | Token2::CharacterTokens(_)) {
+        if matches!(
+            reference_token,
+            Token2::NullCharacterToken | Token2::ParseError(_) | Token2::CharacterTokens(_)
+        ) {
             // TODO
             return TokenSinkResult::Continue;
         };
@@ -62,9 +65,21 @@ impl<R: Reader, E: Emitter<Token = Token>> html5ever::tokenizer::TokenSink for T
                 assert_eq!(comment, comment2.as_ref());
             }
             (Some(Token::Doctype(doctype)), Token2::DoctypeToken(doctype2)) => {
-                assert_eq!(doctype.name, doctype2.name.map(|x| x.as_ref().to_owned()).unwrap_or_default());
-                assert_eq!(doctype.public_identifier, doctype2.public_id.map(|x| x.as_ref().to_owned()));
-                assert_eq!(doctype.system_identifier, doctype2.system_id.map(|x| x.as_ref().to_owned()));
+                assert_eq!(
+                    doctype.name,
+                    doctype2
+                        .name
+                        .map(|x| x.as_ref().to_owned())
+                        .unwrap_or_default()
+                );
+                assert_eq!(
+                    doctype.public_identifier,
+                    doctype2.public_id.map(|x| x.as_ref().to_owned())
+                );
+                assert_eq!(
+                    doctype.system_identifier,
+                    doctype2.system_id.map(|x| x.as_ref().to_owned())
+                );
                 assert_eq!(doctype.force_quirks, doctype2.force_quirks);
             }
             (a, b) => panic!("5gum: {:?}\n5ever: {:?}", a, b),
