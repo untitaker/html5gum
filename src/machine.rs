@@ -33,25 +33,25 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("&")) => {
+                Some("&") => {
                     machine_helper.return_state = Some(machine_helper.state);
                     machine_helper.state = State::CharacterReference;
                     ControlToken::Continue
                 }
-                (Some("<")) => {
+                Some("<") => {
                     machine_helper.state = State::TagOpen;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.emit_string("\0");
                     ControlToken::Continue
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.emit_string(xs);
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     ControlToken::Eof
                 }
             }
@@ -61,25 +61,25 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("&")) => {
+                Some("&") => {
                     machine_helper.return_state = Some(State::RcData);
                     machine_helper.state = State::CharacterReference;
                     ControlToken::Continue
                 }
-                (Some("<")) => {
+                Some("<") => {
                     machine_helper.state = State::RcDataLessThanSign;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.emit_string(xs);
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     ControlToken::Eof
                 }
             }
@@ -88,20 +88,20 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("<")) => {
+                Some("<") => {
                     machine_helper.state = State::RawTextLessThanSign;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.emit_string(xs);
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     ControlToken::Eof
                 }
             }
@@ -110,20 +110,20 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("<")) => {
+                Some("<") => {
                     machine_helper.state = State::ScriptDataLessThanSign;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.emit_string(xs);
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     ControlToken::Eof
                 }
             }
@@ -132,16 +132,16 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.emit_string(xs);
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     ControlToken::Eof
                 }
             }
@@ -216,32 +216,32 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("\t" | "\u{0A}" | "\u{0C}" | " ")) => {
+                Some("\t" | "\u{0A}" | "\u{0C}" | " ") => {
                     machine_helper.state = State::BeforeAttributeName;
                     ControlToken::Continue
                 }
-                (Some("/")) => {
+                Some("/") => {
                     machine_helper.state = State::SelfClosingStartTag;
                     ControlToken::Continue
                 }
-                (Some(">")) => {
+                Some(">") => {
                     machine_helper.state = State::Data;
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_tag_name("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     // TODO: slow
                     for x in xs.chars() {
                         emitter.push_tag_name(ctostr!(x.to_ascii_lowercase()));
                     }
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInTag);
                     ControlToken::Eof
                 }
@@ -477,25 +477,25 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("-")) => {
+                Some("-") => {
                     machine_helper.state = State::ScriptDataEscapedDash;
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
-                (Some("<")) => {
+                Some("<") => {
                     machine_helper.state = State::ScriptDataEscapedLessThanSign;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInScriptHtmlCommentLikeText);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.emit_string(xs);
                     ControlToken::Continue
                 }
@@ -505,26 +505,26 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("-")) => {
+                Some("-") => {
                     machine_helper.state = State::ScriptDataEscapedDashDash;
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
-                (Some("<")) => {
+                Some("<") => {
                     machine_helper.state = State::ScriptDataEscapedLessThanSign;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     machine_helper.state = State::ScriptDataEscaped;
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInScriptHtmlCommentLikeText);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     machine_helper.state = State::ScriptDataEscaped;
                     emitter.emit_string(xs);
                     ControlToken::Continue
@@ -535,30 +535,30 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("-")) => {
+                Some("-") => {
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
-                (Some("<")) => {
+                Some("<") => {
                     machine_helper.state = State::ScriptDataEscapedLessThanSign;
                     ControlToken::Continue
                 }
-                (Some(">")) => {
+                Some(">") => {
                     machine_helper.state = State::ScriptData;
                     emitter.emit_string(">");
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     machine_helper.state = State::ScriptDataEscaped;
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInScriptHtmlCommentLikeText);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     machine_helper.state = State::ScriptDataEscaped;
                     emitter.emit_string(xs);
                     ControlToken::Continue
@@ -663,26 +663,26 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("-")) => {
+                Some("-") => {
                     machine_helper.state = State::ScriptDataDoubleEscapedDash;
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
-                (Some("<")) => {
+                Some("<") => {
                     machine_helper.state = State::ScriptDataDoubleEscapedLessThanSign;
                     emitter.emit_string("<");
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInScriptHtmlCommentLikeText);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.emit_string(xs);
                     ControlToken::Continue
                 }
@@ -692,27 +692,27 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("-")) => {
+                Some("-") => {
                     machine_helper.state = State::ScriptDataDoubleEscapedDashDash;
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
-                (Some("<")) => {
+                Some("<") => {
                     machine_helper.state = State::ScriptDataDoubleEscapedLessThanSign;
                     emitter.emit_string("<");
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     machine_helper.state = State::ScriptDataDoubleEscaped;
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInScriptHtmlCommentLikeText);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     machine_helper.state = State::ScriptDataDoubleEscaped;
                     emitter.emit_string(xs);
                     ControlToken::Continue
@@ -723,31 +723,31 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("-")) => {
+                Some("-") => {
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
-                (Some("<")) => {
+                Some("<") => {
                     emitter.emit_string("<");
                     machine_helper.state = State::ScriptDataDoubleEscapedLessThanSign;
                     ControlToken::Continue
                 }
-                (Some(">")) => {
+                Some(">") => {
                     emitter.emit_string(">");
                     machine_helper.state = State::ScriptData;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     machine_helper.state = State::ScriptDataDoubleEscaped;
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInScriptHtmlCommentLikeText);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     machine_helper.state = State::ScriptDataDoubleEscaped;
                     emitter.emit_string(xs);
                     ControlToken::Continue
@@ -905,25 +905,25 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("\"")) => {
+                Some("\"") => {
                     machine_helper.state = State::AfterAttributeValueQuoted;
                     ControlToken::Continue
                 }
-                (Some("&")) => {
+                Some("&") => {
                     machine_helper.return_state = Some(State::AttributeValueDoubleQuoted);
                     machine_helper.state = State::CharacterReference;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_attribute_value("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInTag);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.push_attribute_value(xs);
                     ControlToken::Continue
                 }
@@ -933,25 +933,25 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("'")) => {
+                Some("'") => {
                     machine_helper.state = State::AfterAttributeValueQuoted;
                     ControlToken::Continue
                 }
-                (Some("&")) => {
+                Some("&") => {
                     machine_helper.return_state = Some(State::AttributeValueSingleQuoted);
                     machine_helper.state = State::CharacterReference;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_attribute_value("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInTag);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.push_attribute_value(xs);
                     ControlToken::Continue
                 }
@@ -961,35 +961,35 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("\t" | "\u{0A}" | "\u{0C}" | " ")) => {
+                Some("\t" | "\u{0A}" | "\u{0C}" | " ") => {
                     machine_helper.state = State::BeforeAttributeName;
                     ControlToken::Continue
                 }
-                (Some("&")) => {
+                Some("&") => {
                     machine_helper.return_state = Some(State::AttributeValueUnquoted);
                     machine_helper.state = State::CharacterReference;
                     ControlToken::Continue
                 }
-                (Some(">")) => {
+                Some(">") => {
                     machine_helper.state = State::Data;
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_attribute_value("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(xs @ ("\"" | "'" | "<" | "=" | "\u{60}"))) => {
+                Some(xs @ ("\"" | "'" | "<" | "=" | "\u{60}")) => {
                     emitter.emit_error(Error::UnexpectedCharacterInUnquotedAttributeValue);
                     emitter.push_attribute_value(xs);
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInTag);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.push_attribute_value(xs);
                     ControlToken::Continue
                 }
@@ -1048,21 +1048,21 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some(">")) => {
+                Some(">") => {
                     machine_helper.state = State::Data;
                     emitter.emit_current_comment();
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_current_comment();
                     ControlToken::Eof
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_comment("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.push_comment(xs);
                     ControlToken::Continue
                 }
@@ -1153,26 +1153,26 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("<")) => {
+                Some("<") => {
                     emitter.push_comment("<");
                     machine_helper.state = State::CommentLessThanSign;
                     ControlToken::Continue
                 }
-                (Some("-")) => {
+                Some("-") => {
                     machine_helper.state = State::CommentEndDash;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_comment("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInComment);
                     emitter.emit_current_comment();
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.push_comment(xs);
                     ControlToken::Continue
                 }
@@ -1387,27 +1387,27 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("\t" | "\u{0A}" | "\u{0C}" | " ")) => {
+                Some("\t" | "\u{0A}" | "\u{0C}" | " ") => {
                     machine_helper.state = State::AfterDoctypeName;
                     ControlToken::Continue
                 }
-                (Some(">")) => {
+                Some(">") => {
                     machine_helper.state = State::Data;
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_doctype_name("\u{fffd}");
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInDoctype);
                     emitter.set_force_quirks();
                     emitter.emit_current_doctype();
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     // TODO: slow
                     for x in xs.chars() {
                         emitter.push_doctype_name(ctostr!(x.to_ascii_lowercase()));
@@ -1529,29 +1529,29 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("\"")) => {
+                Some("\"") => {
                     machine_helper.state = State::AfterDoctypePublicIdentifier;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_doctype_public_identifier("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(">")) => {
+                Some(">") => {
                     emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
                     emitter.set_force_quirks();
                     machine_helper.state = State::Data;
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInDoctype);
                     emitter.set_force_quirks();
                     emitter.emit_current_doctype();
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.push_doctype_public_identifier(xs);
                     ControlToken::Continue
                 }
@@ -1561,29 +1561,29 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("'")) => {
+                Some("'") => {
                     machine_helper.state = State::AfterDoctypePublicIdentifier;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_doctype_public_identifier("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(">")) => {
+                Some(">") => {
                     emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
                     emitter.set_force_quirks();
                     machine_helper.state = State::Data;
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInDoctype);
                     emitter.set_force_quirks();
                     emitter.emit_current_doctype();
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.push_doctype_public_identifier(xs);
                     ControlToken::Continue
                 }
@@ -1747,29 +1747,29 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("\"")) => {
+                Some("\"") => {
                     machine_helper.state = State::AfterDoctypeSystemIdentifier;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_doctype_system_identifier("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(">")) => {
+                Some(">") => {
                     emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
                     machine_helper.state = State::Data;
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInDoctype);
                     emitter.set_force_quirks();
                     emitter.emit_current_doctype();
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.push_doctype_system_identifier(xs);
                     ControlToken::Continue
                 }
@@ -1779,29 +1779,29 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("\'")) => {
+                Some("\'") => {
                     machine_helper.state = State::AfterDoctypeSystemIdentifier;
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_doctype_system_identifier("\u{fffd}");
                     ControlToken::Continue
                 }
-                (Some(">")) => {
+                Some(">") => {
                     emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
                     machine_helper.state = State::Data;
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInDoctype);
                     emitter.set_force_quirks();
                     emitter.emit_current_doctype();
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.push_doctype_system_identifier(xs);
                     ControlToken::Continue
                 }
@@ -1834,20 +1834,20 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some(">")) => {
+                Some(">") => {
                     machine_helper.state = State::Data;
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
-                (Some("\0")) => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_current_doctype();
                     ControlToken::Eof
                 }
-                (Some(_xs)) => {
+                Some(_xs) => {
                     ControlToken::Continue
                 }
             }
@@ -1856,15 +1856,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             emitter,
             match READ_CHAR {
-                (Some("]")) => {
+                Some("]") => {
                     machine_helper.state = State::CdataSectionBracket;
                     ControlToken::Continue
                 }
-                (None) => {
+                None => {
                     emitter.emit_error(Error::EofInCdata);
                     ControlToken::Eof
                 }
-                (Some(xs)) => {
+                Some(xs) => {
                     emitter.emit_string(xs);
                     ControlToken::Continue
                 }
