@@ -1,3 +1,4 @@
-/in/
-/out/
+/in
+/out
 /target
+/target-afl

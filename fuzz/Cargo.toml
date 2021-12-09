@@ -6,3 +6,17 @@ edition = "2021"
 [dependencies]
 html5gum = { path = "../" }
 afl = "0.11.0"
+html5ever = "0.25.1"
+pretty_assertions = "1.0.0"
+
+[lib]
+name = "testcase"
+path = "src/testcase.rs"
+
+[[bin]]
+name = "html5gum-fuzz-afl"
+path = "src/main_afl.rs"
+
+[[bin]]
+name = "html5gum-fuzz-cli"
+path = "src/main_cli.rs"
