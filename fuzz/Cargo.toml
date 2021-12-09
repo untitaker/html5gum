@@ -1,0 +1,8 @@
+[package]
+name = "html5gum-fuzz"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+html5gum = { path = "../" }
+afl = "0.11.0"
