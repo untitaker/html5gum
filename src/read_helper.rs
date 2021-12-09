@@ -215,6 +215,18 @@ macro_rules! produce_needle {
     (($($acc:tt)*); , $($rest:tt)*) => {
         $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
     };
+    (($($acc:tt)*); => $($rest:tt)*) => {
+        $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
+    };
+    (($($acc:tt)*); { $($garbage:tt)* } $($rest:tt)*) => {
+        $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
+    };
+    (($($acc:tt)*); ( $($pattern:tt)* ) $($rest:tt)*) => {
+        $crate::read_helper::produce_needle!(
+            ($($acc)*);
+            $($pattern)* $($rest)*
+        )
+    };
     (($($acc:tt)*); ) => {
         [ $($acc)* ]
     };
@@ -254,12 +266,12 @@ macro_rules! produce_needle {
 /// }
 /// ```
 macro_rules! fast_read_char {
-    ($slf:expr, $emitter:ident, match READ_CHAR { $(($($pattern:tt)*) => $code:block)* }) => {
+    ($slf:expr, $emitter:ident, match READ_CHAR { $($arms:tt)* }) => {
         $slf.reader.read_until(
-            &$crate::read_helper::produce_needle!((); $($($pattern)*,)*),
+            &$crate::read_helper::produce_needle!((); $($arms)*),
             &mut $slf.emitter,
             |xs, $emitter| match xs {
-                $( $($pattern)* => $code ),*
+                $($arms)*
             }
         )
     };
