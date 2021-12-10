@@ -15,7 +15,7 @@ setup-afl: in
 afl: setup-afl
 	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
 
-try-afl-crashes:
+afl-tmin:
 	set -e && for f in out/*/crashes/id:*; do \
 		echo $$f; \
 		if ! $(MAKE) cli < $$f; then \
