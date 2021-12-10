@@ -11,7 +11,7 @@ setup-afl: in
 	CARGO_TARGET_DIR=./target-afl/ cargo afl build --bin html5gum-fuzz-afl
 
 afl: setup-afl
-	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz -i in -o out target-afl/debug/html5gum-fuzz-afl
+	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$AFL_OPTS -i in -o out target-afl/debug/html5gum-fuzz-afl
 
 try-afl-crashes:
 	set -e && for f in out/default/crashes/id:*; do \
