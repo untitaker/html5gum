@@ -1,3 +1,5 @@
+AFL_TARGET_BIN=target-afl/debug/html5gum-fuzz-afl
+
 clean:
 	rm -rf target target-afl in out
 
@@ -11,12 +13,15 @@ setup-afl: in
 	CARGO_TARGET_DIR=./target-afl/ cargo afl build --bin html5gum-fuzz-afl
 
 afl: setup-afl
-	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out target-afl/debug/html5gum-fuzz-afl
+	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
 
 try-afl-crashes:
 	set -e && for f in out/*/crashes/id:*; do \
 		echo $$f; \
-		$(MAKE) cli < $$f; \
+		if ! $(MAKE) cli < $$f; then \
+			afl-tmin -i $$f -o /tmp/html5gum-mintest ${AFL_TARGET_BIN}; \
+			exit 2; \
+		fi \
 	done
 
 cli:
