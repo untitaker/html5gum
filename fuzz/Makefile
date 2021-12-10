@@ -15,14 +15,28 @@ setup-afl: in
 afl: setup-afl
 	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
 
-afl-tmin:
-	set -e && for f in out/*/crashes/id:*; do \
+afl-next:
+	set -e && for f in $$(echo out/*/crashes/id:* | sort); do \
 		echo $$f; \
 		if ! $(MAKE) cli < $$f; then \
 			afl-tmin -i $$f -o /tmp/html5gum-mintest ${AFL_TARGET_BIN}; \
+			echo /tmp/html5gum-mintest; \
+			echo ----; \
+			cat -v /tmp/html5gum-mintest; \
+			echo; \
+			echo ----; \
 			exit 2; \
+		else \
+			rm $$f; \
 		fi \
 	done
+
+afl-skip:
+	set -e && for f in $$(echo out/*/crashes/id:* | sort); do \
+		rm $$f; \
+		break; \
+	done
+
 
 cli:
 	cargo run --bin html5gum-fuzz-cli
