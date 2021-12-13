@@ -479,3 +479,13 @@ pub enum Token {
     /// more tokens afterward.
     Error(Error),
 }
+
+impl Token {
+    pub(crate) fn name(&self) -> Option<&str> {
+        match self {
+            Token::StartTag(x) => Some(&x.name),
+            Token::EndTag(x) => Some(&x.name),
+            _ => None
+        }
+    }
+}

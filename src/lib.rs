@@ -12,6 +12,7 @@ mod never;
 mod read_helper;
 mod reader;
 mod tokenizer;
+mod trees;
 mod utils;
 
 #[cfg(feature = "integration-tests")]
