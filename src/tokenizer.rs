@@ -35,12 +35,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
             eof: false,
             emitter,
             reader: ReadHelper::new(input.to_reader()),
-            machine_helper: MachineHelper {
-                temporary_buffer: String::new(),
-                character_reference_code: 0,
-                state: State::Data,
-                return_state: None,
-            },
+            machine_helper: MachineHelper::default(),
         }
     }
 

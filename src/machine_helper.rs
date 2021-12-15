@@ -5,7 +5,18 @@ pub(crate) struct MachineHelper {
     pub temporary_buffer: String,
     pub character_reference_code: u32,
     pub state: State,
-    pub return_state: Option<State>,
+    return_state: Option<State>,
+}
+
+impl Default for MachineHelper {
+    fn default() -> Self {
+        MachineHelper {
+            temporary_buffer: String::new(),
+            character_reference_code: 0,
+            state: State::Data,
+            return_state: None,
+        }
+    }
 }
 
 impl MachineHelper {
@@ -33,5 +44,18 @@ impl MachineHelper {
     pub(crate) fn flush_buffer_characters<E: Emitter>(&mut self, emitter: &mut E) {
         emitter.emit_string(&self.temporary_buffer);
         self.temporary_buffer.clear();
+    }
+
+    pub(crate) fn enter_state(&mut self, state: State) {
+        self.return_state = Some(self.state);
+        self.state = state;
+    }
+
+    pub(crate) fn pop_return_state(&mut self) -> State {
+        self.return_state.take().unwrap()
+    }
+
+    pub(crate) fn exit_state(&mut self) {
+        self.state = self.pop_return_state();
     }
 }

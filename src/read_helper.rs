@@ -181,55 +181,6 @@ impl<T: Copy> Stack2<T> {
     }
 }
 
-macro_rules! produce_needle {
-    (($($acc:tt)*); Some($var:ident @ ($($pattern:tt)*)) $($rest:tt)*) => {
-        $crate::read_helper::produce_needle!(
-            ($($acc)*);
-            Some($($pattern)*)
-            $($rest)*
-        )
-    };
-
-    (($($acc:tt)*); Some($($x:literal)|*) $($rest:tt)*) => {
-        $crate::read_helper::produce_needle!((
-            $($acc)*
-            $(
-            {
-                debug_assert_eq!($x.len(), 1);
-                $x.chars().next().unwrap()
-            },
-            )*
-        ); $($rest)*)
-    };
-    (($($acc:tt)*); Some($x:ident) $($rest:tt)*) => {
-        $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
-    };
-    (($($acc:tt)*); c $($rest:tt)*) => {
-        $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
-    };
-    (($($acc:tt)*); None $($rest:tt)*) => {
-        $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
-    };
-    (($($acc:tt)*); , $($rest:tt)*) => {
-        $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
-    };
-    (($($acc:tt)*); => $garbage:expr, $($rest:tt)*) => {
-        $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
-    };
-    (($($acc:tt)*); => { $($garbage:tt)* } $($rest:tt)*) => {
-        $crate::read_helper::produce_needle!(($($acc)*); $($rest)*)
-    };
-    (($($acc:tt)*); ( $($pattern:tt)* ) $($rest:tt)*) => {
-        $crate::read_helper::produce_needle!(
-            ($($acc)*);
-            $($pattern)* $($rest)*
-        )
-    };
-    (($($acc:tt)*); ) => {
-        [ $($acc)* ]
-    };
-}
-
 /// A version of `match read_helper.read_char()` that "knows" about matched characters, so it can
 /// produce a more efficient `read_until` call instead.
 ///
@@ -250,7 +201,7 @@ macro_rules! produce_needle {
 /// }
 ///
 /// fn after<R: Reader>(slf: &mut Tokenizer<R>) {
-///     fast_read_char!(slf, emitter, match READ_CHAR {
+///     fast_read_char!(slf, emitter, match xs {
 ///         Some("<") => {
 ///             todo!()
 ///         }
@@ -264,16 +215,33 @@ macro_rules! produce_needle {
 /// }
 /// ```
 macro_rules! fast_read_char {
-    ($slf:expr, $emitter:ident, match READ_CHAR { $($arms:tt)* }) => {
+    ($slf:expr, $emitter:ident, $machine_helper:ident, match $read_char:ident {
+        $(Some($($lit:literal)|*) => $arm:block)*
+        Some($xs:ident) => $catchall:block
+        None => $eof_catchall:block
+    }) => {
         $slf.reader.read_until(
-            &$crate::read_helper::produce_needle!((); $($arms)*),
+            &[ $($({
+                debug_assert_eq!($lit.len(), 1);
+                $lit.chars().next().unwrap()
+            }),*),* ],
             &mut $slf.emitter,
-            |xs, $emitter| match xs {
-                $($arms)*
+            |$read_char, $emitter| match $read_char {
+                $(Some($($lit)|*) => $arm)*
+                Some($xs) => {
+                    // Prevent catch-all arm from using the machine_helper.
+                    //
+                    // State changes in catch-all arms are usually sign of a coding mistake. $xs
+                    // may contain an arbitrary amount of characters, so it's more likely than not
+                    // that the state is changed at the wrong read position.
+                    #[allow(unused_variables)]
+                    let $machine_helper = ();
+                    $catchall
+                }
+                None => $eof_catchall
             }
         )
     };
 }
 
 pub(crate) use fast_read_char;
-pub(crate) use produce_needle;
