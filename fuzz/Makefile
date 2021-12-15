@@ -23,7 +23,7 @@ afl-next:
 	set -e && for f in $$(echo out/*/crashes/id:* | sort); do \
 		echo $$f; \
 		if ! $(MAKE) cli < $$f; then \
-			afl-tmin -i $$f -o /tmp/html5gum-mintest ${AFL_TARGET_BIN}; \
+			cargo afl tmin -i $$f -o /tmp/html5gum-mintest ${AFL_TARGET_BIN}; \
 			echo /tmp/html5gum-mintest; \
 			echo ----; \
 			cat -v /tmp/html5gum-mintest; \
