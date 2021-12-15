@@ -15,7 +15,10 @@ mod tokenizer;
 mod utils;
 
 #[cfg(feature = "integration-tests")]
-pub use utils::State;
+mod slow_reader;
+
+#[cfg(feature = "integration-tests")]
+pub use {slow_reader::SlowReader, utils::State};
 
 pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
