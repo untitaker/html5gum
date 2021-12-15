@@ -4,7 +4,8 @@
 "input":"<a\r\"",
 "output":[],
 "errors":[
-    {"code": "unexpected-character-in-attribute-name", "line": 1, "col": 2}
+    {"code": "unexpected-character-in-attribute-name", "line": 1, "col": 2},
+    {"code": "eof-in-tag", "line": 1, "col": 5}
 ]}
 
 ]}

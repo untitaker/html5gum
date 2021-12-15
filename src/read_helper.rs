@@ -6,6 +6,7 @@ use crate::utils::{control_pat, ctostr, noncharacter_pat, surrogate_pat};
 
 pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
+    last_character_was_cr: bool,
     to_reconsume: Stack2<Option<char>>,
 }
 
@@ -13,6 +14,7 @@ impl<R: Reader> ReadHelper<R> {
     pub(crate) fn new(reader: R) -> Self {
         ReadHelper {
             reader,
+            last_character_was_cr: false,
             to_reconsume: Default::default(),
         }
     }
@@ -22,29 +24,29 @@ impl<R: Reader> ReadHelper<R> {
         &mut self,
         emitter: &mut E,
     ) -> Result<Option<char>, R::Error> {
-        let (c_res, reconsumed) = match self.to_reconsume.pop() {
+        let (mut c, reconsumed) = match self.to_reconsume.pop() {
             Some(c) => (Ok(c), true),
             None => (self.reader.read_char(), false),
         };
 
-        let mut c = match c_res {
-            Ok(Some(c)) => c,
-            res => return res,
-        };
+        if self.last_character_was_cr && matches!(c, Ok(Some('\n'))) {
+            return self.read_char(emitter);
+        }
 
-        if c == '\r' {
-            c = '\n';
-            let c2 = self.reader.read_char()?;
-            if c2 != Some('\n') {
-                self.unread_char(c2);
-            }
+        if matches!(c, Ok(Some('\r'))) {
+            self.last_character_was_cr = true;
+            c = Ok(Some('\n'));
+        } else {
+            self.last_character_was_cr = false;
         }
 
         if !reconsumed {
-            Self::validate_char(emitter, c);
+            if let Ok(Some(x)) = c {
+                Self::validate_char(emitter, x);
+            }
         }
 
-        Ok(Some(c))
+        c
     }
 
     #[inline]
@@ -54,6 +56,7 @@ impl<R: Reader> ReadHelper<R> {
         case_sensitive: bool,
     ) -> Result<bool, R::Error> {
         debug_assert!(!s.is_empty());
+        debug_assert!(!s.contains("\r"));
 
         let to_reconsume_bak = self.to_reconsume;
         let mut chars = s.chars();
@@ -69,6 +72,8 @@ impl<R: Reader> ReadHelper<R> {
             self.to_reconsume = to_reconsume_bak;
             return Ok(false);
         }
+
+        self.last_character_was_cr = false;
 
         self.reader.try_read_string(s, case_sensitive)
     }
@@ -86,48 +91,39 @@ impl<R: Reader> ReadHelper<R> {
             None => (),
         }
 
-        let mut last_character_was_cr = false;
+        let last_character_was_cr = &mut self.last_character_was_cr;
 
-        loop {
-            let rv = self.reader.read_until(needle, |xs| {
-                let xs = match xs {
-                    Some(xs) => xs,
-                    None => {
-                        last_character_was_cr = false;
-                        return read_cb(None, emitter);
-                    }
-                };
+        const MAX_NEEDLE_LEN: usize = 13;
+        let mut needle2 = ['\0'; MAX_NEEDLE_LEN];
+        // Assert that we will have space for adding \r
+        // If not, just bump MAX_NEEDLE_LEN
+        debug_assert!(needle.len() < needle2.len());
+        needle2[..needle.len()].copy_from_slice(needle);
+        needle2[needle.len()] = '\r';
+        let needle2_slice = &needle2[..needle.len() + 1];
 
-                let mut last_i = 0;
-                if last_character_was_cr && xs.starts_with('\n') {
-                    last_i = 1;
+        self.reader.read_until(needle2_slice, |xs| match xs {
+            Some("\r") => {
+                *last_character_was_cr = true;
+                read_cb(Some("\n"), emitter)
+            }
+            Some(mut xs) => {
+                if *last_character_was_cr && xs.starts_with('\n') {
+                    xs = &xs[1..];
                 }
 
-                for (i, _) in xs.match_indices('\r') {
-                    let xs2 = &xs[last_i..i];
-                    for x in xs2.chars() {
-                        Self::validate_char(emitter, x);
-                    }
-                    read_cb(Some(xs2), emitter);
-                    read_cb(Some("\n"), emitter);
-                    last_i = i + 1;
-                    if xs.as_bytes().get(last_i) == Some(&b'\n') {
-                        last_i += 1;
-                    }
-                }
-
-                let xs2 = &xs[last_i..];
-                for x in xs2.chars() {
+                for x in xs.chars() {
                     Self::validate_char(emitter, x);
                 }
-                last_character_was_cr = xs.ends_with('\r');
-                read_cb(Some(xs2), emitter)
-            });
 
-            if !last_character_was_cr {
-                break rv;
+                *last_character_was_cr = false;
+                read_cb(Some(xs), emitter)
             }
-        }
+            None => {
+                *last_character_was_cr = false;
+                read_cb(None, emitter)
+            }
+        })
     }
 
     #[inline]
