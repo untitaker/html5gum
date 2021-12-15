@@ -1,0 +1,10 @@
+{"tests": [
+
+{"description":"CR in tag preventing state change in fast_read_char (found via fuzzer)",
+"input":"<a\r\"",
+"output":[],
+"errors":[
+    {"code": "unexpected-character-in-attribute-name", "line": 1, "col": 2}
+]}
+
+]}
