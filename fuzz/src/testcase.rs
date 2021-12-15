@@ -1,3 +1,5 @@
+use std::env;
+
 use html5ever::buffer_queue::BufferQueue;
 use html5ever::tendril::format_tendril;
 use html5ever::tokenizer::{TagKind, Token as Token2, TokenSinkResult, TokenizerResult};
@@ -6,20 +8,48 @@ use html5gum::{Emitter, Reader, Token};
 use pretty_assertions::assert_eq;
 
 pub fn run(s: &str) {
-    let mut reference_tokenizer = html5ever::tokenizer::Tokenizer::new(
-        TokenSink {
-            testing_tokenizer: html5gum::Tokenizer::new(s),
-        },
-        Default::default(),
-    );
-    let mut queue = BufferQueue::new();
-    queue.push_back(format_tendril!("{}", s));
+    let mut did_anything = false;
 
-    assert!(matches!(
-        reference_tokenizer.feed(&mut queue),
-        TokenizerResult::Done
-    ));
-    reference_tokenizer.end();
+    if env::var("FUZZ_BASIC").unwrap() == "1" {
+        let testing_tokenizer = html5gum::Tokenizer::new(s).infallible();
+        for _ in testing_tokenizer {}
+
+        did_anything = true;
+    }
+
+    if env::var("FUZZ_OLD_HTML5GUM").unwrap() == "1" {
+        let reference_tokenizer = html5gum_old::Tokenizer::new(s).infallible();
+        let testing_tokenizer = html5gum::Tokenizer::new(s).infallible();
+        for (a, b) in testing_tokenizer.zip(reference_tokenizer) {
+            // Check equality of two different versions of Token by... stringifying them
+            assert_eq!(format!("{:?}", a), format!("{:?}", b));
+        }
+
+        did_anything = true;
+    }
+
+    if env::var("FUZZ_HTML5EVER").unwrap() == "1" {
+        let mut reference_tokenizer = html5ever::tokenizer::Tokenizer::new(
+            TokenSink {
+                testing_tokenizer: html5gum::Tokenizer::new(s),
+            },
+            Default::default(),
+        );
+        let mut queue = BufferQueue::new();
+        queue.push_back(format_tendril!("{}", s));
+
+        assert!(matches!(
+            reference_tokenizer.feed(&mut queue),
+            TokenizerResult::Done
+        ));
+        reference_tokenizer.end();
+
+        did_anything = true;
+    }
+
+    if !did_anything {
+        panic!("running empty testcase, enable either FUZZ_OLD_HTML5GUM or FUZZ_HTML5EVER");
+    }
 }
 
 struct TokenSink<R: Reader, E: Emitter> {

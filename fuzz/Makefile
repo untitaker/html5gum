@@ -1,3 +1,7 @@
+export FUZZ_BASIC := 0
+export FUZZ_OLD_HTML5GUM := 0
+export FUZZ_HTML5EVER := 0
+
 AFL_TARGET_BIN=target-afl/debug/html5gum-fuzz-afl
 
 clean:

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 html5gum = { path = "../" }
+html5gum_old = { version = "*", package = "html5gum" }
 afl = "0.11.0"
 html5ever = "0.25.1"
 pretty_assertions = "1.0.0"
