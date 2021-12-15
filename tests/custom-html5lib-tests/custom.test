@@ -6,6 +6,13 @@
 "errors":[
     {"code": "unexpected-character-in-attribute-name", "line": 1, "col": 2},
     {"code": "eof-in-tag", "line": 1, "col": 5}
+]},
+
+{"description": "CR \\u0001",
+"input":"\r\u0001",
+"output":[["Character","\n\u0001"]],
+"errors": [
+    {"code": "control-character-in-input-stream", "line": 1, "col": 2}
 ]}
 
 ]}

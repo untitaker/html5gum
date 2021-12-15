@@ -30,6 +30,7 @@ impl<R: Reader> ReadHelper<R> {
         };
 
         if self.last_character_was_cr && matches!(c, Ok(Some('\n'))) {
+            self.last_character_was_cr = false;
             return self.read_char(emitter);
         }
 
