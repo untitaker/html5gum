@@ -28,6 +28,14 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         };
     }
 
+    macro_rules! reconsume_in {
+        ($c:expr, $state:expr) => {{
+            machine_helper.state = $state;
+            slf.reader.unread_char($c);
+            ControlToken::Continue
+        }};
+    }
+
     match machine_helper.state {
         State::Data => fast_read_char!(
             slf,
@@ -159,16 +167,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
                     emitter.init_start_tag();
-                    machine_helper.state = State::TagName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::TagName)
                 }
                 c @ Some('?') => {
                     emitter.emit_error(Error::UnexpectedQuestionMarkInsteadOfTagName);
                     emitter.init_comment();
-                    machine_helper.state = State::BogusComment;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusComment)
                 }
                 None => {
                     emitter.emit_error(Error::EofBeforeTagName);
@@ -177,10 +181,8 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c @ Some(_) => {
                     emitter.emit_error(Error::InvalidFirstCharacterOfTagName);
-                    machine_helper.state = State::Data;
                     emitter.emit_string("<");
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::Data)
                 }
             }
         }),
@@ -189,9 +191,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(x) if x.is_ascii_alphabetic() => {
                     emitter.init_end_tag();
-                    machine_helper.state = State::TagName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::TagName)
                 }
                 Some('>') => {
                     emitter.emit_error(Error::MissingEndTagName);
@@ -206,9 +206,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Some(x) => {
                     emitter.emit_error(Error::InvalidFirstCharacterOfTagName);
                     emitter.init_comment();
-                    machine_helper.state = State::BogusComment;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::BogusComment)
                 }
             }
         }),
@@ -257,9 +255,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c => {
                     emitter.emit_string("<");
-                    machine_helper.state = State::RcData;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::RcData)
                 }
             }
         }),
@@ -268,15 +264,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(x) if x.is_ascii_alphabetic() => {
                     emitter.init_end_tag();
-                    machine_helper.state = State::RcDataEndTagName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::RcDataEndTagName)
                 }
                 c => {
                     emitter.emit_string("</");
-                    machine_helper.state = State::RcData;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::RcData)
                 }
             }
         }),
@@ -304,10 +296,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c => {
                     emitter.emit_string("</");
                     machine_helper.flush_buffer_characters(&mut slf.emitter);
-
-                    machine_helper.state = State::RcData;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::RcData)
                 }
             }
         }),
@@ -321,9 +310,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c => {
                     emitter.emit_string("<");
-                    machine_helper.state = State::RawText;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::RawText)
                 }
             }
         }),
@@ -332,15 +319,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(x) if x.is_ascii_alphabetic() => {
                     emitter.init_end_tag();
-                    machine_helper.state = State::RawTextEndTagName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::RawTextEndTagName)
                 }
                 c => {
                     emitter.emit_string("</");
-                    machine_helper.state = State::RawText;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::RawText)
                 }
             }
         }),
@@ -368,10 +351,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c => {
                     emitter.emit_string("</");
                     machine_helper.flush_buffer_characters(&mut slf.emitter);
-
-                    machine_helper.state = State::RawText;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::RawText)
                 }
             }
         }),
@@ -390,9 +370,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c => {
                     emitter.emit_string("<");
-                    machine_helper.state = State::ScriptData;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptData)
                 }
             }
         }),
@@ -401,15 +379,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(x) if x.is_ascii_alphabetic() => {
                     emitter.init_end_tag();
-                    machine_helper.state = State::ScriptDataEndTagName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::ScriptDataEndTagName)
                 }
                 c => {
                     emitter.emit_string("</");
-                    machine_helper.state = State::ScriptData;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptData)
                 }
             }
         }),
@@ -437,9 +411,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c => {
                     emitter.emit_string("</");
                     machine_helper.flush_buffer_characters(&mut slf.emitter);
-                    machine_helper.state = State::Data;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::Data)
                 }
             }
         }),
@@ -452,9 +424,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    machine_helper.state = State::ScriptData;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptData)
                 }
             }
         }),
@@ -467,9 +437,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    machine_helper.state = State::ScriptData;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptData)
                 }
             }
         }),
@@ -576,15 +544,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Some(x) if x.is_ascii_alphabetic() => {
                     machine_helper.temporary_buffer.clear();
                     emitter.emit_string("<");
-                    machine_helper.state = State::ScriptDataDoubleEscapeStart;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::ScriptDataDoubleEscapeStart)
                 }
                 c => {
                     emitter.emit_string("<");
-                    machine_helper.state = State::ScriptDataEscaped;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptDataEscaped)
                 }
             }
         }),
@@ -593,15 +557,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(x) if x.is_ascii_alphabetic() => {
                     emitter.init_end_tag();
-                    machine_helper.state = State::ScriptDataEscapedEndTagName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::ScriptDataEscapedEndTagName)
                 }
                 c => {
                     emitter.emit_string("</");
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::ScriptDataEscaped;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptDataEscaped)
                 }
             }
         }),
@@ -629,9 +589,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c => {
                     emitter.emit_string("</");
                     machine_helper.flush_buffer_characters(&mut slf.emitter);
-                    machine_helper.state = State::ScriptDataEscaped;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptDataEscaped)
                 }
             }
         }),
@@ -653,9 +611,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    machine_helper.state = State::ScriptDataEscaped;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptDataEscaped)
                 }
             }
         }),
@@ -764,9 +720,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    machine_helper.state = State::ScriptDataDoubleEscaped;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptDataDoubleEscaped)
                 }
             }
         }),
@@ -789,9 +743,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    machine_helper.state = State::ScriptDataDoubleEscaped;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::ScriptDataDoubleEscaped)
                 }
             }
         }),
@@ -800,9 +752,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => ControlToken::Continue,
                 c @ Some('/' | '>') | c @ None => {
-                    machine_helper.state = State::AfterAttributeName;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::AfterAttributeName)
                 }
                 Some('=') => {
                     emitter.emit_error(Error::UnexpectedEqualsSignBeforeAttributeName);
@@ -813,9 +763,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 Some(x) => {
                     emitter.init_attribute();
-                    machine_helper.state = State::AttributeName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::AttributeName)
                 }
             }
         }),
@@ -823,9 +771,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 c @ Some(whitespace_pat!() | '/' | '>') | c @ None => {
-                    machine_helper.state = State::AfterAttributeName;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::AfterAttributeName)
                 }
                 Some('=') => {
                     machine_helper.state = State::BeforeAttributeValue;
@@ -870,9 +816,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 Some(x) => {
                     emitter.init_attribute();
-                    machine_helper.state = State::AttributeName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::AttributeName)
                 }
             }
         }),
@@ -895,9 +839,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    machine_helper.state = State::AttributeValueUnquoted;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::AttributeValueUnquoted)
                 }
             }
         }),
@@ -1017,9 +959,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 Some(x) => {
                     emitter.emit_error(Error::MissingWhitespaceBetweenAttributes);
-                    machine_helper.state = State::BeforeAttributeName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::BeforeAttributeName)
                 }
             }
         }),
@@ -1038,9 +978,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 Some(x) => {
                     emitter.emit_error(Error::UnexpectedSolidusInTag);
-                    machine_helper.state = State::BeforeAttributeName;
-                    slf.reader.unread_char(Some(x));
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::BeforeAttributeName)
                 }
             }
         }),
@@ -1097,9 +1035,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c => {
                     emitter.emit_error(Error::IncorrectlyOpenedComment);
                     emitter.init_comment();
-                    machine_helper.state = State::BogusComment;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusComment)
                 }
             }
         }),
@@ -1117,9 +1053,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::Comment;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::Comment)
                 }
             }
         }),
@@ -1143,9 +1077,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c @ Some(_) => {
                     emitter.push_comment("-");
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::Comment;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::Comment)
                 }
             }
         }),
@@ -1191,9 +1123,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::Comment;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::Comment)
                 }
             }
         }),
@@ -1205,9 +1135,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::Comment;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::Comment)
                 }
             }
         }),
@@ -1219,9 +1147,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::CommentEndDash;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::CommentEndDash)
                 }
             }
         }),
@@ -1229,15 +1155,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 c @ Some('>') | c @ None => {
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::CommentEnd;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::CommentEnd)
                 }
                 c => {
                     emitter.emit_error(Error::NestedComment);
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::CommentEnd;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::CommentEnd)
                 }
             }
         }),
@@ -1255,9 +1177,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c => {
                     emitter.push_comment("-");
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::Comment;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::Comment)
                 }
             }
         }),
@@ -1285,9 +1205,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c @ Some(_) => {
                     emitter.push_comment("-");
                     emitter.push_comment("-");
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::Comment;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::Comment)
                 }
             }
         }),
@@ -1316,9 +1234,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     emitter.push_comment("-");
                     emitter.push_comment("-");
                     emitter.push_comment("!");
-                    machine_helper.state = State::Comment;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::Comment)
                 }
             }
         }),
@@ -1330,9 +1246,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c @ Some('>') => {
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::BeforeDoctypeName;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BeforeDoctypeName)
                 }
                 None => {
                     emitter.emit_error(Error::EofInDoctype);
@@ -1343,9 +1257,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c @ Some(_) => {
                     emitter.emit_error(Error::MissingWhitespaceBeforeDoctypeName);
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::BeforeDoctypeName;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BeforeDoctypeName)
                 }
             }
         }),
@@ -1442,9 +1354,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c @ Some(_) => {
                     emitter.emit_error(Error::InvalidCharacterSequenceAfterDoctypeName);
                     emitter.set_force_quirks();
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::BogusDoctype;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusDoctype)
                 }
             }
         }),
@@ -1483,9 +1393,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c @ Some(_) => {
                     emitter.emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
                     emitter.set_force_quirks();
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::BogusDoctype;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusDoctype)
                 }
             }
         }),
@@ -1519,9 +1427,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c @ Some(_) => {
                     emitter.emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
                     emitter.set_force_quirks();
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::BogusDoctype;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusDoctype)
                 }
             }
         }),
@@ -1626,9 +1532,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c @ Some(_) => {
                     emitter.emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::BogusDoctype;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusDoctype)
                 }
             }
         }),
@@ -1660,9 +1564,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c @ Some(_) => {
                     emitter.emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::BogusDoctype;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusDoctype)
                 }
             }
         }),
@@ -1701,9 +1603,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c @ Some(_) => {
                     emitter.emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::BogusDoctype;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusDoctype)
                 }
             }
         }),
@@ -1737,9 +1637,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c @ Some(_) => {
                     emitter.emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::BogusDoctype;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusDoctype)
                 }
             }
         }),
@@ -1824,9 +1722,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c @ Some(_) => {
                     emitter.emit_error(Error::UnexpectedCharacterAfterDoctypeSystemIdentifier);
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::BogusDoctype;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::BogusDoctype)
                 }
             }
         }),
@@ -1877,9 +1773,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c => {
                     emitter.emit_string("]");
-                    machine_helper.state = State::CdataSection;
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, State::CdataSection)
                 }
             }
         }),
@@ -1896,9 +1790,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c => {
                     emitter.emit_string("]]");
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::CdataSection;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::CdataSection)
                 }
             }
         }),
@@ -1909,9 +1801,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
 
             match slf.reader.read_char(emitter)? {
                 Some(x) if x.is_ascii_alphanumeric() => {
-                    slf.reader.unread_char(Some(x));
-                    machine_helper.state = State::NamedCharacterReference;
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::NamedCharacterReference)
                 }
                 Some('#') => {
                     machine_helper.temporary_buffer.push('#');
@@ -1921,9 +1811,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 c => {
                     machine_helper
                         .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                    machine_helper.state = machine_helper.return_state.take().unwrap();
-                    slf.reader.unread_char(c);
-                    ControlToken::Continue
+                    reconsume_in!(c, machine_helper.return_state.take().unwrap())
                 }
             }
         }),
@@ -1944,15 +1832,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 machine_helper.temporary_buffer.push_str(char_ref.name);
                 let char_ref_name_last_character = char_ref.name.chars().last();
                 let next_character = reader.read_char(emitter)?;
-                slf.reader.unread_char(next_character);
 
                 if machine_helper.is_consumed_as_part_of_an_attribute()
                     && char_ref_name_last_character != Some(';')
                     && matches!(next_character, Some(x) if x == '=' || x.is_ascii_alphanumeric())
                 {
                     machine_helper.flush_code_points_consumed_as_character_reference(emitter);
-                    machine_helper.state = machine_helper.return_state.take().unwrap();
-                    ControlToken::Continue
                 } else {
                     if char_ref_name_last_character != Some(';') {
                         emitter.emit_error(Error::MissingSemicolonAfterCharacterReference);
@@ -1963,14 +1848,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                         .temporary_buffer
                         .push_str(char_ref.characters);
                     machine_helper.flush_code_points_consumed_as_character_reference(emitter);
-                    machine_helper.state = machine_helper.return_state.take().unwrap();
-                    ControlToken::Continue
                 }
+
+                reconsume_in!(next_character, machine_helper.return_state.take().unwrap())
             } else {
-                slf.reader.unread_char(c);
                 machine_helper.flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                machine_helper.state = State::AmbiguousAmpersand;
-                ControlToken::Continue
+                reconsume_in!(c, State::AmbiguousAmpersand)
             }
         }),
         State::AmbiguousAmpersand => Ok({
@@ -1987,14 +1870,10 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c @ Some(';') => {
                     emitter.emit_error(Error::UnknownNamedCharacterReference);
-                    slf.reader.unread_char(c);
-                    machine_helper.state = machine_helper.return_state.take().unwrap();
-                    ControlToken::Continue
+                    reconsume_in!(c, machine_helper.return_state.take().unwrap())
                 }
                 c => {
-                    slf.reader.unread_char(c);
-                    machine_helper.state = machine_helper.return_state.take().unwrap();
-                    ControlToken::Continue
+                    reconsume_in!(c, machine_helper.return_state.take().unwrap())
                 }
             }
         }),
@@ -2009,9 +1888,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 c => {
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::DecimalCharacterReferenceStart;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::DecimalCharacterReferenceStart)
                 }
             }
         }),
@@ -2019,17 +1896,13 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 c @ Some('0'..='9' | 'A'..='F' | 'a'..='f') => {
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::HexadecimalCharacterReference;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::HexadecimalCharacterReference)
                 }
                 c => {
                     emitter.emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
                     machine_helper
                         .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                    slf.reader.unread_char(c);
-                    machine_helper.state = machine_helper.return_state.take().unwrap();
-                    ControlToken::Continue
+                    reconsume_in!(c, machine_helper.return_state.take().unwrap())
                 }
             }
         }),
@@ -2037,17 +1910,13 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(x @ ascii_digit_pat!()) => {
-                    slf.reader.unread_char(Some(x));
-                    machine_helper.state = State::DecimalCharacterReference;
-                    ControlToken::Continue
+                    reconsume_in!(Some(x), State::DecimalCharacterReference)
                 }
                 c => {
                     emitter.emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
                     machine_helper
                         .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                    slf.reader.unread_char(c);
-                    machine_helper.state = machine_helper.return_state.take().unwrap();
-                    ControlToken::Continue
+                    reconsume_in!(c, machine_helper.return_state.take().unwrap())
                 }
             }
         }),
@@ -2072,9 +1941,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c => {
                     emitter.emit_error(Error::MissingSemicolonAfterCharacterReference);
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::NumericCharacterReferenceEnd;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::NumericCharacterReferenceEnd)
                 }
             }
         }),
@@ -2091,9 +1958,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 c => {
                     emitter.emit_error(Error::MissingSemicolonAfterCharacterReference);
-                    slf.reader.unread_char(c);
-                    machine_helper.state = State::NumericCharacterReferenceEnd;
-                    ControlToken::Continue
+                    reconsume_in!(c, State::NumericCharacterReferenceEnd)
                 }
             }
         }),
