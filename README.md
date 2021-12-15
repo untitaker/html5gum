@@ -64,6 +64,11 @@ This allows you to:
   you, you can implement the respective trait methods as noop and therefore
   avoid any overhead creating plaintext tokens.
 
+## Other features
+
+* No unsafe Rust
+* Only dependency is `memchr`, and can be disabled via crate features (see `Cargo.toml`)
+
 ## Alternative HTML parsers
 
 `html5gum` was created out of a need to parse HTML tag soup efficiently. Previous options were to:

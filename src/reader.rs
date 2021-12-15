@@ -1,3 +1,4 @@
+use crate::utils::ctostr;
 use crate::Never;
 use std::io::{self, BufRead, BufReader, Read};
 
@@ -25,6 +26,64 @@ pub trait Reader {
     /// If the next characters equal to `s`, this function consumes the respective characters from
     /// the input stream and returns `true`. If not, it does nothing and returns `false`.
     fn try_read_string(&mut self, s: &str, case_sensitive: bool) -> Result<bool, Self::Error>;
+
+    /// Read an arbitrary amount of characters up until and including the next character that
+    /// matches an array entry in `needle`.
+    ///
+    /// Repeatedly call `read_cb` with either:
+    ///
+    /// 1. A chunk of consumed characters that does not contain any characters from `needle`. The chunk can be arbitrarily large or small.
+    /// 2. If the next character is included in `needle`, a string with just that character and nothing else.
+    ///
+    /// In other words, case 1 means "we didn't find the needle yet, but here's some read data",
+    /// while case 2 means "we have found the needle".
+    ///
+    /// If `read_cb` is called with `None` (EOF) or a `needle` like in case 2, `read_until` returns
+    /// that call's return value.
+    ///
+    /// The default implementation simply reads one character and calls `read_cb` with that
+    /// character, ignoring the needle entirely. It is recommended to manually implement
+    /// `read_until` if there is any sort of in-memory buffer where `memchr` can be run on.
+    ///
+    /// # Example
+    ///
+    /// Here is how [`StringReader`] behaves:
+    ///
+    /// ```rust
+    /// use html5gum::{Reader, Readable};
+    ///
+    /// let mut reader = "hello world".to_reader();
+    /// let mut eof = false;
+    /// let mut chunks = Vec::new();
+    /// while !eof {
+    ///     reader.read_until(&[' ', 'r'], |xs| {
+    ///         if let Some(xs) = xs {
+    ///             chunks.push(xs.to_owned());
+    ///         } else {
+    ///             eof = true;
+    ///         }
+    ///     });
+    /// }
+    ///
+    /// assert_eq!(chunks, &["hello", " ", "wo", "r", "ld"]);
+    /// ```
+    ///
+    /// The inefficient default implementation produces:
+    ///
+    /// ```text
+    /// ["h", "e", "l", "l", "o", " ", "w", "o", "r", "l", "d"]
+    /// ```
+    fn read_until<F, V>(&mut self, needle: &[char], mut read_cb: F) -> Result<V, Self::Error>
+    where
+        F: FnMut(Option<&str>) -> V,
+    {
+        let _needle = needle;
+
+        match self.read_char()? {
+            Some(x) => Ok(read_cb(Some(ctostr!(x)))),
+            None => Ok(read_cb(None)),
+        }
+    }
 }
 
 /// An object that can be converted into a [`crate::Reader`].
@@ -103,6 +162,32 @@ impl<'a> Reader for StringReader<'a> {
         };
         self.pos += c.len_utf8();
         Ok(Some(c))
+    }
+
+    fn read_until<F, V>(&mut self, needle: &[char], mut read_cb: F) -> Result<V, Self::Error>
+    where
+        F: FnMut(Option<&str>) -> V,
+    {
+        if let Some(input) = self.input.get(self.pos..) {
+            if let Some(needle_pos) = fast_find(needle, input) {
+                if needle_pos == 0 {
+                    let needle = self.cursor.next().unwrap();
+                    self.pos += needle.len_utf8();
+                    Ok(read_cb(Some(ctostr!(needle))))
+                } else {
+                    self.pos += needle_pos;
+                    let (s1, s2) = input.split_at(needle_pos);
+                    self.cursor = s2.chars();
+                    Ok(read_cb(Some(s1)))
+                }
+            } else {
+                self.pos = self.input.len() + 1;
+                self.cursor = "".chars();
+                Ok(read_cb(Some(input)))
+            }
+        } else {
+            Ok(read_cb(None))
+        }
     }
 
     fn try_read_string(&mut self, s1: &str, case_sensitive: bool) -> Result<bool, Self::Error> {
@@ -223,6 +308,33 @@ impl<R: BufRead> Reader for BufReadReader<R> {
 
         Ok(false)
     }
+
+    fn read_until<F, V>(&mut self, needle: &[char], mut read_cb: F) -> Result<V, Self::Error>
+    where
+        F: FnMut(Option<&str>) -> V,
+    {
+        let line = self.get_remaining_line()?;
+        let rv;
+        if !line.is_empty() {
+            if let Some(needle_pos) = fast_find(needle, line) {
+                if needle_pos == 0 {
+                    let len = line.chars().next().unwrap().len_utf8();
+                    rv = Ok(read_cb(Some(&line[..len])));
+                    self.line_pos += len;
+                } else {
+                    rv = Ok(read_cb(Some(&line[..needle_pos])));
+                    self.line_pos += needle_pos;
+                }
+            } else {
+                rv = Ok(read_cb(Some(line)));
+                self.line_pos += line.len();
+            }
+        } else {
+            rv = Ok(read_cb(None));
+        };
+
+        rv
+    }
 }
 
 impl<'a, R: Read + 'a> Readable<'a> for BufReader<R> {
@@ -231,4 +343,25 @@ impl<'a, R: Read + 'a> Readable<'a> for BufReader<R> {
     fn to_reader(self) -> Self::Reader {
         BufReadReader::new(self)
     }
+}
+
+#[inline]
+fn fast_find(needle: &[char], haystack: &str) -> Option<usize> {
+    #[cfg(feature = "memchr")]
+    if needle.iter().all(|x| x.is_ascii()) {
+        if needle.len() == 3 {
+            return memchr::memchr3(
+                needle[0] as u8,
+                needle[1] as u8,
+                needle[2] as u8,
+                haystack.as_bytes(),
+            );
+        } else if needle.len() == 2 {
+            return memchr::memchr2(needle[0] as u8, needle[1] as u8, haystack.as_bytes());
+        } else if needle.len() == 1 {
+            return memchr::memchr(needle[0] as u8, haystack.as_bytes());
+        }
+    }
+
+    haystack.find(needle)
 }
