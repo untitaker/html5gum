@@ -1845,7 +1845,8 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
 
                 if !machine_helper.is_consumed_as_part_of_an_attribute()
                     || char_ref_name_last_character == Some(';')
-                    || !matches!(next_character, Some(x) if x == '=' || x.is_ascii_alphanumeric()) {
+                    || !matches!(next_character, Some(x) if x == '=' || x.is_ascii_alphanumeric())
+                {
                     if char_ref_name_last_character != Some(';') {
                         emitter.emit_error(Error::MissingSemicolonAfterCharacterReference);
                     }
