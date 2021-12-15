@@ -1840,17 +1840,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             };
 
             if let Some((x, char_ref)) = char_ref {
-                machine_helper.temporary_buffer.push(x);
-                machine_helper.temporary_buffer.push_str(char_ref.name);
                 let char_ref_name_last_character = char_ref.name.chars().last();
                 let next_character = reader.read_char(emitter)?;
 
-                if machine_helper.is_consumed_as_part_of_an_attribute()
-                    && char_ref_name_last_character != Some(';')
-                    && matches!(next_character, Some(x) if x == '=' || x.is_ascii_alphanumeric())
-                {
-                    machine_helper.flush_code_points_consumed_as_character_reference(emitter);
-                } else {
+                if !machine_helper.is_consumed_as_part_of_an_attribute()
+                    || char_ref_name_last_character == Some(';')
+                    || !matches!(next_character, Some(x) if x == '=' || x.is_ascii_alphanumeric()) {
                     if char_ref_name_last_character != Some(';') {
                         emitter.emit_error(Error::MissingSemicolonAfterCharacterReference);
                     }
@@ -1859,12 +1854,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     machine_helper
                         .temporary_buffer
                         .push_str(char_ref.characters);
-                    machine_helper.flush_code_points_consumed_as_character_reference(emitter);
+                } else {
+                    machine_helper.temporary_buffer.push(x);
+                    machine_helper.temporary_buffer.push_str(char_ref.name);
                 }
 
+                machine_helper.flush_code_points_consumed_as_character_reference(emitter);
                 reconsume_in!(next_character, machine_helper.pop_return_state())
             } else {
-                machine_helper.flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                machine_helper.flush_code_points_consumed_as_character_reference(emitter);
                 reconsume_in!(c, State::AmbiguousAmpersand)
             }
         }),

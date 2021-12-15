@@ -99,7 +99,7 @@ impl<R: Reader> ReadHelper<R> {
                 };
 
                 let mut last_i = 0;
-                if last_character_was_cr && xs.starts_with("\n") {
+                if last_character_was_cr && xs.starts_with('\n') {
                     last_i = 1;
                 }
 
@@ -120,7 +120,7 @@ impl<R: Reader> ReadHelper<R> {
                 for x in xs2.chars() {
                     Self::validate_char(emitter, x);
                 }
-                last_character_was_cr = xs.ends_with("\r");
+                last_character_was_cr = xs.ends_with('\r');
                 read_cb(Some(xs2), emitter)
             });
 
