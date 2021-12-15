@@ -5,8 +5,10 @@ export FUZZ_BASIC := 0
 export FUZZ_OLD_HTML5GUM := 0
 # Add html5ever to fuzzing
 export FUZZ_HTML5EVER := 0
+# Ignore errors while diffing to paper over bugs in old html5gum
+export FUZZ_IGNORE_PARSE_ERRORS := 0
 # CLI arguments to pass to AFL. useful for multiprocessing
-export _AFL_OPTS := ""
+export _AFL_OPTS :=
 
 AFL_TARGET_BIN=target-afl/debug/html5gum-fuzz-afl
 
