@@ -2,7 +2,7 @@ use crate::entities::try_read_character_reference;
 use crate::read_helper::fast_read_char;
 use crate::utils::{
     ascii_digit_pat, control_pat, ctostr, noncharacter_pat, surrogate_pat, whitespace_pat,
-    ControlToken, State,
+    with_lowercase_str, ControlToken, State,
 };
 use crate::{Emitter, Error, Reader, Tokenizer};
 
@@ -233,10 +233,10 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 Some(xs) => {
-                    // TODO: slow
-                    for x in xs.chars() {
-                        emitter.push_tag_name(ctostr!(x.to_ascii_lowercase()));
-                    }
+                    with_lowercase_str(xs, |x| {
+                        emitter.push_tag_name(x);
+                    });
+
                     ControlToken::Continue
                 }
                 None => {
@@ -1320,10 +1320,9 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Eof
                 }
                 Some(xs) => {
-                    // TODO: slow
-                    for x in xs.chars() {
-                        emitter.push_doctype_name(ctostr!(x.to_ascii_lowercase()));
-                    }
+                    with_lowercase_str(xs, |x| {
+                        emitter.push_doctype_name(x);
+                    });
                     ControlToken::Continue
                 }
             }

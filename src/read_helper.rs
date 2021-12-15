@@ -83,52 +83,31 @@ impl<R: Reader> ReadHelper<R> {
         match self.to_reconsume.pop() {
             Some(Some(x)) => Ok(read_cb(Some(ctostr!(x)), emitter)),
             Some(None) => Ok(read_cb(None, emitter)),
-            None => {
-                let mut last_character_was_cr = false;
-
-                loop {
-                    let rv = self.reader.read_until(needle, |xs| {
-                        match xs {
-                            Some(xs) if xs.find(&['\r', '\n'][..]).is_some() => {
-                                let mut last_rv = None;
-
-                                // TODO: slow
-                                for x in xs.chars() {
-                                    if x == '\r' {
-                                        last_rv = Some(read_cb(Some("\n"), emitter));
-                                        last_character_was_cr = true;
-                                    } else if x == '\n' {
-                                        if !last_character_was_cr {
-                                            last_rv = Some(read_cb(Some("\n"), emitter));
-                                        }
-                                        last_character_was_cr = false;
-                                    } else {
-                                        Self::validate_char(emitter, x);
-                                        last_rv = Some(read_cb(Some(ctostr!(x)), emitter));
-                                        last_character_was_cr = false;
-                                    }
-                                }
-                                last_rv
-                            }
-                            xs => {
-                                if let Some(xs) = xs {
-                                    for x in xs.chars() {
-                                        Self::validate_char(emitter, x);
-                                    }
-                                }
-                                last_character_was_cr = false;
-                                Some(read_cb(xs, emitter))
-                            }
+            None => self.reader.read_until(needle, |xs| {
+                if let Some(xs) = xs {
+                    let mut last_i = 0;
+                    for (i, _) in xs.match_indices('\r') {
+                        let xs2 = &xs[last_i..i];
+                        for x in xs2.chars() {
+                            Self::validate_char(emitter, x);
                         }
-                    })?;
-
-                    if !last_character_was_cr {
-                        if let Some(rv) = rv {
-                            break Ok(rv);
+                        read_cb(Some(xs2), emitter);
+                        read_cb(Some("\n"), emitter);
+                        last_i = i + 1;
+                        if xs.as_bytes().get(last_i) == Some(&b'\n') {
+                            last_i += 1;
                         }
                     }
+
+                    let xs2 = &xs[last_i..];
+                    for x in xs2.chars() {
+                        Self::validate_char(emitter, x);
+                    }
+                    read_cb(Some(xs2), emitter)
+                } else {
+                    read_cb(None, emitter)
                 }
-            }
+            }),
         }
     }
 

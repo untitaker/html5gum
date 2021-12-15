@@ -170,3 +170,14 @@ macro_rules! ctostr {
 }
 
 pub(crate) use ctostr;
+
+/// Repeatedly call `f` with chunks of lowercased characters from `s`.
+pub(crate) fn with_lowercase_str(s: &str, mut f: impl FnMut(&str)) {
+    if s.chars().any(|x| x.is_ascii_uppercase()) {
+        for x in s.chars() {
+            f(ctostr!(x.to_ascii_lowercase()))
+        }
+    } else {
+        f(s);
+    }
+}
