@@ -57,7 +57,7 @@ impl<R: Reader> ReadHelper<R> {
         case_sensitive: bool,
     ) -> Result<bool, R::Error> {
         debug_assert!(!s.is_empty());
-        debug_assert!(!s.contains("\r"));
+        debug_assert!(!s.contains('\r'));
 
         let to_reconsume_bak = self.to_reconsume;
         let mut chars = s.chars();
