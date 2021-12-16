@@ -20,13 +20,23 @@ pub fn run(s: &str) {
     if env::var("FUZZ_OLD_HTML5GUM").unwrap() == "1" {
         let reference_tokenizer = html5gum_old::Tokenizer::new(s).infallible();
         let testing_tokenizer = html5gum::Tokenizer::new(s).infallible();
-        let mut testing_tokens = Vec::new();
-        let mut reference_tokens = Vec::new();
-        for (a, b) in testing_tokenizer.zip(reference_tokenizer) {
-            // Check equality of two different versions of Token by... stringifying them
-            testing_tokens.push(format!("{:?}", a));
-            reference_tokens.push(format!("{:?}", b));
+
+        let mut testing_tokens: Vec<_> = testing_tokenizer.collect();
+        let mut reference_tokens: Vec<_> = reference_tokenizer.collect();
+
+        if env::var("FUZZ_IGNORE_PARSE_ERRORS").unwrap() == "1" {
+            testing_tokens.retain(|x| !matches!(x, html5gum::Token::Error(_)));
+            reference_tokens.retain(|x| !matches!(x, html5gum_old::Token::Error(_)));
         }
+
+        let testing_tokens: Vec<_> = testing_tokens
+            .into_iter()
+            .map(|x| format!("{:?}", x))
+            .collect();
+        let reference_tokens: Vec<_> = reference_tokens
+            .into_iter()
+            .map(|x| format!("{:?}", x))
+            .collect();
 
         assert_eq!(testing_tokens, reference_tokens);
         did_anything = true;

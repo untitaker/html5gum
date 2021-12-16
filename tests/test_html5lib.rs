@@ -179,7 +179,16 @@ struct Tests {
 }
 
 #[test_generator::test_resources("tests/html5lib-tests/tokenizer/*.test")]
-fn test_tokenizer_file(resource_name: &str) {
+fn test_html5lib(resource_name: &str) {
+    run_html5lib_tokenizer_test(resource_name)
+}
+
+#[test_generator::test_resources("tests/custom-html5lib-tests/*.test")]
+fn test_custom_html5lib(resource_name: &str) {
+    run_html5lib_tokenizer_test(resource_name)
+}
+
+fn run_html5lib_tokenizer_test(resource_name: &str) {
     let path = Path::new(resource_name);
     let fname = path.file_name().unwrap().to_str().unwrap();
 

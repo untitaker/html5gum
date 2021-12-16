@@ -1,0 +1,25 @@
+{"tests": [
+
+{"description":"CR in tag preventing state change in fast_read_char (found via fuzzer)",
+"input":"<a\r\"",
+"output":[],
+"errors":[
+    {"code": "unexpected-character-in-attribute-name", "line": 1, "col": 2},
+    {"code": "eof-in-tag", "line": 1, "col": 5}
+]},
+
+{"description": "CR \\u0001",
+"input":"\r\u0001",
+"output":[["Character","\n\u0001"]],
+"errors": [
+    {"code": "control-character-in-input-stream", "line": 1, "col": 2}
+]},
+
+{"description": "comment less than sign bang dash CR",
+"input":"<!--<!-\r",
+"output":[["Comment", "<!-\n"]],
+"errors": [
+    {"code": "eof-in-comment", "line": 1, "col": 5}
+]}
+
+]}
