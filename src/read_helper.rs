@@ -24,9 +24,9 @@ impl<R: Reader> ReadHelper<R> {
         &mut self,
         emitter: &mut E,
     ) -> Result<Option<char>, R::Error> {
-        let (mut c, reconsumed) = match self.to_reconsume.pop() {
-            Some(c) => (Ok(c), true),
-            None => (self.reader.read_char(), false),
+        let mut c = match self.to_reconsume.pop() {
+            Some(c) => return Ok(c),
+            None => self.reader.read_char(),
         };
 
         if self.last_character_was_cr && matches!(c, Ok(Some('\n'))) {
@@ -41,12 +41,9 @@ impl<R: Reader> ReadHelper<R> {
             self.last_character_was_cr = false;
         }
 
-        if !reconsumed {
-            if let Ok(Some(x)) = c {
-                Self::validate_char(emitter, x);
-            }
+        if let Ok(Some(x)) = c {
+            Self::validate_char(emitter, x);
         }
-
         c
     }
 

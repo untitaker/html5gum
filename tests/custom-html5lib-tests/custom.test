@@ -13,6 +13,13 @@
 "output":[["Character","\n\u0001"]],
 "errors": [
     {"code": "control-character-in-input-stream", "line": 1, "col": 2}
+]},
+
+{"description": "comment less than sign bang dash CR",
+"input":"<!--<!-\r",
+"output":[["Comment", "<!-\n"]],
+"errors": [
+    {"code": "eof-in-comment", "line": 1, "col": 5}
 ]}
 
 ]}
