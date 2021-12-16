@@ -47,6 +47,7 @@ impl MachineHelper {
     }
 
     pub(crate) fn enter_state(&mut self, state: State) {
+        debug_assert!(self.return_state.is_none());
         self.return_state = Some(self.state);
         self.state = state;
     }
