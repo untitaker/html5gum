@@ -160,6 +160,7 @@ pub enum State {
 
 pub enum ControlToken {
     Eof,
+    Reconsume(Option<char>, State),
     Continue,
 }
 

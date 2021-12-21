@@ -74,6 +74,10 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
             } else if !self.eof {
                 match machine::consume(self) {
                     Ok(ControlToken::Continue) => (),
+                    Ok(ControlToken::Reconsume(c, state)) => {
+                        self.machine_helper.switch_to(state);
+                        self.reader.unread_char(c);
+                    }
                     Ok(ControlToken::Eof) => {
                         self.eof = true;
                         self.emitter.emit_eof();

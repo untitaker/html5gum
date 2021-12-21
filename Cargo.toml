@@ -22,7 +22,8 @@ test-generator = "0.3.0"
 # This may come in handy if you encounter packaging/build problems.
 default = ["memchr"]
 
-# Feature used by integration tests in tests/ to get access to library internals.
+# If this feature is enabled, html5gum will expose private APIs and start
+# printing debug information to stdout.
 integration-tests = []
 
 [dependencies]
