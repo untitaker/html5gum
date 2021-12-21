@@ -30,10 +30,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
 
     macro_rules! reconsume_in {
         ($c:expr, $state:expr) => {{
-            let new_state = $state;
-            machine_helper.switch_to(new_state);
-            slf.reader.unread_char($c);
-            ControlToken::Continue
+            ControlToken::Reconsume($c, $state)
         }};
     }
 
