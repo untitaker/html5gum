@@ -767,32 +767,39 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
             }
         }),
-        State::AttributeName => Ok({
-            let emitter = &mut slf.emitter;
-            match slf.reader.read_char(emitter)? {
-                c @ Some(whitespace_pat!() | '/' | '>') | c @ None => {
-                    reconsume_in!(c, State::AfterAttributeName)
+        State::AttributeName => fast_read_char!(
+            slf,
+            emitter,
+            machine_helper,
+            match xs {
+                Some("\t" | "\u{0A}" | "\u{0C}" | " " | "/" | ">") => {
+                    reconsume_in!(xs.unwrap().chars().next(), State::AfterAttributeName)
                 }
-                Some('=') => {
+                Some("=") => {
                     machine_helper.switch_to(State::BeforeAttributeValue);
                     ControlToken::Continue
                 }
-                Some('\0') => {
+                Some("\0") => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.push_attribute_name("\u{fffd}");
                     ControlToken::Continue
                 }
-                Some(x @ '"' | x @ '\'' | x @ '<') => {
+                Some("\"" | "'" | "<") => {
                     emitter.emit_error(Error::UnexpectedCharacterInAttributeName);
-                    emitter.push_attribute_name(ctostr!(x.to_ascii_lowercase()));
+                    emitter.push_attribute_name(xs.unwrap());
                     ControlToken::Continue
                 }
-                Some(x) => {
-                    emitter.push_attribute_name(ctostr!(x.to_ascii_lowercase()));
+                Some(xs) => {
+                    with_lowercase_str(xs, |xs| {
+                        emitter.push_attribute_name(xs);
+                    });
                     ControlToken::Continue
+                }
+                None => {
+                    reconsume_in!(None, State::AfterAttributeName)
                 }
             }
-        }),
+        ),
         State::AfterAttributeName => Ok({
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
