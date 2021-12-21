@@ -30,13 +30,14 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
 
     macro_rules! reconsume_in {
         ($c:expr, $state:expr) => {{
-            machine_helper.state = $state;
+            let new_state = $state;
+            machine_helper.switch_to(new_state);
             slf.reader.unread_char($c);
             ControlToken::Continue
         }};
     }
 
-    match machine_helper.state {
+    match machine_helper.state() {
         State::Data => fast_read_char!(
             slf,
             emitter,
@@ -47,7 +48,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 Some("<") => {
-                    machine_helper.state = State::TagOpen;
+                    machine_helper.switch_to(State::TagOpen);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -75,7 +76,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 Some("<") => {
-                    machine_helper.state = State::RcDataLessThanSign;
+                    machine_helper.switch_to(State::RcDataLessThanSign);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -98,7 +99,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("<") => {
-                    machine_helper.state = State::RawTextLessThanSign;
+                    machine_helper.switch_to(State::RawTextLessThanSign);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -121,7 +122,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("<") => {
-                    machine_helper.state = State::ScriptDataLessThanSign;
+                    machine_helper.switch_to(State::ScriptDataLessThanSign);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -161,11 +162,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('!') => {
-                    machine_helper.state = State::MarkupDeclarationOpen;
+                    machine_helper.switch_to(State::MarkupDeclarationOpen);
                     ControlToken::Continue
                 }
                 Some('/') => {
-                    machine_helper.state = State::EndTagOpen;
+                    machine_helper.switch_to(State::EndTagOpen);
                     ControlToken::Continue
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
@@ -198,7 +199,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 Some('>') => {
                     emitter.emit_error(Error::MissingEndTagName);
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     ControlToken::Continue
                 }
                 None => {
@@ -219,15 +220,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("\t" | "\u{0A}" | "\u{0C}" | " ") => {
-                    machine_helper.state = State::BeforeAttributeName;
+                    machine_helper.switch_to(State::BeforeAttributeName);
                     ControlToken::Continue
                 }
                 Some("/") => {
-                    machine_helper.state = State::SelfClosingStartTag;
+                    machine_helper.switch_to(State::SelfClosingStartTag);
                     ControlToken::Continue
                 }
                 Some(">") => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -254,7 +255,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some('/') => {
                     machine_helper.temporary_buffer.clear();
-                    machine_helper.state = State::RcDataEndTagOpen;
+                    machine_helper.switch_to(State::RcDataEndTagOpen);
                     ControlToken::Continue
                 }
                 c => {
@@ -280,15 +281,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::BeforeAttributeName;
+                    machine_helper.switch_to(State::BeforeAttributeName);
                     ControlToken::Continue
                 }
                 Some('/') if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::SelfClosingStartTag;
+                    machine_helper.switch_to(State::SelfClosingStartTag);
                     ControlToken::Continue
                 }
                 Some('>') if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -309,7 +310,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some('/') => {
                     machine_helper.temporary_buffer.clear();
-                    machine_helper.state = State::RawTextEndTagOpen;
+                    machine_helper.switch_to(State::RawTextEndTagOpen);
                     ControlToken::Continue
                 }
                 c => {
@@ -335,15 +336,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::BeforeAttributeName;
+                    machine_helper.switch_to(State::BeforeAttributeName);
                     ControlToken::Continue
                 }
                 Some('/') if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::SelfClosingStartTag;
+                    machine_helper.switch_to(State::SelfClosingStartTag);
                     ControlToken::Continue
                 }
                 Some('>') if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -364,11 +365,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some('/') => {
                     machine_helper.temporary_buffer.clear();
-                    machine_helper.state = State::ScriptDataEndTagOpen;
+                    machine_helper.switch_to(State::ScriptDataEndTagOpen);
                     ControlToken::Continue
                 }
                 Some('!') => {
-                    machine_helper.state = State::ScriptDataEscapeStart;
+                    machine_helper.switch_to(State::ScriptDataEscapeStart);
                     emitter.emit_string("<!");
                     ControlToken::Continue
                 }
@@ -395,15 +396,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::BeforeAttributeName;
+                    machine_helper.switch_to(State::BeforeAttributeName);
                     ControlToken::Continue
                 }
                 Some('/') if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::SelfClosingStartTag;
+                    machine_helper.switch_to(State::SelfClosingStartTag);
                     ControlToken::Continue
                 }
                 Some('>') if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -423,7 +424,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('-') => {
-                    machine_helper.state = State::ScriptDataEscapeStartDash;
+                    machine_helper.switch_to(State::ScriptDataEscapeStartDash);
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
@@ -436,7 +437,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('-') => {
-                    machine_helper.state = State::ScriptDataEscapedDashDash;
+                    machine_helper.switch_to(State::ScriptDataEscapedDashDash);
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
@@ -451,12 +452,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("-") => {
-                    machine_helper.state = State::ScriptDataEscapedDash;
+                    machine_helper.switch_to(State::ScriptDataEscapedDash);
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
                 Some("<") => {
-                    machine_helper.state = State::ScriptDataEscapedLessThanSign;
+                    machine_helper.switch_to(State::ScriptDataEscapedLessThanSign);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -478,22 +479,22 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('-') => {
-                    machine_helper.state = State::ScriptDataEscapedDashDash;
+                    machine_helper.switch_to(State::ScriptDataEscapedDashDash);
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
                 Some('<') => {
-                    machine_helper.state = State::ScriptDataEscapedLessThanSign;
+                    machine_helper.switch_to(State::ScriptDataEscapedLessThanSign);
                     ControlToken::Continue
                 }
                 Some('\0') => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
-                    machine_helper.state = State::ScriptDataEscaped;
+                    machine_helper.switch_to(State::ScriptDataEscaped);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
                 Some(x) => {
-                    machine_helper.state = State::ScriptDataEscaped;
+                    machine_helper.switch_to(State::ScriptDataEscaped);
                     emitter.emit_string(ctostr!(x));
                     ControlToken::Continue
                 }
@@ -511,22 +512,22 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 Some('<') => {
-                    machine_helper.state = State::ScriptDataEscapedLessThanSign;
+                    machine_helper.switch_to(State::ScriptDataEscapedLessThanSign);
                     ControlToken::Continue
                 }
                 Some('>') => {
-                    machine_helper.state = State::ScriptData;
+                    machine_helper.switch_to(State::ScriptData);
                     emitter.emit_string(">");
                     ControlToken::Continue
                 }
                 Some('\0') => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
-                    machine_helper.state = State::ScriptDataEscaped;
+                    machine_helper.switch_to(State::ScriptDataEscaped);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
                 Some(x) => {
-                    machine_helper.state = State::ScriptDataEscaped;
+                    machine_helper.switch_to(State::ScriptDataEscaped);
                     emitter.emit_string(ctostr!(x));
                     ControlToken::Continue
                 }
@@ -541,7 +542,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some('/') => {
                     machine_helper.temporary_buffer.clear();
-                    machine_helper.state = State::ScriptDataEscapedEndTagOpen;
+                    machine_helper.switch_to(State::ScriptDataEscapedEndTagOpen);
                     ControlToken::Continue
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
@@ -572,15 +573,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::BeforeAttributeName;
+                    machine_helper.switch_to(State::BeforeAttributeName);
                     ControlToken::Continue
                 }
                 Some('/') if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::SelfClosingStartTag;
+                    machine_helper.switch_to(State::SelfClosingStartTag);
                     ControlToken::Continue
                 }
                 Some('>') if emitter.current_is_appropriate_end_tag_token() => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -601,9 +602,9 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(x @ whitespace_pat!() | x @ '/' | x @ '>') => {
                     if machine_helper.temporary_buffer == "script" {
-                        machine_helper.state = State::ScriptDataDoubleEscaped;
+                        machine_helper.switch_to(State::ScriptDataDoubleEscaped);
                     } else {
-                        machine_helper.state = State::ScriptDataEscaped;
+                        machine_helper.switch_to(State::ScriptDataEscaped);
                     }
                     emitter.emit_string(ctostr!(x));
                     ControlToken::Continue
@@ -624,12 +625,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("-") => {
-                    machine_helper.state = State::ScriptDataDoubleEscapedDash;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscapedDash);
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
                 Some("<") => {
-                    machine_helper.state = State::ScriptDataDoubleEscapedLessThanSign;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscapedLessThanSign);
                     emitter.emit_string("<");
                     ControlToken::Continue
                 }
@@ -652,23 +653,23 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('-') => {
-                    machine_helper.state = State::ScriptDataDoubleEscapedDashDash;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscapedDashDash);
                     emitter.emit_string("-");
                     ControlToken::Continue
                 }
                 Some('<') => {
-                    machine_helper.state = State::ScriptDataDoubleEscapedLessThanSign;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscapedLessThanSign);
                     emitter.emit_string("<");
                     ControlToken::Continue
                 }
                 Some('\0') => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
-                    machine_helper.state = State::ScriptDataDoubleEscaped;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscaped);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
                 Some(x) => {
-                    machine_helper.state = State::ScriptDataDoubleEscaped;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscaped);
                     emitter.emit_string(ctostr!(x));
                     ControlToken::Continue
                 }
@@ -687,22 +688,22 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 Some('<') => {
                     emitter.emit_string("<");
-                    machine_helper.state = State::ScriptDataDoubleEscapedLessThanSign;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscapedLessThanSign);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_string(">");
-                    machine_helper.state = State::ScriptData;
+                    machine_helper.switch_to(State::ScriptData);
                     ControlToken::Continue
                 }
                 Some('\0') => {
                     emitter.emit_error(Error::UnexpectedNullCharacter);
-                    machine_helper.state = State::ScriptDataDoubleEscaped;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscaped);
                     emitter.emit_string("\u{fffd}");
                     ControlToken::Continue
                 }
                 Some(x) => {
-                    machine_helper.state = State::ScriptDataDoubleEscaped;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscaped);
                     emitter.emit_string(ctostr!(x));
                     ControlToken::Continue
                 }
@@ -717,7 +718,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some('/') => {
                     machine_helper.temporary_buffer.clear();
-                    machine_helper.state = State::ScriptDataDoubleEscapeEnd;
+                    machine_helper.switch_to(State::ScriptDataDoubleEscapeEnd);
                     emitter.emit_string("/");
                     ControlToken::Continue
                 }
@@ -731,9 +732,9 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(x @ whitespace_pat!() | x @ '/' | x @ '>') => {
                     if machine_helper.temporary_buffer == "script" {
-                        machine_helper.state = State::ScriptDataEscaped;
+                        machine_helper.switch_to(State::ScriptDataEscaped);
                     } else {
-                        machine_helper.state = State::ScriptDataDoubleEscaped;
+                        machine_helper.switch_to(State::ScriptDataDoubleEscaped);
                     }
 
                     emitter.emit_string(ctostr!(x));
@@ -760,7 +761,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     emitter.emit_error(Error::UnexpectedEqualsSignBeforeAttributeName);
                     emitter.init_attribute();
                     emitter.push_attribute_name("=");
-                    machine_helper.state = State::AttributeName;
+                    machine_helper.switch_to(State::AttributeName);
                     ControlToken::Continue
                 }
                 Some(x) => {
@@ -776,7 +777,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     reconsume_in!(c, State::AfterAttributeName)
                 }
                 Some('=') => {
-                    machine_helper.state = State::BeforeAttributeValue;
+                    machine_helper.switch_to(State::BeforeAttributeValue);
                     ControlToken::Continue
                 }
                 Some('\0') => {
@@ -800,15 +801,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => ControlToken::Continue,
                 Some('/') => {
-                    machine_helper.state = State::SelfClosingStartTag;
+                    machine_helper.switch_to(State::SelfClosingStartTag);
                     ControlToken::Continue
                 }
                 Some('=') => {
-                    machine_helper.state = State::BeforeAttributeValue;
+                    machine_helper.switch_to(State::BeforeAttributeValue);
                     ControlToken::Continue
                 }
                 Some('>') => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -827,16 +828,16 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => ControlToken::Continue,
                 Some('"') => {
-                    machine_helper.state = State::AttributeValueDoubleQuoted;
+                    machine_helper.switch_to(State::AttributeValueDoubleQuoted);
                     ControlToken::Continue
                 }
                 Some('\'') => {
-                    machine_helper.state = State::AttributeValueSingleQuoted;
+                    machine_helper.switch_to(State::AttributeValueSingleQuoted);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_error(Error::MissingAttributeValue);
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -851,7 +852,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("\"") => {
-                    machine_helper.state = State::AfterAttributeValueQuoted;
+                    machine_helper.switch_to(State::AfterAttributeValueQuoted);
                     ControlToken::Continue
                 }
                 Some("&") => {
@@ -879,7 +880,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("'") => {
-                    machine_helper.state = State::AfterAttributeValueQuoted;
+                    machine_helper.switch_to(State::AfterAttributeValueQuoted);
                     ControlToken::Continue
                 }
                 Some("&") => {
@@ -907,7 +908,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("\t" | "\u{0A}" | "\u{0C}" | " ") => {
-                    machine_helper.state = State::BeforeAttributeName;
+                    machine_helper.switch_to(State::BeforeAttributeName);
                     ControlToken::Continue
                 }
                 Some("&") => {
@@ -915,7 +916,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 Some(">") => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -943,15 +944,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => {
-                    machine_helper.state = State::BeforeAttributeName;
+                    machine_helper.switch_to(State::BeforeAttributeName);
                     ControlToken::Continue
                 }
                 Some('/') => {
-                    machine_helper.state = State::SelfClosingStartTag;
+                    machine_helper.switch_to(State::SelfClosingStartTag);
                     ControlToken::Continue
                 }
                 Some('>') => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -970,7 +971,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some('>') => {
                     emitter.set_self_closing();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_tag();
                     ControlToken::Continue
                 }
@@ -990,7 +991,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some(">") => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_comment();
                     ControlToken::Continue
                 }
@@ -1014,11 +1015,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some('-') if slf.reader.try_read_string("-", true)? => {
                     emitter.init_comment();
-                    machine_helper.state = State::CommentStart;
+                    machine_helper.switch_to(State::CommentStart);
                     ControlToken::Continue
                 }
                 Some('d' | 'D') if slf.reader.try_read_string("octype", false)? => {
-                    machine_helper.state = State::Doctype;
+                    machine_helper.switch_to(State::Doctype);
                     ControlToken::Continue
                 }
                 Some('[') if slf.reader.try_read_string("CDATA[", true)? => {
@@ -1032,7 +1033,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
 
                     emitter.init_comment();
                     emitter.push_comment("[CDATA[");
-                    machine_helper.state = State::BogusComment;
+                    machine_helper.switch_to(State::BogusComment);
                     ControlToken::Continue
                 }
                 c => {
@@ -1046,12 +1047,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('-') => {
-                    machine_helper.state = State::CommentStartDash;
+                    machine_helper.switch_to(State::CommentStartDash);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_error(Error::AbruptClosingOfEmptyComment);
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_comment();
                     ControlToken::Continue
                 }
@@ -1064,12 +1065,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('-') => {
-                    machine_helper.state = State::CommentEnd;
+                    machine_helper.switch_to(State::CommentEnd);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_error(Error::AbruptClosingOfEmptyComment);
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_comment();
                     ControlToken::Continue
                 }
@@ -1091,11 +1092,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match xs {
                 Some("<") => {
                     emitter.push_comment("<");
-                    machine_helper.state = State::CommentLessThanSign;
+                    machine_helper.switch_to(State::CommentLessThanSign);
                     ControlToken::Continue
                 }
                 Some("-") => {
-                    machine_helper.state = State::CommentEndDash;
+                    machine_helper.switch_to(State::CommentEndDash);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -1119,7 +1120,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some('!') => {
                     emitter.push_comment("!");
-                    machine_helper.state = State::CommentLessThanSignBang;
+                    machine_helper.switch_to(State::CommentLessThanSignBang);
                     ControlToken::Continue
                 }
                 Some('<') => {
@@ -1135,7 +1136,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('-') => {
-                    machine_helper.state = State::CommentLessThanSignBangDash;
+                    machine_helper.switch_to(State::CommentLessThanSignBangDash);
                     ControlToken::Continue
                 }
                 c => {
@@ -1147,7 +1148,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('-') => {
-                    machine_helper.state = State::CommentLessThanSignBangDashDash;
+                    machine_helper.switch_to(State::CommentLessThanSignBangDashDash);
                     ControlToken::Continue
                 }
                 c => {
@@ -1171,7 +1172,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('-') => {
-                    machine_helper.state = State::CommentEnd;
+                    machine_helper.switch_to(State::CommentEnd);
                     ControlToken::Continue
                 }
                 None => {
@@ -1189,12 +1190,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some('>') => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_comment();
                     ControlToken::Continue
                 }
                 Some('!') => {
-                    machine_helper.state = State::CommentEndBang;
+                    machine_helper.switch_to(State::CommentEndBang);
                     ControlToken::Continue
                 }
                 Some('-') => {
@@ -1220,12 +1221,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     emitter.push_comment("-");
                     emitter.push_comment("-");
                     emitter.push_comment("!");
-                    machine_helper.state = State::CommentEndDash;
+                    machine_helper.switch_to(State::CommentEndDash);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_error(Error::IncorrectlyClosedComment);
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_comment();
                     ControlToken::Continue
                 }
@@ -1246,7 +1247,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => {
-                    machine_helper.state = State::BeforeDoctypeName;
+                    machine_helper.switch_to(State::BeforeDoctypeName);
                     ControlToken::Continue
                 }
                 c @ Some('>') => {
@@ -1273,14 +1274,14 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     emitter.emit_error(Error::UnexpectedNullCharacter);
                     emitter.init_doctype();
                     emitter.push_doctype_name("\u{fffd}");
-                    machine_helper.state = State::DoctypeName;
+                    machine_helper.switch_to(State::DoctypeName);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_error(Error::MissingDoctypeName);
                     emitter.init_doctype();
                     emitter.set_force_quirks();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1294,7 +1295,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Some(x) => {
                     emitter.init_doctype();
                     emitter.push_doctype_name(ctostr!(x.to_ascii_lowercase()));
-                    machine_helper.state = State::DoctypeName;
+                    machine_helper.switch_to(State::DoctypeName);
                     ControlToken::Continue
                 }
             }
@@ -1305,11 +1306,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("\t" | "\u{0A}" | "\u{0C}" | " ") => {
-                    machine_helper.state = State::AfterDoctypeName;
+                    machine_helper.switch_to(State::AfterDoctypeName);
                     ControlToken::Continue
                 }
                 Some(">") => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1337,7 +1338,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => ControlToken::Continue,
                 Some('>') => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1348,11 +1349,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Eof
                 }
                 Some('p' | 'P') if slf.reader.try_read_string("ublic", false)? => {
-                    machine_helper.state = State::AfterDoctypePublicKeyword;
+                    machine_helper.switch_to(State::AfterDoctypePublicKeyword);
                     ControlToken::Continue
                 }
                 Some('s' | 'S') if slf.reader.try_read_string("ystem", false)? => {
-                    machine_helper.state = State::AfterDoctypeSystemKeyword;
+                    machine_helper.switch_to(State::AfterDoctypeSystemKeyword);
                     ControlToken::Continue
                 }
                 c @ Some(_) => {
@@ -1366,25 +1367,25 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => {
-                    machine_helper.state = State::BeforeDoctypePublicIdentifier;
+                    machine_helper.switch_to(State::BeforeDoctypePublicIdentifier);
                     ControlToken::Continue
                 }
                 Some('"') => {
                     emitter.emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
                     emitter.set_doctype_public_identifier("");
-                    machine_helper.state = State::DoctypePublicIdentifierDoubleQuoted;
+                    machine_helper.switch_to(State::DoctypePublicIdentifierDoubleQuoted);
                     ControlToken::Continue
                 }
                 Some('\'') => {
                     emitter.emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
                     emitter.set_doctype_public_identifier("");
-                    machine_helper.state = State::DoctypePublicIdentifierSingleQuoted;
+                    machine_helper.switch_to(State::DoctypePublicIdentifierSingleQuoted);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_error(Error::MissingDoctypePublicIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1407,18 +1408,18 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Some(whitespace_pat!()) => ControlToken::Continue,
                 Some('"') => {
                     emitter.set_doctype_public_identifier("");
-                    machine_helper.state = State::DoctypePublicIdentifierDoubleQuoted;
+                    machine_helper.switch_to(State::DoctypePublicIdentifierDoubleQuoted);
                     ControlToken::Continue
                 }
                 Some('\'') => {
                     emitter.set_doctype_public_identifier("");
-                    machine_helper.state = State::DoctypePublicIdentifierSingleQuoted;
+                    machine_helper.switch_to(State::DoctypePublicIdentifierSingleQuoted);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_error(Error::MissingDoctypePublicIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1441,7 +1442,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("\"") => {
-                    machine_helper.state = State::AfterDoctypePublicIdentifier;
+                    machine_helper.switch_to(State::AfterDoctypePublicIdentifier);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -1452,7 +1453,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Some(">") => {
                     emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1474,7 +1475,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("'") => {
-                    machine_helper.state = State::AfterDoctypePublicIdentifier;
+                    machine_helper.switch_to(State::AfterDoctypePublicIdentifier);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -1485,7 +1486,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Some(">") => {
                     emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1505,11 +1506,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => {
-                    machine_helper.state = State::BetweenDoctypePublicAndSystemIdentifiers;
+                    machine_helper.switch_to(State::BetweenDoctypePublicAndSystemIdentifiers);
                     ControlToken::Continue
                 }
                 Some('>') => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1518,7 +1519,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                         Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers,
                     );
                     emitter.set_doctype_system_identifier("");
-                    machine_helper.state = State::DoctypeSystemIdentifierDoubleQuoted;
+                    machine_helper.switch_to(State::DoctypeSystemIdentifierDoubleQuoted);
                     ControlToken::Continue
                 }
                 Some('\'') => {
@@ -1526,7 +1527,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                         Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers,
                     );
                     emitter.set_doctype_system_identifier("");
-                    machine_helper.state = State::DoctypeSystemIdentifierSingleQuoted;
+                    machine_helper.switch_to(State::DoctypeSystemIdentifierSingleQuoted);
                     ControlToken::Continue
                 }
                 None => {
@@ -1547,18 +1548,18 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => ControlToken::Continue,
                 Some('>') => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
                 Some('"') => {
                     emitter.set_doctype_system_identifier("");
-                    machine_helper.state = State::DoctypeSystemIdentifierDoubleQuoted;
+                    machine_helper.switch_to(State::DoctypeSystemIdentifierDoubleQuoted);
                     ControlToken::Continue
                 }
                 Some('\'') => {
                     emitter.set_doctype_system_identifier("");
-                    machine_helper.state = State::DoctypeSystemIdentifierSingleQuoted;
+                    machine_helper.switch_to(State::DoctypeSystemIdentifierSingleQuoted);
                     ControlToken::Continue
                 }
                 None => {
@@ -1578,25 +1579,25 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => {
-                    machine_helper.state = State::BeforeDoctypeSystemIdentifier;
+                    machine_helper.switch_to(State::BeforeDoctypeSystemIdentifier);
                     ControlToken::Continue
                 }
                 Some('"') => {
                     emitter.emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
                     emitter.set_doctype_system_identifier("");
-                    machine_helper.state = State::DoctypeSystemIdentifierDoubleQuoted;
+                    machine_helper.switch_to(State::DoctypeSystemIdentifierDoubleQuoted);
                     ControlToken::Continue
                 }
                 Some('\'') => {
                     emitter.emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
                     emitter.set_doctype_system_identifier("");
-                    machine_helper.state = State::DoctypeSystemIdentifierSingleQuoted;
+                    machine_helper.switch_to(State::DoctypeSystemIdentifierSingleQuoted);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_error(Error::MissingDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1619,18 +1620,18 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Some(whitespace_pat!()) => ControlToken::Continue,
                 Some('"') => {
                     emitter.set_doctype_system_identifier("");
-                    machine_helper.state = State::DoctypeSystemIdentifierDoubleQuoted;
+                    machine_helper.switch_to(State::DoctypeSystemIdentifierDoubleQuoted);
                     ControlToken::Continue
                 }
                 Some('\'') => {
                     emitter.set_doctype_system_identifier("");
-                    machine_helper.state = State::DoctypeSystemIdentifierSingleQuoted;
+                    machine_helper.switch_to(State::DoctypeSystemIdentifierSingleQuoted);
                     ControlToken::Continue
                 }
                 Some('>') => {
                     emitter.emit_error(Error::MissingDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1653,7 +1654,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("\"") => {
-                    machine_helper.state = State::AfterDoctypeSystemIdentifier;
+                    machine_helper.switch_to(State::AfterDoctypeSystemIdentifier);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -1664,7 +1665,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Some(">") => {
                     emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1686,7 +1687,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("\'") => {
-                    machine_helper.state = State::AfterDoctypeSystemIdentifier;
+                    machine_helper.switch_to(State::AfterDoctypeSystemIdentifier);
                     ControlToken::Continue
                 }
                 Some("\0") => {
@@ -1697,7 +1698,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 Some(">") => {
                     emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
                     emitter.set_force_quirks();
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1718,7 +1719,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(whitespace_pat!()) => ControlToken::Continue,
                 Some('>') => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1740,7 +1741,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some(">") => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     emitter.emit_current_doctype();
                     ControlToken::Continue
                 }
@@ -1763,7 +1764,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             machine_helper,
             match xs {
                 Some("]") => {
-                    machine_helper.state = State::CdataSectionBracket;
+                    machine_helper.switch_to(State::CdataSectionBracket);
                     ControlToken::Continue
                 }
                 Some(xs) => {
@@ -1780,7 +1781,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             let emitter = &mut slf.emitter;
             match slf.reader.read_char(emitter)? {
                 Some(']') => {
-                    machine_helper.state = State::CdataSectionEnd;
+                    machine_helper.switch_to(State::CdataSectionEnd);
                     ControlToken::Continue
                 }
                 c => {
@@ -1797,7 +1798,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 Some('>') => {
-                    machine_helper.state = State::Data;
+                    machine_helper.switch_to(State::Data);
                     ControlToken::Continue
                 }
                 c => {
@@ -1817,7 +1818,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 Some('#') => {
                     machine_helper.temporary_buffer.push('#');
-                    machine_helper.state = State::NumericCharacterReference;
+                    machine_helper.switch_to(State::NumericCharacterReference);
                     ControlToken::Continue
                 }
                 c => {
@@ -1895,7 +1896,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_char(emitter)? {
                 Some(x @ 'x' | x @ 'X') => {
                     machine_helper.temporary_buffer.push(x);
-                    machine_helper.state = State::HexadecimalCharacterReferenceStart;
+                    machine_helper.switch_to(State::HexadecimalCharacterReferenceStart);
                     ControlToken::Continue
                 }
                 c => {
@@ -1947,7 +1948,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 Some(';') => {
-                    machine_helper.state = State::NumericCharacterReferenceEnd;
+                    machine_helper.switch_to(State::NumericCharacterReferenceEnd);
                     ControlToken::Continue
                 }
                 c => {
@@ -1964,7 +1965,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     ControlToken::Continue
                 }
                 Some(';') => {
-                    machine_helper.state = State::NumericCharacterReferenceEnd;
+                    machine_helper.switch_to(State::NumericCharacterReferenceEnd);
                     ControlToken::Continue
                 }
                 c => {

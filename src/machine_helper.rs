@@ -49,7 +49,7 @@ impl MachineHelper {
     pub(crate) fn enter_state(&mut self, state: State) {
         debug_assert!(self.return_state.is_none());
         self.return_state = Some(self.state);
-        self.state = state;
+        self.switch_to(state);
     }
 
     pub(crate) fn pop_return_state(&mut self) -> State {
@@ -57,6 +57,17 @@ impl MachineHelper {
     }
 
     pub(crate) fn exit_state(&mut self) {
-        self.state = self.pop_return_state();
+        let state = self.pop_return_state();
+        self.switch_to(state);
+    }
+
+    pub(crate) fn state(&self) -> State {
+        self.state
+    }
+
+    pub(crate) fn switch_to(&mut self, state: State) {
+        #[cfg(feature = "integration-tests")]
+        println!("switch_to: {:?} -> {:?}", self.state, state);
+        self.state = state;
     }
 }
