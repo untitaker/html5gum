@@ -1,4 +1,3 @@
-use crate::utils::ctostr;
 use crate::Never;
 use std::io::{self, BufRead, BufReader, Read};
 
@@ -30,7 +29,7 @@ pub trait Reader {
     /// Read an arbitrary amount of characters up until and including the next character that
     /// matches an array entry in `needle`.
     ///
-    /// Repeatedly call `read_cb` with either:
+    /// Return either:
     ///
     /// 1. A chunk of consumed characters that does not contain any characters from `needle`. The chunk can be arbitrarily large or small.
     /// 2. If the next character is included in `needle`, a string with just that character and nothing else.
@@ -38,12 +37,12 @@ pub trait Reader {
     /// In other words, case 1 means "we didn't find the needle yet, but here's some read data",
     /// while case 2 means "we have found the needle".
     ///
-    /// If `read_cb` is called with `None` (EOF) or a `needle` like in case 2, `read_until` returns
-    /// that call's return value.
-    ///
     /// The default implementation simply reads one character and calls `read_cb` with that
     /// character, ignoring the needle entirely. It is recommended to manually implement
     /// `read_until` if there is any sort of in-memory buffer where `memchr` can be run on.
+    ///
+    /// The return value is usually borrowed from underlying buffers. If that's not possible, a
+    /// small buffer is provided as `char_buf` to put a single character into.
     ///
     /// # Example
     ///
@@ -56,13 +55,13 @@ pub trait Reader {
     /// let mut eof = false;
     /// let mut chunks = Vec::new();
     /// while !eof {
-    ///     reader.read_until(&[' ', 'r'], |xs| {
-    ///         if let Some(xs) = xs {
-    ///             chunks.push(xs.to_owned());
-    ///         } else {
-    ///             eof = true;
-    ///         }
-    ///     });
+    ///     let mut char_buf = [0; 4];
+    ///     let xs = reader.read_until(&[' ', 'r'], &mut char_buf).unwrap();
+    ///     if let Some(xs) = xs {
+    ///         chunks.push(xs.to_owned());
+    ///     } else {
+    ///         eof = true;
+    ///     }
     /// }
     ///
     /// assert_eq!(chunks, &["hello", " ", "wo", "r", "ld"]);
@@ -73,15 +72,16 @@ pub trait Reader {
     /// ```text
     /// ["h", "e", "l", "l", "o", " ", "w", "o", "r", "l", "d"]
     /// ```
-    fn read_until<F, V>(&mut self, needle: &[char], mut read_cb: F) -> Result<V, Self::Error>
-    where
-        F: FnMut(Option<&str>) -> V,
-    {
+    fn read_until<'b>(
+        &'b mut self,
+        needle: &[char],
+        char_buf: &'b mut [u8; 4],
+    ) -> Result<Option<&'b str>, Self::Error> {
         let _needle = needle;
 
         match self.read_char()? {
-            Some(x) => Ok(read_cb(Some(ctostr!(x)))),
-            None => Ok(read_cb(None)),
+            Some(x) => Ok(Some(&*x.encode_utf8(char_buf))),
+            None => Ok(None),
         }
     }
 }
@@ -164,29 +164,30 @@ impl<'a> Reader for StringReader<'a> {
         Ok(Some(c))
     }
 
-    fn read_until<F, V>(&mut self, needle: &[char], mut read_cb: F) -> Result<V, Self::Error>
-    where
-        F: FnMut(Option<&str>) -> V,
-    {
+    fn read_until<'b>(
+        &'b mut self,
+        needle: &[char],
+        _: &'b mut [u8; 4],
+    ) -> Result<Option<&'b str>, Self::Error> {
         if let Some(input) = self.input.get(self.pos..) {
             if let Some(needle_pos) = fast_find(needle, input) {
                 if needle_pos == 0 {
                     let needle = self.cursor.next().unwrap();
                     self.pos += needle.len_utf8();
-                    Ok(read_cb(Some(ctostr!(needle))))
+                    Ok(Some(&input[..needle.len_utf8()]))
                 } else {
                     self.pos += needle_pos;
                     let (s1, s2) = input.split_at(needle_pos);
                     self.cursor = s2.chars();
-                    Ok(read_cb(Some(s1)))
+                    Ok(Some(s1))
                 }
             } else {
                 self.pos = self.input.len() + 1;
                 self.cursor = "".chars();
-                Ok(read_cb(Some(input)))
+                Ok(Some(input))
             }
         } else {
-            Ok(read_cb(None))
+            Ok(None)
         }
     }
 
@@ -274,15 +275,19 @@ impl<R: BufRead> BufReadReader<R> {
     }
 
     #[inline]
-    fn get_remaining_line(&mut self) -> Result<&str, io::Error> {
-        if self.line_pos < self.line.len() {
-            return Ok(&self.line[self.line_pos..]);
+    fn prepare_line(&mut self) -> Result<(), io::Error> {
+        if self.line_pos >= self.line.len() {
+            self.line.clear();
+            self.line_pos = 0;
+            self.reader.read_line(&mut self.line)?;
         }
+        Ok(())
+    }
 
-        self.line.clear();
-        self.line_pos = 0;
-        self.reader.read_line(&mut self.line)?;
-        Ok(&self.line)
+    #[inline]
+    fn get_remaining_line(&mut self) -> Result<&str, io::Error> {
+        self.prepare_line()?;
+        Ok(&self.line[self.line_pos..])
     }
 }
 
@@ -309,31 +314,30 @@ impl<R: BufRead> Reader for BufReadReader<R> {
         Ok(false)
     }
 
-    fn read_until<F, V>(&mut self, needle: &[char], mut read_cb: F) -> Result<V, Self::Error>
-    where
-        F: FnMut(Option<&str>) -> V,
-    {
-        let line = self.get_remaining_line()?;
-        let rv;
+    fn read_until<'b>(
+        &'b mut self,
+        needle: &[char],
+        _: &'b mut [u8; 4],
+    ) -> Result<Option<&'b str>, Self::Error> {
+        self.prepare_line()?;
+        let line = &self.line[self.line_pos..];
         if !line.is_empty() {
             if let Some(needle_pos) = fast_find(needle, line) {
                 if needle_pos == 0 {
                     let len = line.chars().next().unwrap().len_utf8();
-                    rv = Ok(read_cb(Some(&line[..len])));
                     self.line_pos += len;
+                    Ok(Some(&line[..len]))
                 } else {
-                    rv = Ok(read_cb(Some(&line[..needle_pos])));
                     self.line_pos += needle_pos;
+                    Ok(Some(&line[..needle_pos]))
                 }
             } else {
-                rv = Ok(read_cb(Some(line)));
                 self.line_pos += line.len();
+                Ok(Some(line))
             }
         } else {
-            rv = Ok(read_cb(None));
-        };
-
-        rv
+            Ok(None)
+        }
     }
 }
 

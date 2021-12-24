@@ -2,7 +2,7 @@ use crate::Emitter;
 use crate::Error;
 use crate::Reader;
 
-use crate::utils::{control_pat, ctostr, noncharacter_pat, surrogate_pat};
+use crate::utils::{control_pat, noncharacter_pat, surrogate_pat};
 
 pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
@@ -77,15 +77,18 @@ impl<R: Reader> ReadHelper<R> {
     }
 
     #[inline]
-    pub(crate) fn read_until<V, F: FnMut(Option<&str>, &mut E) -> V, E: Emitter>(
-        &mut self,
+    pub(crate) fn read_until<'b, E>(
+        &'b mut self,
         needle: &[char],
         emitter: &mut E,
-        mut read_cb: F,
-    ) -> Result<V, R::Error> {
+        char_buf: &'b mut [u8; 4],
+    ) -> Result<Option<&'b str>, R::Error>
+    where
+        E: Emitter,
+    {
         match self.to_reconsume.pop() {
-            Some(Some(x)) => return Ok(read_cb(Some(ctostr!(x)), emitter)),
-            Some(None) => return Ok(read_cb(None, emitter)),
+            Some(Some(x)) => return Ok(Some(&*x.encode_utf8(char_buf))),
+            Some(None) => return Ok(None),
             None => (),
         }
 
@@ -100,10 +103,10 @@ impl<R: Reader> ReadHelper<R> {
         needle2[needle.len()] = '\r';
         let needle2_slice = &needle2[..needle.len() + 1];
 
-        self.reader.read_until(needle2_slice, |xs| match xs {
+        match self.reader.read_until(needle2_slice, char_buf)? {
             Some("\r") => {
                 *last_character_was_cr = true;
-                read_cb(Some("\n"), emitter)
+                Ok(Some("\n"))
             }
             Some(mut xs) => {
                 if *last_character_was_cr && xs.starts_with('\n') {
@@ -115,13 +118,13 @@ impl<R: Reader> ReadHelper<R> {
                 }
 
                 *last_character_was_cr = false;
-                read_cb(Some(xs), emitter)
+                Ok(Some(xs))
             }
             None => {
                 *last_character_was_cr = false;
-                read_cb(None, emitter)
+                Ok(None)
             }
-        })
+        }
     }
 
     #[inline]
@@ -209,33 +212,39 @@ impl<T: Copy> Stack2<T> {
 /// }
 /// ```
 macro_rules! fast_read_char {
-    ($slf:expr, $emitter:ident, $machine_helper:ident, match $read_char:ident {
+    ($slf:expr, match $read_char:ident {
         $(Some($($lit:literal)|*) => $arm:block)*
         Some($xs:ident) => $catchall:block
         None => $eof_catchall:block
-    }) => {
-        $slf.reader.read_until(
+    }) => {{
+        let mut char_buf = [0; 4];
+        let $read_char = $slf.reader.read_until(
             &[ $($({
                 debug_assert_eq!($lit.len(), 1);
                 $lit.chars().next().unwrap()
             }),*),* ],
             &mut $slf.emitter,
-            |$read_char, $emitter| match $read_char {
-                $(Some($($lit)|*) => $arm)*
+            &mut char_buf,
+        )?;
+        match $read_char {
+            $(Some($($lit)|*) => $arm)*
                 Some($xs) => {
                     // Prevent catch-all arm from using the machine_helper.
                     //
                     // State changes in catch-all arms are usually sign of a coding mistake. $xs
                     // may contain an arbitrary amount of characters, so it's more likely than not
                     // that the state is changed at the wrong read position.
+                    //
+                    // reconsume_in!() macro should not be used in this match arm either, as we can
+                    // reconsume 2 characters at maximum, not a random $xs. Luckily that's kind of
+                    // hard to do by accident.
                     #[allow(unused_variables)]
-                    let $machine_helper = ();
+                    let _do_not_use = &mut $slf.machine_helper;
                     $catchall
                 }
-                None => $eof_catchall
-            }
-        )
-    };
+            None => $eof_catchall
+        }
+    }};
 }
 
 pub(crate) use fast_read_char;
