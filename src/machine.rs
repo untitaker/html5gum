@@ -832,7 +832,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
         ),
         State::AfterAttributeValueQuoted => match slf.reader.read_char(&mut slf.emitter)? {
-            c @ (Some(whitespace_pat!() | '/' | '?') | None) => {
+            Some(whitespace_pat!() | '/' | '?') | None => {
                 switch_to!(State::BeforeAttributeName)
             }
             c => {
