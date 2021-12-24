@@ -832,24 +832,13 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
         ),
         State::AfterAttributeValueQuoted => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => {
-                switch_to!(State::BeforeAttributeName)
+            c @ (Some(whitespace_pat!() | '/' | '>') | None) => {
+                reconsume_in!(c, State::BeforeAttributeName)
             }
-            Some('/') => {
-                switch_to!(State::SelfClosingStartTag)
-            }
-            Some('>') => {
-                slf.emitter.emit_current_tag();
-                switch_to!(State::Data)
-            }
-            None => {
-                slf.emitter.emit_error(Error::EofInTag);
-                eof!()
-            }
-            Some(x) => {
+            c => {
                 slf.emitter
                     .emit_error(Error::MissingWhitespaceBetweenAttributes);
-                reconsume_in!(Some(x), State::BeforeAttributeName)
+                reconsume_in!(c, State::BeforeAttributeName)
             }
         },
         State::SelfClosingStartTag => match slf.reader.read_char(&mut slf.emitter)? {

@@ -19,6 +19,7 @@ in:
 	mkdir -p in
 	curl https://www.nytimes.com/ > in/nytimes.html
 	curl https://docs.sentry.io/ > in/sentrydocs.html
+	cat ../tests/html5lib-tests/tokenizer/*.tests | jq -r '.tests[].input' > in/html5lib-tokenizer-tests.html
 
 setup-afl: in
 	which cargo-afl || cargo install afl
