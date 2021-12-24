@@ -7,7 +7,8 @@ use crate::utils::{control_pat, noncharacter_pat, surrogate_pat};
 pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
     last_character_was_cr: bool,
-    to_reconsume: Stack2<Option<char>>,
+    to_reconsume: Stack8<Option<u8>>,
+    char_beginning: u32,
 }
 
 impl<R: Reader> ReadHelper<R> {
@@ -16,34 +17,41 @@ impl<R: Reader> ReadHelper<R> {
             reader,
             last_character_was_cr: false,
             to_reconsume: Default::default(),
+            char_beginning: 0,
         }
     }
 
-    #[inline]
-    pub(crate) fn read_char<E: Emitter>(
+    pub(crate) fn read_byte<E: Emitter>(
         &mut self,
         emitter: &mut E,
-    ) -> Result<Option<char>, R::Error> {
+    ) -> Result<Option<u8>, R::Error> {
         let mut c = match self.to_reconsume.pop() {
             Some(c) => return Ok(c),
-            None => self.reader.read_char(),
+            None => self.reader.read_byte(),
         };
 
-        if self.last_character_was_cr && matches!(c, Ok(Some('\n'))) {
+        if self.last_character_was_cr && matches!(c, Ok(Some(b'\n'))) {
             self.last_character_was_cr = false;
-            return self.read_char(emitter);
+            return self.read_byte(emitter);
         }
 
-        if matches!(c, Ok(Some('\r'))) {
+        if matches!(c, Ok(Some(b'\r'))) {
             self.last_character_was_cr = true;
-            c = Ok(Some('\n'));
+            c = Ok(Some(b'\n'));
         } else {
             self.last_character_was_cr = false;
         }
 
         if let Ok(Some(x)) = c {
-            Self::validate_char(emitter, x);
+            self.char_beginning <<= 8;
+            self.char_beginning |= x as u32;
+            Self::validate_char(emitter, self.char_beginning);
+
+            if std::char::from_u32(self.char_beginning).is_some() {
+                self.char_beginning = 0;
+            }
         }
+
         c
     }
 
@@ -57,12 +65,12 @@ impl<R: Reader> ReadHelper<R> {
         debug_assert!(!s.contains('\r'));
 
         let to_reconsume_bak = self.to_reconsume;
-        let mut chars = s.chars();
+        let mut bytes = s.as_bytes().iter();
         while let Some(c) = self.to_reconsume.pop() {
-            if let (Some(x), Some(x2)) = (c, chars.next()) {
+            if let (Some(x), Some(&x2)) = (c, bytes.next()) {
                 if x == x2 || (!case_sensitive && x.to_ascii_lowercase() == x2.to_ascii_lowercase())
                 {
-                    s = &s[x.len_utf8()..];
+                    s = &s[1..];
                     continue;
                 }
             }
@@ -72,22 +80,28 @@ impl<R: Reader> ReadHelper<R> {
         }
 
         self.last_character_was_cr = false;
+        self.char_beginning = Default::default();
 
-        self.reader.try_read_string(s, case_sensitive)
+        self.reader.try_read_string(s.as_bytes(), case_sensitive)
     }
 
     #[inline]
     pub(crate) fn read_until<'b, E>(
         &'b mut self,
-        needle: &[char],
+        needle: &[u8],
         emitter: &mut E,
         char_buf: &'b mut [u8; 4],
-    ) -> Result<Option<&'b str>, R::Error>
+    ) -> Result<Option<&'b [u8]>, R::Error>
     where
         E: Emitter,
     {
         match self.to_reconsume.pop() {
-            Some(Some(x)) => return Ok(Some(&*x.encode_utf8(char_buf))),
+            Some(Some(x)) => {
+                return Ok(Some({
+                    char_buf[0] = x;
+                    &char_buf[..1]
+                }))
+            }
             Some(None) => return Ok(None),
             None => (),
         }
@@ -95,26 +109,41 @@ impl<R: Reader> ReadHelper<R> {
         let last_character_was_cr = &mut self.last_character_was_cr;
 
         const MAX_NEEDLE_LEN: usize = 13;
-        let mut needle2 = ['\0'; MAX_NEEDLE_LEN];
+        let mut needle2 = [b'\0'; MAX_NEEDLE_LEN];
         // Assert that we will have space for adding \r
         // If not, just bump MAX_NEEDLE_LEN
         debug_assert!(needle.len() < needle2.len());
         needle2[..needle.len()].copy_from_slice(needle);
-        needle2[needle.len()] = '\r';
+        needle2[needle.len()] = b'\r';
         let needle2_slice = &needle2[..needle.len() + 1];
 
         match self.reader.read_until(needle2_slice, char_buf)? {
-            Some("\r") => {
+            Some(b"\r") => {
                 *last_character_was_cr = true;
-                Ok(Some("\n"))
+                self.char_beginning = Default::default();
+                Ok(Some(b"\n"))
             }
             Some(mut xs) => {
-                if *last_character_was_cr && xs.starts_with('\n') {
+                if *last_character_was_cr && xs.starts_with(b"\n") {
                     xs = &xs[1..];
                 }
 
-                for x in xs.chars() {
-                    Self::validate_char(emitter, x);
+                match std::str::from_utf8(xs) {
+                    Ok(xs) => {
+                        for x in xs.chars() {
+                            Self::validate_char(emitter, x as u32);
+                        }
+                    }
+                    Err(e) => {
+                        for x in std::str::from_utf8(&xs[..e.valid_up_to()]).unwrap().chars() {
+                            Self::validate_char(emitter, x as u32);
+                        }
+
+                        for x in &xs[e.valid_up_to()..] {
+                            self.char_beginning <<= 8;
+                            self.char_beginning |= *x as u32;
+                        }
+                    }
                 }
 
                 *last_character_was_cr = false;
@@ -129,12 +158,14 @@ impl<R: Reader> ReadHelper<R> {
 
     #[inline]
     pub(crate) fn unread_char(&mut self, c: Option<char>) {
-        self.to_reconsume.push(c);
+        self.to_reconsume.push(c.map(|x| x as u8));
     }
 
     #[inline]
-    fn validate_char<E: Emitter>(emitter: &mut E, c: char) {
-        match c as u32 {
+    fn validate_char<E: Emitter>(emitter: &mut E, c: u32) {
+        // XXX: c is a buffer of u8, not a char
+
+        match c {
             surrogate_pat!() => {
                 emitter.emit_error(Error::SurrogateInInputStream);
             }
@@ -152,29 +183,28 @@ impl<R: Reader> ReadHelper<R> {
     }
 }
 
-// this is a stack that can hold 0 to 2 Ts
+// this is a stack that can hold 0 to 8 Ts
 #[derive(Debug, Default, Clone, Copy)]
-struct Stack2<T: Copy>(Option<(T, Option<T>)>);
+struct Stack8<T: Copy> {
+    buf: [T; 8],
+    len: usize,
+}
 
-impl<T: Copy> Stack2<T> {
+impl<T: Copy> Stack8<T> {
     #[inline]
     fn push(&mut self, c: T) {
-        self.0 = match self.0 {
-            None => Some((c, None)),
-            Some((c1, None)) => Some((c1, Some(c))),
-            Some((_c1, Some(_c2))) => panic!("stack full!"),
-        }
+        self.buf[self.len] = c;
+        self.len += 1;
     }
 
     #[inline]
     fn pop(&mut self) -> Option<T> {
-        let (new_self, rv) = match self.0 {
-            Some((c1, Some(c2))) => (Some((c1, None)), Some(c2)),
-            Some((c1, None)) => (None, Some(c1)),
-            None => (None, None),
-        };
-        self.0 = new_self;
-        rv
+        if self.len > 0 {
+            self.len -= 1;
+            Some(self.buf[self.len])
+        } else {
+            None
+        }
     }
 }
 
@@ -221,7 +251,7 @@ macro_rules! fast_read_char {
         let $read_char = $slf.reader.read_until(
             &[ $($({
                 debug_assert_eq!($lit.len(), 1);
-                $lit.chars().next().unwrap()
+                $lit[0]
             }),*),* ],
             &mut $slf.emitter,
             &mut char_buf,

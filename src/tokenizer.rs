@@ -60,7 +60,8 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     /// Only available with the `integration-tests` feature which is not public API.
     #[cfg(feature = "integration-tests")]
     pub fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
-        self.emitter.set_last_start_tag(last_start_tag);
+        self.emitter
+            .set_last_start_tag(last_start_tag.map(str::as_bytes));
     }
 }
 

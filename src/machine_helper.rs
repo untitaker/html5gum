@@ -2,7 +2,7 @@ use crate::utils::State;
 use crate::Emitter;
 
 pub(crate) struct MachineHelper {
-    pub temporary_buffer: String,
+    pub temporary_buffer: Vec<u8>,
     pub character_reference_code: u32,
     pub state: State,
     return_state: Option<State>,
@@ -11,7 +11,7 @@ pub(crate) struct MachineHelper {
 impl Default for MachineHelper {
     fn default() -> Self {
         MachineHelper {
-            temporary_buffer: String::new(),
+            temporary_buffer: Vec::new(),
             character_reference_code: 0,
             state: State::Data,
             return_state: None,

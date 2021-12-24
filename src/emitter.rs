@@ -36,7 +36,7 @@ pub trait Emitter {
     ///
     /// This is primarily for testing purposes. This is *not* supposed to override the tag name of
     /// the current tag.
-    fn set_last_start_tag(&mut self, last_start_tag: Option<&str>);
+    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>);
 
     /// The state machine has reached the end of the file. It will soon call `pop_token` for the
     /// last time.
@@ -50,7 +50,7 @@ pub trait Emitter {
     fn pop_token(&mut self) -> Option<Self::Token>;
 
     /// Emit a bunch of plain characters as character tokens.
-    fn emit_string(&mut self, c: &str);
+    fn emit_string(&mut self, c: &[u8]);
 
     /// Set the _current token_ to a start tag.
     fn init_start_tag(&mut self);
@@ -97,17 +97,17 @@ pub trait Emitter {
     /// Assuming the _current token_ is a start/end tag, append a string to the current tag's name.
     ///
     /// If the current token is not a start or end tag, this method may panic.
-    fn push_tag_name(&mut self, s: &str);
+    fn push_tag_name(&mut self, s: &[u8]);
 
     /// Assuming the _current token_ is a comment, append a string to the comment's contents.
     ///
     /// If the current token is not a comment, this method may panic.
-    fn push_comment(&mut self, s: &str);
+    fn push_comment(&mut self, s: &[u8]);
 
     /// Assuming the _current token_ is a doctype, append a string to the doctype's name.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn push_doctype_name(&mut self, s: &str);
+    fn push_doctype_name(&mut self, s: &[u8]);
 
     /// Set the _current token_ to a new doctype token:
     ///
@@ -132,32 +132,32 @@ pub trait Emitter {
     /// Append a string to the current attribute's name.
     ///
     /// If there is no current attribute, this method may panic.
-    fn push_attribute_name(&mut self, s: &str);
+    fn push_attribute_name(&mut self, s: &[u8]);
 
     /// Append a string to the current attribute's value.
     ///
     /// If there is no current attribute, this method may panic.
-    fn push_attribute_value(&mut self, s: &str);
+    fn push_attribute_value(&mut self, s: &[u8]);
 
     /// Assuming the _current token_ is a doctype, set its "public identifier" to the given string.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn set_doctype_public_identifier(&mut self, value: &str);
+    fn set_doctype_public_identifier(&mut self, value: &[u8]);
 
     /// Assuming the _current token_ is a doctype, set its "system identifier" to the given string.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn set_doctype_system_identifier(&mut self, value: &str);
+    fn set_doctype_system_identifier(&mut self, value: &[u8]);
 
     /// Assuming the _current token_ is a doctype, append a string to its "public identifier" to the given string.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn push_doctype_public_identifier(&mut self, s: &str);
+    fn push_doctype_public_identifier(&mut self, s: &[u8]);
 
     /// Assuming the _current token_ is a doctype, append a string to its "system identifier" to the given string.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn push_doctype_system_identifier(&mut self, s: &str);
+    fn push_doctype_system_identifier(&mut self, s: &[u8]);
 
     /// Return true if all of these hold. Return false otherwise.
     ///
@@ -173,18 +173,48 @@ pub trait Emitter {
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
 #[derive(Default)]
 pub struct DefaultEmitter {
-    current_characters: String,
-    current_token: Option<Token>,
-    last_start_tag: String,
-    current_attribute: Option<(String, String)>,
-    seen_attributes: BTreeSet<String>,
+    current_characters: Vec<u8>,
+    current_token: Option<Token<Vec<u8>>>,
+    last_start_tag: Vec<u8>,
+    current_attribute: Option<(Vec<u8>, Vec<u8>)>,
+    seen_attributes: BTreeSet<Vec<u8>>,
     emitted_tokens: VecDeque<Token>,
 }
 
 impl DefaultEmitter {
-    fn emit_token(&mut self, token: Token) {
+    fn emit_token(&mut self, token: Token<Vec<u8>>) {
         self.flush_current_characters();
-        self.emitted_tokens.push_front(token);
+        self.emitted_tokens.push_front(match token {
+            Token::StartTag(StartTag {
+                self_closing,
+                name,
+                attributes,
+            }) => Token::StartTag(StartTag {
+                self_closing,
+                name: String::from_utf8(name).unwrap(),
+                attributes: attributes
+                    .into_iter()
+                    .map(|(k, v)| (String::from_utf8(k).unwrap(), String::from_utf8(v).unwrap()))
+                    .collect(),
+            }),
+            Token::EndTag(EndTag { name }) => Token::EndTag(EndTag {
+                name: String::from_utf8(name).unwrap(),
+            }),
+            Token::String(s) => Token::String(String::from_utf8(s).unwrap()),
+            Token::Comment(s) => Token::Comment(String::from_utf8(s).unwrap()),
+            Token::Doctype(Doctype {
+                force_quirks,
+                name,
+                public_identifier,
+                system_identifier,
+            }) => Token::Doctype(Doctype {
+                force_quirks,
+                name: String::from_utf8(name).unwrap(),
+                public_identifier: public_identifier.map(|x| String::from_utf8(x).unwrap()),
+                system_identifier: system_identifier.map(|x| String::from_utf8(x).unwrap()),
+            }),
+            Token::Error(e) => Token::Error(e),
+        });
     }
 
     fn flush_current_attribute(&mut self) {
@@ -228,10 +258,10 @@ impl DefaultEmitter {
 impl Emitter for DefaultEmitter {
     type Token = Token;
 
-    fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
+    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
         self.last_start_tag.clear();
         self.last_start_tag
-            .push_str(last_start_tag.unwrap_or_default());
+            .extend(last_start_tag.unwrap_or_default());
     }
 
     fn emit_eof(&mut self) {
@@ -248,8 +278,8 @@ impl Emitter for DefaultEmitter {
         self.emitted_tokens.pop_back()
     }
 
-    fn emit_string(&mut self, s: &str) {
-        self.current_characters.push_str(s);
+    fn emit_string(&mut self, s: &[u8]) {
+        self.current_characters.extend(s);
     }
 
     fn init_start_tag(&mut self) {
@@ -261,7 +291,7 @@ impl Emitter for DefaultEmitter {
     }
 
     fn init_comment(&mut self) {
-        self.current_token = Some(Token::Comment(String::new()));
+        self.current_token = Some(Token::Comment(Vec::new()));
     }
     fn emit_current_tag(&mut self) {
         self.flush_current_attribute();
@@ -315,34 +345,34 @@ impl Emitter for DefaultEmitter {
             _ => debug_assert!(false),
         }
     }
-    fn push_tag_name(&mut self, s: &str) {
+    fn push_tag_name(&mut self, s: &[u8]) {
         match self.current_token {
             Some(Token::StartTag(StartTag { ref mut name, .. })) => {
-                name.push_str(s);
+                name.extend(s);
             }
             Some(Token::EndTag(EndTag { ref mut name, .. })) => {
-                name.push_str(s);
+                name.extend(s);
             }
             _ => debug_assert!(false),
         }
     }
 
-    fn push_comment(&mut self, s: &str) {
+    fn push_comment(&mut self, s: &[u8]) {
         match self.current_token {
-            Some(Token::Comment(ref mut data)) => data.push_str(s),
+            Some(Token::Comment(ref mut data)) => data.extend(s),
             _ => debug_assert!(false),
         }
     }
 
-    fn push_doctype_name(&mut self, s: &str) {
+    fn push_doctype_name(&mut self, s: &[u8]) {
         match self.current_token {
-            Some(Token::Doctype(ref mut doctype)) => doctype.name.push_str(s),
+            Some(Token::Doctype(ref mut doctype)) => doctype.name.extend(s),
             _ => debug_assert!(false),
         }
     }
     fn init_doctype(&mut self) {
         self.current_token = Some(Token::Doctype(Doctype {
-            name: String::new(),
+            name: Vec::new(),
             force_quirks: false,
             public_identifier: None,
             system_identifier: None,
@@ -351,54 +381,54 @@ impl Emitter for DefaultEmitter {
 
     fn init_attribute(&mut self) {
         self.flush_current_attribute();
-        self.current_attribute = Some((String::new(), String::new()));
+        self.current_attribute = Some((Vec::new(), Vec::new()));
     }
-    fn push_attribute_name(&mut self, s: &str) {
-        self.current_attribute.as_mut().unwrap().0.push_str(s);
+    fn push_attribute_name(&mut self, s: &[u8]) {
+        self.current_attribute.as_mut().unwrap().0.extend(s);
     }
-    fn push_attribute_value(&mut self, s: &str) {
-        self.current_attribute.as_mut().unwrap().1.push_str(s);
+    fn push_attribute_value(&mut self, s: &[u8]) {
+        self.current_attribute.as_mut().unwrap().1.extend(s);
     }
-    fn set_doctype_public_identifier(&mut self, value: &str) {
+    fn set_doctype_public_identifier(&mut self, value: &[u8]) {
         if let Some(Token::Doctype(Doctype {
             ref mut public_identifier,
             ..
         })) = self.current_token
         {
-            *public_identifier = Some(value.to_owned());
+            *public_identifier = Some(value.to_vec());
         } else {
             debug_assert!(false);
         }
     }
-    fn set_doctype_system_identifier(&mut self, value: &str) {
+    fn set_doctype_system_identifier(&mut self, value: &[u8]) {
         if let Some(Token::Doctype(Doctype {
             ref mut system_identifier,
             ..
         })) = self.current_token
         {
-            *system_identifier = Some(value.to_owned());
+            *system_identifier = Some(value.to_vec());
         } else {
             debug_assert!(false);
         }
     }
-    fn push_doctype_public_identifier(&mut self, s: &str) {
+    fn push_doctype_public_identifier(&mut self, s: &[u8]) {
         if let Some(Token::Doctype(Doctype {
             public_identifier: Some(ref mut id),
             ..
         })) = self.current_token
         {
-            id.push_str(s);
+            id.extend(s);
         } else {
             debug_assert!(false);
         }
     }
-    fn push_doctype_system_identifier(&mut self, s: &str) {
+    fn push_doctype_system_identifier(&mut self, s: &[u8]) {
         if let Some(Token::Doctype(Doctype {
             system_identifier: Some(ref mut id),
             ..
         })) = self.current_token
         {
-            id.push_str(s);
+            id.extend(s);
         } else {
             debug_assert!(false);
         }
@@ -416,26 +446,26 @@ impl Emitter for DefaultEmitter {
 
 /// A HTML end/close tag, such as `<p>` or `<a>`.
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct StartTag {
+pub struct StartTag<S = String> {
     /// Whether this tag is self-closing. If it is self-closing, no following [`EndTag`] should be
     /// expected.
     pub self_closing: bool,
 
     /// The start tag's name, such as `"p"` or `"a"`.
-    pub name: String,
+    pub name: S,
 
     /// A mapping for any HTML attributes this start tag may have.
     ///
     /// Duplicate attributes are ignored after the first one as per WHATWG spec. Implement your own
     /// [`Emitter`] to tweak this behavior.
-    pub attributes: BTreeMap<String, String>,
+    pub attributes: BTreeMap<S, S>,
 }
 
 /// A HTML end/close tag, such as `</p>` or `</a>`.
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct EndTag {
+pub struct EndTag<S = String> {
     /// The ending tag's name, such as `"p"` or `"a"`.
-    pub name: String,
+    pub name: S,
 }
 
 /// A doctype. Some examples:
@@ -445,34 +475,34 @@ pub struct EndTag {
 /// * `<!DOCTYPE {name} SYSTEM '{system_identifier}'>`
 /// * `<!DOCTYPE {name} PUBLIC '{public_identifier}' '{system_identifier}'>`
 #[derive(Debug, Eq, PartialEq)]
-pub struct Doctype {
+pub struct Doctype<S = String> {
     /// The ["force quirks"](https://html.spec.whatwg.org/#force-quirks-flag) flag.
     pub force_quirks: bool,
 
     /// The doctype's name. For HTML documents this is "html".
-    pub name: String,
+    pub name: S,
 
     /// The doctype's public identifier.
-    pub public_identifier: Option<String>,
+    pub public_identifier: Option<S>,
 
     /// The doctype's system identifier.
-    pub system_identifier: Option<String>,
+    pub system_identifier: Option<S>,
 }
 
 /// The token type used by default. You can define your own token type by implementing the
 /// [`crate::Emitter`] trait and using [`crate::Tokenizer::new_with_emitter`].
 #[derive(Debug, Eq, PartialEq)]
-pub enum Token {
+pub enum Token<S = String> {
     /// A HTML start tag.
-    StartTag(StartTag),
+    StartTag(StartTag<S>),
     /// A HTML end tag.
-    EndTag(EndTag),
+    EndTag(EndTag<S>),
     /// A literal string.
-    String(String),
+    String(S),
     /// A HTML comment.
-    Comment(String),
+    Comment(S),
     /// A HTML doctype declaration.
-    Doctype(Doctype),
+    Doctype(Doctype<S>),
     /// A HTML parsing error.
     ///
     /// Can be skipped over, the tokenizer is supposed to recover from the error and continues with
