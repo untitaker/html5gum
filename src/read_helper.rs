@@ -8,7 +8,7 @@ pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
     last_character_was_cr: bool,
     to_reconsume: Stack8<Option<u8>>,
-    char_beginning: u32,
+    last_4_bytes: [u8; 4],
 }
 
 impl<R: Reader> ReadHelper<R> {
@@ -17,7 +17,7 @@ impl<R: Reader> ReadHelper<R> {
             reader,
             last_character_was_cr: false,
             to_reconsume: Default::default(),
-            char_beginning: 0,
+            last_4_bytes: [0; 4],
         }
     }
 
@@ -43,13 +43,7 @@ impl<R: Reader> ReadHelper<R> {
         }
 
         if let Ok(Some(x)) = c {
-            self.char_beginning <<= 8;
-            self.char_beginning |= x as u32;
-            Self::validate_char(emitter, self.char_beginning);
-
-            if std::char::from_u32(self.char_beginning).is_some() {
-                self.char_beginning = 0;
-            }
+            Self::validate_char(emitter, &mut self.last_4_bytes, x);
         }
 
         c
@@ -79,10 +73,14 @@ impl<R: Reader> ReadHelper<R> {
             return Ok(false);
         }
 
-        self.last_character_was_cr = false;
-        self.char_beginning = Default::default();
-
-        self.reader.try_read_string(s.as_bytes(), case_sensitive)
+        if s.is_empty() || self.reader.try_read_string(s.as_bytes(), case_sensitive)? {
+            self.last_character_was_cr = false;
+            self.last_4_bytes = [0; 4];
+            Ok(true)
+        } else {
+            self.to_reconsume = to_reconsume_bak;
+            Ok(false)
+        }
     }
 
     #[inline]
@@ -120,30 +118,16 @@ impl<R: Reader> ReadHelper<R> {
         match self.reader.read_until(needle2_slice, char_buf)? {
             Some(b"\r") => {
                 *last_character_was_cr = true;
-                self.char_beginning = Default::default();
+                Self::validate_char(emitter, &mut self.last_4_bytes, b'\n');
                 Ok(Some(b"\n"))
             }
             Some(mut xs) => {
-                if *last_character_was_cr && xs.starts_with(b"\n") {
-                    xs = &xs[1..];
+                for x in xs {
+                    Self::validate_char(emitter, &mut self.last_4_bytes, *x);
                 }
 
-                match std::str::from_utf8(xs) {
-                    Ok(xs) => {
-                        for x in xs.chars() {
-                            Self::validate_char(emitter, x as u32);
-                        }
-                    }
-                    Err(e) => {
-                        for x in std::str::from_utf8(&xs[..e.valid_up_to()]).unwrap().chars() {
-                            Self::validate_char(emitter, x as u32);
-                        }
-
-                        for x in &xs[e.valid_up_to()..] {
-                            self.char_beginning <<= 8;
-                            self.char_beginning |= *x as u32;
-                        }
-                    }
+                if *last_character_was_cr && xs.starts_with(b"\n") {
+                    xs = &xs[1..];
                 }
 
                 *last_character_was_cr = false;
@@ -162,10 +146,32 @@ impl<R: Reader> ReadHelper<R> {
     }
 
     #[inline]
-    fn validate_char<E: Emitter>(emitter: &mut E, c: u32) {
-        // XXX: c is a buffer of u8, not a char
+    fn validate_char<E: Emitter>(emitter: &mut E, last_4_bytes: &mut [u8; 4], next_byte: u8) {
+        last_4_bytes.rotate_left(1);
+        last_4_bytes[3] = next_byte;
 
-        match c {
+        // convert a u32 containing the last 4 bytes to the corresponding unicode scalar value, if
+        // there's any.
+        //
+        // `last_4_bytes` is utf8-encoded character (or trunchated garbage), while `char_c` is a
+        // `char`.
+        //
+        // ideally this function would pattern match on `last_4_bytes` directly.
+        let char_c = if matches!(last_4_bytes, [0, 0, 0, _]) {
+            last_4_bytes[3] as char
+        } else {
+            let first_non_null_byte = last_4_bytes[..].iter().position(|&x| x != b'\0').unwrap_or(0);
+            match std::str::from_utf8(&last_4_bytes[first_non_null_byte..]) {
+                Ok(x) => x.chars().next().unwrap(),
+                Err(_) => return,
+            }
+        };
+
+        if char_c.is_ascii() {
+            *last_4_bytes = [0; 4];
+        }
+
+        match char_c as u32 {
             surrogate_pat!() => {
                 emitter.emit_error(Error::SurrogateInInputStream);
             }
