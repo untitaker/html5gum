@@ -49,7 +49,6 @@ impl<R: Reader> ReadHelper<R> {
         c
     }
 
-    #[inline]
     pub(crate) fn try_read_string(
         &mut self,
         mut s: &str,
@@ -83,7 +82,6 @@ impl<R: Reader> ReadHelper<R> {
         }
     }
 
-    #[inline]
     pub(crate) fn read_until<'b, E>(
         &'b mut self,
         needle: &[u8],
@@ -145,7 +143,6 @@ impl<R: Reader> ReadHelper<R> {
         self.to_reconsume.push(c.map(|x| x as u8));
     }
 
-    #[inline]
     fn validate_char<E: Emitter>(emitter: &mut E, last_4_bytes: &mut [u8; 4], next_byte: u8) {
         last_4_bytes.rotate_left(1);
         last_4_bytes[3] = next_byte;
