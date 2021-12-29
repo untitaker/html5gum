@@ -160,7 +160,10 @@ impl<R: Reader> ReadHelper<R> {
         let char_c = if matches!(last_4_bytes, [0, 0, 0, _]) {
             last_4_bytes[3] as char
         } else {
-            let first_non_null_byte = last_4_bytes[..].iter().position(|&x| x != b'\0').unwrap_or(0);
+            let first_non_null_byte = last_4_bytes[..]
+                .iter()
+                .position(|&x| x != b'\0')
+                .unwrap_or(0);
             match std::str::from_utf8(&last_4_bytes[first_non_null_byte..]) {
                 Ok(x) => x.chars().next().unwrap(),
                 Err(_) => return,
