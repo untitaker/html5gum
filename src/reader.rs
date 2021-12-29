@@ -347,7 +347,7 @@ impl<R: BufRead> Reader for BufReadReader<R> {
                 }
             } else {
                 self.buf_offset += buf.len();
-                Ok(Some(&buf))
+                Ok(Some(buf))
             }
         } else {
             Ok(None)
