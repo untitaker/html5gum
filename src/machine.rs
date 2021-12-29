@@ -81,7 +81,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
                 Some(b"\0") => {
                     slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\0".as_bytes());
+                    slf.emitter.emit_string(b"\0");
                     cont!()
                 }
                 Some(xs) => {
@@ -193,13 +193,13 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
             None => {
                 slf.emitter.emit_error(Error::EofBeforeTagName);
-                slf.emitter.emit_string("<".as_bytes());
+                slf.emitter.emit_string(b"<");
                 eof!()
             }
             c @ Some(_) => {
                 slf.emitter
                     .emit_error(Error::InvalidFirstCharacterOfTagName);
-                slf.emitter.emit_string("<".as_bytes());
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::Data)
             }
         },
@@ -214,7 +214,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
             None => {
                 slf.emitter.emit_error(Error::EofBeforeTagName);
-                slf.emitter.emit_string("</".as_bytes());
+                slf.emitter.emit_string(b"</");
                 eof!()
             }
             Some(x) => {
@@ -262,7 +262,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::RcDataEndTagOpen)
             }
             c => {
-                slf.emitter.emit_string("<".as_bytes());
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::RcData)
             }
         },
@@ -272,7 +272,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(Some(x), State::RcDataEndTagName)
             }
             c => {
-                slf.emitter.emit_string("</".as_bytes());
+                slf.emitter.emit_string(b"</");
                 reconsume_in!(c, State::RcData)
             }
         },
@@ -295,7 +295,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 cont!()
             }
             c => {
-                slf.emitter.emit_string("</".as_bytes());
+                slf.emitter.emit_string(b"</");
                 slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
                 reconsume_in!(c, State::RcData)
             }
@@ -306,7 +306,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::RawTextEndTagOpen)
             }
             c => {
-                slf.emitter.emit_string("<".as_bytes());
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::RawText)
             }
         },
@@ -316,7 +316,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(Some(x), State::RawTextEndTagName)
             }
             c => {
-                slf.emitter.emit_string("</".as_bytes());
+                slf.emitter.emit_string(b"</");
                 reconsume_in!(c, State::RawText)
             }
         },
@@ -339,7 +339,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 cont!()
             }
             c => {
-                slf.emitter.emit_string("</".as_bytes());
+                slf.emitter.emit_string(b"</");
                 slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
                 reconsume_in!(c, State::RawText)
             }
@@ -350,11 +350,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::ScriptDataEndTagOpen)
             }
             Some(b'!') => {
-                slf.emitter.emit_string("<!".as_bytes());
+                slf.emitter.emit_string(b"<!");
                 switch_to!(State::ScriptDataEscapeStart)
             }
             c => {
-                slf.emitter.emit_string("<".as_bytes());
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::ScriptData)
             }
         },
@@ -364,7 +364,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(Some(x), State::ScriptDataEndTagName)
             }
             c => {
-                slf.emitter.emit_string("</".as_bytes());
+                slf.emitter.emit_string(b"</");
                 reconsume_in!(c, State::ScriptData)
             }
         },
@@ -389,14 +389,14 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 cont!()
             }
             c => {
-                slf.emitter.emit_string("</".as_bytes());
+                slf.emitter.emit_string(b"</");
                 slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
                 reconsume_in!(c, State::Data)
             }
         },
         State::ScriptDataEscapeStart => match slf.reader.read_byte(&mut slf.emitter)? {
             Some(b'-') => {
-                slf.emitter.emit_string("-".as_bytes());
+                slf.emitter.emit_string(b"-");
                 switch_to!(State::ScriptDataEscapeStartDash)
             }
             c => {
@@ -405,7 +405,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::ScriptDataEscapeStartDash => match slf.reader.read_byte(&mut slf.emitter)? {
             Some(b'-') => {
-                slf.emitter.emit_string("-".as_bytes());
+                slf.emitter.emit_string(b"-");
                 switch_to!(State::ScriptDataEscapedDashDash)
             }
             c => {
@@ -416,7 +416,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             match xs {
                 Some(b"-") => {
-                    slf.emitter.emit_string("-".as_bytes());
+                    slf.emitter.emit_string(b"-");
                     switch_to!(State::ScriptDataEscapedDash)
                 }
                 Some(b"<") => {
@@ -440,7 +440,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         ),
         State::ScriptDataEscapedDash => match slf.reader.read_byte(&mut slf.emitter)? {
             Some(b'-') => {
-                slf.emitter.emit_string("-".as_bytes());
+                slf.emitter.emit_string(b"-");
                 switch_to!(State::ScriptDataEscapedDashDash)
             }
             Some(b'<') => {
@@ -463,14 +463,14 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::ScriptDataEscapedDashDash => match slf.reader.read_byte(&mut slf.emitter)? {
             Some(b'-') => {
-                slf.emitter.emit_string("-".as_bytes());
+                slf.emitter.emit_string(b"-");
                 cont!()
             }
             Some(b'<') => {
                 switch_to!(State::ScriptDataEscapedLessThanSign)
             }
             Some(b'>') => {
-                slf.emitter.emit_string(">".as_bytes());
+                slf.emitter.emit_string(b">");
                 switch_to!(State::ScriptData)
             }
             Some(b'\0') => {
@@ -495,11 +495,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.machine_helper.temporary_buffer.clear();
-                slf.emitter.emit_string("<".as_bytes());
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(Some(x), State::ScriptDataDoubleEscapeStart)
             }
             c => {
-                slf.emitter.emit_string("<".as_bytes());
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::ScriptDataEscaped)
             }
         },
@@ -509,7 +509,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(Some(x), State::ScriptDataEscapedEndTagName)
             }
             c => {
-                slf.emitter.emit_string("</".as_bytes());
+                slf.emitter.emit_string(b"</");
                 reconsume_in!(c, State::ScriptDataEscaped)
             }
         },
@@ -532,7 +532,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 cont!()
             }
             c => {
-                slf.emitter.emit_string("</".as_bytes());
+                slf.emitter.emit_string(b"</");
                 slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
                 reconsume_in!(c, State::ScriptDataEscaped)
             }
@@ -561,11 +561,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             match xs {
                 Some(b"-") => {
-                    slf.emitter.emit_string("-".as_bytes());
+                    slf.emitter.emit_string(b"-");
                     switch_to!(State::ScriptDataDoubleEscapedDash)
                 }
                 Some(b"<") => {
-                    slf.emitter.emit_string("<".as_bytes());
+                    slf.emitter.emit_string(b"<");
                     switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
                 }
                 Some(b"\0") => {
@@ -586,11 +586,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         ),
         State::ScriptDataDoubleEscapedDash => match slf.reader.read_byte(&mut slf.emitter)? {
             Some(b'-') => {
-                slf.emitter.emit_string("-".as_bytes());
+                slf.emitter.emit_string(b"-");
                 switch_to!(State::ScriptDataDoubleEscapedDashDash)
             }
             Some(b'<') => {
-                slf.emitter.emit_string("<".as_bytes());
+                slf.emitter.emit_string(b"<");
                 switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
             }
             Some(b'\0') => {
@@ -610,15 +610,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::ScriptDataDoubleEscapedDashDash => match slf.reader.read_byte(&mut slf.emitter)? {
             Some(b'-') => {
-                slf.emitter.emit_string("-".as_bytes());
+                slf.emitter.emit_string(b"-");
                 cont!()
             }
             Some(b'<') => {
-                slf.emitter.emit_string("<".as_bytes());
+                slf.emitter.emit_string(b"<");
                 switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
             }
             Some(b'>') => {
-                slf.emitter.emit_string(">".as_bytes());
+                slf.emitter.emit_string(b">");
                 switch_to!(State::ScriptData)
             }
             Some(b'\0') => {
@@ -640,7 +640,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             match slf.reader.read_byte(&mut slf.emitter)? {
                 Some(b'/') => {
                     slf.machine_helper.temporary_buffer.clear();
-                    slf.emitter.emit_string("/".as_bytes());
+                    slf.emitter.emit_string(b"/");
                     switch_to!(State::ScriptDataDoubleEscapeEnd)
                 }
                 c => {
@@ -1544,20 +1544,20 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::CdataSectionEnd)
             }
             c => {
-                slf.emitter.emit_string("]".as_bytes());
+                slf.emitter.emit_string(b"]");
                 reconsume_in!(c, State::CdataSection)
             }
         },
         State::CdataSectionEnd => match slf.reader.read_byte(&mut slf.emitter)? {
             Some(b']') => {
-                slf.emitter.emit_string("]".as_bytes());
+                slf.emitter.emit_string(b"]");
                 cont!()
             }
             Some(b'>') => {
                 switch_to!(State::Data)
             }
             c => {
-                slf.emitter.emit_string("]]".as_bytes());
+                slf.emitter.emit_string(b"]]");
                 reconsume_in!(c, State::CdataSection)
             }
         },
