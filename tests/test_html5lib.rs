@@ -1,5 +1,6 @@
 use html5gum::{
-    Doctype, EndTag, Error, Readable, Reader, SlowReader, StartTag, State, Token, Tokenizer,
+    Doctype, EndTag, Error, IoReader, Readable, Reader, SlowReader, StartTag, State, Token,
+    Tokenizer,
 };
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
@@ -258,7 +259,7 @@ fn run_test(fname: &str, test_i: usize, mut test: Test) {
             test_i,
             &test,
             state.0,
-            Tokenizer::new(BufReader::new(test.input.as_bytes())),
+            Tokenizer::new(IoReader::new(test.input.as_bytes())),
             "bufread",
         );
 
@@ -267,9 +268,7 @@ fn run_test(fname: &str, test_i: usize, mut test: Test) {
             test_i,
             &test,
             state.0,
-            Tokenizer::new(SlowReader(
-                BufReader::new(test.input.as_bytes()).to_reader(),
-            )),
+            Tokenizer::new(SlowReader(IoReader::new(test.input.as_bytes()).to_reader())),
             "slow-bufread",
         );
     }

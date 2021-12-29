@@ -1,6 +1,7 @@
 use crate::Never;
 use std::cmp::min;
-use std::io::{self, BufRead, BufReader, Read};
+use std::fs::File;
+use std::io::{self, Read};
 
 /// An object that provides characters to the tokenizer.
 ///
@@ -220,19 +221,25 @@ impl<'a> Readable<'a> for &'a String {
     }
 }
 
-/// A [`BufReadReader`] can be used to construct a tokenizer from any type that implements
-/// `BufRead`.
+/// A [`IoReader`] can be used to construct a tokenizer from any type that implements
+/// `std::io::Read`.
+///
+/// Because of trait impl conflicts, `IoReader` needs to be explicitly constructed. The exception
+/// to that is `File`, which can be directly passed to `Tokenizer::new`.
+///
+/// When passing `Read`-types into html5gum, no I/O buffering is required. html5gum maintains its
+/// own read-buffer (16kb, heap-allocated) such that it can be accessed directly. Put more simply,
+/// it's wasteful to wrap your `File` in a `std::io::BufReader` before passing it to html5gum.
 ///
 /// Example:
 ///
 /// ```rust
-/// use std::io::BufReader;
 /// use std::fmt::Write;
-/// use html5gum::{Token, BufReadReader, Tokenizer};
+/// use html5gum::{Token, IoReader, Tokenizer};
 ///
-/// let tokenizer = Tokenizer::new(BufReader::new("<title>hello world</title>".as_bytes()));
-/// // or alternatively:
-/// // tokenizer = Tokenizer::new(BufReadReader::new(BufReader::new("...".as_bytes())));
+/// let tokenizer = Tokenizer::new(IoReader::new("<title>hello world</title>".as_bytes()));
+/// // more realistically: Tokenizer::new(File::open("index.html")?)
+/// // long-form: Tokenizer::new(IoReader::new(File::open("index.html")?))
 ///
 /// let mut new_html = String::new();
 ///
@@ -256,7 +263,7 @@ impl<'a> Readable<'a> for &'a String {
 ///
 /// assert_eq!(new_html, "<title>hello world</title>");
 /// ```
-pub struct BufReadReader<R: Read> {
+pub struct IoReader<R: Read> {
     buf: Box<[u8; BUF_SIZE]>,
     buf_offset: usize,
     buf_len: usize,
@@ -265,10 +272,10 @@ pub struct BufReadReader<R: Read> {
 
 const BUF_SIZE: usize = 16 * 1024;
 
-impl<R: Read> BufReadReader<R> {
-    /// Construct a new `BufReadReader` from any type that implements `BufRead`.
+impl<R: Read> IoReader<R> {
+    /// Construct a new `BufReadReader` from any type that implements `Read`.
     pub fn new(reader: R) -> Self {
-        BufReadReader {
+        IoReader {
             buf: Box::new([0; BUF_SIZE]),
             buf_offset: 0,
             buf_len: 0,
@@ -285,7 +292,7 @@ impl<R: Read> BufReadReader<R> {
             let mut raw_buf = &mut self.buf[..];
             raw_buf.rotate_left(self.buf_offset);
             raw_buf = &mut raw_buf[len..];
-            while len < BUF_SIZE {
+            while len < min_len {
                 let n = self.reader.read(raw_buf)?;
                 if n == 0 {
                     break;
@@ -300,7 +307,7 @@ impl<R: Read> BufReadReader<R> {
     }
 }
 
-impl<R: BufRead> Reader for BufReadReader<R> {
+impl<R: Read> Reader for IoReader<R> {
     type Error = io::Error;
 
     fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
@@ -355,11 +362,11 @@ impl<R: BufRead> Reader for BufReadReader<R> {
     }
 }
 
-impl<'a, R: Read + 'a> Readable<'a> for BufReader<R> {
-    type Reader = BufReadReader<BufReader<R>>;
+impl<'a> Readable<'a> for File {
+    type Reader = IoReader<File>;
 
     fn to_reader(self) -> Self::Reader {
-        BufReadReader::new(self)
+        IoReader::new(self)
     }
 }
 
