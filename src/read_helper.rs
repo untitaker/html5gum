@@ -8,7 +8,7 @@ pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
     last_character_was_cr: bool,
     to_reconsume: Option<Option<u8>>,
-    last_4_bytes: [u8; 4],
+    last_4_bytes: u32,
 }
 
 impl<R: Reader> ReadHelper<R> {
@@ -17,7 +17,7 @@ impl<R: Reader> ReadHelper<R> {
             reader,
             last_character_was_cr: false,
             to_reconsume: Default::default(),
-            last_4_bytes: [0; 4],
+            last_4_bytes: 0,
         }
     }
 
@@ -42,7 +42,7 @@ impl<R: Reader> ReadHelper<R> {
         }
 
         if let Ok(Some(x)) = c {
-            Self::validate_char(emitter, &mut self.last_4_bytes, x);
+            Self::validate_byte(emitter, &mut self.last_4_bytes, x);
         }
 
         c
@@ -73,7 +73,7 @@ impl<R: Reader> ReadHelper<R> {
 
         if s.is_empty() || self.reader.try_read_string(s.as_bytes(), case_sensitive)? {
             self.last_character_was_cr = false;
-            self.last_4_bytes = [0; 4];
+            self.last_4_bytes = 0;
             Ok(true)
         } else {
             self.to_reconsume = to_reconsume_bak;
@@ -113,12 +113,12 @@ impl<R: Reader> ReadHelper<R> {
         match self.reader.read_until(needle2_slice, char_buf)? {
             Some(b"\r") => {
                 self.last_character_was_cr = true;
-                Self::validate_char(emitter, &mut self.last_4_bytes, b'\n');
+                Self::validate_byte(emitter, &mut self.last_4_bytes, b'\n');
                 Ok(Some(b"\n"))
             }
             Some(mut xs) => {
                 for x in xs {
-                    Self::validate_char(emitter, &mut self.last_4_bytes, *x);
+                    Self::validate_byte(emitter, &mut self.last_4_bytes, *x);
                 }
 
                 if self.last_character_was_cr && xs.starts_with(b"\n") {
@@ -141,7 +141,7 @@ impl<R: Reader> ReadHelper<R> {
     }
 
     #[inline]
-    fn validate_char<E: Emitter>(emitter: &mut E, last_4_bytes: &mut [u8; 4], next_byte: u8) {
+    fn validate_byte<E: Emitter>(emitter: &mut E, last_4_bytes: &mut u32, next_byte: u8) {
         // convert a u32 containing the last 4 bytes to the corresponding unicode scalar value, if
         // there's any.
         //
@@ -150,32 +150,32 @@ impl<R: Reader> ReadHelper<R> {
         //
         // ideally this function would pattern match on `last_4_bytes` directly.
 
-        let char_c = if next_byte < 128 {
+        if next_byte < 128 {
             // ascii
-            *last_4_bytes = [0; 4];
-            next_byte as u32
+            *last_4_bytes = 0;
+            Self::validate_char(emitter, next_byte as u32);
         } else if next_byte >= 192 {
             // (non-ascii) character boundary
-            *last_4_bytes = [0, 0, 0, next_byte];
-            return;
+            *last_4_bytes = next_byte as u32;
         } else {
-            last_4_bytes[0] = last_4_bytes[1];
-            last_4_bytes[1] = last_4_bytes[2];
-            last_4_bytes[2] = last_4_bytes[3];
-            last_4_bytes[3] = next_byte;
-            match std::str::from_utf8(&last_4_bytes[..]) {
+            *last_4_bytes <<= 8;
+            *last_4_bytes |= next_byte as u32;
+            match std::str::from_utf8(&last_4_bytes.to_be_bytes()[..]) {
                 // last_4_bytes contains a valid character, potentially prefixed by some nullbytes.
                 // get the last character
                 //
                 // we rely on the other branches to ensure no other state can occur
-                Ok(x) => x.chars().rev().next().unwrap() as u32,
+                Ok(x) => Self::validate_char(emitter, x.chars().rev().next().unwrap() as u32),
 
                 // last_4_bytes contains truncated utf8 and it's not time to validate a character
                 // yet
-                Err(_) => return,
+                Err(_) => (),
             }
         };
+    }
 
+    #[inline]
+    fn validate_char<E: Emitter>(emitter: &mut E, char_c: u32) {
         match char_c {
             surrogate_pat!() => {
                 emitter.emit_error(Error::SurrogateInInputStream);
