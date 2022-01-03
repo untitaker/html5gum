@@ -182,26 +182,30 @@ pub struct DefaultEmitter {
 }
 
 impl DefaultEmitter {
+    fn to_str(&mut self, bytes: Vec<u8>) -> String {
+        String::from_utf8(bytes).unwrap()
+    }
+
     fn emit_token(&mut self, token: Token<Vec<u8>>) {
         self.flush_current_characters();
-        self.emitted_tokens.push_front(match token {
+        let new_token = match token {
             Token::StartTag(StartTag {
                 self_closing,
                 name,
                 attributes,
             }) => Token::StartTag(StartTag {
                 self_closing,
-                name: String::from_utf8(name).unwrap(),
+                name: self.to_str(name),
                 attributes: attributes
                     .into_iter()
-                    .map(|(k, v)| (String::from_utf8(k).unwrap(), String::from_utf8(v).unwrap()))
+                    .map(|(k, v)| (self.to_str(k), self.to_str(v)))
                     .collect(),
             }),
             Token::EndTag(EndTag { name }) => Token::EndTag(EndTag {
-                name: String::from_utf8(name).unwrap(),
+                name: self.to_str(name),
             }),
-            Token::String(s) => Token::String(String::from_utf8(s).unwrap()),
-            Token::Comment(s) => Token::Comment(String::from_utf8(s).unwrap()),
+            Token::String(s) => Token::String(self.to_str(s)),
+            Token::Comment(s) => Token::Comment(self.to_str(s)),
             Token::Doctype(Doctype {
                 force_quirks,
                 name,
@@ -209,12 +213,14 @@ impl DefaultEmitter {
                 system_identifier,
             }) => Token::Doctype(Doctype {
                 force_quirks,
-                name: String::from_utf8(name).unwrap(),
-                public_identifier: public_identifier.map(|x| String::from_utf8(x).unwrap()),
-                system_identifier: system_identifier.map(|x| String::from_utf8(x).unwrap()),
+                name: self.to_str(name),
+                public_identifier: public_identifier.map(|x| self.to_str(x)),
+                system_identifier: system_identifier.map(|x| self.to_str(x)),
             }),
             Token::Error(e) => Token::Error(e),
-        });
+        };
+
+        self.emitted_tokens.push_front(new_token);
     }
 
     fn flush_current_attribute(&mut self) {
