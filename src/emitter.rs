@@ -182,7 +182,7 @@ pub struct DefaultEmitter {
 }
 
 impl DefaultEmitter {
-    fn to_str(&mut self, bytes: Vec<u8>) -> String {
+    fn convert_string(&mut self, bytes: Vec<u8>) -> String {
         String::from_utf8(bytes).unwrap()
     }
 
@@ -195,17 +195,17 @@ impl DefaultEmitter {
                 attributes,
             }) => Token::StartTag(StartTag {
                 self_closing,
-                name: self.to_str(name),
+                name: self.convert_string(name),
                 attributes: attributes
                     .into_iter()
-                    .map(|(k, v)| (self.to_str(k), self.to_str(v)))
+                    .map(|(k, v)| (self.convert_string(k), self.convert_string(v)))
                     .collect(),
             }),
             Token::EndTag(EndTag { name }) => Token::EndTag(EndTag {
-                name: self.to_str(name),
+                name: self.convert_string(name),
             }),
-            Token::String(s) => Token::String(self.to_str(s)),
-            Token::Comment(s) => Token::Comment(self.to_str(s)),
+            Token::String(s) => Token::String(self.convert_string(s)),
+            Token::Comment(s) => Token::Comment(self.convert_string(s)),
             Token::Doctype(Doctype {
                 force_quirks,
                 name,
@@ -213,9 +213,9 @@ impl DefaultEmitter {
                 system_identifier,
             }) => Token::Doctype(Doctype {
                 force_quirks,
-                name: self.to_str(name),
-                public_identifier: public_identifier.map(|x| self.to_str(x)),
-                system_identifier: system_identifier.map(|x| self.to_str(x)),
+                name: self.convert_string(name),
+                public_identifier: public_identifier.map(|x| self.convert_string(x)),
+                system_identifier: system_identifier.map(|x| self.convert_string(x)),
             }),
             Token::Error(e) => Token::Error(e),
         };

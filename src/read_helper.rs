@@ -58,17 +58,20 @@ impl<R: Reader> ReadHelper<R> {
 
         let to_reconsume_bak = self.to_reconsume;
         let mut bytes = s.as_bytes().iter();
-        while let Some(c) = self.to_reconsume.take() {
-            if let (Some(x), Some(&x2)) = (c, bytes.next()) {
-                if x == x2 || (!case_sensitive && x.to_ascii_lowercase() == x2.to_ascii_lowercase())
+        if let Some(c) = self.to_reconsume.take() {
+            match (c, bytes.next()) {
+                (Some(x), Some(&x2))
+                    if x == x2
+                        || (!case_sensitive
+                            && x.to_ascii_lowercase() == x2.to_ascii_lowercase()) =>
                 {
                     s = &s[1..];
-                    break;
+                }
+                _ => {
+                    self.to_reconsume = to_reconsume_bak;
+                    return Ok(false);
                 }
             }
-
-            self.to_reconsume = to_reconsume_bak;
-            return Ok(false);
         }
 
         if s.is_empty() || self.reader.try_read_string(s.as_bytes(), case_sensitive)? {
@@ -160,16 +163,15 @@ impl<R: Reader> ReadHelper<R> {
         } else {
             *last_4_bytes <<= 8;
             *last_4_bytes |= next_byte as u32;
-            match std::str::from_utf8(&last_4_bytes.to_be_bytes()[..]) {
+            if let Ok(x) = std::str::from_utf8(&last_4_bytes.to_be_bytes()[..]) {
                 // last_4_bytes contains a valid character, potentially prefixed by some nullbytes.
                 // get the last character
                 //
                 // we rely on the other branches to ensure no other state can occur
-                Ok(x) => Self::validate_char(emitter, x.chars().rev().next().unwrap() as u32),
-
+                Self::validate_char(emitter, x.chars().rev().next().unwrap() as u32);
+            } else {
                 // last_4_bytes contains truncated utf8 and it's not time to validate a character
                 // yet
-                Err(_) => (),
             }
         };
     }
