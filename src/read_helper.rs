@@ -163,12 +163,15 @@ impl<R: Reader> ReadHelper<R> {
             last_4_bytes[1] = last_4_bytes[2];
             last_4_bytes[2] = last_4_bytes[3];
             last_4_bytes[3] = next_byte;
-            let character_boundary = last_4_bytes[..]
-                .iter()
-                .position(|&x| x != 0)
-                .unwrap_or(0);
-            match std::str::from_utf8(&last_4_bytes[character_boundary..]) {
-                Ok(x) => x.chars().next().unwrap() as u32,
+            match std::str::from_utf8(&last_4_bytes[..]) {
+                // last_4_bytes contains a valid character, potentially prefixed by some nullbytes.
+                // get the last character
+                //
+                // we rely on the other branches to ensure no other state can occur
+                Ok(x) => x.chars().rev().next().unwrap() as u32,
+
+                // last_4_bytes contains truncated utf8 and it's not time to validate a character
+                // yet
                 Err(_) => return,
             }
         };
