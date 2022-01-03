@@ -173,7 +173,7 @@ impl<R: Reader> ReadHelper<R> {
                 // last_4_bytes contains truncated utf8 and it's not time to validate a character
                 // yet
             }
-        };
+        }
     }
 
     #[inline]
