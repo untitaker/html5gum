@@ -51,7 +51,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         ($c:expr, $state:expr) => {{
             let new_state = $state;
             let c = $c;
-            slf.reader.unread_char(c.map(|x: u8| x as char));
+            slf.reader.unread_byte(c);
             slf.machine_helper.switch_to(new_state);
             cont!()
         }};

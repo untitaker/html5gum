@@ -7,7 +7,7 @@ use crate::utils::{control_pat, noncharacter_pat, surrogate_pat};
 pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
     last_character_was_cr: bool,
-    to_reconsume: Stack8<Option<u8>>,
+    to_reconsume: Option<Option<u8>>,
     last_4_bytes: [u8; 4],
 }
 
@@ -25,14 +25,13 @@ impl<R: Reader> ReadHelper<R> {
         &mut self,
         emitter: &mut E,
     ) -> Result<Option<u8>, R::Error> {
-        let mut c = match self.to_reconsume.pop() {
-            Some(c) => return Ok(c),
-            None => self.reader.read_byte(),
-        };
+        if let Some(c) = self.to_reconsume.take() {
+            return Ok(c);
+        }
 
+        let mut c = self.reader.read_byte();
         if self.last_character_was_cr && matches!(c, Ok(Some(b'\n'))) {
-            self.last_character_was_cr = false;
-            return self.read_byte(emitter);
+            c = self.reader.read_byte();
         }
 
         if matches!(c, Ok(Some(b'\r'))) {
@@ -59,12 +58,12 @@ impl<R: Reader> ReadHelper<R> {
 
         let to_reconsume_bak = self.to_reconsume;
         let mut bytes = s.as_bytes().iter();
-        while let Some(c) = self.to_reconsume.pop() {
+        while let Some(c) = self.to_reconsume.take() {
             if let (Some(x), Some(&x2)) = (c, bytes.next()) {
                 if x == x2 || (!case_sensitive && x.to_ascii_lowercase() == x2.to_ascii_lowercase())
                 {
                     s = &s[1..];
-                    continue;
+                    break;
                 }
             }
 
@@ -91,7 +90,7 @@ impl<R: Reader> ReadHelper<R> {
     where
         E: Emitter,
     {
-        match self.to_reconsume.pop() {
+        match self.to_reconsume.take() {
             Some(Some(x)) => {
                 return Ok(Some({
                     char_buf[0] = x;
@@ -101,8 +100,6 @@ impl<R: Reader> ReadHelper<R> {
             Some(None) => return Ok(None),
             None => (),
         }
-
-        let last_character_was_cr = &mut self.last_character_was_cr;
 
         const MAX_NEEDLE_LEN: usize = 13;
         let mut needle2 = [b'\0'; MAX_NEEDLE_LEN];
@@ -115,7 +112,7 @@ impl<R: Reader> ReadHelper<R> {
 
         match self.reader.read_until(needle2_slice, char_buf)? {
             Some(b"\r") => {
-                *last_character_was_cr = true;
+                self.last_character_was_cr = true;
                 Self::validate_char(emitter, &mut self.last_4_bytes, b'\n');
                 Ok(Some(b"\n"))
             }
@@ -124,54 +121,59 @@ impl<R: Reader> ReadHelper<R> {
                     Self::validate_char(emitter, &mut self.last_4_bytes, *x);
                 }
 
-                if *last_character_was_cr && xs.starts_with(b"\n") {
+                if self.last_character_was_cr && xs.starts_with(b"\n") {
                     xs = &xs[1..];
                 }
 
-                *last_character_was_cr = false;
+                self.last_character_was_cr = false;
                 Ok(Some(xs))
             }
             None => {
-                *last_character_was_cr = false;
+                self.last_character_was_cr = false;
                 Ok(None)
             }
         }
     }
 
     #[inline]
-    pub(crate) fn unread_char(&mut self, c: Option<char>) {
-        self.to_reconsume.push(c.map(|x| x as u8));
+    pub(crate) fn unread_byte(&mut self, c: Option<u8>) {
+        self.to_reconsume = Some(c);
     }
 
+    #[inline]
     fn validate_char<E: Emitter>(emitter: &mut E, last_4_bytes: &mut [u8; 4], next_byte: u8) {
-        last_4_bytes.rotate_left(1);
-        last_4_bytes[3] = next_byte;
-
         // convert a u32 containing the last 4 bytes to the corresponding unicode scalar value, if
         // there's any.
         //
         // `last_4_bytes` is utf8-encoded character (or trunchated garbage), while `char_c` is a
-        // `char`.
+        // `char` (as u32 because of pattern-matching)
         //
         // ideally this function would pattern match on `last_4_bytes` directly.
-        let char_c = if matches!(last_4_bytes, [0, 0, 0, _]) {
-            last_4_bytes[3] as char
+
+        let char_c = if next_byte < 128 {
+            // ascii
+            *last_4_bytes = [0; 4];
+            next_byte as u32
+        } else if next_byte >= 192 {
+            // (non-ascii) character boundary
+            *last_4_bytes = [0, 0, 0, next_byte];
+            return;
         } else {
-            let first_non_null_byte = last_4_bytes[..]
+            last_4_bytes[0] = last_4_bytes[1];
+            last_4_bytes[1] = last_4_bytes[2];
+            last_4_bytes[2] = last_4_bytes[3];
+            last_4_bytes[3] = next_byte;
+            let character_boundary = last_4_bytes[..]
                 .iter()
-                .position(|&x| x != b'\0')
+                .position(|&x| x != 0)
                 .unwrap_or(0);
-            match std::str::from_utf8(&last_4_bytes[first_non_null_byte..]) {
-                Ok(x) => x.chars().next().unwrap(),
+            match std::str::from_utf8(&last_4_bytes[character_boundary..]) {
+                Ok(x) => x.chars().next().unwrap() as u32,
                 Err(_) => return,
             }
         };
 
-        if char_c.is_ascii() {
-            *last_4_bytes = [0; 4];
-        }
-
-        match char_c as u32 {
+        match char_c {
             surrogate_pat!() => {
                 emitter.emit_error(Error::SurrogateInInputStream);
             }
@@ -185,31 +187,6 @@ impl<R: Reader> ReadHelper<R> {
                 emitter.emit_error(Error::ControlCharacterInInputStream);
             }
             _ => (),
-        }
-    }
-}
-
-// this is a stack that can hold 0 to 8 Ts
-#[derive(Debug, Default, Clone, Copy)]
-struct Stack8<T: Copy> {
-    buf: [T; 8],
-    len: usize,
-}
-
-impl<T: Copy> Stack8<T> {
-    #[inline]
-    fn push(&mut self, c: T) {
-        self.buf[self.len] = c;
-        self.len += 1;
-    }
-
-    #[inline]
-    fn pop(&mut self) -> Option<T> {
-        if self.len > 0 {
-            self.len -= 1;
-            Some(self.buf[self.len])
-        } else {
-            None
         }
     }
 }
