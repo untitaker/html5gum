@@ -33,3 +33,6 @@ memchr = { version = "2.4.1", optional = true }
 [[bench]]
 name = "data_state"
 harness = false
+
+[lib]
+bench = false
