@@ -148,10 +148,13 @@ impl<R: Reader> ReadHelper<R> {
 
     #[inline]
     fn validate_byte<E: Emitter>(emitter: &mut E, last_4_bytes: &mut u32, next_byte: u8) {
-        // convert a u32 containing the last 4 bytes to the corresponding unicode scalar value, if
-        // there's any.
+        // `last_4_bytes` is a big-endian buffer of 4 bytes. those bytes are one of:
         //
-        // `last_4_bytes` is utf8-encoded character (or trunchated garbage).
+        // * utf8-encoded character, preceded by null-bytes
+        // * start of utf8-encoded character, preceded by null-bytes
+        // * just null bytes
+        //
+        // Assumption: validate_byte is called in sequence with bytes from a valid utf-8 str
 
         if next_byte < 128 {
             // ascii
