@@ -20,6 +20,15 @@
 "output":[["Comment", "<!-\n"]],
 "errors": [
     {"code": "eof-in-comment", "line": 1, "col": 5}
+]},
+
+{"description": "3c c2 8c",
+"input":"<\u00c2\u008c",
+"output":[["Character", "<\u00c2\u008c"]],
+"errors": [
+    {"code": "control-character-in-input-stream", "line": 1, "col": 2},
+    {"code": "invalid-first-character-of-tag-name", "line": 1, "col": 2}
 ]}
+
 
 ]}
