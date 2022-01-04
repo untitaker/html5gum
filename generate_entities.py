@@ -5,6 +5,16 @@ key_and_value = list(json.load(sys.stdin).items())
 # Sort by descending length so we match the largest prefix first
 key_and_value.sort(key=lambda x: (-len(x[0]), x[0]))
 
+match_arms = {}
+
+for key, value in key_and_value:
+    assert key[0] == '&'
+    key = key[1:]
+    first_char = key[0]
+    key = key[1:]
+
+    match_arms.setdefault(first_char, []).append((key, value))
+
 with open("src/entities.rs", "w") as f:
     f.write("""
 // @generated
@@ -18,22 +28,46 @@ pub struct CharRef {
     pub characters: &'static str,
 }
 
-pub fn try_read_character_reference<E>(first_char: char, mut try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
+pub fn try_read_character_reference<E>(first_char: char, try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
+    match first_char {
 """)
 
-    for key, value in key_and_value:
-        assert key[0] == '&'
-        key = key[1:]
-        characters = ""
-        for c in value['codepoints']:
-            characters += r"\u{" + hex(c)[2:] + r"}"
-
-        first_char = key[0]
-        key = key[1:]
+    for first_char, if_statements in sorted(match_arms.items()):
+        # Write each branch of the match stmt as its own function such that
+        # compilation is faster.
         f.write("""
-        if first_char == '%(first_char)s' && try_read("%(key)s")? {
-            return Ok(Some(CharRef { name: "%(key)s", characters: "%(characters)s" }));
-        }
-        """ % {"key": key, "characters": characters, "first_char": first_char})
+        '%(first_char)s' => {
+            #[allow(non_snake_case)]
+            fn branch_%(first_char)s<E>(mut try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
+                for (other_chars, characters) in &[
+        """ % {"first_char": first_char})
 
-    f.write(" Ok(None) }");
+        for other_chars, value in if_statements:
+            characters = ""
+            for c in value['codepoints']:
+                characters += r"\u{" + hex(c)[2:] + r"}"
+
+            f.write("""
+                    ("%(other_chars)s", "%(characters)s"),
+            """ % {"other_chars": other_chars, "characters": characters})
+
+        f.write("""
+                ] {
+                    if try_read(other_chars)? {
+                        return Ok(Some(CharRef { name: other_chars, characters }));
+                    }
+                }
+
+                Ok(None)
+            }
+
+            branch_%(first_char)s(try_read)
+
+        }
+        """ % {"first_char": first_char})
+
+    f.write("""
+        _ => Ok(None)
+    }
+}
+    """)
