@@ -141,15 +141,8 @@ impl<R: Reader> ReadHelper<R> {
 
     #[inline]
     fn validate_bytes<E: Emitter>(emitter: &mut E, last_4_bytes: &mut u32, next_bytes: &[u8]) {
-        if let Ok(xs) = std::str::from_utf8(next_bytes) {
-            *last_4_bytes = 0;
-            for x in xs.chars() {
-                Self::validate_char(emitter, x);
-            }
-        } else {
-            for &x in next_bytes {
-                Self::validate_byte(emitter, last_4_bytes, x);
-            }
+        for &x in next_bytes {
+            Self::validate_byte(emitter, last_4_bytes, x);
         }
     }
 
@@ -158,85 +151,48 @@ impl<R: Reader> ReadHelper<R> {
         // convert a u32 containing the last 4 bytes to the corresponding unicode scalar value, if
         // there's any.
         //
-        // `last_4_bytes` is utf8-encoded character (or trunchated garbage), while `char_c` is a
-        // `char`
-        //
-        // ideally this function would pattern match on `last_4_bytes` directly.
+        // `last_4_bytes` is utf8-encoded character (or trunchated garbage).
 
         if next_byte < 128 {
             // ascii
             *last_4_bytes = 0;
-            Self::validate_char(emitter, next_byte as char);
+            Self::validate_last_4_bytes(emitter, next_byte as u32);
         } else if next_byte >= 192 {
             // (non-ascii) character boundary
             *last_4_bytes = next_byte as u32;
         } else {
             *last_4_bytes <<= 8;
             *last_4_bytes |= next_byte as u32;
-            if let Ok(x) = std::str::from_utf8(&last_4_bytes.to_be_bytes()[..]) {
-                // last_4_bytes contains a valid character, potentially prefixed by some nullbytes.
-                // get the last character
-                //
-                // we rely on the other branches to ensure no other state can occur
-                Self::validate_char(emitter, x.chars().rev().next().unwrap());
-            } else {
-                // last_4_bytes contains truncated utf8 and it's not time to validate a character
-                // yet
-            }
+            Self::validate_last_4_bytes(emitter, *last_4_bytes);
         }
     }
 
     #[inline]
-    fn validate_char<E: Emitter>(emitter: &mut E, char_c: char) {
-        match char_c {
-            // TODO: we cannot validate surrogates
-            //'\u{d800}'..='\u{dfff}' => {
-            //emitter.emit_error(Error::SurrogateInInputStream);
-            //}
-            //
-            '\u{fdd0}'..='\u{fdef}'
-            | '\u{fffe}'
-            | '\u{ffff}'
-            | '\u{1fffe}'
-            | '\u{1ffff}'
-            | '\u{2fffe}'
-            | '\u{2ffff}'
-            | '\u{3fffe}'
-            | '\u{3ffff}'
-            | '\u{4fffe}'
-            | '\u{4ffff}'
-            | '\u{5fffe}'
-            | '\u{5ffff}'
-            | '\u{6fffe}'
-            | '\u{6ffff}'
-            | '\u{7fffe}'
-            | '\u{7ffff}'
-            | '\u{8fffe}'
-            | '\u{8ffff}'
-            | '\u{9fffe}'
-            | '\u{9ffff}'
-            | '\u{afffe}'
-            | '\u{affff}'
-            | '\u{bfffe}'
-            | '\u{bffff}'
-            | '\u{cfffe}'
-            | '\u{cffff}'
-            | '\u{dfffe}'
-            | '\u{dffff}'
-            | '\u{efffe}'
-            | '\u{effff}'
-            | '\u{ffffe}'
-            | '\u{fffff}'
-            | '\u{10fffe}'
-            | '\u{10ffff}' => {
+    fn validate_last_4_bytes<E: Emitter>(emitter: &mut E, last_4_bytes: u32) {
+        // generated with Python 3:
+        // ' | '.join(map(str, sorted([int.from_bytes(chr(x).encode("utf8"), 'big') for x in nonchars])))
+        match last_4_bytes {
+            15710096 | 15710097 | 15710098 | 15710099 | 15710100 | 15710101 | 15710102
+            | 15710103 | 15710104 | 15710105 | 15710106 | 15710107 | 15710108 | 15710109
+            | 15710110 | 15710111 | 15710112 | 15710113 | 15710114 | 15710115 | 15710116
+            | 15710117 | 15710118 | 15710119 | 15710120 | 15710121 | 15710122 | 15710123
+            | 15710124 | 15710125 | 15710126 | 15710127 | 15712190 | 15712191 | 4037001150
+            | 4037001151 | 4038049726 | 4038049727 | 4039098302 | 4039098303 | 4052729790
+            | 4052729791 | 4053778366 | 4053778367 | 4054826942 | 4054826943 | 4055875518
+            | 4055875519 | 4069507006 | 4069507007 | 4070555582 | 4070555583 | 4071604158
+            | 4071604159 | 4072652734 | 4072652735 | 4086284222 | 4086284223 | 4087332798
+            | 4087332799 | 4088381374 | 4088381375 | 4089429950 | 4089429951 | 4103061438
+            | 4103061439 => {
                 emitter.emit_error(Error::NoncharacterInInputStream);
             }
-            // control without whitespace or nul
-            x @ ('\u{1}'..='\u{1f}' | '\u{7f}'..='\u{9f}')
-                if !matches!(x, '\u{9}' | '\u{a}' | '\u{c}' | '\u{20}') =>
-            {
+            1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 11 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21
+            | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 127 | 49792 | 49793 | 49794
+            | 49795 | 49796 | 49797 | 49798 | 49799 | 49800 | 49801 | 49802 | 49803 | 49804
+            | 49805 | 49806 | 49807 | 49808 | 49809 | 49810 | 49811 | 49812 | 49813 | 49814
+            | 49815 | 49816 | 49817 | 49818 | 49819 | 49820 | 49821 | 49822 | 49823 => {
                 emitter.emit_error(Error::ControlCharacterInInputStream);
             }
+
             _ => (),
         }
     }
