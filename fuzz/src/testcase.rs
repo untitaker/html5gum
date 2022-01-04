@@ -3,7 +3,7 @@ use std::env;
 use html5ever::buffer_queue::BufferQueue;
 use html5ever::tendril::format_tendril;
 use html5ever::tokenizer::{TagKind, Token as Token2, TokenSinkResult, TokenizerResult};
-use html5gum::{Emitter, Reader, Token};
+use html5gum::{Doctype, Emitter, EndTag, Reader, StartTag, Token};
 
 use pretty_assertions::assert_eq;
 
@@ -29,13 +29,31 @@ pub fn run(s: &str) {
             reference_tokens.retain(|x| !matches!(x, html5gum_old::Token::Error(_)));
         }
 
-        let testing_tokens: Vec<_> = testing_tokens
-            .into_iter()
-            .map(|x| format!("{:?}", x))
-            .collect();
         let reference_tokens: Vec<_> = reference_tokens
             .into_iter()
-            .map(|x| format!("{:?}", x))
+            .map(|x| match x {
+                html5gum_old::Token::String(x) => Token::String(x.into_bytes()),
+                html5gum_old::Token::Comment(x) => Token::Comment(x.into_bytes()),
+                html5gum_old::Token::StartTag(x) => Token::StartTag(StartTag {
+                    name: x.name.into_bytes(),
+                    attributes: x
+                        .attributes
+                        .into_iter()
+                        .map(|(k, v)| (k.into_bytes(), v.into_bytes()))
+                        .collect(),
+                    self_closing: x.self_closing,
+                }),
+                html5gum_old::Token::EndTag(x) => Token::EndTag(EndTag {
+                    name: x.name.into_bytes(),
+                }),
+                html5gum_old::Token::Error(x) => Token::Error(x.to_string().parse().unwrap()),
+                html5gum_old::Token::Doctype(x) => Token::Doctype(Doctype {
+                    name: x.name.into_bytes(),
+                    force_quirks: x.force_quirks,
+                    public_identifier: x.public_identifier.map(String::into_bytes),
+                    system_identifier: x.system_identifier.map(String::into_bytes),
+                }),
+            })
             .collect();
 
         assert_eq!(testing_tokens, reference_tokens);
@@ -98,31 +116,35 @@ impl<R: Reader, E: Emitter<Token = Token>> html5ever::tokenizer::TokenSink for T
         match (token, reference_token) {
             (Some(Token::StartTag(tag)), Token2::TagToken(tag2)) => {
                 assert_eq!(tag2.kind, TagKind::StartTag);
-                assert_eq!(tag.name, tag2.name.as_ref());
+                assert_eq!(tag.name, tag2.name.as_ref().as_bytes());
             }
             (Some(Token::EndTag(tag)), Token2::TagToken(tag2)) => {
                 assert_eq!(tag2.kind, TagKind::EndTag);
-                assert_eq!(tag.name, tag2.name.as_ref());
+                assert_eq!(tag.name, tag2.name.as_ref().as_bytes());
             }
             (None, Token2::EOFToken) => {}
             (Some(Token::Comment(comment)), Token2::CommentToken(comment2)) => {
-                assert_eq!(comment, comment2.as_ref());
+                assert_eq!(comment, comment2.as_ref().as_bytes());
             }
             (Some(Token::Doctype(doctype)), Token2::DoctypeToken(doctype2)) => {
                 assert_eq!(
                     doctype.name,
                     doctype2
                         .name
-                        .map(|x| x.as_ref().to_owned())
+                        .map(|x| x.as_ref().to_owned().into_bytes())
                         .unwrap_or_default()
                 );
                 assert_eq!(
                     doctype.public_identifier,
-                    doctype2.public_id.map(|x| x.as_ref().to_owned())
+                    doctype2
+                        .public_id
+                        .map(|x| x.as_ref().to_owned().into_bytes())
                 );
                 assert_eq!(
                     doctype.system_identifier,
-                    doctype2.system_id.map(|x| x.as_ref().to_owned())
+                    doctype2
+                        .system_id
+                        .map(|x| x.as_ref().to_owned().into_bytes())
                 );
                 assert_eq!(doctype.force_quirks, doctype2.force_quirks);
             }
