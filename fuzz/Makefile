@@ -10,7 +10,7 @@ export FUZZ_IGNORE_PARSE_ERRORS := 0
 # CLI arguments to pass to AFL. useful for multiprocessing
 export _AFL_OPTS := -M fuzzer01
 
-AFL_TARGET_BIN=target-afl/debug/html5gum-fuzz-afl
+AFL_TARGET_BIN=target-afl/release/html5gum-fuzz-afl
 
 clean:
 	rm -rf target target-afl in out
@@ -23,7 +23,7 @@ in:
 
 setup-afl: in
 	which cargo-afl || cargo install afl
-	CARGO_TARGET_DIR=./target-afl/ cargo afl build --bin html5gum-fuzz-afl
+	CARGO_TARGET_DIR=./target-afl/ cargo afl build --release --bin html5gum-fuzz-afl
 
 afl: setup-afl
 	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
