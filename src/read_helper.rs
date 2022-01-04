@@ -2,8 +2,6 @@ use crate::Emitter;
 use crate::Error;
 use crate::Reader;
 
-use crate::utils::{control_pat, noncharacter_pat, surrogate_pat};
-
 pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
     last_character_was_cr: bool,
@@ -120,9 +118,7 @@ impl<R: Reader> ReadHelper<R> {
                 Ok(Some(b"\n"))
             }
             Some(mut xs) => {
-                for x in xs {
-                    Self::validate_byte(emitter, &mut self.last_4_bytes, *x);
-                }
+                Self::validate_bytes(emitter, &mut self.last_4_bytes, xs);
 
                 if self.last_character_was_cr && xs.starts_with(b"\n") {
                     xs = &xs[1..];
@@ -144,19 +140,33 @@ impl<R: Reader> ReadHelper<R> {
     }
 
     #[inline]
+    fn validate_bytes<E: Emitter>(emitter: &mut E, last_4_bytes: &mut u32, next_bytes: &[u8]) {
+        if let Ok(xs) = std::str::from_utf8(next_bytes) {
+            *last_4_bytes = 0;
+            for x in xs.chars() {
+                Self::validate_char(emitter, x);
+            }
+        } else {
+            for &x in next_bytes {
+                Self::validate_byte(emitter, last_4_bytes, x);
+            }
+        }
+    }
+
+    #[inline]
     fn validate_byte<E: Emitter>(emitter: &mut E, last_4_bytes: &mut u32, next_byte: u8) {
         // convert a u32 containing the last 4 bytes to the corresponding unicode scalar value, if
         // there's any.
         //
         // `last_4_bytes` is utf8-encoded character (or trunchated garbage), while `char_c` is a
-        // `char` (as u32 because of pattern-matching)
+        // `char`
         //
         // ideally this function would pattern match on `last_4_bytes` directly.
 
         if next_byte < 128 {
             // ascii
             *last_4_bytes = 0;
-            Self::validate_char(emitter, next_byte as u32);
+            Self::validate_char(emitter, next_byte as char);
         } else if next_byte >= 192 {
             // (non-ascii) character boundary
             *last_4_bytes = next_byte as u32;
@@ -168,7 +178,7 @@ impl<R: Reader> ReadHelper<R> {
                 // get the last character
                 //
                 // we rely on the other branches to ensure no other state can occur
-                Self::validate_char(emitter, x.chars().rev().next().unwrap() as u32);
+                Self::validate_char(emitter, x.chars().rev().next().unwrap());
             } else {
                 // last_4_bytes contains truncated utf8 and it's not time to validate a character
                 // yet
@@ -177,17 +187,53 @@ impl<R: Reader> ReadHelper<R> {
     }
 
     #[inline]
-    fn validate_char<E: Emitter>(emitter: &mut E, char_c: u32) {
+    fn validate_char<E: Emitter>(emitter: &mut E, char_c: char) {
         match char_c {
-            surrogate_pat!() => {
-                emitter.emit_error(Error::SurrogateInInputStream);
-            }
-            noncharacter_pat!() => {
+            // TODO: we cannot validate surrogates
+            //'\u{d800}'..='\u{dfff}' => {
+            //emitter.emit_error(Error::SurrogateInInputStream);
+            //}
+            //
+            '\u{fdd0}'..='\u{fdef}'
+            | '\u{fffe}'
+            | '\u{ffff}'
+            | '\u{1fffe}'
+            | '\u{1ffff}'
+            | '\u{2fffe}'
+            | '\u{2ffff}'
+            | '\u{3fffe}'
+            | '\u{3ffff}'
+            | '\u{4fffe}'
+            | '\u{4ffff}'
+            | '\u{5fffe}'
+            | '\u{5ffff}'
+            | '\u{6fffe}'
+            | '\u{6ffff}'
+            | '\u{7fffe}'
+            | '\u{7ffff}'
+            | '\u{8fffe}'
+            | '\u{8ffff}'
+            | '\u{9fffe}'
+            | '\u{9ffff}'
+            | '\u{afffe}'
+            | '\u{affff}'
+            | '\u{bfffe}'
+            | '\u{bffff}'
+            | '\u{cfffe}'
+            | '\u{cffff}'
+            | '\u{dfffe}'
+            | '\u{dffff}'
+            | '\u{efffe}'
+            | '\u{effff}'
+            | '\u{ffffe}'
+            | '\u{fffff}'
+            | '\u{10fffe}'
+            | '\u{10ffff}' => {
                 emitter.emit_error(Error::NoncharacterInInputStream);
             }
             // control without whitespace or nul
-            x @ control_pat!()
-                if !matches!(x, 0x0000 | 0x0009 | 0x000a | 0x000c | 0x000d | 0x0020) =>
+            x @ ('\u{1}'..='\u{1f}' | '\u{7f}'..='\u{9f}')
+                if !matches!(x, '\u{9}' | '\u{a}' | '\u{c}' | '\u{20}') =>
             {
                 emitter.emit_error(Error::ControlCharacterInInputStream);
             }
