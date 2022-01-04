@@ -13,6 +13,9 @@ compile_error!(
 
 struct ExpectedOutputTokens(Vec<Token>);
 
+#[derive(Deserialize, Ord, PartialOrd, PartialEq, Eq, Default)]
+struct HtmlString(#[serde(with = "serde_bytes")] Vec<u8>);
+
 impl<'de> Deserialize<'de> for ExpectedOutputTokens {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -37,7 +40,7 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
         def_const!("Comment", CommentConst);
         def_const!("Character", CharacterConst);
 
-        type Attributes = BTreeMap<String, String>;
+        type Attributes = BTreeMap<HtmlString, HtmlString>;
 
         #[derive(Deserialize)]
         #[serde(untagged)]
@@ -45,20 +48,20 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
             // "DOCTYPE", name, public_id, system_id, correctness
             Doctype(
                 DoctypeConst,
-                Option<String>,
-                Option<String>,
-                Option<String>,
+                Option<HtmlString>,
+                Option<HtmlString>,
+                Option<HtmlString>,
                 bool,
             ),
             // "StartTag", name, attributes, self_closing
-            StartTag(StartTagConst, String, Attributes),
-            StartTag2(StartTagConst, String, Attributes, bool),
+            StartTag(StartTagConst, HtmlString, Attributes),
+            StartTag2(StartTagConst, HtmlString, Attributes, bool),
             // "EndTag", name
-            EndTag(EndTagConst, String),
+            EndTag(EndTagConst, HtmlString),
             // "Comment", data
-            Comment(CommentConst, String),
+            Comment(CommentConst, HtmlString),
             // "Character", data
-            Character(CharacterConst, String),
+            Character(CharacterConst, HtmlString),
         }
 
         Ok(ExpectedOutputTokens(
@@ -72,26 +75,26 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
                         system_identifier,
                         correctness,
                     ) => Token::Doctype(Doctype {
-                        name: name.unwrap_or_default(),
-                        public_identifier,
-                        system_identifier,
+                        name: name.unwrap_or_default().0,
+                        public_identifier: public_identifier.map(|x| x.0),
+                        system_identifier: system_identifier.map(|x| x.0),
                         force_quirks: !correctness,
                     }),
                     OutputToken::StartTag(_, name, attributes) => Token::StartTag(StartTag {
                         self_closing: false,
-                        name,
-                        attributes,
+                        name: name.0,
+                        attributes: attributes.into_iter().map(|(k, v)| (k.0, v.0)).collect(),
                     }),
                     OutputToken::StartTag2(_, name, attributes, self_closing) => {
                         Token::StartTag(StartTag {
                             self_closing,
-                            name,
-                            attributes,
+                            name: name.0,
+                            attributes: attributes.into_iter().map(|(k, v)| (k.0, v.0)).collect(),
                         })
                     }
-                    OutputToken::EndTag(_, name) => Token::EndTag(EndTag { name }),
-                    OutputToken::Comment(_, data) => Token::Comment(data),
-                    OutputToken::Character(_, data) => Token::String(data),
+                    OutputToken::EndTag(_, name) => Token::EndTag(EndTag { name: name.0 }),
+                    OutputToken::Comment(_, data) => Token::Comment(data.0),
+                    OutputToken::Character(_, data) => Token::String(data.0),
                 })
                 .collect::<Vec<Token>>(),
         ))
@@ -140,7 +143,7 @@ fn initial_states_default() -> Vec<InitialState> {
 #[serde(rename_all = "camelCase")]
 struct Test {
     description: String,
-    input: String,
+    input: HtmlString,
     output: ExpectedOutputTokens,
     #[serde(default = "initial_states_default")]
     initial_states: Vec<InitialState>,
@@ -196,9 +199,9 @@ fn run_html5lib_tokenizer_test(resource_name: &str) {
     if matches!(
         fname,
         // We don't implement "Coercing an HTML DOM into an infoset" section
-        "xmlViolation.test" |
-        // Our parser does not operate on bytes, the input isn't valid Rust &str
-        "unicodeCharsProblematic.test"
+        "xmlViolation.test"
+        // We don't detect surrogates
+        | "unicodeCharsProblematic.test"
     ) {
         return;
     }
@@ -213,10 +216,10 @@ fn run_html5lib_tokenizer_test(resource_name: &str) {
 }
 
 fn run_test(fname: &str, test_i: usize, mut test: Test) {
-    test.input = if test.double_escaped {
-        unescape(&test.input)
+    test.input.0 = if test.double_escaped {
+        unescape(&test.input.0)
     } else {
-        test.input
+        test.input.0
     };
 
     test.output = if test.double_escaped {
@@ -225,8 +228,8 @@ fn run_test(fname: &str, test_i: usize, mut test: Test) {
                 .0
                 .into_iter()
                 .map(|token| match token {
-                    Token::String(x) => Token::String(unescape(&x)),
-                    Token::Comment(x) => Token::Comment(unescape(&x)),
+                    Token::String(x) => Token::String(unescape(x.as_slice())),
+                    Token::Comment(x) => Token::Comment(unescape(x.as_slice())),
                     token => token,
                 })
                 .collect(),
@@ -241,7 +244,7 @@ fn run_test(fname: &str, test_i: usize, mut test: Test) {
             test_i,
             &test,
             state.0,
-            Tokenizer::new(SlowReader(test.input.to_reader())),
+            Tokenizer::new(SlowReader(test.input.0.to_reader())),
             "slow-string",
         );
 
@@ -250,7 +253,7 @@ fn run_test(fname: &str, test_i: usize, mut test: Test) {
             test_i,
             &test,
             state.0,
-            Tokenizer::new(&test.input),
+            Tokenizer::new(&test.input.0),
             "string",
         );
 
@@ -259,7 +262,7 @@ fn run_test(fname: &str, test_i: usize, mut test: Test) {
             test_i,
             &test,
             state.0,
-            Tokenizer::new(IoReader::new(test.input.as_bytes())),
+            Tokenizer::new(IoReader::new(test.input.0.as_slice())),
             "bufread",
         );
 
@@ -268,7 +271,9 @@ fn run_test(fname: &str, test_i: usize, mut test: Test) {
             test_i,
             &test,
             state.0,
-            Tokenizer::new(SlowReader(IoReader::new(test.input.as_bytes()).to_reader())),
+            Tokenizer::new(SlowReader(
+                IoReader::new(test.input.0.as_slice()).to_reader(),
+            )),
             "slow-bufread",
         );
     }
@@ -311,22 +316,22 @@ fn run_test_inner<R: Reader>(
 
 /// Implements the escape sequences described in the tokenizer tests of html5lib-tests (and nothing
 /// more)
-fn unescape(data: &str) -> String {
-    let mut stream = data.chars();
-    let mut rv = String::new();
+fn unescape(data: &[u8]) -> Vec<u8> {
+    let mut stream = data.into_iter();
+    let mut rv = Vec::new();
 
     loop {
         match stream.next() {
-            Some('\\') => (),
+            Some(b'\\') => (),
             Some(x) => {
-                rv.push(x);
+                rv.push(*x);
                 continue;
             }
             None => break,
         }
 
         match stream.next() {
-            Some('u') => (),
+            Some(b'u') => (),
             x => panic!("unexpected escape: {:?}", x),
         }
 
@@ -334,15 +339,28 @@ fn unescape(data: &str) -> String {
 
         for _ in 0..4 {
             rv.push(match stream.next() {
-                Some(x) => x,
+                Some(x) => *x,
                 None => panic!("unexpected eof after \\u"),
             });
         }
 
-        let c = u32::from_str_radix(&rv[orig_len..], 16).expect("failed to parse as hex");
-        let c = char::from_u32(c).expect("bad character");
+        let c = u32::from_str_radix(std::str::from_utf8(&rv[orig_len..]).unwrap(), 16)
+            .expect("failed to parse as hex");
         rv.truncate(orig_len);
-        rv.push(c);
+
+        if let Some(c) = char::from_u32(c) {
+            rv.push(0);
+            rv.push(0);
+            rv.push(0);
+            rv.push(0);
+            let char_len = c.encode_utf8(&mut rv[orig_len..]).len();
+            rv.truncate(orig_len + char_len);
+        } else if c >= 0xD800 && c <= 0xDFFF {
+            // a surrogate
+            for b in &c.to_be_bytes()[2..] {
+                rv.push(*b);
+            }
+        }
     }
 
     rv

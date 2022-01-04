@@ -148,22 +148,10 @@ impl<R: Reader> ReadHelper<R> {
 
     #[inline]
     fn validate_byte<E: Emitter>(emitter: &mut E, last_4_bytes: &mut u32, next_byte: u8) {
-        // `last_4_bytes` is a big-endian buffer of 4 bytes. those bytes are one of:
-        //
-        // * utf8-encoded character, preceded by null-bytes
-        // * start of utf8-encoded character, preceded by null-bytes
-        // * just null bytes
-        //
-        // Assumption: validate_byte is called in sequence with bytes from a valid utf-8 str. If
-        // this is violated and there are eg. multiple truncated characters in a row, you might get
-        // false-positive errors sent into the emitter.
-
         if next_byte < 128 {
-            // ascii
             *last_4_bytes = 0;
             Self::validate_last_4_bytes(emitter, next_byte as u32);
         } else if next_byte >= 192 {
-            // (non-ascii) character boundary
             *last_4_bytes = next_byte as u32;
         } else {
             *last_4_bytes <<= 8;
@@ -175,26 +163,12 @@ impl<R: Reader> ReadHelper<R> {
     #[inline]
     fn validate_last_4_bytes<E: Emitter>(emitter: &mut E, last_4_bytes: u32) {
         // generated with Python 3:
-        // ' | '.join(map(str, sorted([int.from_bytes(chr(x).encode("utf8"), 'big') for x in nonchars])))
+        // ' | '.join(map(hex, sorted([int.from_bytes(chr(x).encode("utf8"), 'big') for x in nonchars])))
         match last_4_bytes {
-            15710096 | 15710097 | 15710098 | 15710099 | 15710100 | 15710101 | 15710102
-            | 15710103 | 15710104 | 15710105 | 15710106 | 15710107 | 15710108 | 15710109
-            | 15710110 | 15710111 | 15710112 | 15710113 | 15710114 | 15710115 | 15710116
-            | 15710117 | 15710118 | 15710119 | 15710120 | 15710121 | 15710122 | 15710123
-            | 15710124 | 15710125 | 15710126 | 15710127 | 15712190 | 15712191 | 4037001150
-            | 4037001151 | 4038049726 | 4038049727 | 4039098302 | 4039098303 | 4052729790
-            | 4052729791 | 4053778366 | 4053778367 | 4054826942 | 4054826943 | 4055875518
-            | 4055875519 | 4069507006 | 4069507007 | 4070555582 | 4070555583 | 4071604158
-            | 4071604159 | 4072652734 | 4072652735 | 4086284222 | 4086284223 | 4087332798
-            | 4087332799 | 4088381374 | 4088381375 | 4089429950 | 4089429951 | 4103061438
-            | 4103061439 => {
+            0xefb790 | 0xefb791 | 0xefb792 | 0xefb793 | 0xefb794 | 0xefb795 | 0xefb796 | 0xefb797 | 0xefb798 | 0xefb799 | 0xefb79a | 0xefb79b | 0xefb79c | 0xefb79d | 0xefb79e | 0xefb79f | 0xefb7a0 | 0xefb7a1 | 0xefb7a2 | 0xefb7a3 | 0xefb7a4 | 0xefb7a5 | 0xefb7a6 | 0xefb7a7 | 0xefb7a8 | 0xefb7a9 | 0xefb7aa | 0xefb7ab | 0xefb7ac | 0xefb7ad | 0xefb7ae | 0xefb7af | 0xefbfbe | 0xefbfbf | 0xf09fbfbe | 0xf09fbfbf | 0xf0afbfbe | 0xf0afbfbf | 0xf0bfbfbe | 0xf0bfbfbf | 0xf18fbfbe | 0xf18fbfbf | 0xf19fbfbe | 0xf19fbfbf | 0xf1afbfbe | 0xf1afbfbf | 0xf1bfbfbe | 0xf1bfbfbf | 0xf28fbfbe | 0xf28fbfbf | 0xf29fbfbe | 0xf29fbfbf | 0xf2afbfbe | 0xf2afbfbf | 0xf2bfbfbe | 0xf2bfbfbf | 0xf38fbfbe | 0xf38fbfbf | 0xf39fbfbe | 0xf39fbfbf | 0xf3afbfbe | 0xf3afbfbf | 0xf3bfbfbe | 0xf3bfbfbf | 0xf48fbfbe | 0xf48fbfbf => {
                 emitter.emit_error(Error::NoncharacterInInputStream);
             }
-            1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 11 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21
-            | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 127 | 49792 | 49793 | 49794
-            | 49795 | 49796 | 49797 | 49798 | 49799 | 49800 | 49801 | 49802 | 49803 | 49804
-            | 49805 | 49806 | 49807 | 49808 | 49809 | 49810 | 49811 | 49812 | 49813 | 49814
-            | 49815 | 49816 | 49817 | 49818 | 49819 | 49820 | 49821 | 49822 | 49823 => {
+            0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0xb | 0xd | 0xe | 0xf | 0x10 | 0x11 | 0x12 | 0x13 | 0x14 | 0x15 | 0x16 | 0x17 | 0x18 | 0x19 | 0x1a | 0x1b | 0x1c | 0x1d | 0x1e | 0x1f | 0x7f | 0xc280 | 0xc281 | 0xc282 | 0xc283 | 0xc284 | 0xc285 | 0xc286 | 0xc287 | 0xc288 | 0xc289 | 0xc28a | 0xc28b | 0xc28c | 0xc28d | 0xc28e | 0xc28f | 0xc290 | 0xc291 | 0xc292 | 0xc293 | 0xc294 | 0xc295 | 0xc296 | 0xc297 | 0xc298 | 0xc299 | 0xc29a | 0xc29b | 0xc29c | 0xc29d | 0xc29e | 0xc29f => {
                 emitter.emit_error(Error::ControlCharacterInInputStream);
             }
 

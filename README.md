@@ -15,13 +15,13 @@ let mut new_html = String::new();
 for token in Tokenizer::new(html).infallible() {
     match token {
         Token::StartTag(tag) => {
-            write!(new_html, "<{}>", tag.name).unwrap();
+            write!(new_html, "<{}>", String::from_utf8_lossy(&tag.name)).unwrap();
         }
         Token::String(hello_world) => {
-            write!(new_html, "{}", hello_world).unwrap();
+            write!(new_html, "{}", String::from_utf8_lossy(&hello_world)).unwrap();
         }
         Token::EndTag(tag) => {
-            write!(new_html, "</{}>", tag.name).unwrap();
+            write!(new_html, "</{}>", String::from_utf8_lossy(&tag.name)).unwrap();
         }
         _ => panic!("unexpected input"),
     }
@@ -38,8 +38,8 @@ test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer). S
 
 * `html5gum` **does not** [implement charset
   detection.](https://html.spec.whatwg.org/#determining-the-character-encoding)
-  This implementation requires all input to be Rust strings and therefore valid
-  UTF-8.
+  This implementation takes and returns bytes, but assumes UTF-8. It recovers
+  gracefully from invalid UTF-8.
 * `html5gum` **does not** [correct mis-nested
   tags.](https://html.spec.whatwg.org/#an-introduction-to-error-handling-and-strange-cases-in-the-parser)
 * `html5gum` **does not** recognize implicitly self-closing elements like

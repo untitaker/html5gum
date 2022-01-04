@@ -5,6 +5,8 @@ use std::mem;
 
 use crate::Error;
 
+type HtmlString = Vec<u8>;
+
 /// An emitter is an object providing methods to the tokenizer to produce tokens.
 ///
 /// Domain-specific applications of the HTML tokenizer can manually implement this trait to
@@ -174,53 +176,17 @@ pub trait Emitter {
 #[derive(Default)]
 pub struct DefaultEmitter {
     current_characters: Vec<u8>,
-    current_token: Option<Token<Vec<u8>>>,
+    current_token: Option<Token>,
     last_start_tag: Vec<u8>,
-    current_attribute: Option<(Vec<u8>, Vec<u8>)>,
-    seen_attributes: BTreeSet<Vec<u8>>,
+    current_attribute: Option<(HtmlString, HtmlString)>,
+    seen_attributes: BTreeSet<HtmlString>,
     emitted_tokens: VecDeque<Token>,
 }
 
 impl DefaultEmitter {
-    fn convert_string(&mut self, bytes: Vec<u8>) -> String {
-        String::from_utf8(bytes).unwrap()
-    }
-
-    fn emit_token(&mut self, token: Token<Vec<u8>>) {
+    fn emit_token(&mut self, token: Token) {
         self.flush_current_characters();
-        let new_token = match token {
-            Token::StartTag(StartTag {
-                self_closing,
-                name,
-                attributes,
-            }) => Token::StartTag(StartTag {
-                self_closing,
-                name: self.convert_string(name),
-                attributes: attributes
-                    .into_iter()
-                    .map(|(k, v)| (self.convert_string(k), self.convert_string(v)))
-                    .collect(),
-            }),
-            Token::EndTag(EndTag { name }) => Token::EndTag(EndTag {
-                name: self.convert_string(name),
-            }),
-            Token::String(s) => Token::String(self.convert_string(s)),
-            Token::Comment(s) => Token::Comment(self.convert_string(s)),
-            Token::Doctype(Doctype {
-                force_quirks,
-                name,
-                public_identifier,
-                system_identifier,
-            }) => Token::Doctype(Doctype {
-                force_quirks,
-                name: self.convert_string(name),
-                public_identifier: public_identifier.map(|x| self.convert_string(x)),
-                system_identifier: system_identifier.map(|x| self.convert_string(x)),
-            }),
-            Token::Error(e) => Token::Error(e),
-        };
-
-        self.emitted_tokens.push_front(new_token);
+        self.emitted_tokens.push_front(token);
     }
 
     fn flush_current_attribute(&mut self) {
@@ -452,26 +418,26 @@ impl Emitter for DefaultEmitter {
 
 /// A HTML end/close tag, such as `<p>` or `<a>`.
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct StartTag<S = String> {
+pub struct StartTag {
     /// Whether this tag is self-closing. If it is self-closing, no following [`EndTag`] should be
     /// expected.
     pub self_closing: bool,
 
     /// The start tag's name, such as `"p"` or `"a"`.
-    pub name: S,
+    pub name: HtmlString,
 
     /// A mapping for any HTML attributes this start tag may have.
     ///
     /// Duplicate attributes are ignored after the first one as per WHATWG spec. Implement your own
     /// [`Emitter`] to tweak this behavior.
-    pub attributes: BTreeMap<S, S>,
+    pub attributes: BTreeMap<HtmlString, HtmlString>,
 }
 
 /// A HTML end/close tag, such as `</p>` or `</a>`.
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct EndTag<S = String> {
+pub struct EndTag {
     /// The ending tag's name, such as `"p"` or `"a"`.
-    pub name: S,
+    pub name: HtmlString,
 }
 
 /// A doctype. Some examples:
@@ -481,34 +447,34 @@ pub struct EndTag<S = String> {
 /// * `<!DOCTYPE {name} SYSTEM '{system_identifier}'>`
 /// * `<!DOCTYPE {name} PUBLIC '{public_identifier}' '{system_identifier}'>`
 #[derive(Debug, Eq, PartialEq)]
-pub struct Doctype<S = String> {
+pub struct Doctype {
     /// The ["force quirks"](https://html.spec.whatwg.org/#force-quirks-flag) flag.
     pub force_quirks: bool,
 
     /// The doctype's name. For HTML documents this is "html".
-    pub name: S,
+    pub name: HtmlString,
 
     /// The doctype's public identifier.
-    pub public_identifier: Option<S>,
+    pub public_identifier: Option<HtmlString>,
 
     /// The doctype's system identifier.
-    pub system_identifier: Option<S>,
+    pub system_identifier: Option<HtmlString>,
 }
 
 /// The token type used by default. You can define your own token type by implementing the
 /// [`crate::Emitter`] trait and using [`crate::Tokenizer::new_with_emitter`].
 #[derive(Debug, Eq, PartialEq)]
-pub enum Token<S = String> {
+pub enum Token {
     /// A HTML start tag.
-    StartTag(StartTag<S>),
+    StartTag(StartTag),
     /// A HTML end tag.
-    EndTag(EndTag<S>),
+    EndTag(EndTag),
     /// A literal string.
-    String(S),
+    String(HtmlString),
     /// A HTML comment.
-    Comment(S),
+    Comment(HtmlString),
     /// A HTML doctype declaration.
-    Doctype(Doctype<S>),
+    Doctype(Doctype),
     /// A HTML parsing error.
     ///
     /// Can be skipped over, the tokenizer is supposed to recover from the error and continues with

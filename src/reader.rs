@@ -126,13 +126,13 @@ impl<'a, R: 'a + Reader> Readable<'a> for R {
 /// for token in Tokenizer::new(html).infallible() {
 ///     match token {
 ///         Token::StartTag(tag) => {
-///             write!(new_html, "<{}>", tag.name).unwrap();
+///             write!(new_html, "<{}>", String::from_utf8_lossy(&tag.name)).unwrap();
 ///         }
 ///         Token::String(hello_world) => {
-///             write!(new_html, "{}", hello_world).unwrap();
+///             write!(new_html, "{}", String::from_utf8_lossy(&hello_world)).unwrap();
 ///         }
 ///         Token::EndTag(tag) => {
-///             write!(new_html, "</{}>", tag.name).unwrap();
+///             write!(new_html, "</{}>", String::from_utf8_lossy(&tag.name)).unwrap();
 ///         }
 ///         _ => panic!("unexpected input"),
 ///     }
@@ -145,10 +145,8 @@ pub struct StringReader<'a> {
 }
 
 impl<'a> StringReader<'a> {
-    fn new(input: &'a str) -> Self {
-        StringReader {
-            input: input.as_bytes(),
-        }
+    fn new(input: &'a [u8]) -> Self {
+        StringReader { input }
     }
 }
 
@@ -209,7 +207,7 @@ impl<'a> Readable<'a> for &'a str {
     type Reader = StringReader<'a>;
 
     fn to_reader(self) -> Self::Reader {
-        StringReader::new(self)
+        StringReader::new(self.as_bytes())
     }
 }
 
@@ -217,7 +215,23 @@ impl<'a> Readable<'a> for &'a String {
     type Reader = StringReader<'a>;
 
     fn to_reader(self) -> Self::Reader {
-        StringReader::new(self.as_str())
+        StringReader::new(self.as_bytes())
+    }
+}
+
+impl<'a> Readable<'a> for &'a Vec<u8> {
+    type Reader = StringReader<'a>;
+
+    fn to_reader(self) -> Self::Reader {
+        StringReader::new(self.as_slice())
+    }
+}
+
+impl<'a> Readable<'a> for &'a [u8] {
+    type Reader = StringReader<'a>;
+
+    fn to_reader(self) -> Self::Reader {
+        StringReader::new(self)
     }
 }
 
@@ -248,13 +262,13 @@ impl<'a> Readable<'a> for &'a String {
 ///
 ///     match token {
 ///         Token::StartTag(tag) => {
-///             write!(new_html, "<{}>", tag.name).unwrap();
+///             write!(new_html, "<{}>", String::from_utf8_lossy(&tag.name)).unwrap();
 ///         }
 ///         Token::String(hello_world) => {
-///             write!(new_html, "{}", hello_world).unwrap();
+///             write!(new_html, "{}", String::from_utf8_lossy(&hello_world)).unwrap();
 ///         }
 ///         Token::EndTag(tag) => {
-///             write!(new_html, "</{}>", tag.name).unwrap();
+///             write!(new_html, "</{}>", String::from_utf8_lossy(&tag.name)).unwrap();
 ///         }
 ///         _ => panic!("unexpected input"),
 ///     }

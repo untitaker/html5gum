@@ -7,7 +7,7 @@ use std::fmt;
 /// can be safely unwrapped and the `unwrap()` may be optimized away entirely.
 ///
 /// This error is typically encountered when attempting to get tokens from the `Tokenizer`. Call
-/// [`Tokenizer::infallible`] if you wish to avoid unwrapping those results yourself.
+/// [`crate::Tokenizer::infallible`] if you wish to avoid unwrapping those results yourself.
 pub enum Never {}
 
 impl fmt::Display for Never {
