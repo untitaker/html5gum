@@ -1653,8 +1653,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     slf.machine_helper.temporary_buffer.push(x as u8);
                     switch_to!(State::HexadecimalCharacterReferenceStart)
                 }
+                Some(x @ b'0'..=b'9') => {
+                    reconsume_in!(Some(x), State::DecimalCharacterReference)
+                }
                 c => {
-                    reconsume_in!(c, State::DecimalCharacterReferenceStart)
+                    slf.emitter
+                        .emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
+                    slf.machine_helper
+                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                    reconsume_in!(c, slf.machine_helper.pop_return_state())
                 }
             }
         }
@@ -1672,18 +1679,6 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
             }
         }
-        State::DecimalCharacterReferenceStart => match slf.reader.read_byte(&mut slf.emitter)? {
-            Some(x @ b'0'..=b'9') => {
-                reconsume_in!(Some(x), State::DecimalCharacterReference)
-            }
-            c => {
-                slf.emitter
-                    .emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
-                slf.machine_helper
-                    .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                reconsume_in!(c, slf.machine_helper.pop_return_state())
-            }
-        },
         State::HexadecimalCharacterReference => match slf.reader.read_byte(&mut slf.emitter)? {
             Some(x @ b'0'..=b'9') => {
                 mutate_character_reference!(*16 + x - 0x0030);

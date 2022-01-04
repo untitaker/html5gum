@@ -136,7 +136,6 @@ pub enum State {
     AmbiguousAmpersand,
     NumericCharacterReference,
     HexadecimalCharacterReferenceStart,
-    DecimalCharacterReferenceStart,
     HexadecimalCharacterReference,
     DecimalCharacterReference,
     NumericCharacterReferenceEnd,
