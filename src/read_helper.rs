@@ -154,7 +154,9 @@ impl<R: Reader> ReadHelper<R> {
         // * start of utf8-encoded character, preceded by null-bytes
         // * just null bytes
         //
-        // Assumption: validate_byte is called in sequence with bytes from a valid utf-8 str
+        // Assumption: validate_byte is called in sequence with bytes from a valid utf-8 str. If
+        // this is violated and there are eg. multiple truncated characters in a row, you might get
+        // false-positive errors sent into the emitter.
 
         if next_byte < 128 {
             // ascii
