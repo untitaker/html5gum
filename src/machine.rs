@@ -75,6 +75,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         };
     }
 
+    macro_rules! error {
+        ($e:expr) => {
+            slf.validator.set_character_error(&mut slf.emitter, $e);
+        };
+    }
+
     match slf.machine_helper.state() {
         State::Data => fast_read_char!(
             slf,
@@ -197,8 +203,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(Some(x), State::TagName)
             }
             c @ Some(b'?') => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedQuestionMarkInsteadOfTagName);
+                error!(Error::UnexpectedQuestionMarkInsteadOfTagName);
                 slf.emitter.init_comment();
                 reconsume_in!(c, State::BogusComment)
             }
@@ -221,7 +226,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(Some(x), State::TagName)
             }
             Some(b'>') => {
-                slf.emitter.emit_error(Error::MissingEndTagName);
+                error!(Error::MissingEndTagName);
                 switch_to!(State::Data)
             }
             None => {
@@ -231,8 +236,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             Some(x) => {
-                slf.emitter
-                    .emit_error(Error::InvalidFirstCharacterOfTagName);
+                error!(Error::InvalidFirstCharacterOfTagName);
                 slf.emitter.init_comment();
                 reconsume_in!(Some(x), State::BogusComment)
             }
@@ -265,7 +269,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInTag);
+                    error!(Error::EofInTag);
                     eof!()
                 }
             }
@@ -447,8 +451,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter
-                        .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                    error!(Error::EofInScriptHtmlCommentLikeText);
                     eof!()
                 }
             }
@@ -472,8 +475,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::ScriptDataEscaped)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                error!(Error::EofInScriptHtmlCommentLikeText);
                 eof!()
             }
         },
@@ -500,8 +502,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::ScriptDataEscaped)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                error!(Error::EofInScriptHtmlCommentLikeText);
                 eof!()
             }
         },
@@ -596,8 +597,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter
-                        .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                    error!(Error::EofInScriptHtmlCommentLikeText);
                     eof!()
                 }
             }
@@ -622,8 +622,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::ScriptDataDoubleEscaped)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                error!(Error::EofInScriptHtmlCommentLikeText);
                 eof!()
             }
         },
@@ -651,8 +650,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::ScriptDataDoubleEscaped)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                error!(Error::EofInScriptHtmlCommentLikeText);
                 eof!()
             }
         },
@@ -693,8 +691,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::AfterAttributeName)
             }
             Some(b'=') => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedEqualsSignBeforeAttributeName);
+                error!(Error::UnexpectedEqualsSignBeforeAttributeName);
                 slf.emitter.init_attribute();
                 slf.emitter.push_attribute_name("=".as_bytes());
                 switch_to!(State::AttributeName)
@@ -720,8 +717,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 Some(b"\"" | b"'" | b"<") => {
-                    slf.emitter
-                        .emit_error(Error::UnexpectedCharacterInAttributeName);
+                    error!(Error::UnexpectedCharacterInAttributeName);
                     slf.emitter.push_attribute_name(xs.unwrap());
                     cont!()
                 }
@@ -750,7 +746,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                error!(Error::EofInTag);
                 eof!()
             }
             Some(x) => {
@@ -767,7 +763,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::AttributeValueSingleQuoted)
             }
             Some(b'>') => {
-                slf.emitter.emit_error(Error::MissingAttributeValue);
+                error!(Error::MissingAttributeValue);
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
@@ -795,7 +791,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInTag);
+                    error!(Error::EofInTag);
                     eof!()
                 }
             }
@@ -820,7 +816,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInTag);
+                    error!(Error::EofInTag);
                     eof!()
                 }
             }
@@ -845,8 +841,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 Some(b"\"" | b"'" | b"<" | b"=" | b"\x60") => {
-                    slf.emitter
-                        .emit_error(Error::UnexpectedCharacterInUnquotedAttributeValue);
+                    error!(Error::UnexpectedCharacterInUnquotedAttributeValue);
                     slf.emitter.push_attribute_value(xs.unwrap());
                     cont!()
                 }
@@ -855,7 +850,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInTag);
+                    error!(Error::EofInTag);
                     eof!()
                 }
             }
@@ -865,8 +860,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::BeforeAttributeName)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBetweenAttributes);
+                error!(Error::MissingWhitespaceBetweenAttributes);
                 reconsume_in!(c, State::BeforeAttributeName)
             }
         },
@@ -877,11 +871,11 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                error!(Error::EofInTag);
                 eof!()
             }
             Some(x) => {
-                slf.emitter.emit_error(Error::UnexpectedSolidusInTag);
+                error!(Error::UnexpectedSolidusInTag);
                 reconsume_in!(Some(x), State::BeforeAttributeName)
             }
         },
@@ -933,14 +927,14 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                         // missing: cdata transition
                         //
                         // let's hope that bogus comment can just sort of skip over cdata
-                        slf.emitter.emit_error(Error::CdataInHtmlContent);
+                        error!(Error::CdataInHtmlContent);
 
                         slf.emitter.init_comment();
                         slf.emitter.push_comment(b"[CDATA[");
                         switch_to!(State::BogusComment)
                     }
                     c => {
-                        slf.emitter.emit_error(Error::IncorrectlyOpenedComment);
+                        error!(Error::IncorrectlyOpenedComment);
                         slf.emitter.init_comment();
                         reconsume_in!(c, State::BogusComment)
                     }
@@ -952,7 +946,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::CommentStartDash)
             }
             Some(b'>') => {
-                slf.emitter.emit_error(Error::AbruptClosingOfEmptyComment);
+                error!(Error::AbruptClosingOfEmptyComment);
                 slf.emitter.emit_current_comment();
                 switch_to!(State::Data)
             }
@@ -965,7 +959,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::CommentEnd)
             }
             Some(b'>') => {
-                slf.emitter.emit_error(Error::AbruptClosingOfEmptyComment);
+                error!(Error::AbruptClosingOfEmptyComment);
                 slf.emitter.emit_current_comment();
                 switch_to!(State::Data)
             }
@@ -1042,7 +1036,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::CommentEnd)
             }
             c => {
-                slf.emitter.emit_error(Error::NestedComment);
+                error!(Error::NestedComment);
                 reconsume_in!(c, State::CommentEnd)
             }
         },
@@ -1090,7 +1084,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::CommentEndDash)
             }
             Some(b'>') => {
-                slf.emitter.emit_error(Error::IncorrectlyClosedComment);
+                error!(Error::IncorrectlyClosedComment);
                 slf.emitter.emit_current_comment();
                 switch_to!(State::Data)
             }
@@ -1121,8 +1115,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBeforeDoctypeName);
+                error!(Error::MissingWhitespaceBeforeDoctypeName);
                 reconsume_in!(c, State::BeforeDoctypeName)
             }
         },
@@ -1136,7 +1129,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::DoctypeName)
             }
             Some(b'>') => {
-                slf.emitter.emit_error(Error::MissingDoctypeName);
+                error!(Error::MissingDoctypeName);
                 slf.emitter.init_doctype();
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
@@ -1216,8 +1209,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::AfterDoctypeSystemKeyword)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::InvalidCharacterSequenceAfterDoctypeName);
+                error!(Error::InvalidCharacterSequenceAfterDoctypeName);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
@@ -1227,20 +1219,17 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::BeforeDoctypePublicIdentifier)
             }
             Some(b'"') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
+                error!(Error::MissingWhitespaceAfterDoctypePublicKeyword);
                 slf.emitter.set_doctype_public_identifier(b"");
                 switch_to!(State::DoctypePublicIdentifierDoubleQuoted)
             }
             Some(b'\'') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
+                error!(Error::MissingWhitespaceAfterDoctypePublicKeyword);
                 slf.emitter.set_doctype_public_identifier(b"");
                 switch_to!(State::DoctypePublicIdentifierSingleQuoted)
             }
             Some(b'>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypePublicIdentifier);
+                error!(Error::MissingDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
@@ -1253,8 +1242,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
@@ -1270,8 +1258,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::DoctypePublicIdentifierSingleQuoted)
             }
             Some(b'>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypePublicIdentifier);
+                error!(Error::MissingDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
@@ -1284,8 +1271,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
@@ -1304,7 +1290,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 Some(b">") => {
-                    slf.emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
+                    error!(Error::AbruptDoctypePublicIdentifier);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
@@ -1336,7 +1322,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 Some(b">") => {
-                    slf.emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
+                    error!(Error::AbruptDoctypePublicIdentifier);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
@@ -1363,14 +1349,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             Some(b'"') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
+                error!(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
                 slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
             }
             Some(b'\'') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
+                error!(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
                 slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
             }
@@ -1382,8 +1366,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
@@ -1410,8 +1393,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
@@ -1421,20 +1403,17 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::BeforeDoctypeSystemIdentifier)
             }
             Some(b'"') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
+                error!(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
                 slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
             }
             Some(b'\'') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
+                error!(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
                 slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
             }
             Some(b'>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypeSystemIdentifier);
+                error!(Error::MissingDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
@@ -1447,8 +1426,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
@@ -1464,8 +1442,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
             }
             Some(b'>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypeSystemIdentifier);
+                error!(Error::MissingDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
@@ -1478,8 +1455,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
@@ -1498,7 +1474,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 Some(b">") => {
-                    slf.emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
+                    error!(Error::AbruptDoctypeSystemIdentifier);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
@@ -1530,7 +1506,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 Some(b">") => {
-                    slf.emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
+                    error!(Error::AbruptDoctypeSystemIdentifier);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
@@ -1562,8 +1538,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedCharacterAfterDoctypeSystemIdentifier);
+                error!(Error::UnexpectedCharacterAfterDoctypeSystemIdentifier);
                 reconsume_in!(c, State::BogusDoctype)
             }
         },
@@ -1599,7 +1574,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInCdata);
+                    error!(Error::EofInCdata);
                     eof!()
                 }
             }
@@ -1666,8 +1641,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     || !matches!(next_character, Some(x) if x == b'=' || x.is_ascii_alphanumeric())
                 {
                     if char_ref_name_last_character != Some(';') {
-                        slf.emitter
-                            .emit_error(Error::MissingSemicolonAfterCharacterReference);
+                        error!(Error::MissingSemicolonAfterCharacterReference);
                     }
 
                     slf.machine_helper.temporary_buffer.clear();
@@ -1701,8 +1675,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 cont!()
             }
             c @ Some(b';') => {
-                slf.emitter
-                    .emit_error(Error::UnknownNamedCharacterReference);
+                error!(Error::UnknownNamedCharacterReference);
                 reconsume_in!(c, slf.machine_helper.pop_return_state())
             }
             c => {
@@ -1721,8 +1694,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     reconsume_in!(Some(x), State::DecimalCharacterReference)
                 }
                 c => {
-                    slf.emitter
-                        .emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
+                    error!(Error::AbsenceOfDigitsInNumericCharacterReference);
                     slf.machine_helper
                         .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
                     reconsume_in!(c, slf.machine_helper.pop_return_state())
@@ -1734,8 +1706,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::HexadecimalCharacterReference)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
+                error!(Error::AbsenceOfDigitsInNumericCharacterReference);
                 slf.machine_helper
                     .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
                 reconsume_in!(c, slf.machine_helper.pop_return_state())
@@ -1758,8 +1729,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::NumericCharacterReferenceEnd)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::MissingSemicolonAfterCharacterReference);
+                error!(Error::MissingSemicolonAfterCharacterReference);
                 reconsume_in!(c, State::NumericCharacterReferenceEnd)
             }
         },
@@ -1772,36 +1742,33 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::NumericCharacterReferenceEnd)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::MissingSemicolonAfterCharacterReference);
+                error!(Error::MissingSemicolonAfterCharacterReference);
                 reconsume_in!(c, State::NumericCharacterReferenceEnd)
             }
         },
         State::NumericCharacterReferenceEnd => {
             match slf.machine_helper.character_reference_code {
                 0x00 => {
-                    slf.emitter.emit_error(Error::NullCharacterReference);
+                    error!(Error::NullCharacterReference);
                     slf.machine_helper.character_reference_code = 0xfffd;
                 }
                 0x110000.. => {
-                    slf.emitter
-                        .emit_error(Error::CharacterReferenceOutsideUnicodeRange);
+                    error!(Error::CharacterReferenceOutsideUnicodeRange);
                     slf.machine_helper.character_reference_code = 0xfffd;
                 }
                 surrogate_pat!() => {
-                    slf.emitter.emit_error(Error::SurrogateCharacterReference);
+                    error!(Error::SurrogateCharacterReference);
                     slf.machine_helper.character_reference_code = 0xfffd;
                 }
                 // noncharacter
                 noncharacter_pat!() => {
-                    slf.emitter
-                        .emit_error(Error::NoncharacterCharacterReference);
+                    error!(Error::NoncharacterCharacterReference);
                 }
                 // 0x000d, or a control that is not whitespace
                 x @ 0x000d | x @ control_pat!()
                     if !matches!(x, 0x0009 | 0x000a | 0x000c | 0x0020) =>
                 {
-                    slf.emitter.emit_error(Error::ControlCharacterReference);
+                    error!(Error::ControlCharacterReference);
                     slf.machine_helper.character_reference_code = match x {
                         0x80 => 0x20AC, // EURO SIGN (€)
                         0x82 => 0x201A, // SINGLE LOW-9 QUOTATION MARK (‚)

@@ -22,6 +22,7 @@ impl CharValidator {
     pub fn validate_byte<E: Emitter>(&mut self, emitter: &mut E, next_byte: u8) {
         if next_byte < 128 {
             self.last_4_bytes = 0;
+            self.flush_character_error(emitter);
             self.validate_last_4_bytes(emitter, next_byte as u32);
         } else if next_byte >= 192 {
             self.last_4_bytes = next_byte as u32;
