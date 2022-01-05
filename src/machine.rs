@@ -99,8 +99,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::TagOpen)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.emit_string(b"\0");
                     cont!()
                 }
@@ -124,8 +123,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::RcDataLessThanSign)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -145,8 +143,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::RawTextLessThanSign)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -166,8 +163,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::ScriptDataLessThanSign)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -184,8 +180,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf,
             match xs {
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -215,14 +210,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::BogusComment)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofBeforeTagName);
+                error!(Error::EofBeforeTagName);
                 slf.emitter.emit_string(b"<");
                 eof!()
             }
             c @ Some(_) => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::InvalidFirstCharacterOfTagName);
+                error!(Error::InvalidFirstCharacterOfTagName);
                 slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::Data)
             }
@@ -237,8 +230,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofBeforeTagName);
+                error!(Error::EofBeforeTagName);
                 slf.emitter.emit_string(b"</");
                 eof!()
             }
@@ -262,8 +254,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::Data)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.push_tag_name("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -448,8 +439,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::ScriptDataEscapedLessThanSign)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -472,8 +462,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::ScriptDataEscapedLessThanSign)
             }
             Some(b'\0') => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                error!(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}".as_bytes());
                 switch_to!(State::ScriptDataEscaped)
             }
@@ -499,8 +488,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::ScriptData)
             }
             Some(b'\0') => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                error!(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}".as_bytes());
                 switch_to!(State::ScriptDataEscaped)
             }
@@ -594,8 +582,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -619,8 +606,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
             }
             Some(b'\0') => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                error!(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}".as_bytes());
                 switch_to!(State::ScriptDataDoubleEscaped)
             }
@@ -647,8 +633,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::ScriptData)
             }
             Some(b'\0') => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                error!(Error::UnexpectedNullCharacter);
                 slf.emitter.emit_string("\u{fffd}".as_bytes());
                 switch_to!(State::ScriptDataDoubleEscaped)
             }
@@ -718,8 +703,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::BeforeAttributeValue)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.push_attribute_name("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -788,8 +772,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     enter_state!(State::CharacterReference)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.push_attribute_value("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -813,8 +796,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     enter_state!(State::CharacterReference)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.push_attribute_value("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -842,8 +824,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::Data)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.push_attribute_value("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -894,8 +875,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::Data)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.push_comment("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -971,8 +951,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInComment);
+                error!(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 eof!()
             }
@@ -992,8 +971,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::CommentEndDash)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.push_comment("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -1002,8 +980,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::EofInComment);
+                    error!(Error::EofInComment);
                     slf.emitter.emit_current_comment();
                     eof!()
                 }
@@ -1052,8 +1029,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::CommentEnd)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInComment);
+                error!(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 eof!()
             }
@@ -1075,8 +1051,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 cont!()
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInComment);
+                error!(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 eof!()
             }
@@ -1096,8 +1071,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInComment);
+                error!(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 eof!()
             }
@@ -1114,8 +1088,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::BeforeDoctypeName)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error_immediate!(Error::EofInDoctype);
                 slf.emitter.init_doctype();
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
@@ -1129,8 +1102,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::BeforeDoctypeName => match read_byte!()? {
             Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
             Some(b'\0') => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                error!(Error::UnexpectedNullCharacter);
                 slf.emitter.init_doctype();
                 slf.emitter.push_doctype_name("\u{fffd}".as_bytes());
                 switch_to!(State::DoctypeName)
@@ -1143,8 +1115,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.init_doctype();
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
@@ -1167,8 +1138,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::Data)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.push_doctype_name("\u{fffd}".as_bytes());
                     cont!()
                 }
@@ -1180,8 +1150,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
@@ -1195,8 +1164,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
@@ -1242,8 +1210,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
@@ -1271,8 +1238,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
@@ -1290,8 +1256,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::AfterDoctypePublicIdentifier)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter
                         .push_doctype_public_identifier("\u{fffd}".as_bytes());
                     cont!()
@@ -1307,8 +1272,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
@@ -1322,8 +1286,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::AfterDoctypePublicIdentifier)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter
                         .push_doctype_public_identifier("\u{fffd}".as_bytes());
                     cont!()
@@ -1339,8 +1302,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
@@ -1366,8 +1328,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
@@ -1393,8 +1354,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
@@ -1426,8 +1386,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
@@ -1455,8 +1414,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
@@ -1474,8 +1432,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::AfterDoctypeSystemIdentifier)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter
                         .push_doctype_system_identifier("\u{fffd}".as_bytes());
                     cont!()
@@ -1491,8 +1448,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
@@ -1506,8 +1462,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::AfterDoctypeSystemIdentifier)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter
                         .push_doctype_system_identifier("\u{fffd}".as_bytes());
                     cont!()
@@ -1523,8 +1478,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
@@ -1538,8 +1492,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::Data)
             }
             None => {
-                slf.validator
-                    .set_character_error(&mut slf.emitter, Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
@@ -1557,8 +1510,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::Data)
                 }
                 Some(b"\0") => {
-                    slf.validator
-                        .set_character_error(&mut slf.emitter, Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     cont!()
                 }
                 Some(_xs) => {

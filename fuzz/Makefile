@@ -6,6 +6,10 @@ export FUZZ_OLD_HTML5GUM := 0
 # Add html5ever to fuzzing
 export FUZZ_HTML5EVER := 0
 # Ignore errors while diffing to paper over bugs in old html5gum
+#           order = ignore sort order of errors relative to other non-error
+#                   tokens (not relative to each other)
+#               1 = ignore all errors
+# any other value = assert exact token equality
 export FUZZ_IGNORE_PARSE_ERRORS := 0
 # CLI arguments to pass to AFL. useful for multiprocessing
 export _AFL_OPTS := -M fuzzer01

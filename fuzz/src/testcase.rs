@@ -24,9 +24,24 @@ pub fn run(s: &str) {
         let mut testing_tokens: Vec<_> = testing_tokenizer.collect();
         let mut reference_tokens: Vec<_> = reference_tokenizer.collect();
 
-        if env::var("FUZZ_IGNORE_PARSE_ERRORS").unwrap() == "1" {
-            testing_tokens.retain(|x| !matches!(x, html5gum::Token::Error(_)));
-            reference_tokens.retain(|x| !matches!(x, html5gum_old::Token::Error(_)));
+        fn isnt_error(x: &html5gum::Token) -> bool {
+            !matches!(*x, html5gum::Token::Error(_))
+        }
+
+        fn isnt_old_error(x: &html5gum_old::Token) -> bool {
+            !matches!(*x, html5gum_old::Token::Error(_))
+        }
+
+        match env::var("FUZZ_IGNORE_PARSE_ERRORS").unwrap().as_str() {
+            "1" => {
+                testing_tokens.retain(isnt_error);
+                reference_tokens.retain(isnt_old_error);
+            }
+            "order" => {
+                testing_tokens.sort_by_key(isnt_error);
+                reference_tokens.sort_by_key(isnt_old_error);
+            }
+            _ => (),
         }
 
         let reference_tokens: Vec<_> = reference_tokens
