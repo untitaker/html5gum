@@ -37,6 +37,17 @@
     {"code": "missing-whitespace-between-attributes", "line": 1, "col": 15},
     {"code": "duplicate-attribute", "line": 1, "col": 12},
     {"code": "eof-in-tag", "line": 1, "col": 16}
+]},
+
+{"description": "duplicate solidus",
+"input":"<d/000000000000000/000000000000000/0",
+"output":[],
+"errors": [
+    {"code": "unexpected-solidus-in-tag", "line": 1, "col": 3},
+    {"code": "unexpected-solidus-in-tag", "line": 1, "col": 19},
+    {"code": "unexpected-solidus-in-tag", "line": 1, "col": 35},
+    {"code": "duplicate-attribute", "line": 1, "col": 20},
+    {"code": "eof-in-tag", "line": 1, "col": 36}
 ]}
 
 ]}

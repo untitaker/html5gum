@@ -882,7 +882,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 eof!()
             }
             Some(x) => {
-                error!(Error::UnexpectedSolidusInTag);
+                error_immediate!(Error::UnexpectedSolidusInTag);
                 reconsume_in!(Some(x), State::BeforeAttributeName)
             }
         },
