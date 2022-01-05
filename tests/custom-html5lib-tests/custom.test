@@ -28,7 +28,15 @@
 "errors": [
     {"code": "control-character-in-input-stream", "line": 1, "col": 2},
     {"code": "invalid-first-character-of-tag-name", "line": 1, "col": 2}
-]}
+]},
 
+{"description": "duplicate attribute and missing whitespace",
+"input":"<l 00l=0 00l=''0",
+"output":[],
+"errors": [
+    {"code": "missing-whitespace-between-attributes", "line": 1, "col": 15},
+    {"code": "duplicate-attribute", "line": 1, "col": 12},
+    {"code": "eof-in-tag", "line": 1, "col": 16}
+]}
 
 ]}

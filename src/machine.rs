@@ -81,6 +81,13 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         };
     }
 
+    macro_rules! error_immediate {
+        ($e:expr) => {
+            error!($e);
+            slf.validator.flush_character_error(&mut slf.emitter);
+        };
+    }
+
     match slf.machine_helper.state() {
         State::Data => fast_read_char!(
             slf,
@@ -763,7 +770,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::AttributeValueSingleQuoted)
             }
             Some(b'>') => {
-                error!(Error::MissingAttributeValue);
+                error_immediate!(Error::MissingAttributeValue);
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
@@ -860,7 +867,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::BeforeAttributeName)
             }
             c => {
-                error!(Error::MissingWhitespaceBetweenAttributes);
+                error_immediate!(Error::MissingWhitespaceBetweenAttributes);
                 reconsume_in!(c, State::BeforeAttributeName)
             }
         },
