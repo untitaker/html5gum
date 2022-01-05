@@ -6,7 +6,6 @@ pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
     last_character_was_cr: bool,
     to_reconsume: Option<Option<u8>>,
-    validator: CharValidator,
 }
 
 impl<R: Reader> ReadHelper<R> {
@@ -15,12 +14,12 @@ impl<R: Reader> ReadHelper<R> {
             reader,
             last_character_was_cr: false,
             to_reconsume: Default::default(),
-            validator: Default::default(),
         }
     }
 
     pub(crate) fn read_byte<E: Emitter>(
         &mut self,
+        char_validator: &mut CharValidator,
         emitter: &mut E,
     ) -> Result<Option<u8>, R::Error> {
         if let Some(c) = self.to_reconsume.take() {
@@ -40,7 +39,7 @@ impl<R: Reader> ReadHelper<R> {
         }
 
         if let Ok(Some(x)) = c {
-            self.validator.validate_byte(emitter, x);
+            char_validator.validate_byte(emitter, x);
         }
 
         c
@@ -48,6 +47,7 @@ impl<R: Reader> ReadHelper<R> {
 
     pub(crate) fn try_read_string(
         &mut self,
+        char_validator: &mut CharValidator,
         mut s: &str,
         case_sensitive: bool,
     ) -> Result<bool, R::Error> {
@@ -74,7 +74,7 @@ impl<R: Reader> ReadHelper<R> {
 
         if s.is_empty() || self.reader.try_read_string(s.as_bytes(), case_sensitive)? {
             self.last_character_was_cr = false;
-            self.validator.reset();
+            char_validator.reset();
             Ok(true)
         } else {
             self.to_reconsume = to_reconsume_bak;
@@ -85,6 +85,7 @@ impl<R: Reader> ReadHelper<R> {
     pub(crate) fn read_until<'b, E>(
         &'b mut self,
         needle: &[u8],
+        char_validator: &mut CharValidator,
         emitter: &mut E,
         char_buf: &'b mut [u8; 4],
     ) -> Result<Option<&'b [u8]>, R::Error>
@@ -114,11 +115,11 @@ impl<R: Reader> ReadHelper<R> {
         match self.reader.read_until(needle2_slice, char_buf)? {
             Some(b"\r") => {
                 self.last_character_was_cr = true;
-                self.validator.validate_byte(emitter, b'\n');
+                char_validator.validate_byte(emitter, b'\n');
                 Ok(Some(b"\n"))
             }
             Some(mut xs) => {
-                self.validator.validate_bytes(emitter, xs);
+                char_validator.validate_bytes(emitter, xs);
 
                 if self.last_character_was_cr && xs.starts_with(b"\n") {
                     xs = &xs[1..];
@@ -185,6 +186,7 @@ macro_rules! fast_read_char {
                 debug_assert_eq!($lit.len(), 1);
                 $lit[0]
             }),*),* ],
+            &mut $slf.validator,
             &mut $slf.emitter,
             &mut char_buf,
         )?;

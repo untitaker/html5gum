@@ -3,6 +3,7 @@ use crate::{Emitter, Error};
 #[derive(Default)]
 pub(crate) struct CharValidator {
     last_4_bytes: u32,
+    character_error: Option<Error>,
 }
 
 impl CharValidator {
@@ -21,18 +22,29 @@ impl CharValidator {
     pub fn validate_byte<E: Emitter>(&mut self, emitter: &mut E, next_byte: u8) {
         if next_byte < 128 {
             self.last_4_bytes = 0;
-            Self::validate_last_4_bytes(emitter, next_byte as u32);
+            self.validate_last_4_bytes(emitter, next_byte as u32);
         } else if next_byte >= 192 {
             self.last_4_bytes = next_byte as u32;
         } else {
             self.last_4_bytes <<= 8;
             self.last_4_bytes |= next_byte as u32;
-            Self::validate_last_4_bytes(emitter, self.last_4_bytes);
+            self.validate_last_4_bytes(emitter, self.last_4_bytes);
         }
     }
 
+    pub fn flush_character_error<E: Emitter>(&mut self, emitter: &mut E) {
+        if let Some(e) = self.character_error.take() {
+            emitter.emit_error(e);
+        }
+    }
+
+    pub fn set_character_error<E: Emitter>(&mut self, emitter: &mut E, error: Error) {
+        self.flush_character_error(emitter);
+        self.character_error = Some(error);
+    }
+
     #[inline]
-    fn validate_last_4_bytes<E: Emitter>(emitter: &mut E, last_4_bytes: u32) {
+    fn validate_last_4_bytes<E: Emitter>(&mut self, emitter: &mut E, last_4_bytes: u32) {
         // generated with Python 3:
         // ' | '.join(map(hex, sorted([int.from_bytes(chr(x).encode("utf8"), 'big') for x in nonchars])))
         match last_4_bytes {
@@ -48,6 +60,7 @@ impl CharValidator {
             | 0xf39fbfbf | 0xf3afbfbe | 0xf3afbfbf | 0xf3bfbfbe | 0xf3bfbfbf | 0xf48fbfbe
             | 0xf48fbfbf => {
                 emitter.emit_error(Error::NoncharacterInInputStream);
+                self.flush_character_error(emitter);
             }
             0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0xb | 0xd | 0xe | 0xf | 0x10 | 0x11
             | 0x12 | 0x13 | 0x14 | 0x15 | 0x16 | 0x17 | 0x18 | 0x19 | 0x1a | 0x1b | 0x1c | 0x1d
@@ -56,6 +69,7 @@ impl CharValidator {
             | 0xc290 | 0xc291 | 0xc292 | 0xc293 | 0xc294 | 0xc295 | 0xc296 | 0xc297 | 0xc298
             | 0xc299 | 0xc29a | 0xc29b | 0xc29c | 0xc29d | 0xc29e | 0xc29f => {
                 emitter.emit_error(Error::ControlCharacterInInputStream);
+                self.flush_character_error(emitter);
             }
 
             _ => (),
