@@ -48,6 +48,33 @@
     {"code": "unexpected-solidus-in-tag", "line": 1, "col": 35},
     {"code": "duplicate-attribute", "line": 1, "col": 20},
     {"code": "eof-in-tag", "line": 1, "col": 36}
+]},
+
+{"description": "equals sign before attribute",
+"input":"<W^L<0000000000/M-XM-^@^L<0000000000/=",
+"output":[],
+"errors": [
+    {"code": "unexpected-solidus-in-tag", "line": 1, "col": 0},
+    {"code": "unexpected-character-in-attribute-name", "line": 1, "col": 0},
+    {"code": "unexpected-solidus-in-tag", "line": 1, "col": 0},
+    {"code": "unexpected-equals-sign-before-attribute-name", "line": 1, "col": 38},
+    {"code": "eof-in-tag", "line": 1, "col": 38}
+]},
+
+{"description": "00 c2 8c",
+"input":"\u0000\u00c2\u008c",
+"output":[["Character", "\u0000\u00c2\u008c"]],
+"errors": [
+    {"code": "unexpected-null-character", "line": 1, "col": 1},
+    {"code": "control-character-in-input-stream", "line": 1, "col": 2}
+]},
+
+{"description": "3c 30 c2 98",
+"input":"<\u0030\u00c2\u0098",
+"output":[["Character", "<\u0030\u00c2\u0098"]],
+"errors": [
+    {"code": "invalid-first-character-of-tag-name", "line": 1, "col": 1},
+    {"code": "control-character-in-input-stream", "line": 1, "col": 2}
 ]}
 
 ]}

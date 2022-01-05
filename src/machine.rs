@@ -99,7 +99,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::TagOpen)
                 }
                 Some(b"\0") => {
-                    error!(Error::UnexpectedNullCharacter);
+                    error_immediate!(Error::UnexpectedNullCharacter);
                     slf.emitter.emit_string(b"\0");
                     cont!()
                 }
@@ -683,7 +683,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::AfterAttributeName)
             }
             Some(b'=') => {
-                error!(Error::UnexpectedEqualsSignBeforeAttributeName);
+                error_immediate!(Error::UnexpectedEqualsSignBeforeAttributeName);
                 slf.emitter.init_attribute();
                 slf.emitter.push_attribute_name("=".as_bytes());
                 switch_to!(State::AttributeName)
