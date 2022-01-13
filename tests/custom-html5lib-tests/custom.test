@@ -105,13 +105,13 @@
     {"code": "null-character-reference", "line": 1, "col": 5}
 ]},
 
-{"description": "duplicate attribute with control characters",
+{"description": "duplicate attribute with control character 0x9a",
 "input":"<D\u069a 00=\u069a 00=0\n\u009a",
 "output": [],
 "errors": [
-    {"code": "control-character-in-input-stream", "line": 1, "col": 31},
-    {"code": "duplicate-attribute", "line": 1, "col": 31},
-    {"code": "eof-in-tag", "line": 1, "col": 31}
+    {"code": "duplicate-attribute", "line": 1, "col": 11},
+    {"code": "control-character-in-input-stream", "line": 1, "col": 15},
+    {"code": "eof-in-tag", "line": 1, "col": 15}
 ]}
 
 ]}
