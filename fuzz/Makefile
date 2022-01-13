@@ -9,6 +9,7 @@ export FUZZ_HTML5EVER := 0
 #           order = ignore sort order of errors relative to other non-error
 #                   tokens (not relative to each other)
 #               1 = ignore all errors
+# if-reference-contains:XYZ = ignore all errors if one of the ones emitted by old html5gum is equal to XYZ (e.g. "if-reference-contains:duplicate-attribute")
 # any other value = assert exact token equality
 export FUZZ_IGNORE_PARSE_ERRORS := 0
 # CLI arguments to pass to AFL. useful for multiprocessing

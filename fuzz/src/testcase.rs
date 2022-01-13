@@ -32,16 +32,31 @@ pub fn run(s: &str) {
             !matches!(*x, html5gum_old::Token::Error(_))
         }
 
-        match env::var("FUZZ_IGNORE_PARSE_ERRORS").unwrap().as_str() {
-            "1" => {
-                testing_tokens.retain(isnt_error);
-                reference_tokens.retain(isnt_old_error);
+        for instruction in env::var("FUZZ_IGNORE_PARSE_ERRORS")
+            .unwrap()
+            .as_str()
+            .trim()
+            .split(",")
+        {
+            match instruction {
+                "1" => {
+                    testing_tokens.retain(isnt_error);
+                    reference_tokens.retain(isnt_old_error);
+                }
+                "order" => {
+                    testing_tokens.sort_by_key(isnt_error);
+                    reference_tokens.sort_by_key(isnt_old_error);
+                }
+                x if x.starts_with("if-reference-contains:") => {
+                    if reference_tokens.contains(&html5gum_old::Token::Error(
+                        x["if-reference-contains:".len()..].parse().unwrap(),
+                    )) {
+                        reference_tokens.retain(isnt_old_error);
+                        testing_tokens.retain(isnt_error);
+                    }
+                }
+                x => panic!("unknown FUZZ_IGNORE_PARSE_ERRORS instruction: {}", x),
             }
-            "order" => {
-                testing_tokens.sort_by_key(isnt_error);
-                reference_tokens.sort_by_key(isnt_old_error);
-            }
-            _ => (),
         }
 
         let reference_tokens: Vec<_> = reference_tokens
