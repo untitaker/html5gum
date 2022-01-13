@@ -112,6 +112,17 @@
     {"code": "duplicate-attribute", "line": 1, "col": 11},
     {"code": "control-character-in-input-stream", "line": 1, "col": 15},
     {"code": "eof-in-tag", "line": 1, "col": 15}
+]},
+
+{"description": "noncharacter after attribute value",
+"input": "<a 0=\"\ud9bf\udfff\"\ud9ff\udfff\ud9bf\udfff",
+"output": [],
+"errors": [
+    {"code": "noncharacter-in-input-stream", "line": 1, "col": 7},
+    {"code": "noncharacter-in-input-stream", "line": 1, "col": 9},
+    {"code": "missing-whitespace-between-attributes", "line": 1, "col": 9},
+    {"code": "noncharacter-in-input-stream", "line": 1, "col": 10},
+    {"code": "eof-in-tag", "line": 1, "col": 10}
 ]}
 
 ]}
