@@ -94,6 +94,14 @@
 "errors": [
     {"code": "invalid-first-character-of-tag-name", "line": 1, "col": 2},
     {"code": "control-character-in-input-stream", "line": 1, "col": 3}
+]},
+{"description": "26 23 30 c2 94 ce 94",
+"input":"&#0\u0094\u0394",
+"output": [["Character", "\ufffd\u0094\u0394"]],
+"errors": [
+    {"code": "control-character-in-input-stream", "line": 1, "col": 4},
+    {"code": "missing-semicolon-after-character-reference", "line": 1, "col": 5},
+    {"code": "null-character-reference", "line": 1, "col": 5}
 ]}
 
 ]}

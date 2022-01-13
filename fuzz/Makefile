@@ -37,10 +37,13 @@ afl-next:
 		echo $$f; \
 		if ! $(MAKE) cli < $$f; then \
 			cargo afl tmin -i $$f -o /tmp/html5gum-mintest ${AFL_TARGET_BIN}; \
-			echo /tmp/html5gum-mintest; \
+			echo new test input written to /tmp/html5gum-mintest; \
 			echo ----; \
-			cat -v /tmp/html5gum-mintest; \
-			echo; \
+			echo hexyl preview:
+			hexyl /tmp/html5gum-mintest || true; \
+			echo ----; \
+			echo json string:
+			cat /tmp/html5gum-mintest | jq -Ra . || true; \
 			echo ----; \
 			exit 2; \
 		else \
