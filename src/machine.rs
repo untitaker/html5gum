@@ -848,7 +848,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::BeforeAttributeName)
             }
             c => {
-                error_immediate!(Error::MissingWhitespaceBetweenAttributes);
+                error!(Error::MissingWhitespaceBetweenAttributes);
                 reconsume_in!(c, State::BeforeAttributeName)
             }
         },
