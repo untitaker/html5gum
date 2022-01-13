@@ -75,6 +75,17 @@
 "errors": [
     {"code": "invalid-first-character-of-tag-name", "line": 1, "col": 1},
     {"code": "control-character-in-input-stream", "line": 1, "col": 2}
+]},
+
+{"description": "3c 41 2f c2 85 c2 85 c2 85",
+"input":"<A/\u0085\u0085\u0085",
+"output": [],
+"errors": [
+    {"code": "unexpected-solidus-in-tag", "line": 1, "col": 3},
+    {"code": "control-character-in-input-stream", "line": 1, "col": 4},
+    {"code": "control-character-in-input-stream", "line": 1, "col": 5},
+    {"code": "control-character-in-input-stream", "line": 1, "col": 6},
+    {"code": "eof-in-tag", "line": 1, "col": 6}
 ]}
 
 ]}
