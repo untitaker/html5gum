@@ -310,8 +310,8 @@ fn run_test_inner<R: Reader>(
         }
     }
 
-    assert_eq!(test.output.0, actual_tokens);
-    assert_eq!(test.errors, actual_errors);
+    assert_eq!(actual_tokens, test.output.0);
+    assert_eq!(actual_errors, test.errors);
 }
 
 /// Implements the escape sequences described in the tokenizer tests of html5lib-tests (and nothing
