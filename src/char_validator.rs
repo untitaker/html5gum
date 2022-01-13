@@ -41,7 +41,11 @@ impl CharValidator {
 
     pub fn set_character_error<E: Emitter>(&mut self, emitter: &mut E, error: Error) {
         self.flush_character_error(emitter);
-        self.character_error = Some(error);
+        if self.last_4_bytes == 0 {
+            emitter.emit_error(error);
+        } else {
+            self.character_error = Some(error);
+        }
     }
 
     #[inline]
