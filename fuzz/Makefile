@@ -34,7 +34,7 @@ afl: in setup-afl
 	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
 
 afl-next: setup-afl
-	set -e && for f in $$(echo out/*/crashes/id:* | xargs echo | sort); do \
+	set -e && for f in out/*/crashes/id:*; do \
 		echo $$f; \
 		if ! $(MAKE) cli < $$f; then \
 			cargo afl tmin -i $$f -o /tmp/html5gum-mintest ${AFL_TARGET_BIN}; \
@@ -53,7 +53,9 @@ afl-next: setup-afl
 	done
 
 afl-skip:
-	set -e && for f in $$(echo out/*/crashes/id:* | xargs echo | sort); do \
+	# relies on the same order as in afl-next, see
+	# https://serverfault.com/a/122743/520816
+	set -e && for f in out/*/crashes/id:*; do \
 		rm $$f; \
 		break; \
 	done
