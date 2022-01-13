@@ -86,6 +86,14 @@
     {"code": "control-character-in-input-stream", "line": 1, "col": 5},
     {"code": "control-character-in-input-stream", "line": 1, "col": 6},
     {"code": "eof-in-tag", "line": 1, "col": 6}
+]},
+
+{"description": "3c d7 b2 c2 9a",
+"input":"<\u05f3\u009a",
+"output": [["Character", "<\u05f3\u009a"]],
+"errors": [
+    {"code": "invalid-first-character-of-tag-name", "line": 1, "col": 2},
+    {"code": "control-character-in-input-stream", "line": 1, "col": 3}
 ]}
 
 ]}
