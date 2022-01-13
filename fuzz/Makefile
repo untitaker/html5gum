@@ -39,10 +39,10 @@ afl-next:
 			cargo afl tmin -i $$f -o /tmp/html5gum-mintest ${AFL_TARGET_BIN}; \
 			echo new test input written to /tmp/html5gum-mintest; \
 			echo ----; \
-			echo hexyl preview:
+			echo "hexyl preview:"; \
 			hexyl /tmp/html5gum-mintest || true; \
 			echo ----; \
-			echo json string:
+			echo "json string:"; \
 			cat /tmp/html5gum-mintest | jq -Ra . || true; \
 			echo ----; \
 			exit 2; \
