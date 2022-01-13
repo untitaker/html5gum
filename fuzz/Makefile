@@ -25,14 +25,14 @@ in:
 	curl https://docs.sentry.io/ > in/sentrydocs.html
 	cat ../tests/html5lib-tests/tokenizer/*.tests | jq -r '.tests[].input' > in/html5lib-tokenizer-tests.html
 
-setup-afl: in
+setup-afl:
 	which cargo-afl || cargo install afl
 	CARGO_TARGET_DIR=./target-afl/ cargo afl build --release --bin html5gum-fuzz-afl
 
-afl: setup-afl
+afl: in setup-afl
 	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
 
-afl-next:
+afl-next: setup-afl
 	set -e && for f in $$(echo out/*/crashes/id:* | sort); do \
 		echo $$f; \
 		if ! $(MAKE) cli < $$f; then \
