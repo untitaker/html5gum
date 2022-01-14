@@ -3,7 +3,7 @@ use std::io::Read;
 use testcase::run;
 
 fn main() {
-    let mut input = String::new();
-    std::io::stdin().lock().read_to_string(&mut input).unwrap();
+    let mut input = Vec::new();
+    std::io::stdin().lock().read_to_end(&mut input).unwrap();
     run(&input);
 }
