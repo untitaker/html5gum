@@ -3,6 +3,8 @@
 #![forbid(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
+mod arrayvec;
+mod char_validator;
 mod emitter;
 mod entities;
 mod error;
@@ -23,5 +25,5 @@ pub use {slow_reader::SlowReader, utils::State};
 pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
 pub use never::Never;
-pub use reader::{BufReadReader, Readable, Reader, StringReader};
+pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};

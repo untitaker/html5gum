@@ -1,8 +1,7 @@
 use crate::entities::try_read_character_reference;
 use crate::read_helper::fast_read_char;
 use crate::utils::{
-    ascii_digit_pat, control_pat, ctostr, noncharacter_pat, surrogate_pat, whitespace_pat,
-    with_lowercase_str, ControlToken, State,
+    control_pat, ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken, State,
 };
 use crate::{Emitter, Error, Reader, Tokenizer};
 
@@ -52,7 +51,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         ($c:expr, $state:expr) => {{
             let new_state = $state;
             let c = $c;
-            slf.reader.unread_char(c);
+            slf.reader.unread_byte(c);
             slf.machine_helper.switch_to(new_state);
             cont!()
         }};
@@ -70,19 +69,42 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         }};
     }
 
+    macro_rules! read_byte {
+        () => {
+            slf.reader.read_byte(&mut slf.validator, &mut slf.emitter)
+        };
+    }
+
+    /// Produce error for current character. The error will be emitted once the character's bytes
+    /// have been fully consumed (and after any errors originating from pre-processing the input
+    /// stream bytes)
+    macro_rules! error {
+        ($e:expr) => {
+            slf.validator.set_character_error(&mut slf.emitter, $e);
+        };
+    }
+
+    /// Produce error for a previous character, emit immediately.
+    macro_rules! error_immediate {
+        ($e:expr) => {
+            error!($e);
+            slf.validator.flush_character_error(&mut slf.emitter);
+        };
+    }
+
     match slf.machine_helper.state() {
         State::Data => fast_read_char!(
             slf,
             match xs {
-                Some("&") => {
+                Some(b"&") => {
                     enter_state!(State::CharacterReference)
                 }
-                Some("<") => {
+                Some(b"<") => {
                     switch_to!(State::TagOpen)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\0");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string(b"\0");
                     cont!()
                 }
                 Some(xs) => {
@@ -98,15 +120,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::RcData => fast_read_char!(
             slf,
             match xs {
-                Some("&") => {
+                Some(b"&") => {
                     enter_state!(State::CharacterReference)
                 }
-                Some("<") => {
+                Some(b"<") => {
                     switch_to!(State::RcDataLessThanSign)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -121,12 +143,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::RawText => fast_read_char!(
             slf,
             match xs {
-                Some("<") => {
+                Some(b"<") => {
                     switch_to!(State::RawTextLessThanSign)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -141,12 +163,12 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::ScriptData => fast_read_char!(
             slf,
             match xs {
-                Some("<") => {
+                Some(b"<") => {
                     switch_to!(State::ScriptDataLessThanSign)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -161,9 +183,9 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::PlainText => fast_read_char!(
             slf,
             match xs {
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -175,52 +197,49 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
             }
         ),
-        State::TagOpen => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('!') => {
+        State::TagOpen => match read_byte!()? {
+            Some(b'!') => {
                 switch_to!(State::MarkupDeclarationOpen)
             }
-            Some('/') => {
+            Some(b'/') => {
                 switch_to!(State::EndTagOpen)
             }
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.init_start_tag();
                 reconsume_in!(Some(x), State::TagName)
             }
-            c @ Some('?') => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedQuestionMarkInsteadOfTagName);
+            c @ Some(b'?') => {
+                error!(Error::UnexpectedQuestionMarkInsteadOfTagName);
                 slf.emitter.init_comment();
                 reconsume_in!(c, State::BogusComment)
             }
             None => {
-                slf.emitter.emit_error(Error::EofBeforeTagName);
-                slf.emitter.emit_string("<");
+                error!(Error::EofBeforeTagName);
+                slf.emitter.emit_string(b"<");
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::InvalidFirstCharacterOfTagName);
-                slf.emitter.emit_string("<");
+                error!(Error::InvalidFirstCharacterOfTagName);
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::Data)
             }
         },
-        State::EndTagOpen => match slf.reader.read_char(&mut slf.emitter)? {
+        State::EndTagOpen => match read_byte!()? {
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.init_end_tag();
                 reconsume_in!(Some(x), State::TagName)
             }
-            Some('>') => {
-                slf.emitter.emit_error(Error::MissingEndTagName);
+            Some(b'>') => {
+                error!(Error::MissingEndTagName);
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofBeforeTagName);
-                slf.emitter.emit_string("</");
+                error!(Error::EofBeforeTagName);
+                slf.emitter.emit_string(b"</");
                 eof!()
             }
             Some(x) => {
-                slf.emitter
-                    .emit_error(Error::InvalidFirstCharacterOfTagName);
+                error!(Error::InvalidFirstCharacterOfTagName);
                 slf.emitter.init_comment();
                 reconsume_in!(Some(x), State::BogusComment)
             }
@@ -228,19 +247,19 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::TagName => fast_read_char!(
             slf,
             match xs {
-                Some("\t" | "\u{0A}" | "\u{0C}" | " ") => {
+                Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
                     switch_to!(State::BeforeAttributeName)
                 }
-                Some("/") => {
+                Some(b"/") => {
                     switch_to!(State::SelfClosingStartTag)
                 }
-                Some(">") => {
+                Some(b">") => {
                     slf.emitter.emit_current_tag();
                     switch_to!(State::Data)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_tag_name("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.push_tag_name("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -252,155 +271,161 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInTag);
+                    error!(Error::EofInTag);
                     eof!()
                 }
             }
         ),
-        State::RcDataLessThanSign => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('/') => {
+        State::RcDataLessThanSign => match read_byte!()? {
+            Some(b'/') => {
                 slf.machine_helper.temporary_buffer.clear();
                 switch_to!(State::RcDataEndTagOpen)
             }
             c => {
-                slf.emitter.emit_string("<");
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::RcData)
             }
         },
-        State::RcDataEndTagOpen => match slf.reader.read_char(&mut slf.emitter)? {
+        State::RcDataEndTagOpen => match read_byte!()? {
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.init_end_tag();
                 reconsume_in!(Some(x), State::RcDataEndTagName)
             }
             c => {
-                slf.emitter.emit_string("</");
+                slf.emitter.emit_string(b"</");
                 reconsume_in!(c, State::RcData)
             }
         },
-        State::RcDataEndTagName => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) if slf.emitter.current_is_appropriate_end_tag_token() => {
+        State::RcDataEndTagName => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
+                if slf.emitter.current_is_appropriate_end_tag_token() =>
+            {
                 switch_to!(State::BeforeAttributeName)
             }
-            Some('/') if slf.emitter.current_is_appropriate_end_tag_token() => {
+            Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
                 switch_to!(State::SelfClosingStartTag)
             }
-            Some('>') if slf.emitter.current_is_appropriate_end_tag_token() => {
+            Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.push_tag_name(ctostr!(x.to_ascii_lowercase()));
-                slf.machine_helper.temporary_buffer.push(x);
+                slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                slf.machine_helper.temporary_buffer.push(x as u8);
                 cont!()
             }
             c => {
-                slf.emitter.emit_string("</");
+                slf.emitter.emit_string(b"</");
                 slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
                 reconsume_in!(c, State::RcData)
             }
         },
-        State::RawTextLessThanSign => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('/') => {
+        State::RawTextLessThanSign => match read_byte!()? {
+            Some(b'/') => {
                 slf.machine_helper.temporary_buffer.clear();
                 switch_to!(State::RawTextEndTagOpen)
             }
             c => {
-                slf.emitter.emit_string("<");
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::RawText)
             }
         },
-        State::RawTextEndTagOpen => match slf.reader.read_char(&mut slf.emitter)? {
+        State::RawTextEndTagOpen => match read_byte!()? {
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.init_end_tag();
                 reconsume_in!(Some(x), State::RawTextEndTagName)
             }
             c => {
-                slf.emitter.emit_string("</");
+                slf.emitter.emit_string(b"</");
                 reconsume_in!(c, State::RawText)
             }
         },
-        State::RawTextEndTagName => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) if slf.emitter.current_is_appropriate_end_tag_token() => {
+        State::RawTextEndTagName => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
+                if slf.emitter.current_is_appropriate_end_tag_token() =>
+            {
                 switch_to!(State::BeforeAttributeName)
             }
-            Some('/') if slf.emitter.current_is_appropriate_end_tag_token() => {
+            Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
                 switch_to!(State::SelfClosingStartTag)
             }
-            Some('>') if slf.emitter.current_is_appropriate_end_tag_token() => {
+            Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.push_tag_name(ctostr!(x.to_ascii_lowercase()));
-                slf.machine_helper.temporary_buffer.push(x);
+                slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                slf.machine_helper.temporary_buffer.push(x as u8);
                 cont!()
             }
             c => {
-                slf.emitter.emit_string("</");
+                slf.emitter.emit_string(b"</");
                 slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
                 reconsume_in!(c, State::RawText)
             }
         },
-        State::ScriptDataLessThanSign => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('/') => {
+        State::ScriptDataLessThanSign => match read_byte!()? {
+            Some(b'/') => {
                 slf.machine_helper.temporary_buffer.clear();
                 switch_to!(State::ScriptDataEndTagOpen)
             }
-            Some('!') => {
-                slf.emitter.emit_string("<!");
+            Some(b'!') => {
+                slf.emitter.emit_string(b"<!");
                 switch_to!(State::ScriptDataEscapeStart)
             }
             c => {
-                slf.emitter.emit_string("<");
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::ScriptData)
             }
         },
-        State::ScriptDataEndTagOpen => match slf.reader.read_char(&mut slf.emitter)? {
+        State::ScriptDataEndTagOpen => match read_byte!()? {
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.init_end_tag();
                 reconsume_in!(Some(x), State::ScriptDataEndTagName)
             }
             c => {
-                slf.emitter.emit_string("</");
+                slf.emitter.emit_string(b"</");
                 reconsume_in!(c, State::ScriptData)
             }
         },
-        State::ScriptDataEndTagName => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) if slf.emitter.current_is_appropriate_end_tag_token() => {
+        State::ScriptDataEndTagName => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
+                if slf.emitter.current_is_appropriate_end_tag_token() =>
+            {
                 switch_to!(State::BeforeAttributeName)
             }
-            Some('/') if slf.emitter.current_is_appropriate_end_tag_token() => {
+            Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
                 switch_to!(State::SelfClosingStartTag)
             }
-            Some('>') if slf.emitter.current_is_appropriate_end_tag_token() => {
+            Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.push_tag_name(ctostr!(x.to_ascii_lowercase()));
+                slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
                 slf.machine_helper
                     .temporary_buffer
-                    .push(x.to_ascii_lowercase());
+                    .push(x.to_ascii_lowercase() as u8);
                 cont!()
             }
             c => {
-                slf.emitter.emit_string("</");
+                slf.emitter.emit_string(b"</");
                 slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
                 reconsume_in!(c, State::Data)
             }
         },
-        State::ScriptDataEscapeStart => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
-                slf.emitter.emit_string("-");
+        State::ScriptDataEscapeStart => match read_byte!()? {
+            Some(b'-') => {
+                slf.emitter.emit_string(b"-");
                 switch_to!(State::ScriptDataEscapeStartDash)
             }
             c => {
                 reconsume_in!(c, State::ScriptData)
             }
         },
-        State::ScriptDataEscapeStartDash => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
-                slf.emitter.emit_string("-");
+        State::ScriptDataEscapeStartDash => match read_byte!()? {
+            Some(b'-') => {
+                slf.emitter.emit_string(b"-");
                 switch_to!(State::ScriptDataEscapedDashDash)
             }
             c => {
@@ -410,16 +435,16 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::ScriptDataEscaped => fast_read_char!(
             slf,
             match xs {
-                Some("-") => {
-                    slf.emitter.emit_string("-");
+                Some(b"-") => {
+                    slf.emitter.emit_string(b"-");
                     switch_to!(State::ScriptDataEscapedDash)
                 }
-                Some("<") => {
+                Some(b"<") => {
                     switch_to!(State::ScriptDataEscapedLessThanSign)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -427,113 +452,112 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter
-                        .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                    error!(Error::EofInScriptHtmlCommentLikeText);
                     eof!()
                 }
             }
         ),
-        State::ScriptDataEscapedDash => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
-                slf.emitter.emit_string("-");
+        State::ScriptDataEscapedDash => match read_byte!()? {
+            Some(b'-') => {
+                slf.emitter.emit_string(b"-");
                 switch_to!(State::ScriptDataEscapedDashDash)
             }
-            Some('<') => {
+            Some(b'<') => {
                 switch_to!(State::ScriptDataEscapedLessThanSign)
             }
-            Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                slf.emitter.emit_string("\u{fffd}");
+            Some(b'\0') => {
+                error!(Error::UnexpectedNullCharacter);
+                slf.emitter.emit_string("\u{fffd}".as_bytes());
                 switch_to!(State::ScriptDataEscaped)
             }
             Some(x) => {
-                slf.emitter.emit_string(ctostr!(x));
+                slf.emitter.emit_string(&[x]);
                 switch_to!(State::ScriptDataEscaped)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                error!(Error::EofInScriptHtmlCommentLikeText);
                 eof!()
             }
         },
-        State::ScriptDataEscapedDashDash => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
-                slf.emitter.emit_string("-");
+        State::ScriptDataEscapedDashDash => match read_byte!()? {
+            Some(b'-') => {
+                slf.emitter.emit_string(b"-");
                 cont!()
             }
-            Some('<') => {
+            Some(b'<') => {
                 switch_to!(State::ScriptDataEscapedLessThanSign)
             }
-            Some('>') => {
-                slf.emitter.emit_string(">");
+            Some(b'>') => {
+                slf.emitter.emit_string(b">");
                 switch_to!(State::ScriptData)
             }
-            Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                slf.emitter.emit_string("\u{fffd}");
+            Some(b'\0') => {
+                error!(Error::UnexpectedNullCharacter);
+                slf.emitter.emit_string("\u{fffd}".as_bytes());
                 switch_to!(State::ScriptDataEscaped)
             }
             Some(x) => {
-                slf.emitter.emit_string(ctostr!(x));
+                slf.emitter.emit_string(&[x]);
                 switch_to!(State::ScriptDataEscaped)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                error!(Error::EofInScriptHtmlCommentLikeText);
                 eof!()
             }
         },
-        State::ScriptDataEscapedLessThanSign => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('/') => {
+        State::ScriptDataEscapedLessThanSign => match read_byte!()? {
+            Some(b'/') => {
                 slf.machine_helper.temporary_buffer.clear();
                 switch_to!(State::ScriptDataEscapedEndTagOpen)
             }
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.machine_helper.temporary_buffer.clear();
-                slf.emitter.emit_string("<");
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(Some(x), State::ScriptDataDoubleEscapeStart)
             }
             c => {
-                slf.emitter.emit_string("<");
+                slf.emitter.emit_string(b"<");
                 reconsume_in!(c, State::ScriptDataEscaped)
             }
         },
-        State::ScriptDataEscapedEndTagOpen => match slf.reader.read_char(&mut slf.emitter)? {
+        State::ScriptDataEscapedEndTagOpen => match read_byte!()? {
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.init_end_tag();
                 reconsume_in!(Some(x), State::ScriptDataEscapedEndTagName)
             }
             c => {
-                slf.emitter.emit_string("</");
+                slf.emitter.emit_string(b"</");
                 reconsume_in!(c, State::ScriptDataEscaped)
             }
         },
-        State::ScriptDataEscapedEndTagName => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) if slf.emitter.current_is_appropriate_end_tag_token() => {
+        State::ScriptDataEscapedEndTagName => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
+                if slf.emitter.current_is_appropriate_end_tag_token() =>
+            {
                 switch_to!(State::BeforeAttributeName)
             }
-            Some('/') if slf.emitter.current_is_appropriate_end_tag_token() => {
+            Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
                 switch_to!(State::SelfClosingStartTag)
             }
-            Some('>') if slf.emitter.current_is_appropriate_end_tag_token() => {
+            Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
             Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.push_tag_name(ctostr!(x.to_ascii_lowercase()));
-                slf.machine_helper.temporary_buffer.push(x);
+                slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                slf.machine_helper.temporary_buffer.extend(&[x]);
                 cont!()
             }
             c => {
-                slf.emitter.emit_string("</");
+                slf.emitter.emit_string(b"</");
                 slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
                 reconsume_in!(c, State::ScriptDataEscaped)
             }
         },
-        State::ScriptDataDoubleEscapeStart => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(x @ whitespace_pat!() | x @ '/' | x @ '>') => {
-                slf.emitter.emit_string(ctostr!(x));
-                if slf.machine_helper.temporary_buffer == "script" {
+        State::ScriptDataDoubleEscapeStart => match read_byte!()? {
+            Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
+                slf.emitter.emit_string(&[x]);
+                if slf.machine_helper.temporary_buffer == b"script" {
                     switch_to!(State::ScriptDataDoubleEscaped)
                 } else {
                     switch_to!(State::ScriptDataEscaped)
@@ -542,8 +566,8 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.machine_helper
                     .temporary_buffer
-                    .push(x.to_ascii_lowercase());
-                slf.emitter.emit_string(ctostr!(x));
+                    .push(x.to_ascii_lowercase() as u8);
+                slf.emitter.emit_string(&[x]);
                 cont!()
             }
             c => {
@@ -553,17 +577,17 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::ScriptDataDoubleEscaped => fast_read_char!(
             slf,
             match xs {
-                Some("-") => {
-                    slf.emitter.emit_string("-");
+                Some(b"-") => {
+                    slf.emitter.emit_string(b"-");
                     switch_to!(State::ScriptDataDoubleEscapedDash)
                 }
-                Some("<") => {
-                    slf.emitter.emit_string("<");
+                Some(b"<") => {
+                    slf.emitter.emit_string(b"<");
                     switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -571,81 +595,76 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter
-                        .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                    error!(Error::EofInScriptHtmlCommentLikeText);
                     eof!()
                 }
             }
         ),
-        State::ScriptDataDoubleEscapedDash => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
-                slf.emitter.emit_string("-");
+        State::ScriptDataDoubleEscapedDash => match read_byte!()? {
+            Some(b'-') => {
+                slf.emitter.emit_string(b"-");
                 switch_to!(State::ScriptDataDoubleEscapedDashDash)
             }
-            Some('<') => {
-                slf.emitter.emit_string("<");
+            Some(b'<') => {
+                slf.emitter.emit_string(b"<");
                 switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
             }
-            Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                slf.emitter.emit_string("\u{fffd}");
+            Some(b'\0') => {
+                error!(Error::UnexpectedNullCharacter);
+                slf.emitter.emit_string("\u{fffd}".as_bytes());
                 switch_to!(State::ScriptDataDoubleEscaped)
             }
             Some(x) => {
-                slf.emitter.emit_string(ctostr!(x));
+                slf.emitter.emit_string(&[x]);
                 switch_to!(State::ScriptDataDoubleEscaped)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                error!(Error::EofInScriptHtmlCommentLikeText);
                 eof!()
             }
         },
-        State::ScriptDataDoubleEscapedDashDash => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
-                slf.emitter.emit_string("-");
+        State::ScriptDataDoubleEscapedDashDash => match read_byte!()? {
+            Some(b'-') => {
+                slf.emitter.emit_string(b"-");
                 cont!()
             }
-            Some('<') => {
-                slf.emitter.emit_string("<");
+            Some(b'<') => {
+                slf.emitter.emit_string(b"<");
                 switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
             }
-            Some('>') => {
-                slf.emitter.emit_string(">");
+            Some(b'>') => {
+                slf.emitter.emit_string(b">");
                 switch_to!(State::ScriptData)
             }
-            Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                slf.emitter.emit_string("\u{fffd}");
+            Some(b'\0') => {
+                error!(Error::UnexpectedNullCharacter);
+                slf.emitter.emit_string("\u{fffd}".as_bytes());
                 switch_to!(State::ScriptDataDoubleEscaped)
             }
             Some(x) => {
-                slf.emitter.emit_string(ctostr!(x));
+                slf.emitter.emit_string(&[x]);
                 switch_to!(State::ScriptDataDoubleEscaped)
             }
             None => {
-                slf.emitter
-                    .emit_error(Error::EofInScriptHtmlCommentLikeText);
+                error!(Error::EofInScriptHtmlCommentLikeText);
                 eof!()
             }
         },
-        State::ScriptDataDoubleEscapedLessThanSign => {
-            match slf.reader.read_char(&mut slf.emitter)? {
-                Some('/') => {
-                    slf.machine_helper.temporary_buffer.clear();
-                    slf.emitter.emit_string("/");
-                    switch_to!(State::ScriptDataDoubleEscapeEnd)
-                }
-                c => {
-                    reconsume_in!(c, State::ScriptDataDoubleEscaped)
-                }
+        State::ScriptDataDoubleEscapedLessThanSign => match read_byte!()? {
+            Some(b'/') => {
+                slf.machine_helper.temporary_buffer.clear();
+                slf.emitter.emit_string(b"/");
+                switch_to!(State::ScriptDataDoubleEscapeEnd)
             }
-        }
-        State::ScriptDataDoubleEscapeEnd => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(x @ whitespace_pat!() | x @ '/' | x @ '>') => {
-                slf.emitter.emit_string(ctostr!(x));
+            c => {
+                reconsume_in!(c, State::ScriptDataDoubleEscaped)
+            }
+        },
+        State::ScriptDataDoubleEscapeEnd => match read_byte!()? {
+            Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
+                slf.emitter.emit_string(&[x]);
 
-                if slf.machine_helper.temporary_buffer == "script" {
+                if slf.machine_helper.temporary_buffer == b"script" {
                     switch_to!(State::ScriptDataEscaped)
                 } else {
                     switch_to!(State::ScriptDataDoubleEscaped)
@@ -654,24 +673,23 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.machine_helper
                     .temporary_buffer
-                    .push(x.to_ascii_lowercase());
-                slf.emitter.emit_string(ctostr!(x));
+                    .push(x.to_ascii_lowercase() as u8);
+                slf.emitter.emit_string(&[x]);
                 cont!()
             }
             c => {
                 reconsume_in!(c, State::ScriptDataDoubleEscaped)
             }
         },
-        State::BeforeAttributeName => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => cont!(),
-            c @ Some('/' | '>') | c @ None => {
+        State::BeforeAttributeName => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+            c @ Some(b'/' | b'>') | c @ None => {
                 reconsume_in!(c, State::AfterAttributeName)
             }
-            Some('=') => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedEqualsSignBeforeAttributeName);
+            Some(b'=') => {
+                error!(Error::UnexpectedEqualsSignBeforeAttributeName);
                 slf.emitter.init_attribute();
-                slf.emitter.push_attribute_name("=");
+                slf.emitter.push_attribute_name("=".as_bytes());
                 switch_to!(State::AttributeName)
             }
             Some(x) => {
@@ -682,20 +700,19 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::AttributeName => fast_read_char!(
             slf,
             match xs {
-                Some("\t" | "\u{0A}" | "\u{0C}" | " " | "/" | ">") => {
-                    reconsume_in!(xs.unwrap().chars().next(), State::AfterAttributeName)
+                Some(b"\t" | b"\x0A" | b"\x0C" | b" " | b"/" | b">") => {
+                    reconsume_in!(Some(xs.unwrap()[0]), State::AfterAttributeName)
                 }
-                Some("=") => {
+                Some(b"=") => {
                     switch_to!(State::BeforeAttributeValue)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_name("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.push_attribute_name("\u{fffd}".as_bytes());
                     cont!()
                 }
-                Some("\"" | "'" | "<") => {
-                    slf.emitter
-                        .emit_error(Error::UnexpectedCharacterInAttributeName);
+                Some(b"\"" | b"'" | b"<") => {
+                    error!(Error::UnexpectedCharacterInAttributeName);
                     slf.emitter.push_attribute_name(xs.unwrap());
                     cont!()
                 }
@@ -711,20 +728,20 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 }
             }
         ),
-        State::AfterAttributeName => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => cont!(),
-            Some('/') => {
+        State::AfterAttributeName => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+            Some(b'/') => {
                 switch_to!(State::SelfClosingStartTag)
             }
-            Some('=') => {
+            Some(b'=') => {
                 switch_to!(State::BeforeAttributeValue)
             }
-            Some('>') => {
+            Some(b'>') => {
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                error!(Error::EofInTag);
                 eof!()
             }
             Some(x) => {
@@ -732,16 +749,16 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(Some(x), State::AttributeName)
             }
         },
-        State::BeforeAttributeValue => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => cont!(),
-            Some('"') => {
+        State::BeforeAttributeValue => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+            Some(b'"') => {
                 switch_to!(State::AttributeValueDoubleQuoted)
             }
-            Some('\'') => {
+            Some(b'\'') => {
                 switch_to!(State::AttributeValueSingleQuoted)
             }
-            Some('>') => {
-                slf.emitter.emit_error(Error::MissingAttributeValue);
+            Some(b'>') => {
+                error!(Error::MissingAttributeValue);
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
@@ -752,15 +769,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::AttributeValueDoubleQuoted => fast_read_char!(
             slf,
             match xs {
-                Some("\"") => {
+                Some(b"\"") => {
                     switch_to!(State::AfterAttributeValueQuoted)
                 }
-                Some("&") => {
+                Some(b"&") => {
                     enter_state!(State::CharacterReference)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_value("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -768,7 +785,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInTag);
+                    error!(Error::EofInTag);
                     eof!()
                 }
             }
@@ -776,15 +793,15 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::AttributeValueSingleQuoted => fast_read_char!(
             slf,
             match xs {
-                Some("'") => {
+                Some(b"'") => {
                     switch_to!(State::AfterAttributeValueQuoted)
                 }
-                Some("&") => {
+                Some(b"&") => {
                     enter_state!(State::CharacterReference)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_value("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -792,7 +809,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInTag);
+                    error!(Error::EofInTag);
                     eof!()
                 }
             }
@@ -800,24 +817,23 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::AttributeValueUnquoted => fast_read_char!(
             slf,
             match xs {
-                Some("\t" | "\u{0A}" | "\u{0C}" | " ") => {
+                Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
                     switch_to!(State::BeforeAttributeName)
                 }
-                Some("&") => {
+                Some(b"&") => {
                     enter_state!(State::CharacterReference)
                 }
-                Some(">") => {
+                Some(b">") => {
                     slf.emitter.emit_current_tag();
                     switch_to!(State::Data)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_value("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes());
                     cont!()
                 }
-                Some("\"" | "'" | "<" | "=" | "\u{60}") => {
-                    slf.emitter
-                        .emit_error(Error::UnexpectedCharacterInUnquotedAttributeValue);
+                Some(b"\"" | b"'" | b"<" | b"=" | b"\x60") => {
+                    error!(Error::UnexpectedCharacterInUnquotedAttributeValue);
                     slf.emitter.push_attribute_value(xs.unwrap());
                     cont!()
                 }
@@ -826,46 +842,45 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInTag);
+                    error!(Error::EofInTag);
                     eof!()
                 }
             }
         ),
-        State::AfterAttributeValueQuoted => match slf.reader.read_char(&mut slf.emitter)? {
-            c @ (Some(whitespace_pat!() | '/' | '>') | None) => {
+        State::AfterAttributeValueQuoted => match read_byte!()? {
+            c @ (Some(b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>') | None) => {
                 reconsume_in!(c, State::BeforeAttributeName)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBetweenAttributes);
+                error!(Error::MissingWhitespaceBetweenAttributes);
                 reconsume_in!(c, State::BeforeAttributeName)
             }
         },
-        State::SelfClosingStartTag => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('>') => {
+        State::SelfClosingStartTag => match read_byte!()? {
+            Some(b'>') => {
                 slf.emitter.set_self_closing();
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInTag);
+                error!(Error::EofInTag);
                 eof!()
             }
             Some(x) => {
-                slf.emitter.emit_error(Error::UnexpectedSolidusInTag);
+                error_immediate!(Error::UnexpectedSolidusInTag);
                 reconsume_in!(Some(x), State::BeforeAttributeName)
             }
         },
         State::BogusComment => fast_read_char!(
             slf,
             match xs {
-                Some(">") => {
+                Some(b">") => {
                     slf.emitter.emit_current_comment();
                     switch_to!(State::Data)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_comment("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.push_comment("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -880,41 +895,49 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         ),
         State::MarkupDeclarationOpen => {
             {
-                match slf.reader.read_char(&mut slf.emitter)? {
-                    Some('-') if slf.reader.try_read_string("-", true)? => {
+                match read_byte!()? {
+                    Some(b'-') if slf.reader.try_read_string(&mut slf.validator, "-", true)? => {
                         slf.emitter.init_comment();
                         switch_to!(State::CommentStart)
                     }
-                    Some('d' | 'D') if slf.reader.try_read_string("octype", false)? => {
+                    Some(b'd' | b'D')
+                        if slf
+                            .reader
+                            .try_read_string(&mut slf.validator, "octype", false)? =>
+                    {
                         switch_to!(State::Doctype)
                     }
-                    Some('[') if slf.reader.try_read_string("CDATA[", true)? => {
+                    Some(b'[')
+                        if slf
+                            .reader
+                            .try_read_string(&mut slf.validator, "CDATA[", true)? =>
+                    {
                         // missing: check for adjusted current element: we don't have an element stack
                         // at all
                         //
                         // missing: cdata transition
                         //
                         // let's hope that bogus comment can just sort of skip over cdata
-                        slf.emitter.emit_error(Error::CdataInHtmlContent);
+                        error!(Error::CdataInHtmlContent);
 
                         slf.emitter.init_comment();
-                        slf.emitter.push_comment("[CDATA[");
+                        slf.emitter.push_comment(b"[CDATA[");
                         switch_to!(State::BogusComment)
                     }
                     c => {
-                        slf.emitter.emit_error(Error::IncorrectlyOpenedComment);
+                        error!(Error::IncorrectlyOpenedComment);
                         slf.emitter.init_comment();
                         reconsume_in!(c, State::BogusComment)
                     }
                 }
             }
         }
-        State::CommentStart => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
+        State::CommentStart => match read_byte!()? {
+            Some(b'-') => {
                 switch_to!(State::CommentStartDash)
             }
-            Some('>') => {
-                slf.emitter.emit_error(Error::AbruptClosingOfEmptyComment);
+            Some(b'>') => {
+                error!(Error::AbruptClosingOfEmptyComment);
                 slf.emitter.emit_current_comment();
                 switch_to!(State::Data)
             }
@@ -922,38 +945,38 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::Comment)
             }
         },
-        State::CommentStartDash => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
+        State::CommentStartDash => match read_byte!()? {
+            Some(b'-') => {
                 switch_to!(State::CommentEnd)
             }
-            Some('>') => {
-                slf.emitter.emit_error(Error::AbruptClosingOfEmptyComment);
+            Some(b'>') => {
+                error!(Error::AbruptClosingOfEmptyComment);
                 slf.emitter.emit_current_comment();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInComment);
+                error!(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter.push_comment("-");
+                slf.emitter.push_comment(b"-");
                 reconsume_in!(c, State::Comment)
             }
         },
         State::Comment => fast_read_char!(
             slf,
             match xs {
-                Some("<") => {
-                    slf.emitter.push_comment("<");
+                Some(b"<") => {
+                    slf.emitter.push_comment(b"<");
                     switch_to!(State::CommentLessThanSign)
                 }
-                Some("-") => {
+                Some(b"-") => {
                     switch_to!(State::CommentEndDash)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_comment("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.push_comment("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -961,148 +984,142 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInComment);
+                    error!(Error::EofInComment);
                     slf.emitter.emit_current_comment();
                     eof!()
                 }
             }
         ),
-        State::CommentLessThanSign => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('!') => {
-                slf.emitter.push_comment("!");
+        State::CommentLessThanSign => match read_byte!()? {
+            Some(b'!') => {
+                slf.emitter.push_comment(b"!");
                 switch_to!(State::CommentLessThanSignBang)
             }
-            Some('<') => {
-                slf.emitter.push_comment("<");
+            Some(b'<') => {
+                slf.emitter.push_comment(b"<");
                 cont!()
             }
             c => {
                 reconsume_in!(c, State::Comment)
             }
         },
-        State::CommentLessThanSignBang => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
+        State::CommentLessThanSignBang => match read_byte!()? {
+            Some(b'-') => {
                 switch_to!(State::CommentLessThanSignBangDash)
             }
             c => {
                 reconsume_in!(c, State::Comment)
             }
         },
-        State::CommentLessThanSignBangDash => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
+        State::CommentLessThanSignBangDash => match read_byte!()? {
+            Some(b'-') => {
                 switch_to!(State::CommentLessThanSignBangDashDash)
             }
             c => {
                 reconsume_in!(c, State::CommentEndDash)
             }
         },
-        State::CommentLessThanSignBangDashDash => match slf.reader.read_char(&mut slf.emitter)? {
-            c @ Some('>') | c @ None => {
+        State::CommentLessThanSignBangDashDash => match read_byte!()? {
+            c @ Some(b'>') | c @ None => {
                 reconsume_in!(c, State::CommentEnd)
             }
             c => {
-                slf.emitter.emit_error(Error::NestedComment);
+                error!(Error::NestedComment);
                 reconsume_in!(c, State::CommentEnd)
             }
         },
-        State::CommentEndDash => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
+        State::CommentEndDash => match read_byte!()? {
+            Some(b'-') => {
                 switch_to!(State::CommentEnd)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInComment);
+                error!(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 eof!()
             }
             c => {
-                slf.emitter.push_comment("-");
+                slf.emitter.push_comment(b"-");
                 reconsume_in!(c, State::Comment)
             }
         },
-        State::CommentEnd => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('>') => {
+        State::CommentEnd => match read_byte!()? {
+            Some(b'>') => {
                 slf.emitter.emit_current_comment();
                 switch_to!(State::Data)
             }
-            Some('!') => {
+            Some(b'!') => {
                 switch_to!(State::CommentEndBang)
             }
-            Some('-') => {
-                slf.emitter.push_comment("-");
+            Some(b'-') => {
+                slf.emitter.push_comment(b"-");
                 cont!()
             }
             None => {
-                slf.emitter.emit_error(Error::EofInComment);
+                error!(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter.push_comment("-");
-                slf.emitter.push_comment("-");
+                slf.emitter.push_comment(b"--");
                 reconsume_in!(c, State::Comment)
             }
         },
-        State::CommentEndBang => match slf.reader.read_char(&mut slf.emitter)? {
-            Some('-') => {
-                slf.emitter.push_comment("-");
-                slf.emitter.push_comment("-");
-                slf.emitter.push_comment("!");
+        State::CommentEndBang => match read_byte!()? {
+            Some(b'-') => {
+                slf.emitter.push_comment(b"--!");
                 switch_to!(State::CommentEndDash)
             }
-            Some('>') => {
-                slf.emitter.emit_error(Error::IncorrectlyClosedComment);
+            Some(b'>') => {
+                error!(Error::IncorrectlyClosedComment);
                 slf.emitter.emit_current_comment();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInComment);
+                error!(Error::EofInComment);
                 slf.emitter.emit_current_comment();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter.push_comment("-");
-                slf.emitter.push_comment("-");
-                slf.emitter.push_comment("!");
+                slf.emitter.push_comment(b"--!");
                 reconsume_in!(c, State::Comment)
             }
         },
-        State::Doctype => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => {
+        State::Doctype => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
                 switch_to!(State::BeforeDoctypeName)
             }
-            c @ Some('>') => {
+            c @ Some(b'>') => {
                 reconsume_in!(c, State::BeforeDoctypeName)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.init_doctype();
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBeforeDoctypeName);
+                error!(Error::MissingWhitespaceBeforeDoctypeName);
                 reconsume_in!(c, State::BeforeDoctypeName)
             }
         },
-        State::BeforeDoctypeName => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => cont!(),
-            Some('\0') => {
-                slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+        State::BeforeDoctypeName => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+            Some(b'\0') => {
+                error!(Error::UnexpectedNullCharacter);
                 slf.emitter.init_doctype();
-                slf.emitter.push_doctype_name("\u{fffd}");
+                slf.emitter.push_doctype_name("\u{fffd}".as_bytes());
                 switch_to!(State::DoctypeName)
             }
-            Some('>') => {
-                slf.emitter.emit_error(Error::MissingDoctypeName);
+            Some(b'>') => {
+                error!(Error::MissingDoctypeName);
                 slf.emitter.init_doctype();
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.init_doctype();
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
@@ -1110,24 +1127,23 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
             Some(x) => {
                 slf.emitter.init_doctype();
-                slf.emitter
-                    .push_doctype_name(ctostr!(x.to_ascii_lowercase()));
+                slf.emitter.push_doctype_name(&[x.to_ascii_lowercase()]);
                 switch_to!(State::DoctypeName)
             }
         },
         State::DoctypeName => fast_read_char!(
             slf,
             match xs {
-                Some("\t" | "\u{0A}" | "\u{0C}" | " ") => {
+                Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
                     switch_to!(State::AfterDoctypeName)
                 }
-                Some(">") => {
+                Some(b">") => {
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_doctype_name("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.push_doctype_name("\u{fffd}".as_bytes());
                     cont!()
                 }
                 Some(xs) => {
@@ -1138,100 +1154,101 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
                 }
             }
         ),
-        State::AfterDoctypeName => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => cont!(),
-            Some('>') => {
+        State::AfterDoctypeName => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+            Some(b'>') => {
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
             }
-            Some('p' | 'P') if slf.reader.try_read_string("ublic", false)? => {
+            Some(b'p' | b'P')
+                if slf
+                    .reader
+                    .try_read_string(&mut slf.validator, "ublic", false)? =>
+            {
                 switch_to!(State::AfterDoctypePublicKeyword)
             }
-            Some('s' | 'S') if slf.reader.try_read_string("ystem", false)? => {
+            Some(b's' | b'S')
+                if slf
+                    .reader
+                    .try_read_string(&mut slf.validator, "ystem", false)? =>
+            {
                 switch_to!(State::AfterDoctypeSystemKeyword)
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::InvalidCharacterSequenceAfterDoctypeName);
+                error!(Error::InvalidCharacterSequenceAfterDoctypeName);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
         },
-        State::AfterDoctypePublicKeyword => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => {
+        State::AfterDoctypePublicKeyword => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
                 switch_to!(State::BeforeDoctypePublicIdentifier)
             }
-            Some('"') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
-                slf.emitter.set_doctype_public_identifier("");
+            Some(b'"') => {
+                error!(Error::MissingWhitespaceAfterDoctypePublicKeyword);
+                slf.emitter.set_doctype_public_identifier(b"");
                 switch_to!(State::DoctypePublicIdentifierDoubleQuoted)
             }
-            Some('\'') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypePublicKeyword);
-                slf.emitter.set_doctype_public_identifier("");
+            Some(b'\'') => {
+                error!(Error::MissingWhitespaceAfterDoctypePublicKeyword);
+                slf.emitter.set_doctype_public_identifier(b"");
                 switch_to!(State::DoctypePublicIdentifierSingleQuoted)
             }
-            Some('>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypePublicIdentifier);
+            Some(b'>') => {
+                error!(Error::MissingDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
         },
-        State::BeforeDoctypePublicIdentifier => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => cont!(),
-            Some('"') => {
-                slf.emitter.set_doctype_public_identifier("");
+        State::BeforeDoctypePublicIdentifier => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+            Some(b'"') => {
+                slf.emitter.set_doctype_public_identifier(b"");
                 switch_to!(State::DoctypePublicIdentifierDoubleQuoted)
             }
-            Some('\'') => {
-                slf.emitter.set_doctype_public_identifier("");
+            Some(b'\'') => {
+                slf.emitter.set_doctype_public_identifier(b"");
                 switch_to!(State::DoctypePublicIdentifierSingleQuoted)
             }
-            Some('>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypePublicIdentifier);
+            Some(b'>') => {
+                error!(Error::MissingDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypePublicIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypePublicIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
@@ -1239,16 +1256,17 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::DoctypePublicIdentifierDoubleQuoted => fast_read_char!(
             slf,
             match xs {
-                Some("\"") => {
+                Some(b"\"") => {
                     switch_to!(State::AfterDoctypePublicIdentifier)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_doctype_public_identifier("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter
+                        .push_doctype_public_identifier("\u{fffd}".as_bytes());
                     cont!()
                 }
-                Some(">") => {
-                    slf.emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
+                Some(b">") => {
+                    error!(Error::AbruptDoctypePublicIdentifier);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
@@ -1258,7 +1276,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
@@ -1268,16 +1286,17 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::DoctypePublicIdentifierSingleQuoted => fast_read_char!(
             slf,
             match xs {
-                Some("'") => {
+                Some(b"'") => {
                     switch_to!(State::AfterDoctypePublicIdentifier)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_doctype_public_identifier("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter
+                        .push_doctype_public_identifier("\u{fffd}".as_bytes());
                     cont!()
                 }
-                Some(">") => {
-                    slf.emitter.emit_error(Error::AbruptDoctypePublicIdentifier);
+                Some(b">") => {
+                    error!(Error::AbruptDoctypePublicIdentifier);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
@@ -1287,137 +1306,125 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
                 }
             }
         ),
-        State::AfterDoctypePublicIdentifier => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => {
+        State::AfterDoctypePublicIdentifier => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
                 switch_to!(State::BetweenDoctypePublicAndSystemIdentifiers)
             }
-            Some('>') => {
+            Some(b'>') => {
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
             }
-            Some('"') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
-                slf.emitter.set_doctype_system_identifier("");
+            Some(b'"') => {
+                error!(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
+                slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
             }
-            Some('\'') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
-                slf.emitter.set_doctype_system_identifier("");
+            Some(b'\'') => {
+                error!(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
+                slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
         },
-        State::BetweenDoctypePublicAndSystemIdentifiers => {
-            match slf.reader.read_char(&mut slf.emitter)? {
-                Some(whitespace_pat!()) => cont!(),
-                Some('>') => {
-                    slf.emitter.emit_current_doctype();
-                    switch_to!(State::Data)
-                }
-                Some('"') => {
-                    slf.emitter.set_doctype_system_identifier("");
-                    switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
-                }
-                Some('\'') => {
-                    slf.emitter.set_doctype_system_identifier("");
-                    switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
-                }
-                None => {
-                    slf.emitter.emit_error(Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
-                    eof!()
-                }
-                c @ Some(_) => {
-                    slf.emitter
-                        .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
-                    reconsume_in!(c, State::BogusDoctype)
-                }
+        State::BetweenDoctypePublicAndSystemIdentifiers => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+            Some(b'>') => {
+                slf.emitter.emit_current_doctype();
+                switch_to!(State::Data)
             }
-        }
-        State::AfterDoctypeSystemKeyword => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => {
+            Some(b'"') => {
+                slf.emitter.set_doctype_system_identifier(b"");
+                switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
+            }
+            Some(b'\'') => {
+                slf.emitter.set_doctype_system_identifier(b"");
+                switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
+            }
+            None => {
+                error!(Error::EofInDoctype);
+                slf.emitter.set_force_quirks();
+                slf.emitter.emit_current_doctype();
+                eof!()
+            }
+            c @ Some(_) => {
+                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                slf.emitter.set_force_quirks();
+                reconsume_in!(c, State::BogusDoctype)
+            }
+        },
+        State::AfterDoctypeSystemKeyword => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
                 switch_to!(State::BeforeDoctypeSystemIdentifier)
             }
-            Some('"') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
-                slf.emitter.set_doctype_system_identifier("");
+            Some(b'"') => {
+                error!(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
+                slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
             }
-            Some('\'') => {
-                slf.emitter
-                    .emit_error(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
-                slf.emitter.set_doctype_system_identifier("");
+            Some(b'\'') => {
+                error!(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
+                slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
             }
-            Some('>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypeSystemIdentifier);
+            Some(b'>') => {
+                error!(Error::MissingDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
         },
-        State::BeforeDoctypeSystemIdentifier => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => cont!(),
-            Some('"') => {
-                slf.emitter.set_doctype_system_identifier("");
+        State::BeforeDoctypeSystemIdentifier => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+            Some(b'"') => {
+                slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
             }
-            Some('\'') => {
-                slf.emitter.set_doctype_system_identifier("");
+            Some(b'\'') => {
+                slf.emitter.set_doctype_system_identifier(b"");
                 switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
             }
-            Some('>') => {
-                slf.emitter
-                    .emit_error(Error::MissingDoctypeSystemIdentifier);
+            Some(b'>') => {
+                error!(Error::MissingDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
                 slf.emitter.set_force_quirks();
                 reconsume_in!(c, State::BogusDoctype)
             }
@@ -1425,16 +1432,17 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::DoctypeSystemIdentifierDoubleQuoted => fast_read_char!(
             slf,
             match xs {
-                Some("\"") => {
+                Some(b"\"") => {
                     switch_to!(State::AfterDoctypeSystemIdentifier)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_doctype_system_identifier("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter
+                        .push_doctype_system_identifier("\u{fffd}".as_bytes());
                     cont!()
                 }
-                Some(">") => {
-                    slf.emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
+                Some(b">") => {
+                    error!(Error::AbruptDoctypeSystemIdentifier);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
@@ -1444,7 +1452,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
@@ -1454,16 +1462,17 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::DoctypeSystemIdentifierSingleQuoted => fast_read_char!(
             slf,
             match xs {
-                Some("\'") => {
+                Some(b"\'") => {
                     switch_to!(State::AfterDoctypeSystemIdentifier)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
-                    slf.emitter.push_doctype_system_identifier("\u{fffd}");
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter
+                        .push_doctype_system_identifier("\u{fffd}".as_bytes());
                     cont!()
                 }
-                Some(">") => {
-                    slf.emitter.emit_error(Error::AbruptDoctypeSystemIdentifier);
+                Some(b">") => {
+                    error!(Error::AbruptDoctypeSystemIdentifier);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
@@ -1473,40 +1482,39 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInDoctype);
+                    error!(Error::EofInDoctype);
                     slf.emitter.set_force_quirks();
                     slf.emitter.emit_current_doctype();
                     eof!()
                 }
             }
         ),
-        State::AfterDoctypeSystemIdentifier => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(whitespace_pat!()) => cont!(),
-            Some('>') => {
+        State::AfterDoctypeSystemIdentifier => match read_byte!()? {
+            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+            Some(b'>') => {
                 slf.emitter.emit_current_doctype();
                 switch_to!(State::Data)
             }
             None => {
-                slf.emitter.emit_error(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
                 eof!()
             }
             c @ Some(_) => {
-                slf.emitter
-                    .emit_error(Error::UnexpectedCharacterAfterDoctypeSystemIdentifier);
+                error!(Error::UnexpectedCharacterAfterDoctypeSystemIdentifier);
                 reconsume_in!(c, State::BogusDoctype)
             }
         },
         State::BogusDoctype => fast_read_char!(
             slf,
             match xs {
-                Some(">") => {
+                Some(b">") => {
                     slf.emitter.emit_current_doctype();
                     switch_to!(State::Data)
                 }
-                Some("\0") => {
-                    slf.emitter.emit_error(Error::UnexpectedNullCharacter);
+                Some(b"\0") => {
+                    error!(Error::UnexpectedNullCharacter);
                     cont!()
                 }
                 Some(_xs) => {
@@ -1521,7 +1529,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::CdataSection => fast_read_char!(
             slf,
             match xs {
-                Some("]") => {
+                Some(b"]") => {
                     switch_to!(State::CdataSectionBracket)
                 }
                 Some(xs) => {
@@ -1529,43 +1537,43 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_error(Error::EofInCdata);
+                    error!(Error::EofInCdata);
                     eof!()
                 }
             }
         ),
-        State::CdataSectionBracket => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(']') => {
+        State::CdataSectionBracket => match read_byte!()? {
+            Some(b']') => {
                 switch_to!(State::CdataSectionEnd)
             }
             c => {
-                slf.emitter.emit_string("]");
+                slf.emitter.emit_string(b"]");
                 reconsume_in!(c, State::CdataSection)
             }
         },
-        State::CdataSectionEnd => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(']') => {
-                slf.emitter.emit_string("]");
+        State::CdataSectionEnd => match read_byte!()? {
+            Some(b']') => {
+                slf.emitter.emit_string(b"]");
                 cont!()
             }
-            Some('>') => {
+            Some(b'>') => {
                 switch_to!(State::Data)
             }
             c => {
-                slf.emitter.emit_string("]]");
+                slf.emitter.emit_string(b"]]");
                 reconsume_in!(c, State::CdataSection)
             }
         },
         State::CharacterReference => {
             slf.machine_helper.temporary_buffer.clear();
-            slf.machine_helper.temporary_buffer.push('&');
+            slf.machine_helper.temporary_buffer.push(b'&');
 
-            match slf.reader.read_char(&mut slf.emitter)? {
+            match read_byte!()? {
                 Some(x) if x.is_ascii_alphanumeric() => {
                     reconsume_in!(Some(x), State::NamedCharacterReference)
                 }
-                Some('#') => {
-                    slf.machine_helper.temporary_buffer.push('#');
+                Some(b'#') => {
+                    slf.machine_helper.temporary_buffer.push(b'#');
                     switch_to!(State::NumericCharacterReference)
                 }
                 c => {
@@ -1576,36 +1584,38 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
         }
         State::NamedCharacterReference => {
-            let reader = &mut slf.reader;
-            let c = reader.read_char(&mut slf.emitter)?;
+            let c = read_byte!()?;
 
             let char_ref = match c {
-                Some(x) => try_read_character_reference(x, |x| reader.try_read_string(x, true))?
-                    .map(|char_ref| (x, char_ref)),
+                Some(x) => try_read_character_reference(x as char, |x| {
+                    slf.reader.try_read_string(&mut slf.validator, x, true)
+                })?
+                .map(|char_ref| (x, char_ref)),
 
                 None => None,
             };
 
             if let Some((x, char_ref)) = char_ref {
                 let char_ref_name_last_character = char_ref.name.chars().last();
-                let next_character = reader.read_char(&mut slf.emitter)?;
+                let next_character = read_byte!()?;
 
                 if !slf.machine_helper.is_consumed_as_part_of_an_attribute()
                     || char_ref_name_last_character == Some(';')
-                    || !matches!(next_character, Some(x) if x == '=' || x.is_ascii_alphanumeric())
+                    || !matches!(next_character, Some(x) if x == b'=' || x.is_ascii_alphanumeric())
                 {
                     if char_ref_name_last_character != Some(';') {
-                        slf.emitter
-                            .emit_error(Error::MissingSemicolonAfterCharacterReference);
+                        error!(Error::MissingSemicolonAfterCharacterReference);
                     }
 
                     slf.machine_helper.temporary_buffer.clear();
                     slf.machine_helper
                         .temporary_buffer
-                        .push_str(char_ref.characters);
+                        .extend(char_ref.characters.as_bytes());
                 } else {
-                    slf.machine_helper.temporary_buffer.push(x);
-                    slf.machine_helper.temporary_buffer.push_str(char_ref.name);
+                    slf.machine_helper.temporary_buffer.extend(&[x]);
+                    slf.machine_helper
+                        .temporary_buffer
+                        .extend(char_ref.name.as_bytes());
                 }
 
                 slf.machine_helper
@@ -1617,19 +1627,18 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::AmbiguousAmpersand)
             }
         }
-        State::AmbiguousAmpersand => match slf.reader.read_char(&mut slf.emitter)? {
+        State::AmbiguousAmpersand => match read_byte!()? {
             Some(x) if x.is_ascii_alphanumeric() => {
                 if slf.machine_helper.is_consumed_as_part_of_an_attribute() {
-                    slf.emitter.push_attribute_value(ctostr!(x));
+                    slf.emitter.push_attribute_value(&[x]);
                 } else {
-                    slf.emitter.emit_string(ctostr!(x));
+                    slf.emitter.emit_string(&[x]);
                 }
 
                 cont!()
             }
-            c @ Some(';') => {
-                slf.emitter
-                    .emit_error(Error::UnknownNamedCharacterReference);
+            c @ Some(b';') => {
+                error!(Error::UnknownNamedCharacterReference);
                 reconsume_in!(c, slf.machine_helper.pop_return_state())
             }
             c => {
@@ -1639,98 +1648,90 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         State::NumericCharacterReference => {
             slf.machine_helper.character_reference_code = 0;
 
-            match slf.reader.read_char(&mut slf.emitter)? {
-                Some(x @ 'x' | x @ 'X') => {
-                    slf.machine_helper.temporary_buffer.push(x);
+            match read_byte!()? {
+                Some(x @ b'x' | x @ b'X') => {
+                    slf.machine_helper.temporary_buffer.push(x as u8);
                     switch_to!(State::HexadecimalCharacterReferenceStart)
                 }
-                Some(x @ ascii_digit_pat!()) => {
+                Some(x @ b'0'..=b'9') => {
                     reconsume_in!(Some(x), State::DecimalCharacterReference)
                 }
                 c => {
-                    slf.emitter
-                        .emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
+                    error!(Error::AbsenceOfDigitsInNumericCharacterReference);
                     slf.machine_helper
                         .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
                     reconsume_in!(c, slf.machine_helper.pop_return_state())
                 }
             }
         }
-        State::HexadecimalCharacterReferenceStart => {
-            match slf.reader.read_char(&mut slf.emitter)? {
-                c @ Some('0'..='9' | 'A'..='F' | 'a'..='f') => {
-                    reconsume_in!(c, State::HexadecimalCharacterReference)
-                }
-                c => {
-                    slf.emitter
-                        .emit_error(Error::AbsenceOfDigitsInNumericCharacterReference);
-                    slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                    reconsume_in!(c, slf.machine_helper.pop_return_state())
-                }
+        State::HexadecimalCharacterReferenceStart => match read_byte!()? {
+            c @ Some(b'0'..=b'9' | b'A'..=b'F' | b'a'..=b'f') => {
+                reconsume_in!(c, State::HexadecimalCharacterReference)
             }
-        }
-        State::HexadecimalCharacterReference => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(x @ ascii_digit_pat!()) => {
+            c => {
+                error!(Error::AbsenceOfDigitsInNumericCharacterReference);
+                slf.machine_helper
+                    .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                reconsume_in!(c, slf.machine_helper.pop_return_state())
+            }
+        },
+        State::HexadecimalCharacterReference => match read_byte!()? {
+            Some(x @ b'0'..=b'9') => {
                 mutate_character_reference!(*16 + x - 0x0030);
                 cont!()
             }
-            Some(x @ 'A'..='F') => {
+            Some(x @ b'A'..=b'F') => {
                 mutate_character_reference!(*16 + x - 0x0037);
                 cont!()
             }
-            Some(x @ 'a'..='f') => {
+            Some(x @ b'a'..=b'f') => {
                 mutate_character_reference!(*16 + x - 0x0057);
                 cont!()
             }
-            Some(';') => {
+            Some(b';') => {
                 switch_to!(State::NumericCharacterReferenceEnd)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::MissingSemicolonAfterCharacterReference);
+                error!(Error::MissingSemicolonAfterCharacterReference);
                 reconsume_in!(c, State::NumericCharacterReferenceEnd)
             }
         },
-        State::DecimalCharacterReference => match slf.reader.read_char(&mut slf.emitter)? {
-            Some(x @ ascii_digit_pat!()) => {
+        State::DecimalCharacterReference => match read_byte!()? {
+            Some(x @ b'0'..=b'9') => {
                 mutate_character_reference!(*10 + x - 0x0030);
                 cont!()
             }
-            Some(';') => {
+            Some(b';') => {
                 switch_to!(State::NumericCharacterReferenceEnd)
             }
             c => {
-                slf.emitter
-                    .emit_error(Error::MissingSemicolonAfterCharacterReference);
+                error!(Error::MissingSemicolonAfterCharacterReference);
                 reconsume_in!(c, State::NumericCharacterReferenceEnd)
             }
         },
         State::NumericCharacterReferenceEnd => {
             match slf.machine_helper.character_reference_code {
                 0x00 => {
-                    slf.emitter.emit_error(Error::NullCharacterReference);
+                    error!(Error::NullCharacterReference);
                     slf.machine_helper.character_reference_code = 0xfffd;
                 }
                 0x110000.. => {
-                    slf.emitter
-                        .emit_error(Error::CharacterReferenceOutsideUnicodeRange);
+                    error!(Error::CharacterReferenceOutsideUnicodeRange);
                     slf.machine_helper.character_reference_code = 0xfffd;
                 }
                 surrogate_pat!() => {
-                    slf.emitter.emit_error(Error::SurrogateCharacterReference);
+                    error!(Error::SurrogateCharacterReference);
                     slf.machine_helper.character_reference_code = 0xfffd;
                 }
                 // noncharacter
                 noncharacter_pat!() => {
-                    slf.emitter
-                        .emit_error(Error::NoncharacterCharacterReference);
+                    error!(Error::NoncharacterCharacterReference);
                 }
                 // 0x000d, or a control that is not whitespace
                 x @ 0x000d | x @ control_pat!()
                     if !matches!(x, 0x0009 | 0x000a | 0x000c | 0x0020) =>
                 {
-                    slf.emitter.emit_error(Error::ControlCharacterReference);
+                    error!(Error::ControlCharacterReference);
                     slf.machine_helper.character_reference_code = match x {
                         0x80 => 0x20AC, // EURO SIGN (€)
                         0x82 => 0x201A, // SINGLE LOW-9 QUOTATION MARK (‚)
@@ -1766,9 +1767,10 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
 
             slf.machine_helper.temporary_buffer.clear();
-            slf.machine_helper
-                .temporary_buffer
-                .push(std::char::from_u32(slf.machine_helper.character_reference_code).unwrap());
+            slf.machine_helper.temporary_buffer.extend(
+                ctostr!(std::char::from_u32(slf.machine_helper.character_reference_code).unwrap())
+                    .as_bytes(),
+            );
             slf.machine_helper
                 .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
             exit_state!()

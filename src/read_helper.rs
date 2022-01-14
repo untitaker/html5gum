@@ -1,13 +1,11 @@
+use crate::char_validator::CharValidator;
 use crate::Emitter;
-use crate::Error;
 use crate::Reader;
-
-use crate::utils::{control_pat, noncharacter_pat, surrogate_pat};
 
 pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
     last_character_was_cr: bool,
-    to_reconsume: Stack2<Option<char>>,
+    to_reconsume: Option<Option<u8>>,
 }
 
 impl<R: Reader> ReadHelper<R> {
@@ -19,37 +17,37 @@ impl<R: Reader> ReadHelper<R> {
         }
     }
 
-    #[inline]
-    pub(crate) fn read_char<E: Emitter>(
+    pub(crate) fn read_byte<E: Emitter>(
         &mut self,
+        char_validator: &mut CharValidator,
         emitter: &mut E,
-    ) -> Result<Option<char>, R::Error> {
-        let mut c = match self.to_reconsume.pop() {
-            Some(c) => return Ok(c),
-            None => self.reader.read_char(),
-        };
-
-        if self.last_character_was_cr && matches!(c, Ok(Some('\n'))) {
-            self.last_character_was_cr = false;
-            return self.read_char(emitter);
+    ) -> Result<Option<u8>, R::Error> {
+        if let Some(c) = self.to_reconsume.take() {
+            return Ok(c);
         }
 
-        if matches!(c, Ok(Some('\r'))) {
+        let mut c = self.reader.read_byte();
+        if self.last_character_was_cr && matches!(c, Ok(Some(b'\n'))) {
+            c = self.reader.read_byte();
+        }
+
+        if matches!(c, Ok(Some(b'\r'))) {
             self.last_character_was_cr = true;
-            c = Ok(Some('\n'));
+            c = Ok(Some(b'\n'));
         } else {
             self.last_character_was_cr = false;
         }
 
         if let Ok(Some(x)) = c {
-            Self::validate_char(emitter, x);
+            char_validator.validate_byte(emitter, x);
         }
+
         c
     }
 
-    #[inline]
     pub(crate) fn try_read_string(
         &mut self,
+        char_validator: &mut CharValidator,
         mut s: &str,
         case_sensitive: bool,
     ) -> Result<bool, R::Error> {
@@ -57,124 +55,89 @@ impl<R: Reader> ReadHelper<R> {
         debug_assert!(!s.contains('\r'));
 
         let to_reconsume_bak = self.to_reconsume;
-        let mut chars = s.chars();
-        while let Some(c) = self.to_reconsume.pop() {
-            if let (Some(x), Some(x2)) = (c, chars.next()) {
-                if x == x2 || (!case_sensitive && x.to_ascii_lowercase() == x2.to_ascii_lowercase())
+        let mut bytes = s.as_bytes().iter();
+        if let Some(c) = self.to_reconsume.take() {
+            match (c, bytes.next()) {
+                (Some(x), Some(&x2))
+                    if x == x2
+                        || (!case_sensitive
+                            && x.to_ascii_lowercase() == x2.to_ascii_lowercase()) =>
                 {
-                    s = &s[x.len_utf8()..];
-                    continue;
+                    s = &s[1..];
+                }
+                _ => {
+                    self.to_reconsume = to_reconsume_bak;
+                    return Ok(false);
                 }
             }
-
-            self.to_reconsume = to_reconsume_bak;
-            return Ok(false);
         }
 
-        self.last_character_was_cr = false;
-
-        self.reader.try_read_string(s, case_sensitive)
+        if s.is_empty() || self.reader.try_read_string(s.as_bytes(), case_sensitive)? {
+            self.last_character_was_cr = false;
+            char_validator.reset();
+            Ok(true)
+        } else {
+            self.to_reconsume = to_reconsume_bak;
+            Ok(false)
+        }
     }
 
-    #[inline]
     pub(crate) fn read_until<'b, E>(
         &'b mut self,
-        needle: &[char],
+        needle: &[u8],
+        char_validator: &mut CharValidator,
         emitter: &mut E,
         char_buf: &'b mut [u8; 4],
-    ) -> Result<Option<&'b str>, R::Error>
+    ) -> Result<Option<&'b [u8]>, R::Error>
     where
         E: Emitter,
     {
-        match self.to_reconsume.pop() {
-            Some(Some(x)) => return Ok(Some(&*x.encode_utf8(char_buf))),
+        match self.to_reconsume.take() {
+            Some(Some(x)) => {
+                return Ok(Some({
+                    char_buf[0] = x;
+                    &char_buf[..1]
+                }))
+            }
             Some(None) => return Ok(None),
             None => (),
         }
 
-        let last_character_was_cr = &mut self.last_character_was_cr;
-
         const MAX_NEEDLE_LEN: usize = 13;
-        let mut needle2 = ['\0'; MAX_NEEDLE_LEN];
+        let mut needle2 = [b'\0'; MAX_NEEDLE_LEN];
         // Assert that we will have space for adding \r
         // If not, just bump MAX_NEEDLE_LEN
         debug_assert!(needle.len() < needle2.len());
         needle2[..needle.len()].copy_from_slice(needle);
-        needle2[needle.len()] = '\r';
+        needle2[needle.len()] = b'\r';
         let needle2_slice = &needle2[..needle.len() + 1];
 
         match self.reader.read_until(needle2_slice, char_buf)? {
-            Some("\r") => {
-                *last_character_was_cr = true;
-                Ok(Some("\n"))
+            Some(b"\r") => {
+                self.last_character_was_cr = true;
+                char_validator.validate_byte(emitter, b'\n');
+                Ok(Some(b"\n"))
             }
             Some(mut xs) => {
-                if *last_character_was_cr && xs.starts_with('\n') {
+                char_validator.validate_bytes(emitter, xs);
+
+                if self.last_character_was_cr && xs.starts_with(b"\n") {
                     xs = &xs[1..];
                 }
 
-                for x in xs.chars() {
-                    Self::validate_char(emitter, x);
-                }
-
-                *last_character_was_cr = false;
+                self.last_character_was_cr = false;
                 Ok(Some(xs))
             }
             None => {
-                *last_character_was_cr = false;
+                self.last_character_was_cr = false;
                 Ok(None)
             }
         }
     }
 
     #[inline]
-    pub(crate) fn unread_char(&mut self, c: Option<char>) {
-        self.to_reconsume.push(c);
-    }
-
-    #[inline]
-    fn validate_char<E: Emitter>(emitter: &mut E, c: char) {
-        match c as u32 {
-            surrogate_pat!() => {
-                emitter.emit_error(Error::SurrogateInInputStream);
-            }
-            noncharacter_pat!() => {
-                emitter.emit_error(Error::NoncharacterInInputStream);
-            }
-            // control without whitespace or nul
-            x @ control_pat!()
-                if !matches!(x, 0x0000 | 0x0009 | 0x000a | 0x000c | 0x000d | 0x0020) =>
-            {
-                emitter.emit_error(Error::ControlCharacterInInputStream);
-            }
-            _ => (),
-        }
-    }
-}
-
-// this is a stack that can hold 0 to 2 Ts
-#[derive(Debug, Default, Clone, Copy)]
-struct Stack2<T: Copy>(Option<(T, Option<T>)>);
-
-impl<T: Copy> Stack2<T> {
-    #[inline]
-    fn push(&mut self, c: T) {
-        self.0 = match self.0 {
-            None => Some((c, None)),
-            Some((c1, None)) => Some((c1, Some(c))),
-            Some((_c1, Some(_c2))) => panic!("stack full!"),
-        }
-    }
-
-    #[inline]
-    fn pop(&mut self) -> Option<T> {
-        let (new_self, rv) = match self.0 {
-            Some((c1, Some(c2))) => (Some((c1, None)), Some(c2)),
-            Some((c1, None)) => (None, Some(c1)),
-            None => (None, None),
-        };
-        self.0 = new_self;
-        rv
+    pub(crate) fn unread_byte(&mut self, c: Option<u8>) {
+        self.to_reconsume = Some(c);
     }
 }
 
@@ -221,8 +184,9 @@ macro_rules! fast_read_char {
         let $read_char = $slf.reader.read_until(
             &[ $($({
                 debug_assert_eq!($lit.len(), 1);
-                $lit.chars().next().unwrap()
+                $lit[0]
             }),*),* ],
+            &mut $slf.validator,
             &mut $slf.emitter,
             &mut char_buf,
         )?;

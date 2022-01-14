@@ -1,5 +1,7 @@
 use crate::Never;
-use std::io::{self, BufRead, BufReader, Read};
+use std::cmp::min;
+use std::fs::File;
+use std::io::{self, Read};
 
 /// An object that provides characters to the tokenizer.
 ///
@@ -8,11 +10,11 @@ pub trait Reader {
     /// The error returned by this reader.
     type Error: std::error::Error;
 
-    /// Return a new character from the input stream.
+    /// Return a new byte from the input stream.
     ///
     /// The input stream does **not** have to be preprocessed in any way, it can contain standalone
     /// surrogates and have inconsistent newlines.
-    fn read_char(&mut self) -> Result<Option<char>, Self::Error>;
+    fn read_byte(&mut self) -> Result<Option<u8>, Self::Error>;
 
     /// Attempt to read an entire string at once, either case-insensitively or not.
     ///
@@ -24,7 +26,7 @@ pub trait Reader {
     ///
     /// If the next characters equal to `s`, this function consumes the respective characters from
     /// the input stream and returns `true`. If not, it does nothing and returns `false`.
-    fn try_read_string(&mut self, s: &str, case_sensitive: bool) -> Result<bool, Self::Error>;
+    fn try_read_string(&mut self, s: &[u8], case_sensitive: bool) -> Result<bool, Self::Error>;
 
     /// Read an arbitrary amount of characters up until and including the next character that
     /// matches an array entry in `needle`.
@@ -56,9 +58,9 @@ pub trait Reader {
     /// let mut chunks = Vec::new();
     /// while !eof {
     ///     let mut char_buf = [0; 4];
-    ///     let xs = reader.read_until(&[' ', 'r'], &mut char_buf).unwrap();
+    ///     let xs = reader.read_until(&[b' ', b'r'], &mut char_buf).unwrap();
     ///     if let Some(xs) = xs {
-    ///         chunks.push(xs.to_owned());
+    ///         chunks.push(std::str::from_utf8(xs).unwrap().to_owned());
     ///     } else {
     ///         eof = true;
     ///     }
@@ -74,13 +76,16 @@ pub trait Reader {
     /// ```
     fn read_until<'b>(
         &'b mut self,
-        needle: &[char],
+        needle: &[u8],
         char_buf: &'b mut [u8; 4],
-    ) -> Result<Option<&'b str>, Self::Error> {
+    ) -> Result<Option<&'b [u8]>, Self::Error> {
         let _needle = needle;
 
-        match self.read_char()? {
-            Some(x) => Ok(Some(&*x.encode_utf8(char_buf))),
+        match self.read_byte()? {
+            Some(x) => {
+                char_buf[0] = x;
+                Ok(Some(&char_buf[..1]))
+            }
             None => Ok(None),
         }
     }
@@ -121,13 +126,13 @@ impl<'a, R: 'a + Reader> Readable<'a> for R {
 /// for token in Tokenizer::new(html).infallible() {
 ///     match token {
 ///         Token::StartTag(tag) => {
-///             write!(new_html, "<{}>", tag.name).unwrap();
+///             write!(new_html, "<{}>", String::from_utf8_lossy(&tag.name)).unwrap();
 ///         }
 ///         Token::String(hello_world) => {
-///             write!(new_html, "{}", hello_world).unwrap();
+///             write!(new_html, "{}", String::from_utf8_lossy(&hello_world)).unwrap();
 ///         }
 ///         Token::EndTag(tag) => {
-///             write!(new_html, "</{}>", tag.name).unwrap();
+///             write!(new_html, "</{}>", String::from_utf8_lossy(&tag.name)).unwrap();
 ///         }
 ///         _ => panic!("unexpected input"),
 ///     }
@@ -136,68 +141,60 @@ impl<'a, R: 'a + Reader> Readable<'a> for R {
 /// assert_eq!(new_html, "<title>hello world</title>");
 /// ```
 pub struct StringReader<'a> {
-    input: &'a str,
-    cursor: std::str::Chars<'a>,
-    pos: usize,
+    input: &'a [u8],
 }
 
 impl<'a> StringReader<'a> {
-    fn new(input: &'a str) -> Self {
-        let cursor = input.chars();
-        StringReader {
-            input,
-            cursor,
-            pos: 0,
-        }
+    fn new(input: &'a [u8]) -> Self {
+        StringReader { input }
     }
 }
 
 impl<'a> Reader for StringReader<'a> {
     type Error = Never;
 
-    fn read_char(&mut self) -> Result<Option<char>, Self::Error> {
-        let c = match self.cursor.next() {
-            Some(c) => c,
-            None => return Ok(None),
-        };
-        self.pos += c.len_utf8();
-        Ok(Some(c))
+    fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
+        if self.input.is_empty() {
+            Ok(None)
+        } else {
+            let rv = self.input[0];
+            self.input = &self.input[1..];
+            Ok(Some(rv))
+        }
     }
 
     fn read_until<'b>(
         &'b mut self,
-        needle: &[char],
+        needle: &[u8],
         _: &'b mut [u8; 4],
-    ) -> Result<Option<&'b str>, Self::Error> {
-        if let Some(input) = self.input.get(self.pos..) {
-            if let Some(needle_pos) = fast_find(needle, input) {
-                if needle_pos == 0 {
-                    let needle = self.cursor.next().unwrap();
-                    self.pos += needle.len_utf8();
-                    Ok(Some(&input[..needle.len_utf8()]))
-                } else {
-                    self.pos += needle_pos;
-                    let (s1, s2) = input.split_at(needle_pos);
-                    self.cursor = s2.chars();
-                    Ok(Some(s1))
-                }
+    ) -> Result<Option<&'b [u8]>, Self::Error> {
+        if self.input.is_empty() {
+            return Ok(None);
+        }
+
+        if let Some(needle_pos) = fast_find(needle, self.input) {
+            if needle_pos == 0 {
+                let (rv, new_input) = self.input.split_at(1);
+                self.input = new_input;
+                Ok(Some(rv))
             } else {
-                self.pos = self.input.len() + 1;
-                self.cursor = "".chars();
-                Ok(Some(input))
+                let (rv, new_input) = self.input.split_at(needle_pos);
+                self.input = new_input;
+                Ok(Some(rv))
             }
         } else {
-            Ok(None)
+            let rv = self.input;
+            self.input = b"";
+            Ok(Some(rv))
         }
     }
 
-    fn try_read_string(&mut self, s1: &str, case_sensitive: bool) -> Result<bool, Self::Error> {
+    fn try_read_string(&mut self, s1: &[u8], case_sensitive: bool) -> Result<bool, Self::Error> {
         // we do not need to call validate_char here because `s` hopefully does not contain invalid
         // characters
-        if let Some(s2) = self.input.get(self.pos..self.pos + s1.len()) {
+        if let Some(s2) = self.input.get(..s1.len()) {
             if s1 == s2 || (!case_sensitive && s1.eq_ignore_ascii_case(s2)) {
-                self.pos += s1.len();
-                self.cursor = self.input[self.pos..].chars();
+                self.input = &self.input[s1.len()..];
                 return Ok(true);
             }
         }
@@ -210,7 +207,7 @@ impl<'a> Readable<'a> for &'a str {
     type Reader = StringReader<'a>;
 
     fn to_reader(self) -> Self::Reader {
-        StringReader::new(self)
+        StringReader::new(self.as_bytes())
     }
 }
 
@@ -218,23 +215,45 @@ impl<'a> Readable<'a> for &'a String {
     type Reader = StringReader<'a>;
 
     fn to_reader(self) -> Self::Reader {
-        StringReader::new(self.as_str())
+        StringReader::new(self.as_bytes())
     }
 }
 
-/// A [`BufReadReader`] can be used to construct a tokenizer from any type that implements
-/// `BufRead`.
+impl<'a> Readable<'a> for &'a Vec<u8> {
+    type Reader = StringReader<'a>;
+
+    fn to_reader(self) -> Self::Reader {
+        StringReader::new(self.as_slice())
+    }
+}
+
+impl<'a> Readable<'a> for &'a [u8] {
+    type Reader = StringReader<'a>;
+
+    fn to_reader(self) -> Self::Reader {
+        StringReader::new(self)
+    }
+}
+
+/// A [`IoReader`] can be used to construct a tokenizer from any type that implements
+/// `std::io::Read`.
+///
+/// Because of trait impl conflicts, `IoReader` needs to be explicitly constructed. The exception
+/// to that is `File`, which can be directly passed to `Tokenizer::new`.
+///
+/// When passing `Read`-types into html5gum, no I/O buffering is required. html5gum maintains its
+/// own read-buffer (16kb, heap-allocated) such that it can be accessed directly. Put more simply,
+/// it's wasteful to wrap your `File` in a `std::io::BufReader` before passing it to html5gum.
 ///
 /// Example:
 ///
 /// ```rust
-/// use std::io::BufReader;
 /// use std::fmt::Write;
-/// use html5gum::{Token, BufReadReader, Tokenizer};
+/// use html5gum::{Token, IoReader, Tokenizer};
 ///
-/// let tokenizer = Tokenizer::new(BufReader::new("<title>hello world</title>".as_bytes()));
-/// // or alternatively:
-/// // tokenizer = Tokenizer::new(BufReadReader::new(BufReader::new("...".as_bytes())));
+/// let tokenizer = Tokenizer::new(IoReader::new("<title>hello world</title>".as_bytes()));
+/// // more realistically: Tokenizer::new(File::open("index.html")?)
+/// // long-form: Tokenizer::new(IoReader::new(File::open("index.html")?))
 ///
 /// let mut new_html = String::new();
 ///
@@ -243,13 +262,13 @@ impl<'a> Readable<'a> for &'a String {
 ///
 ///     match token {
 ///         Token::StartTag(tag) => {
-///             write!(new_html, "<{}>", tag.name).unwrap();
+///             write!(new_html, "<{}>", String::from_utf8_lossy(&tag.name)).unwrap();
 ///         }
 ///         Token::String(hello_world) => {
-///             write!(new_html, "{}", hello_world).unwrap();
+///             write!(new_html, "{}", String::from_utf8_lossy(&hello_world)).unwrap();
 ///         }
 ///         Token::EndTag(tag) => {
-///             write!(new_html, "</{}>", tag.name).unwrap();
+///             write!(new_html, "</{}>", String::from_utf8_lossy(&tag.name)).unwrap();
 ///         }
 ///         _ => panic!("unexpected input"),
 ///     }
@@ -258,82 +277,98 @@ impl<'a> Readable<'a> for &'a String {
 ///
 /// assert_eq!(new_html, "<title>hello world</title>");
 /// ```
-pub struct BufReadReader<R: BufRead> {
-    line: String,
-    line_pos: usize,
+pub struct IoReader<R: Read> {
+    buf: Box<[u8; BUF_SIZE]>,
+    buf_offset: usize,
+    buf_len: usize,
     reader: R,
 }
 
-impl<R: BufRead> BufReadReader<R> {
-    /// Construct a new `BufReadReader` from any type that implements `BufRead`.
+const BUF_SIZE: usize = 16 * 1024;
+
+impl<R: Read> IoReader<R> {
+    /// Construct a new `BufReadReader` from any type that implements `Read`.
     pub fn new(reader: R) -> Self {
-        BufReadReader {
-            line: String::new(),
-            line_pos: 0,
+        IoReader {
+            buf: Box::new([0; BUF_SIZE]),
+            buf_offset: 0,
+            buf_len: 0,
             reader,
         }
     }
 
     #[inline]
-    fn prepare_line(&mut self) -> Result<(), io::Error> {
-        if self.line_pos >= self.line.len() {
-            self.line.clear();
-            self.line_pos = 0;
-            self.reader.read_line(&mut self.line)?;
+    fn prepare_buf(&mut self, min_len: usize) -> Result<(), io::Error> {
+        // XXX: we don't do any utf8 validation here anymore
+        debug_assert!(min_len < BUF_SIZE);
+        let mut len = self.buf_len - self.buf_offset;
+        if len < min_len {
+            let mut raw_buf = &mut self.buf[..];
+            raw_buf.rotate_left(self.buf_offset);
+            raw_buf = &mut raw_buf[len..];
+            while len < min_len {
+                let n = self.reader.read(raw_buf)?;
+                if n == 0 {
+                    break;
+                }
+                len += n;
+                raw_buf = &mut raw_buf[n..];
+            }
+            self.buf_len = len;
+            self.buf_offset = 0;
         }
         Ok(())
     }
-
-    #[inline]
-    fn get_remaining_line(&mut self) -> Result<&str, io::Error> {
-        self.prepare_line()?;
-        Ok(&self.line[self.line_pos..])
-    }
 }
 
-impl<R: BufRead> Reader for BufReadReader<R> {
+impl<R: Read> Reader for IoReader<R> {
     type Error = io::Error;
 
-    fn read_char(&mut self) -> Result<Option<char>, Self::Error> {
-        let rv = self.get_remaining_line()?.chars().next();
-        self.line_pos += rv.map(char::len_utf8).unwrap_or(1);
+    fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
+        self.prepare_buf(1)?;
+        if self.buf_offset == self.buf_len {
+            return Ok(None);
+        }
+        let rv = self.buf.get(self.buf_offset).copied();
+        if rv.is_some() {
+            self.buf_offset += 1;
+        }
         Ok(rv)
     }
 
-    fn try_read_string(&mut self, s1: &str, case_sensitive: bool) -> Result<bool, Self::Error> {
-        debug_assert!(!s1.contains('\r'));
-        debug_assert!(!s1.contains('\n'));
+    fn try_read_string(&mut self, s1: &[u8], case_sensitive: bool) -> Result<bool, Self::Error> {
+        debug_assert!(!s1.contains(&b'\r'));
+        debug_assert!(!s1.contains(&b'\n'));
 
-        if let Some(s2) = self.get_remaining_line()?.get(..s1.len()) {
-            if s1 == s2 || (!case_sensitive && s1.eq_ignore_ascii_case(s2)) {
-                self.line_pos += s1.len();
-                return Ok(true);
-            }
+        self.prepare_buf(s1.len())?;
+        let s2 = &self.buf[self.buf_offset..min(self.buf_offset + s1.len(), self.buf_len)];
+        if s1 == s2 || (!case_sensitive && s1.eq_ignore_ascii_case(s2)) {
+            self.buf_offset += s1.len();
+            Ok(true)
+        } else {
+            Ok(false)
         }
-
-        Ok(false)
     }
 
     fn read_until<'b>(
         &'b mut self,
-        needle: &[char],
+        needle: &[u8],
         _: &'b mut [u8; 4],
-    ) -> Result<Option<&'b str>, Self::Error> {
-        self.prepare_line()?;
-        let line = &self.line[self.line_pos..];
-        if !line.is_empty() {
-            if let Some(needle_pos) = fast_find(needle, line) {
+    ) -> Result<Option<&'b [u8]>, Self::Error> {
+        self.prepare_buf(4)?;
+        let buf = &self.buf[self.buf_offset..self.buf_len];
+        if !buf.is_empty() {
+            if let Some(needle_pos) = fast_find(needle, buf) {
                 if needle_pos == 0 {
-                    let len = line.chars().next().unwrap().len_utf8();
-                    self.line_pos += len;
-                    Ok(Some(&line[..len]))
+                    self.buf_offset += 1;
+                    Ok(Some(&buf[..1]))
                 } else {
-                    self.line_pos += needle_pos;
-                    Ok(Some(&line[..needle_pos]))
+                    self.buf_offset += needle_pos;
+                    Ok(Some(&buf[..needle_pos]))
                 }
             } else {
-                self.line_pos += line.len();
-                Ok(Some(line))
+                self.buf_offset += buf.len();
+                Ok(Some(buf))
             }
         } else {
             Ok(None)
@@ -341,31 +376,30 @@ impl<R: BufRead> Reader for BufReadReader<R> {
     }
 }
 
-impl<'a, R: Read + 'a> Readable<'a> for BufReader<R> {
-    type Reader = BufReadReader<BufReader<R>>;
+impl<'a> Readable<'a> for File {
+    type Reader = IoReader<File>;
 
     fn to_reader(self) -> Self::Reader {
-        BufReadReader::new(self)
+        IoReader::new(self)
     }
 }
 
 #[inline]
-fn fast_find(needle: &[char], haystack: &str) -> Option<usize> {
+fn fast_find(needle: &[u8], haystack: &[u8]) -> Option<usize> {
     #[cfg(feature = "memchr")]
     if needle.iter().all(|x| x.is_ascii()) {
         if needle.len() == 3 {
-            return memchr::memchr3(
-                needle[0] as u8,
-                needle[1] as u8,
-                needle[2] as u8,
-                haystack.as_bytes(),
-            );
+            return memchr::memchr3(needle[0], needle[1], needle[2], haystack);
         } else if needle.len() == 2 {
-            return memchr::memchr2(needle[0] as u8, needle[1] as u8, haystack.as_bytes());
+            return memchr::memchr2(needle[0], needle[1], haystack);
         } else if needle.len() == 1 {
-            return memchr::memchr(needle[0] as u8, haystack.as_bytes());
+            return memchr::memchr(needle[0], haystack);
         }
     }
 
-    haystack.find(needle)
+    let (i, _) = haystack
+        .iter()
+        .enumerate()
+        .find(|(_, &b)| needle.contains(&b))?;
+    Some(i)
 }

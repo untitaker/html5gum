@@ -1,3 +1,4 @@
+use crate::char_validator::CharValidator;
 use crate::machine;
 use crate::machine_helper::MachineHelper;
 use crate::read_helper::ReadHelper;
@@ -7,6 +8,7 @@ use crate::{DefaultEmitter, Emitter, Never, Readable, Reader};
 /// A HTML tokenizer. See crate-level docs for basic usage.
 pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
     eof: bool,
+    pub(crate) validator: CharValidator,
     pub(crate) emitter: E,
     pub(crate) reader: ReadHelper<R>,
     pub(crate) machine_helper: MachineHelper,
@@ -33,6 +35,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     pub fn new_with_emitter<'a, S: Readable<'a, Reader = R>>(input: S, emitter: E) -> Self {
         Tokenizer {
             eof: false,
+            validator: CharValidator::default(),
             emitter,
             reader: ReadHelper::new(input.to_reader()),
             machine_helper: MachineHelper::default(),
@@ -60,7 +63,8 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     /// Only available with the `integration-tests` feature which is not public API.
     #[cfg(feature = "integration-tests")]
     pub fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
-        self.emitter.set_last_start_tag(last_start_tag);
+        self.emitter
+            .set_last_start_tag(last_start_tag.map(str::as_bytes));
     }
 }
 
@@ -75,6 +79,7 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
                 match machine::consume(self) {
                     Ok(ControlToken::Continue) => (),
                     Ok(ControlToken::Eof) => {
+                        self.validator.flush_character_error(&mut self.emitter);
                         self.eof = true;
                         self.emitter.emit_eof();
                     }

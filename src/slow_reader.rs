@@ -6,11 +6,11 @@ pub struct SlowReader<R: Reader>(pub R);
 impl<R: Reader> Reader for SlowReader<R> {
     type Error = R::Error;
 
-    fn read_char(&mut self) -> Result<Option<char>, Self::Error> {
-        self.0.read_char()
+    fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
+        self.0.read_byte()
     }
 
-    fn try_read_string(&mut self, s: &str, case_sensitive: bool) -> Result<bool, Self::Error> {
+    fn try_read_string(&mut self, s: &[u8], case_sensitive: bool) -> Result<bool, Self::Error> {
         self.0.try_read_string(s, case_sensitive)
     }
 }

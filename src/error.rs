@@ -3,7 +3,7 @@ macro_rules! impl_error {
         $string:literal <=> $variant:ident,
     )*) => {
         /// All [parsing errors](https://html.spec.whatwg.org/#parse-errors) this tokenizer can emit.
-        #[derive(Debug, Eq, PartialEq)]
+        #[derive(Debug, Eq, PartialEq, Clone, Copy)]
         pub enum Error {
             $(
                 #[doc = "This error corresponds to the `$literal` error found in the WHATWG spec."]

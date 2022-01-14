@@ -12,22 +12,6 @@ macro_rules! control_pat {
 
 pub(crate) use control_pat;
 
-macro_rules! ascii_digit_pat {
-    () => {
-        '0'..='9'
-    };
-}
-
-pub(crate) use ascii_digit_pat;
-
-macro_rules! whitespace_pat {
-    () => {
-        '\t' | '\u{0A}' | '\u{0C}' | ' '
-    };
-}
-
-pub(crate) use whitespace_pat;
-
 macro_rules! noncharacter_pat {
     () => {
         0xfdd0
@@ -171,10 +155,10 @@ macro_rules! ctostr {
 pub(crate) use ctostr;
 
 /// Repeatedly call `f` with chunks of lowercased characters from `s`.
-pub(crate) fn with_lowercase_str(s: &str, mut f: impl FnMut(&str)) {
-    if s.chars().any(|x| x.is_ascii_uppercase()) {
-        for x in s.chars() {
-            f(ctostr!(x.to_ascii_lowercase()))
+pub(crate) fn with_lowercase_str(s: &[u8], mut f: impl FnMut(&[u8])) {
+    if s.iter().any(|x| x.is_ascii_uppercase()) {
+        for x in s {
+            f(&[x.to_ascii_lowercase()]);
         }
     } else {
         f(s);

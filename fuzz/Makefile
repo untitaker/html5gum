@@ -6,6 +6,11 @@ export FUZZ_OLD_HTML5GUM := 0
 # Add html5ever to fuzzing
 export FUZZ_HTML5EVER := 0
 # Ignore errors while diffing to paper over bugs in old html5gum
+#           order = ignore sort order of errors relative to other non-error
+#                   tokens (not relative to each other)
+#               1 = ignore all errors
+# if-reference-contains:XYZ = ignore all errors if one of the ones emitted by old html5gum is equal to XYZ (e.g. "if-reference-contains:duplicate-attribute")
+# any other value = assert exact token equality
 export FUZZ_IGNORE_PARSE_ERRORS := 0
 # CLI arguments to pass to AFL. useful for multiprocessing
 export _AFL_OPTS := -M fuzzer01
@@ -21,22 +26,25 @@ in:
 	curl https://docs.sentry.io/ > in/sentrydocs.html
 	cat ../tests/html5lib-tests/tokenizer/*.tests | jq -r '.tests[].input' > in/html5lib-tokenizer-tests.html
 
-setup-afl: in
+setup-afl:
 	which cargo-afl || cargo install afl
 	CARGO_TARGET_DIR=./target-afl/ cargo afl build --bin html5gum-fuzz-afl
 
-afl: setup-afl
+afl: in setup-afl
 	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
 
-afl-next:
-	set -e && for f in $$(echo out/*/crashes/id:* | sort); do \
+afl-next: setup-afl
+	set -e && for f in out/*/crashes/id:*; do \
 		echo $$f; \
 		if ! $(MAKE) cli < $$f; then \
 			cargo afl tmin -i $$f -o /tmp/html5gum-mintest ${AFL_TARGET_BIN}; \
-			echo /tmp/html5gum-mintest; \
+			echo new test input written to /tmp/html5gum-mintest; \
 			echo ----; \
-			cat -v /tmp/html5gum-mintest; \
-			echo; \
+			echo "hexyl preview:"; \
+			hexyl /tmp/html5gum-mintest || true; \
+			echo ----; \
+			echo "json string:"; \
+			cat /tmp/html5gum-mintest | jq -Ra . || true; \
 			echo ----; \
 			exit 2; \
 		else \
@@ -45,7 +53,9 @@ afl-next:
 	done
 
 afl-skip:
-	set -e && for f in $$(echo out/*/crashes/id:* | sort); do \
+	# relies on the same order as in afl-next, see
+	# https://serverfault.com/a/122743/520816
+	set -e && for f in out/*/crashes/id:*; do \
 		rm $$f; \
 		break; \
 	done
