@@ -10,8 +10,8 @@ use pretty_assertions::assert_eq;
 pub fn run(s: &[u8]) {
     let mut did_anything = env::var("FUZZ_BASIC").unwrap() == "1";
 
-    // unconditionally run tokenizer against raw bytes, it should never crash. unclear whether this
-    // is optimized away, unlikely though.
+    // unconditionally run tokenizer against raw bytes, it should never crash. we rely on running
+    // in debug mode such that this is not just simply optimized away
     let testing_tokenizer = html5gum::Tokenizer::new(s).infallible();
     for _ in testing_tokenizer {}
 
