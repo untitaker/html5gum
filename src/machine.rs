@@ -75,12 +75,16 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         };
     }
 
+    /// Produce error for current character. The error will be emitted once the character's bytes
+    /// have been fully consumed (and after any errors originating from pre-processing the input
+    /// stream bytes)
     macro_rules! error {
         ($e:expr) => {
             slf.validator.set_character_error(&mut slf.emitter, $e);
         };
     }
 
+    /// Produce error for a previous character, emit immediately.
     macro_rules! error_immediate {
         ($e:expr) => {
             error!($e);
@@ -99,7 +103,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     switch_to!(State::TagOpen)
                 }
                 Some(b"\0") => {
-                    error_immediate!(Error::UnexpectedNullCharacter);
+                    error!(Error::UnexpectedNullCharacter);
                     slf.emitter.emit_string(b"\0");
                     cont!()
                 }
@@ -683,7 +687,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::AfterAttributeName)
             }
             Some(b'=') => {
-                error_immediate!(Error::UnexpectedEqualsSignBeforeAttributeName);
+                error!(Error::UnexpectedEqualsSignBeforeAttributeName);
                 slf.emitter.init_attribute();
                 slf.emitter.push_attribute_name("=".as_bytes());
                 switch_to!(State::AttributeName)
@@ -754,7 +758,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 switch_to!(State::AttributeValueSingleQuoted)
             }
             Some(b'>') => {
-                error_immediate!(Error::MissingAttributeValue);
+                error!(Error::MissingAttributeValue);
                 slf.emitter.emit_current_tag();
                 switch_to!(State::Data)
             }
@@ -1088,7 +1092,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                 reconsume_in!(c, State::BeforeDoctypeName)
             }
             None => {
-                error_immediate!(Error::EofInDoctype);
+                error!(Error::EofInDoctype);
                 slf.emitter.init_doctype();
                 slf.emitter.set_force_quirks();
                 slf.emitter.emit_current_doctype();
