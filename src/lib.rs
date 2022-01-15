@@ -20,7 +20,10 @@ mod utils;
 mod slow_reader;
 
 #[cfg(feature = "integration-tests")]
-pub use {slow_reader::SlowReader, utils::{State, trace_log, OUTPUT}};
+pub use {
+    slow_reader::SlowReader,
+    utils::{trace_log, State, OUTPUT},
+};
 
 pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;

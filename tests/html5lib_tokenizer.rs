@@ -2,14 +2,14 @@ use std::ops::Deref;
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
 
 use html5gum::{
-    Doctype, EndTag, Error, IoReader, Readable, Reader, SlowReader, StartTag, State, Token, 
-    Tokenizer, trace_log, OUTPUT
+    trace_log, Doctype, EndTag, Error, IoReader, Readable, Reader, SlowReader, StartTag, State,
+    Token, Tokenizer, OUTPUT,
 };
 
+use glob::glob;
+use libtest_mimic::{run_tests, Arguments, Outcome, Test};
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
-use glob::glob;
-use libtest_mimic::{Arguments, Test, Outcome, run_tests};
 
 #[cfg(not(feature = "integration-tests"))]
 compile_error!(
@@ -272,13 +272,17 @@ fn produce_testcases_from_file(tests: &mut Vec<Test<TestCase>>, path: &Path) {
 
     let f = File::open(path).unwrap();
     let bf = BufReader::new(f);
-    let TestFile { tests: declarations } = serde_json::from_reader(bf).unwrap();
+    let TestFile {
+        tests: declarations,
+    } = serde_json::from_reader(bf).unwrap();
 
     for (test_i, mut declaration) in declarations.into_iter().enumerate() {
         if declaration.double_escaped {
             declaration.input.0 = unescape(&declaration.input.0);
 
-            declaration.output.0 = declaration.output.0
+            declaration.output.0 = declaration
+                .output
+                .0
                 .into_iter()
                 .map(|token| match token {
                     Token::String(x) => Token::String(unescape(x.as_slice())),
@@ -289,9 +293,17 @@ fn produce_testcases_from_file(tests: &mut Vec<Test<TestCase>>, path: &Path) {
         }
 
         for state in &declaration.initial_states {
-            for &reader_type in &[ReaderType::SlowString, ReaderType::String, ReaderType::BufRead, ReaderType::SlowBufRead] {
+            for &reader_type in &[
+                ReaderType::SlowString,
+                ReaderType::String,
+                ReaderType::BufRead,
+                ReaderType::SlowBufRead,
+            ] {
                 tests.push(Test {
-                    name: format!("{}:{}:{:?}:{:?}", fname, declaration.description, state.0, reader_type),
+                    name: format!(
+                        "{}:{}:{:?}:{:?}",
+                        fname, declaration.description, state.0, reader_type
+                    ),
                     kind: "".into(),
                     is_ignored: false,
                     is_bench: false,
@@ -301,7 +313,7 @@ fn produce_testcases_from_file(tests: &mut Vec<Test<TestCase>>, path: &Path) {
                         filename: fname.to_owned(),
                         test_i,
                         declaration: declaration.clone(),
-                    }
+                    },
                 });
             }
         }
@@ -331,9 +343,14 @@ fn main() {
 
             match test.reader_type {
                 ReaderType::String => run_test(test, Tokenizer::new(string.to_reader())),
-                ReaderType::SlowString => run_test(test, Tokenizer::new(SlowReader(string.to_reader()))),
+                ReaderType::SlowString => {
+                    run_test(test, Tokenizer::new(SlowReader(string.to_reader())))
+                }
                 ReaderType::BufRead => run_test(test, Tokenizer::new(IoReader::new(string))),
-                ReaderType::SlowBufRead => run_test(test, Tokenizer::new(SlowReader(IoReader::new(string).to_reader()))),
+                ReaderType::SlowBufRead => run_test(
+                    test,
+                    Tokenizer::new(SlowReader(IoReader::new(string).to_reader())),
+                ),
             }
         });
 
@@ -350,20 +367,20 @@ fn main() {
 
                 msg.push_str("\n");
                 if let Some(s) = e
-        // Try to convert it to a String, then turn that into a str
-        .downcast_ref::<String>()
-        .map(String::as_str)
-        // If that fails, try to turn it into a &'static str
-        .or_else(|| e.downcast_ref::<&'static str>().map(Deref::deref))  {
-
-
+                    // Try to convert it to a String, then turn that into a str
+                    .downcast_ref::<String>()
+                    .map(String::as_str)
+                    // If that fails, try to turn it into a &'static str
+                    .or_else(|| e.downcast_ref::<&'static str>().map(Deref::deref))
+                {
                     msg.push_str(s);
                 }
 
                 Outcome::Failed { msg: Some(msg) }
             }
         }
-    }).exit();
+    })
+    .exit();
 }
 
 fn run_test<R: Reader>(test: &TestCase, mut tokenizer: Tokenizer<R>) {

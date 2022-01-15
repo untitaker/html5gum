@@ -1,4 +1,4 @@
-use crate::utils::{State, trace_log};
+use crate::utils::{trace_log, State};
 use crate::Emitter;
 
 pub(crate) struct MachineHelper {

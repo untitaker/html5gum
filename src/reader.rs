@@ -91,7 +91,6 @@ pub trait Reader {
     }
 }
 
-
 /// An object that can be converted into a [`crate::Reader`].
 ///
 /// For example, any utf8-string can be converted into a `StringReader`, such that
