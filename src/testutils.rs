@@ -3,13 +3,13 @@
 //! Those tests should only test public API surface in general, with some exceptions as provided by
 //! this module.
 use crate::Reader;
-use std::sync::Mutex;
+use std::cell::Cell;
 
 pub use crate::utils::State;
 
 thread_local! {
     /// Buffer of all debugging output logged internally by html5gum.
-    pub static OUTPUT: Mutex<String> = Default::default();
+    pub static OUTPUT: Cell<String> = Default::default();
 }
 
 /// Simple debug logger for tests.
@@ -20,8 +20,8 @@ thread_local! {
 ///
 /// A noop version for non-test builds is implemented in src/lib.rs
 pub fn trace_log(msg: String) {
-    OUTPUT.with(|lock| {
-        let mut buf = lock.lock().unwrap();
+    OUTPUT.with(|cell| {
+        let mut buf = cell.take();
         buf.push_str(&msg);
         buf.push('\n');
 
@@ -29,6 +29,8 @@ pub fn trace_log(msg: String) {
             buf.clear();
             buf.push_str("[truncated output]\n");
         }
+
+        cell.set(buf);
     });
 }
 

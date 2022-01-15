@@ -358,10 +358,11 @@ fn main() {
             Err(e) => {
                 let mut msg = String::new();
 
-                OUTPUT.with(|lock| {
-                    let mut buf = lock.lock().unwrap();
+                OUTPUT.with(|cell| {
+                    let mut buf = cell.take();
                     msg.push_str(&buf);
                     buf.clear();
+                    cell.set(buf);
                 });
 
                 msg.push_str("\n");
