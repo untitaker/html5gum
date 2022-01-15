@@ -1,8 +1,9 @@
+use std::ops::Deref;
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
 
 use html5gum::{
     Doctype, EndTag, Error, IoReader, Readable, Reader, SlowReader, StartTag, State, Token, 
-    Tokenizer, 
+    Tokenizer, trace_log, OUTPUT
 };
 
 use pretty_assertions::assert_eq;
@@ -290,7 +291,7 @@ fn produce_testcases_from_file(tests: &mut Vec<Test<TestCase>>, path: &Path) {
         for state in &declaration.initial_states {
             for &reader_type in &[ReaderType::SlowString, ReaderType::String, ReaderType::BufRead, ReaderType::SlowBufRead] {
                 tests.push(Test {
-                    name: declaration.description.clone(),
+                    name: format!("{}:{}:{:?}:{:?}", fname, declaration.description, state.0, reader_type),
                     kind: "".into(),
                     is_ignored: false,
                     is_bench: false,
@@ -317,24 +318,51 @@ fn main() {
     }
 
     run_tests(&args, tests, |test| {
-        let test = &test.data;
+        let result = std::panic::catch_unwind(move || {
+            let test = &test.data;
 
-        println!(
-            "==== FILE {}, TEST {}, STATE {:?}, TOKENIZER {:?} ====",
-            test.filename, test.test_i, test.state, test.reader_type,
-        );
-        println!("description: {}", test.declaration.description);
+            trace_log(format!(
+                "==== FILE {}, TEST {}, STATE {:?}, TOKENIZER {:?} ====",
+                test.filename, test.test_i, test.state, test.reader_type,
+            ));
+            trace_log(format!("description: {}", test.declaration.description));
 
-        let string = test.declaration.input.0.as_slice();
+            let string = test.declaration.input.0.as_slice();
 
-        match test.reader_type {
-            ReaderType::String => run_test(test, Tokenizer::new(string.to_reader())),
-            ReaderType::SlowString => run_test(test, Tokenizer::new(SlowReader(string.to_reader()))),
-            ReaderType::BufRead => run_test(test, Tokenizer::new(IoReader::new(string))),
-            ReaderType::SlowBufRead => run_test(test, Tokenizer::new(SlowReader(IoReader::new(string).to_reader()))),
+            match test.reader_type {
+                ReaderType::String => run_test(test, Tokenizer::new(string.to_reader())),
+                ReaderType::SlowString => run_test(test, Tokenizer::new(SlowReader(string.to_reader()))),
+                ReaderType::BufRead => run_test(test, Tokenizer::new(IoReader::new(string))),
+                ReaderType::SlowBufRead => run_test(test, Tokenizer::new(SlowReader(IoReader::new(string).to_reader()))),
+            }
+        });
+
+        match result {
+            Ok(_) => Outcome::Passed,
+            Err(e) => {
+                let mut msg = String::new();
+
+                OUTPUT.with(|lock| {
+                    let mut buf = lock.lock().unwrap();
+                    msg.push_str(&buf);
+                    buf.clear();
+                });
+
+                msg.push_str("\n");
+                if let Some(s) = e
+        // Try to convert it to a String, then turn that into a str
+        .downcast_ref::<String>()
+        .map(String::as_str)
+        // If that fails, try to turn it into a &'static str
+        .or_else(|| e.downcast_ref::<&'static str>().map(Deref::deref))  {
+
+
+                    msg.push_str(s);
+                }
+
+                Outcome::Failed { msg: Some(msg) }
+            }
         }
-
-        Outcome::Passed
     }).exit();
 }
 

@@ -164,3 +164,20 @@ pub(crate) fn with_lowercase_str(s: &[u8], mut f: impl FnMut(&[u8])) {
         f(s);
     }
 }
+
+#[cfg(feature = "integration-tests")]
+thread_local! {
+    pub static OUTPUT: std::sync::Mutex<String> = Default::default();
+}
+
+#[cfg(feature = "integration-tests")]
+pub fn trace_log(msg: String) {
+    OUTPUT.with(|lock| {
+        let mut buf = lock.lock().unwrap();
+        buf.push_str(&msg);
+        buf.push_str("\n");
+    });
+}
+
+#[cfg(not(feature = "integration-tests"))]
+pub fn trace_log(_: String) {}
