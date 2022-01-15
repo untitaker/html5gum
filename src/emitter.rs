@@ -417,7 +417,7 @@ impl Emitter for DefaultEmitter {
 }
 
 /// A HTML end/close tag, such as `<p>` or `<a>`.
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct StartTag {
     /// Whether this tag is self-closing. If it is self-closing, no following [`EndTag`] should be
     /// expected.
@@ -434,7 +434,7 @@ pub struct StartTag {
 }
 
 /// A HTML end/close tag, such as `</p>` or `</a>`.
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct EndTag {
     /// The ending tag's name, such as `"p"` or `"a"`.
     pub name: HtmlString,
@@ -446,7 +446,7 @@ pub struct EndTag {
 /// * `<!DOCTYPE {name} PUBLIC '{public_identifier}'>`
 /// * `<!DOCTYPE {name} SYSTEM '{system_identifier}'>`
 /// * `<!DOCTYPE {name} PUBLIC '{public_identifier}' '{system_identifier}'>`
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Doctype {
     /// The ["force quirks"](https://html.spec.whatwg.org/#force-quirks-flag) flag.
     pub force_quirks: bool,
@@ -463,7 +463,7 @@ pub struct Doctype {
 
 /// The token type used by default. You can define your own token type by implementing the
 /// [`crate::Emitter`] trait and using [`crate::Tokenizer::new_with_emitter`].
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Token {
     /// A HTML start tag.
     StartTag(StartTag),
