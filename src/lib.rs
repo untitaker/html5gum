@@ -23,13 +23,6 @@ mod utils;
 #[cfg(feature = "integration-tests")]
 pub mod testutils;
 
-pub(crate) fn trace_log(msg: &str) {
-    #[cfg(feature = "integration-tests")]
-    testutils::trace_log(msg);
-    #[cfg(not(feature = "integration-tests"))]
-    let _ = msg;
-}
-
 pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
 pub use never::Never;

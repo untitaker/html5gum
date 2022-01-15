@@ -158,3 +158,22 @@ pub(crate) fn with_lowercase_str(s: &[u8], mut f: impl FnMut(&[u8])) {
         f(s);
     }
 }
+
+// having this be a macro is performance critical. rustc appears to be unable to optimize away code
+// like this:
+//
+// ```rust
+// fn noop(s: &str) {}
+//
+// noop(&format!("foo"));
+// ```
+//
+// format!() + its string allocation still exists in resulting code
+macro_rules! trace_log {
+    ($($tt:tt)*) => {{
+        #[cfg(feature = "integration-tests")]
+        crate::testutils::trace_log(&format!($($tt)*));
+    }};
+}
+
+pub(crate) use trace_log;

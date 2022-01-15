@@ -1,5 +1,5 @@
-use crate::utils::State;
-use crate::{trace_log, Emitter};
+use crate::utils::{trace_log, State};
+use crate::Emitter;
 
 pub(crate) struct MachineHelper {
     pub temporary_buffer: Vec<u8>,
@@ -66,7 +66,7 @@ impl MachineHelper {
     }
 
     pub(crate) fn switch_to(&mut self, state: State) {
-        trace_log(&format!("switch_to: {:?} -> {:?}", self.state, state));
+        trace_log!("switch_to: {:?} -> {:?}", self.state, state);
         self.state = state;
     }
 }
