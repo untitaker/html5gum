@@ -9,20 +9,20 @@ pub use crate::utils::State;
 
 thread_local! {
     /// Buffer of all debugging output logged internally by html5gum.
-    pub static OUTPUT: Cell<String> = Default::default();
+    pub static OUTPUT: Cell<String> = Cell::default();
 }
 
 /// Simple debug logger for tests.
 ///
-/// The test harness used by tests/html5lib_tokenizer.rs cannot capture stdout, see
-/// https://github.com/LukasKalbertodt/libtest-mimic/issues/9 -- this is much more performant
+/// The test harness used by `tests/html5lib_tokenizer.rs` cannot capture stdout, see [libtest-mimic
+/// issue #9](https://github.com/LukasKalbertodt/libtest-mimic/issues/9) -- this is much more performant
 /// than println anyway though.
 ///
 /// A noop version for non-test builds is implemented in src/lib.rs
-pub fn trace_log(msg: String) {
+pub fn trace_log(msg: &str) {
     OUTPUT.with(|cell| {
         let mut buf = cell.take();
-        buf.push_str(&msg);
+        buf.push_str(msg);
         buf.push('\n');
 
         if buf.len() > 20 * 1024 * 1024 {
@@ -34,7 +34,7 @@ pub fn trace_log(msg: String) {
     });
 }
 
-/// A kind of reader that implements read_until very poorly. Only available in tests
+/// A kind of reader that implements `read_until` very poorly. Only available in tests
 pub struct SlowReader<R: Reader>(pub R);
 
 impl<R: Reader> Reader for SlowReader<R> {

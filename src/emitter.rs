@@ -255,10 +255,10 @@ impl Emitter for DefaultEmitter {
     }
 
     fn init_start_tag(&mut self) {
-        self.current_token = Some(Token::StartTag(Default::default()));
+        self.current_token = Some(Token::StartTag(StartTag::default()));
     }
     fn init_end_tag(&mut self) {
-        self.current_token = Some(Token::EndTag(Default::default()));
+        self.current_token = Some(Token::EndTag(EndTag::default()));
         self.seen_attributes.clear();
     }
 
@@ -275,8 +275,8 @@ impl Emitter for DefaultEmitter {
                 }
                 self.seen_attributes.clear();
             }
-            Token::StartTag(ref mut _tag) => {
-                self.set_last_start_tag(Some(&_tag.name));
+            Token::StartTag(ref mut tag) => {
+                self.set_last_start_tag(Some(&tag.name));
             }
             _ => debug_assert!(false),
         }
@@ -319,10 +319,10 @@ impl Emitter for DefaultEmitter {
     }
     fn push_tag_name(&mut self, s: &[u8]) {
         match self.current_token {
-            Some(Token::StartTag(StartTag { ref mut name, .. })) => {
-                name.extend(s);
-            }
-            Some(Token::EndTag(EndTag { ref mut name, .. })) => {
+            Some(
+                Token::StartTag(StartTag { ref mut name, .. })
+                | Token::EndTag(EndTag { ref mut name, .. }),
+            ) => {
                 name.extend(s);
             }
             _ => debug_assert!(false),

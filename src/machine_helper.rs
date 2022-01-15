@@ -66,7 +66,7 @@ impl MachineHelper {
     }
 
     pub(crate) fn switch_to(&mut self, state: State) {
-        trace_log(format!("switch_to: {:?} -> {:?}", self.state, state));
+        trace_log(&format!("switch_to: {:?} -> {:?}", self.state, state));
         self.state = state;
     }
 }

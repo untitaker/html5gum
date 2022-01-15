@@ -13,7 +13,7 @@ impl<R: Reader> ReadHelper<R> {
         ReadHelper {
             reader,
             last_character_was_cr: false,
-            to_reconsume: Default::default(),
+            to_reconsume: None,
         }
     }
 
@@ -92,6 +92,8 @@ impl<R: Reader> ReadHelper<R> {
     where
         E: Emitter,
     {
+        const MAX_NEEDLE_LEN: usize = 13;
+
         match self.to_reconsume.take() {
             Some(Some(x)) => {
                 return Ok(Some({
@@ -103,14 +105,13 @@ impl<R: Reader> ReadHelper<R> {
             None => (),
         }
 
-        const MAX_NEEDLE_LEN: usize = 13;
         let mut needle2 = [b'\0'; MAX_NEEDLE_LEN];
         // Assert that we will have space for adding \r
         // If not, just bump MAX_NEEDLE_LEN
         debug_assert!(needle.len() < needle2.len());
         needle2[..needle.len()].copy_from_slice(needle);
         needle2[needle.len()] = b'\r';
-        let needle2_slice = &needle2[..needle.len() + 1];
+        let needle2_slice = &needle2[..=needle.len()];
 
         match self.reader.read_until(needle2_slice, char_buf)? {
             Some(b"\r") => {

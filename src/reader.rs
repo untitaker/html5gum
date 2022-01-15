@@ -79,7 +79,7 @@ pub trait Reader {
         needle: &[u8],
         char_buf: &'b mut [u8; 4],
     ) -> Result<Option<&'b [u8]>, Self::Error> {
-        let _needle = needle;
+        let _ = needle;
 
         match self.read_byte()? {
             Some(x) => {
@@ -357,21 +357,19 @@ impl<R: Read> Reader for IoReader<R> {
     ) -> Result<Option<&'b [u8]>, Self::Error> {
         self.prepare_buf(4)?;
         let buf = &self.buf[self.buf_offset..self.buf_len];
-        if !buf.is_empty() {
-            if let Some(needle_pos) = fast_find(needle, buf) {
-                if needle_pos == 0 {
-                    self.buf_offset += 1;
-                    Ok(Some(&buf[..1]))
-                } else {
-                    self.buf_offset += needle_pos;
-                    Ok(Some(&buf[..needle_pos]))
-                }
+        if buf.is_empty() {
+            Ok(None)
+        } else if let Some(needle_pos) = fast_find(needle, buf) {
+            if needle_pos == 0 {
+                self.buf_offset += 1;
+                Ok(Some(&buf[..1]))
             } else {
-                self.buf_offset += buf.len();
-                Ok(Some(buf))
+                self.buf_offset += needle_pos;
+                Ok(Some(&buf[..needle_pos]))
             }
         } else {
-            Ok(None)
+            self.buf_offset += buf.len();
+            Ok(Some(buf))
         }
     }
 }
@@ -387,7 +385,7 @@ impl<'a> Readable<'a> for File {
 #[inline]
 fn fast_find(needle: &[u8], haystack: &[u8]) -> Option<usize> {
     #[cfg(feature = "memchr")]
-    if needle.iter().all(|x| x.is_ascii()) {
+    if needle.iter().all(u8::is_ascii) {
         if needle.len() == 3 {
             return memchr::memchr3(needle[0], needle[1], needle[2], haystack);
         } else if needle.len() == 2 {

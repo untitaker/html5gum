@@ -1,7 +1,7 @@
 use crate::entities::try_read_character_reference;
 use crate::read_helper::fast_read_char;
 use crate::utils::{
-    control_pat, ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken, State,
+    ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken, State,
 };
 use crate::{Emitter, Error, Reader, Tokenizer};
 
@@ -59,7 +59,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
 
     macro_rules! cont {
         () => {{
-            return Ok(ControlToken::Continue);
+            Ok(ControlToken::Continue)
         }};
     }
 
@@ -683,7 +683,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
         },
         State::BeforeAttributeName => match read_byte!()? {
             Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            c @ Some(b'/' | b'>') | c @ None => {
+            c @ (Some(b'/' | b'>') | None) => {
                 reconsume_in!(c, State::AfterAttributeName)
             }
             Some(b'=') => {
@@ -1020,7 +1020,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             }
         },
         State::CommentLessThanSignBangDashDash => match read_byte!()? {
-            c @ Some(b'>') | c @ None => {
+            c @ (Some(b'>') | None) => {
                 reconsume_in!(c, State::CommentEnd)
             }
             c => {
@@ -1649,7 +1649,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
             slf.machine_helper.character_reference_code = 0;
 
             match read_byte!()? {
-                Some(x @ b'x' | x @ b'X') => {
+                Some(x @ (b'x' | b'X')) => {
                     slf.machine_helper.temporary_buffer.push(x as u8);
                     switch_to!(State::HexadecimalCharacterReferenceStart)
                 }
@@ -1715,7 +1715,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     error!(Error::NullCharacterReference);
                     slf.machine_helper.character_reference_code = 0xfffd;
                 }
-                0x110000.. => {
+                0x0011_0000.. => {
                     error!(Error::CharacterReferenceOutsideUnicodeRange);
                     slf.machine_helper.character_reference_code = 0xfffd;
                 }
@@ -1728,7 +1728,7 @@ pub fn consume<R: Reader, E: Emitter>(slf: &mut Tokenizer<R, E>) -> Result<Contr
                     error!(Error::NoncharacterCharacterReference);
                 }
                 // 0x000d, or a control that is not whitespace
-                x @ 0x000d | x @ control_pat!()
+                x @ (0x000d | 0x0d | 0x0000..=0x001f | 0x007f..=0x009f)
                     if !matches!(x, 0x0009 | 0x000a | 0x000c | 0x0020) =>
                 {
                     error!(Error::ControlCharacterReference);

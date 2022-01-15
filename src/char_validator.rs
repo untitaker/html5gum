@@ -33,14 +33,14 @@ impl CharValidator {
             // start of character (ascii)
             self.last_4_bytes = 0;
             self.flush_character_error(emitter);
-            self.validate_last_4_bytes(emitter, next_byte as u32);
+            self.validate_last_4_bytes(emitter, u32::from(next_byte));
         } else if next_byte >= 192 {
             // start of character (non-ascii)
-            self.last_4_bytes = next_byte as u32;
+            self.last_4_bytes = u32::from(next_byte);
             self.flush_character_error(emitter);
         } else {
             self.last_4_bytes <<= 8;
-            self.last_4_bytes |= next_byte as u32;
+            self.last_4_bytes |= u32::from(next_byte);
             self.validate_last_4_bytes(emitter, self.last_4_bytes);
         }
     }
@@ -64,17 +64,17 @@ impl CharValidator {
         // generated with Python 3:
         // ' | '.join(map(hex, sorted([int.from_bytes(chr(x).encode("utf8"), 'big') for x in nonchars])))
         match last_4_bytes {
-            0xefb790 | 0xefb791 | 0xefb792 | 0xefb793 | 0xefb794 | 0xefb795 | 0xefb796
-            | 0xefb797 | 0xefb798 | 0xefb799 | 0xefb79a | 0xefb79b | 0xefb79c | 0xefb79d
-            | 0xefb79e | 0xefb79f | 0xefb7a0 | 0xefb7a1 | 0xefb7a2 | 0xefb7a3 | 0xefb7a4
-            | 0xefb7a5 | 0xefb7a6 | 0xefb7a7 | 0xefb7a8 | 0xefb7a9 | 0xefb7aa | 0xefb7ab
-            | 0xefb7ac | 0xefb7ad | 0xefb7ae | 0xefb7af | 0xefbfbe | 0xefbfbf | 0xf09fbfbe
-            | 0xf09fbfbf | 0xf0afbfbe | 0xf0afbfbf | 0xf0bfbfbe | 0xf0bfbfbf | 0xf18fbfbe
-            | 0xf18fbfbf | 0xf19fbfbe | 0xf19fbfbf | 0xf1afbfbe | 0xf1afbfbf | 0xf1bfbfbe
-            | 0xf1bfbfbf | 0xf28fbfbe | 0xf28fbfbf | 0xf29fbfbe | 0xf29fbfbf | 0xf2afbfbe
-            | 0xf2afbfbf | 0xf2bfbfbe | 0xf2bfbfbf | 0xf38fbfbe | 0xf38fbfbf | 0xf39fbfbe
-            | 0xf39fbfbf | 0xf3afbfbe | 0xf3afbfbf | 0xf3bfbfbe | 0xf3bfbfbf | 0xf48fbfbe
-            | 0xf48fbfbf => {
+            0x00ef_b790 | 0x00ef_b791 | 0x00ef_b792 | 0x00ef_b793 | 0x00ef_b794 | 0x00ef_b795
+            | 0x00ef_b796 | 0x00ef_b797 | 0x00ef_b798 | 0x00ef_b799 | 0x00ef_b79a | 0x00ef_b79b
+            | 0x00ef_b79c | 0x00ef_b79d | 0x00ef_b79e | 0x00ef_b79f | 0x00ef_b7a0 | 0x00ef_b7a1
+            | 0x00ef_b7a2 | 0x00ef_b7a3 | 0x00ef_b7a4 | 0x00ef_b7a5 | 0x00ef_b7a6 | 0x00ef_b7a7
+            | 0x00ef_b7a8 | 0x00ef_b7a9 | 0x00ef_b7aa | 0x00ef_b7ab | 0x00ef_b7ac | 0x00ef_b7ad
+            | 0x00ef_b7ae | 0x00ef_b7af | 0x00ef_bfbe | 0x00ef_bfbf | 0xf09f_bfbe | 0xf09f_bfbf
+            | 0xf0af_bfbe | 0xf0af_bfbf | 0xf0bf_bfbe | 0xf0bf_bfbf | 0xf18f_bfbe | 0xf18f_bfbf
+            | 0xf19f_bfbe | 0xf19f_bfbf | 0xf1af_bfbe | 0xf1af_bfbf | 0xf1bf_bfbe | 0xf1bf_bfbf
+            | 0xf28f_bfbe | 0xf28f_bfbf | 0xf29f_bfbe | 0xf29f_bfbf | 0xf2af_bfbe | 0xf2af_bfbf
+            | 0xf2bf_bfbe | 0xf2bf_bfbf | 0xf38f_bfbe | 0xf38f_bfbf | 0xf39f_bfbe | 0xf39f_bfbf
+            | 0xf3af_bfbe | 0xf3af_bfbf | 0xf3bf_bfbe | 0xf3bf_bfbf | 0xf48f_bfbe | 0xf48f_bfbf => {
                 emitter.emit_error(Error::NoncharacterInInputStream);
                 self.flush_character_error(emitter);
             }

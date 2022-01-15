@@ -332,18 +332,18 @@ fn main() {
         let result = std::panic::catch_unwind(move || {
             let test = &test.data;
 
-            trace_log(format!(
+            trace_log(&format!(
                 "==== FILE {}, TEST {}, STATE {:?}, TOKENIZER {:?} ====",
                 test.filename, test.test_i, test.state, test.reader_type,
             ));
-            trace_log(format!("description: {}", test.declaration.description));
+            trace_log(&format!("description: {}", test.declaration.description));
 
             let string = test.declaration.input.0.as_slice();
 
             match test.reader_type {
                 ReaderType::String => run_test(test, Tokenizer::new(string.to_reader())),
                 ReaderType::SlowString => {
-                    run_test(test, Tokenizer::new(SlowReader(string.to_reader())))
+                    run_test(test, Tokenizer::new(SlowReader(string.to_reader())));
                 }
                 ReaderType::BufRead => run_test(test, Tokenizer::new(IoReader::new(string))),
                 ReaderType::SlowBufRead => run_test(

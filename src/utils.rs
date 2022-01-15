@@ -6,12 +6,6 @@ macro_rules! surrogate_pat {
 
 pub(crate) use surrogate_pat;
 
-macro_rules! control_pat {
-    () => (0x0d | 0x0000..=0x001f | 0x007f..=0x009f)
-}
-
-pub(crate) use control_pat;
-
 macro_rules! noncharacter_pat {
     () => {
         0xfdd0
@@ -156,7 +150,7 @@ pub(crate) use ctostr;
 
 /// Repeatedly call `f` with chunks of lowercased characters from `s`.
 pub(crate) fn with_lowercase_str(s: &[u8], mut f: impl FnMut(&[u8])) {
-    if s.iter().any(|x| x.is_ascii_uppercase()) {
+    if s.iter().any(u8::is_ascii_uppercase) {
         for x in s {
             f(&[x.to_ascii_lowercase()]);
         }
