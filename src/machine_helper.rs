@@ -1,5 +1,5 @@
-use crate::utils::{trace_log, State};
-use crate::Emitter;
+use crate::utils::State;
+use crate::{trace_log, Emitter};
 
 pub(crate) struct MachineHelper {
     pub temporary_buffer: Vec<u8>,

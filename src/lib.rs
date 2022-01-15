@@ -17,13 +17,12 @@ mod tokenizer;
 mod utils;
 
 #[cfg(feature = "integration-tests")]
-mod slow_reader;
+pub mod testutils;
 
-#[cfg(feature = "integration-tests")]
-pub use {
-    slow_reader::SlowReader,
-    utils::{trace_log, State, OUTPUT},
-};
+pub(crate) fn trace_log(_msg: String) {
+    #[cfg(feature = "integration-tests")]
+    testutils::trace_log(_msg);
+}
 
 pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;

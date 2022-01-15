@@ -1,10 +1,9 @@
 use std::ops::Deref;
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
 
-use html5gum::{
-    trace_log, Doctype, EndTag, Error, IoReader, Readable, Reader, SlowReader, StartTag, State,
-    Token, Tokenizer, OUTPUT,
-};
+use html5gum::{Doctype, EndTag, Error, IoReader, Readable, Reader, StartTag, Token, Tokenizer};
+
+use html5gum::testutils::{trace_log, SlowReader, State, OUTPUT};
 
 use glob::glob;
 use libtest_mimic::{run_tests, Arguments, Outcome, Test};
