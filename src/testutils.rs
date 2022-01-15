@@ -16,7 +16,7 @@ thread_local! {
 ///
 /// The test harness used by tests/html5lib_tokenizer.rs cannot capture stdout, see
 /// https://github.com/LukasKalbertodt/libtest-mimic/issues/9 -- this is much more performant
-/// anyway though.
+/// than println anyway though.
 ///
 /// A noop version for non-test builds is implemented in src/lib.rs
 pub fn trace_log(msg: String) {
