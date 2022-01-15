@@ -23,7 +23,7 @@ pub fn trace_log(msg: String) {
     OUTPUT.with(|lock| {
         let mut buf = lock.lock().unwrap();
         buf.push_str(&msg);
-        buf.push_str('\n');
+        buf.push('\n');
 
         if buf.len() > 20 * 1024 * 1024 {
             buf.clear();
