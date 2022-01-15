@@ -17,6 +17,8 @@ serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.71"
 test-generator = "0.3.0"
 serde_bytes = "0.11.5"
+glob = "0.3.0"
+libtest-mimic = "0.3.0"
 
 [features]
 # By default this crate depends on the memchr library for best performance.
@@ -33,6 +35,11 @@ memchr = { version = "2.4.1", optional = true }
 
 [[bench]]
 name = "data_state"
+harness = false
+
+[[test]]
+name = "html5lib-tokenizer"
+path = "tests/html5lib_tokenizer.rs"
 harness = false
 
 [lib]

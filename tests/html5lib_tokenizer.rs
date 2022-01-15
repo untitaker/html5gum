@@ -1,19 +1,24 @@
+use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
+
 use html5gum::{
-    Doctype, EndTag, Error, IoReader, Readable, Reader, SlowReader, StartTag, State, Token,
-    Tokenizer,
+    Doctype, EndTag, Error, IoReader, Readable, Reader, SlowReader, StartTag, State, Token, 
+    Tokenizer, 
 };
+
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
-use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
+use glob::glob;
+use libtest_mimic::{Arguments, Test, Outcome, run_tests};
 
 #[cfg(not(feature = "integration-tests"))]
 compile_error!(
     "integration tests need the integration-tests feature enabled. Run cargo test --all-features"
 );
 
+#[derive(Clone)]
 struct ExpectedOutputTokens(Vec<Token>);
 
-#[derive(Deserialize, Ord, PartialOrd, PartialEq, Eq, Default)]
+#[derive(Deserialize, Ord, PartialOrd, PartialEq, Eq, Default, Clone)]
 struct HtmlString(#[serde(with = "serde_bytes")] Vec<u8>);
 
 impl<'de> Deserialize<'de> for ExpectedOutputTokens {
@@ -101,6 +106,7 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
     }
 }
 
+#[derive(Clone)]
 struct InitialState(State);
 
 impl<'de> Deserialize<'de> for InitialState {
@@ -139,9 +145,9 @@ fn initial_states_default() -> Vec<InitialState> {
     vec![InitialState(State::Data)]
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-struct Test {
+struct TestFileEntry {
     description: String,
     input: HtmlString,
     output: ExpectedOutputTokens,
@@ -155,7 +161,7 @@ struct Test {
     errors: Vec<ParseError>,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 struct ParseErrorInner(Error);
 
 impl<'de> Deserialize<'de> for ParseErrorInner {
@@ -171,147 +177,31 @@ impl<'de> Deserialize<'de> for ParseErrorInner {
     }
 }
 
-#[derive(Deserialize, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 struct ParseError {
     code: ParseErrorInner,
 }
 
 #[derive(Deserialize)]
-struct Tests {
-    tests: Vec<Test>,
+struct TestFile {
+    tests: Vec<TestFileEntry>,
 }
 
-#[test_generator::test_resources("tests/html5lib-tests/tokenizer/*.test")]
-fn test_html5lib(resource_name: &str) {
-    run_html5lib_tokenizer_test(resource_name)
-}
-
-#[test_generator::test_resources("tests/custom-html5lib-tests/*.test")]
-fn test_custom_html5lib(resource_name: &str) {
-    run_html5lib_tokenizer_test(resource_name)
-}
-
-fn run_html5lib_tokenizer_test(resource_name: &str) {
-    let path = Path::new(resource_name);
-    let fname = path.file_name().unwrap().to_str().unwrap();
-
-    if matches!(
-        fname,
-        // We don't implement "Coercing an HTML DOM into an infoset" section
-        "xmlViolation.test"
-        // We don't detect surrogates
-        | "unicodeCharsProblematic.test"
-    ) {
-        return;
-    }
-
-    let f = File::open(path).unwrap();
-    let bf = BufReader::new(f);
-    let tests: Tests = serde_json::from_reader(bf).unwrap();
-
-    for (i, test) in tests.tests.into_iter().enumerate() {
-        run_test(fname, i, test);
-    }
-}
-
-fn run_test(fname: &str, test_i: usize, mut test: Test) {
-    test.input.0 = if test.double_escaped {
-        unescape(&test.input.0)
-    } else {
-        test.input.0
-    };
-
-    test.output = if test.double_escaped {
-        ExpectedOutputTokens(
-            test.output
-                .0
-                .into_iter()
-                .map(|token| match token {
-                    Token::String(x) => Token::String(unescape(x.as_slice())),
-                    Token::Comment(x) => Token::Comment(unescape(x.as_slice())),
-                    token => token,
-                })
-                .collect(),
-        )
-    } else {
-        ExpectedOutputTokens(test.output.0)
-    };
-
-    for state in &test.initial_states {
-        run_test_inner(
-            fname,
-            test_i,
-            &test,
-            state.0,
-            Tokenizer::new(SlowReader(test.input.0.to_reader())),
-            "slow-string",
-        );
-
-        run_test_inner(
-            fname,
-            test_i,
-            &test,
-            state.0,
-            Tokenizer::new(&test.input.0),
-            "string",
-        );
-
-        run_test_inner(
-            fname,
-            test_i,
-            &test,
-            state.0,
-            Tokenizer::new(IoReader::new(test.input.0.as_slice())),
-            "bufread",
-        );
-
-        run_test_inner(
-            fname,
-            test_i,
-            &test,
-            state.0,
-            Tokenizer::new(SlowReader(
-                IoReader::new(test.input.0.as_slice()).to_reader(),
-            )),
-            "slow-bufread",
-        );
-    }
-}
-
-fn run_test_inner<R: Reader>(
-    fname: &str,
-    test_i: usize,
-    test: &Test,
+struct TestCase {
     state: State,
-    mut tokenizer: Tokenizer<R>,
-    tokenizer_info: &str,
-) {
-    println!(
-        "==== FILE {}, TEST {}, STATE {:?}, TOKENIZER {} ====",
-        fname, test_i, state, tokenizer_info,
-    );
-    println!("description: {}", test.description);
-    tokenizer.set_state(state);
-    tokenizer.set_last_start_tag(test.last_start_tag.as_ref().map(String::as_str));
+    reader_type: ReaderType,
+    filename: String,
+    test_i: usize,
+    declaration: TestFileEntry,
+}
 
-    let mut actual_tokens = Vec::new();
-    let mut actual_errors = Vec::new();
-
-    for token in tokenizer {
-        let token = token.unwrap();
-
-        if let Token::Error(e) = token {
-            actual_errors.push(ParseError {
-                code: ParseErrorInner(e),
-            });
-        } else {
-            actual_tokens.push(token);
-        }
-    }
-
-    assert_eq!(actual_tokens, test.output.0);
-    assert_eq!(actual_errors, test.errors);
+#[derive(Debug, Clone, Copy)]
+enum ReaderType {
+    SlowString,
+    String,
+    BufRead,
+    SlowBufRead,
 }
 
 /// Implements the escape sequences described in the tokenizer tests of html5lib-tests (and nothing
@@ -364,4 +254,109 @@ fn unescape(data: &[u8]) -> Vec<u8> {
     }
 
     rv
+}
+
+fn produce_testcases_from_file(tests: &mut Vec<Test<TestCase>>, path: &Path) {
+    let fname = path.file_name().unwrap().to_str().unwrap();
+
+    if matches!(
+        fname,
+        // We don't implement "Coercing an HTML DOM into an infoset" section
+        "xmlViolation.test"
+        // We don't detect surrogates
+        | "unicodeCharsProblematic.test"
+    ) {
+        return;
+    }
+
+    let f = File::open(path).unwrap();
+    let bf = BufReader::new(f);
+    let TestFile { tests: declarations } = serde_json::from_reader(bf).unwrap();
+
+    for (test_i, mut declaration) in declarations.into_iter().enumerate() {
+        if declaration.double_escaped {
+            declaration.input.0 = unescape(&declaration.input.0);
+
+            declaration.output.0 = declaration.output.0
+                .into_iter()
+                .map(|token| match token {
+                    Token::String(x) => Token::String(unescape(x.as_slice())),
+                    Token::Comment(x) => Token::Comment(unescape(x.as_slice())),
+                    token => token,
+                })
+                .collect();
+        }
+
+        for state in &declaration.initial_states {
+            for &reader_type in &[ReaderType::SlowString, ReaderType::String, ReaderType::BufRead, ReaderType::SlowBufRead] {
+                tests.push(Test {
+                    name: declaration.description.clone(),
+                    kind: "".into(),
+                    is_ignored: false,
+                    is_bench: false,
+                    data: TestCase {
+                        state: state.0,
+                        reader_type,
+                        filename: fname.to_owned(),
+                        test_i,
+                        declaration: declaration.clone(),
+                    }
+                });
+            }
+        }
+    }
+}
+
+fn main() {
+    let args = Arguments::from_args();
+
+    let mut tests = Vec::new();
+
+    for entry in glob("tests/html5lib-tests/tokenizer/*.test").unwrap() {
+        produce_testcases_from_file(&mut tests, &entry.unwrap());
+    }
+
+    run_tests(&args, tests, |test| {
+        let test = &test.data;
+
+        println!(
+            "==== FILE {}, TEST {}, STATE {:?}, TOKENIZER {:?} ====",
+            test.filename, test.test_i, test.state, test.reader_type,
+        );
+        println!("description: {}", test.declaration.description);
+
+        let string = test.declaration.input.0.as_slice();
+
+        match test.reader_type {
+            ReaderType::String => run_test(test, Tokenizer::new(string.to_reader())),
+            ReaderType::SlowString => run_test(test, Tokenizer::new(SlowReader(string.to_reader()))),
+            ReaderType::BufRead => run_test(test, Tokenizer::new(IoReader::new(string))),
+            ReaderType::SlowBufRead => run_test(test, Tokenizer::new(SlowReader(IoReader::new(string).to_reader()))),
+        }
+
+        Outcome::Passed
+    }).exit();
+}
+
+fn run_test<R: Reader>(test: &TestCase, mut tokenizer: Tokenizer<R>) {
+    tokenizer.set_state(test.state);
+    tokenizer.set_last_start_tag(test.declaration.last_start_tag.as_ref().map(String::as_str));
+
+    let mut actual_tokens = Vec::new();
+    let mut actual_errors = Vec::new();
+
+    for token in tokenizer {
+        let token = token.unwrap();
+
+        if let Token::Error(e) = token {
+            actual_errors.push(ParseError {
+                code: ParseErrorInner(e),
+            });
+        } else {
+            actual_tokens.push(token);
+        }
+    }
+
+    assert_eq!(actual_tokens, test.declaration.output.0);
+    assert_eq!(actual_errors, test.declaration.errors);
 }
