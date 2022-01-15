@@ -207,7 +207,7 @@ enum ReaderType {
 /// Implements the escape sequences described in the tokenizer tests of html5lib-tests (and nothing
 /// more)
 fn unescape(data: &[u8]) -> Vec<u8> {
-    let mut stream = data.into_iter();
+    let mut stream = data.iter();
     let mut rv = Vec::new();
 
     loop {
@@ -245,7 +245,7 @@ fn unescape(data: &[u8]) -> Vec<u8> {
             rv.push(0);
             let char_len = c.encode_utf8(&mut rv[orig_len..]).len();
             rv.truncate(orig_len + char_len);
-        } else if c >= 0xD800 && c <= 0xDFFF {
+        } else if (0xD800..=0xDFFF).contains(&c) {
             // a surrogate
             for b in &c.to_be_bytes()[2..] {
                 rv.push(*b);
@@ -365,7 +365,7 @@ fn main() {
                     cell.set(buf);
                 });
 
-                msg.push_str("\n");
+                msg.push('\n');
                 if let Some(s) = e
                     // Try to convert it to a String, then turn that into a str
                     .downcast_ref::<String>()
@@ -385,7 +385,7 @@ fn main() {
 
 fn run_test<R: Reader>(test: &TestCase, mut tokenizer: Tokenizer<R>) {
     tokenizer.set_state(test.state);
-    tokenizer.set_last_start_tag(test.declaration.last_start_tag.as_ref().map(String::as_str));
+    tokenizer.set_last_start_tag(test.declaration.last_start_tag.as_deref());
 
     let mut actual_tokens = Vec::new();
     let mut actual_errors = Vec::new();

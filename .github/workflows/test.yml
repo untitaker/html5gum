@@ -70,7 +70,7 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup component add clippy
-      - run: cargo clippy -- -D warnings
+      - run: cargo clippy --all-features --tests -- -D clippy::all
 
   rustdoc:
     name: rustdoc
