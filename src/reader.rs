@@ -41,7 +41,8 @@ pub trait Reader {
     ///
     /// The default implementation simply reads one character and calls `read_cb` with that
     /// character, ignoring the needle entirely. It is recommended to manually implement
-    /// `read_until` if there is any sort of in-memory buffer where `memchr` can be run on.
+    /// `read_until` if there is any sort of in-memory buffer where some sort of efficient string
+    /// search (see `memchr` or `jetscii` crate) can be run on.
     ///
     /// The return value is usually borrowed from underlying buffers. If that's not possible, a
     /// small buffer is provided as `char_buf` to put a single character into.
@@ -384,20 +385,8 @@ impl<'a> Readable<'a> for File {
 
 #[inline]
 fn fast_find(needle: &[u8], haystack: &[u8]) -> Option<usize> {
-    #[cfg(feature = "memchr")]
-    if needle.iter().all(u8::is_ascii) {
-        if needle.len() == 3 {
-            return memchr::memchr3(needle[0], needle[1], needle[2], haystack);
-        } else if needle.len() == 2 {
-            return memchr::memchr2(needle[0], needle[1], haystack);
-        } else if needle.len() == 1 {
-            return memchr::memchr(needle[0], haystack);
-        }
-    }
-
-    let (i, _) = haystack
-        .iter()
-        .enumerate()
-        .find(|(_, &b)| needle.contains(&b))?;
-    Some(i)
+    debug_assert!(needle.len() <= 16);
+    let mut needle_arr = [0; 16];
+    needle_arr[..needle.len()].copy_from_slice(needle);
+    jetscii::Bytes::new(needle_arr, needle.len() as i32, |b| needle.contains(&b)).find(haystack)
 }

@@ -21,17 +21,17 @@ glob = "0.3.0"
 libtest-mimic = "0.3.0"
 
 [features]
-# By default this crate depends on the memchr library for best performance.
+# By default this crate depends on the jetscii library for best performance.
 # Disabling this feature will leave you with 100% safe Rust and no dependencies.
 # This may come in handy if you encounter packaging/build problems.
-default = ["memchr"]
+default = ["jetscii"]
 
 # If this feature is enabled, html5gum will expose private APIs and start
 # printing debug information to stdout.
 integration-tests = []
 
 [dependencies]
-memchr = { version = "2.4.1", optional = true }
+jetscii = { version = "0.5.1", optional = true }
 
 [[bench]]
 name = "data_state"

@@ -67,7 +67,7 @@ This allows you to:
 ## Other features
 
 * No unsafe Rust
-* Only dependency is `memchr`, and can be disabled via crate features (see `Cargo.toml`)
+* Only dependency is `jetscii`, and can be disabled via crate features (see `Cargo.toml`)
 
 ## Alternative HTML parsers
 
