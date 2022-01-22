@@ -298,14 +298,13 @@ impl<R: Read> IoReader<R> {
         }
     }
 
-    #[inline]
     fn prepare_buf(&mut self, min_len: usize) -> Result<(), io::Error> {
-        // XXX: we don't do any utf8 validation here anymore
-        debug_assert!(min_len < BUF_SIZE);
         let mut len = self.buf_len - self.buf_offset;
+        debug_assert!(min_len < self.buf.len());
+        debug_assert!(len < self.buf.len());
         if len < min_len {
             let mut raw_buf = &mut self.buf[..];
-            raw_buf.rotate_left(self.buf_offset);
+            raw_buf.copy_within(self.buf_offset..self.buf_len, 0);
             raw_buf = &mut raw_buf[len..];
             while len < min_len {
                 let n = self.reader.read(raw_buf)?;
