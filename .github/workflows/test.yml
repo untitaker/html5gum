@@ -32,7 +32,8 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: check --no-default-features
+          command: check
+          args: '--no-default-features'
   test:
     name: Test Suite
     runs-on: ubuntu-latest
