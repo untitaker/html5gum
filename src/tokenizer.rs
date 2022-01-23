@@ -1,9 +1,11 @@
+use std::convert::Infallible;
+
 use crate::char_validator::CharValidator;
 use crate::machine;
 use crate::machine_helper::MachineHelper;
 use crate::read_helper::ReadHelper;
 use crate::utils::{ControlToken, State};
-use crate::{DefaultEmitter, Emitter, Never, Readable, Reader};
+use crate::{DefaultEmitter, Emitter, Readable, Reader};
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
 pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
@@ -96,9 +98,9 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
 /// `Result<Token, _>`.
 ///
 /// This is the return value of [`Tokenizer::infallible`].
-pub struct InfallibleTokenizer<R: Reader<Error = Never>, E: Emitter>(Tokenizer<R, E>);
+pub struct InfallibleTokenizer<R: Reader<Error = Infallible>, E: Emitter>(Tokenizer<R, E>);
 
-impl<R: Reader<Error = Never>, E: Emitter> Tokenizer<R, E> {
+impl<R: Reader<Error = Infallible>, E: Emitter> Tokenizer<R, E> {
     /// Statically assert that this iterator is infallible.
     ///
     /// Call this to get rid of error handling when parsing HTML from strings.
@@ -107,7 +109,7 @@ impl<R: Reader<Error = Never>, E: Emitter> Tokenizer<R, E> {
     }
 }
 
-impl<R: Reader<Error = Never>, E: Emitter> Iterator for InfallibleTokenizer<R, E> {
+impl<R: Reader<Error = Infallible>, E: Emitter> Iterator for InfallibleTokenizer<R, E> {
     type Item = E::Token;
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -1,5 +1,5 @@
-use crate::Never;
 use std::cmp::min;
+use std::convert::Infallible;
 use std::fs::File;
 use std::io::{self, Read};
 
@@ -152,7 +152,7 @@ impl<'a> StringReader<'a> {
 }
 
 impl<'a> Reader for StringReader<'a> {
-    type Error = Never;
+    type Error = Infallible;
 
     fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
         if self.input.is_empty() {

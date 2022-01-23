@@ -14,7 +14,6 @@ mod entities;
 mod error;
 mod machine;
 mod machine_helper;
-mod never;
 mod read_helper;
 mod reader;
 mod tokenizer;
@@ -25,6 +24,5 @@ pub mod testutils;
 
 pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
-pub use never::Never;
 pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};
