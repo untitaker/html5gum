@@ -1,0 +1,4 @@
+[toolchain]
+# This prevents contributors using non-stable std APIs which won't build on stable channel.
+# Other channels is still able to build html5gum by overriding it on command line.
+channel = "stable"
