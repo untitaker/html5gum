@@ -14,8 +14,8 @@ include = ["src/**/*", "LICENSE", "README.md", "benches"]
 [dev-dependencies]
 criterion = "0.3.5"
 pretty_assertions = "1.0.0"
-serde = { version = "1.0.130", features = ["derive"] }
-serde_json = "1.0.71"
+serde = { version = "1.0.136", features = ["derive"] }
+serde_json = "1.0.78"
 test-generator = "0.3.0"
 serde_bytes = "0.11.5"
 glob = "0.3.0"
