@@ -1,6 +1,7 @@
 use crate::arrayvec::ArrayVec;
 use crate::{Emitter, Error};
 
+#[derive(Debug)]
 pub(crate) struct CharValidator {
     last_4_bytes: u32,
     character_error: ArrayVec<Error, 3>,
@@ -16,19 +17,19 @@ impl Default for CharValidator {
 }
 
 impl CharValidator {
-    pub fn reset(&mut self) {
+    pub(crate) fn reset(&mut self) {
         self.last_4_bytes = 0;
     }
 
     #[inline]
-    pub fn validate_bytes<E: Emitter>(&mut self, emitter: &mut E, next_bytes: &[u8]) {
+    pub(crate) fn validate_bytes<E: Emitter>(&mut self, emitter: &mut E, next_bytes: &[u8]) {
         for &x in next_bytes {
             self.validate_byte(emitter, x);
         }
     }
 
     #[inline]
-    pub fn validate_byte<E: Emitter>(&mut self, emitter: &mut E, next_byte: u8) {
+    pub(crate) fn validate_byte<E: Emitter>(&mut self, emitter: &mut E, next_byte: u8) {
         if next_byte < 128 {
             // start of character (ascii)
             self.last_4_bytes = 0;
@@ -45,13 +46,13 @@ impl CharValidator {
         }
     }
 
-    pub fn flush_character_error<E: Emitter>(&mut self, emitter: &mut E) {
+    pub(crate) fn flush_character_error<E: Emitter>(&mut self, emitter: &mut E) {
         for e in self.character_error.drain() {
             emitter.emit_error(*e);
         }
     }
 
-    pub fn set_character_error<E: Emitter>(&mut self, emitter: &mut E, error: Error) {
+    pub(crate) fn set_character_error<E: Emitter>(&mut self, emitter: &mut E, error: Error) {
         if self.last_4_bytes == 0 {
             emitter.emit_error(error);
         } else {

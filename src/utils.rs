@@ -135,7 +135,7 @@ pub enum State {
     NumericCharacterReferenceEnd,
 }
 
-pub enum ControlToken {
+pub(crate) enum ControlToken {
     Eof,
     Continue,
 }

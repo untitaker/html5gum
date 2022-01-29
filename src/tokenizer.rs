@@ -8,6 +8,7 @@ use crate::utils::{ControlToken, State};
 use crate::{DefaultEmitter, Emitter, Readable, Reader};
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
+#[derive(Debug)]
 pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
     eof: bool,
     pub(crate) validator: CharValidator,
@@ -98,6 +99,7 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
 /// `Result<Token, _>`.
 ///
 /// This is the return value of [`Tokenizer::infallible`].
+#[derive(Debug)]
 pub struct InfallibleTokenizer<R: Reader<Error = Infallible>, E: Emitter>(Tokenizer<R, E>);
 
 impl<R: Reader<Error = Infallible>, E: Emitter> Tokenizer<R, E> {

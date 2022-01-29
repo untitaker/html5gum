@@ -35,6 +35,7 @@ pub fn trace_log(msg: &str) {
 }
 
 /// A kind of reader that implements `read_until` very poorly. Only available in tests
+#[derive(Debug)]
 pub struct SlowReader<R: Reader>(pub R);
 
 impl<R: Reader> Reader for SlowReader<R> {

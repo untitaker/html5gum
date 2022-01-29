@@ -141,12 +141,13 @@ impl<'a, R: 'a + Reader> Readable<'a> for R {
 ///
 /// assert_eq!(new_html, "<title>hello world</title>");
 /// ```
+#[derive(Debug)]
 pub struct StringReader<'a> {
     input: &'a [u8],
 }
 
 impl<'a> StringReader<'a> {
-    fn new(input: &'a [u8]) -> Self {
+    const fn new(input: &'a [u8]) -> Self {
         StringReader { input }
     }
 }
@@ -273,11 +274,12 @@ impl<'a> Readable<'a> for &'a [u8] {
 ///         }
 ///         _ => panic!("unexpected input"),
 ///     }
-///     
+///
 /// }
 ///
 /// assert_eq!(new_html, "<title>hello world</title>");
 /// ```
+#[derive(Debug)]
 pub struct IoReader<R: Read> {
     buf: Box<[u8; BUF_SIZE]>,
     buf_offset: usize,
@@ -389,6 +391,7 @@ fn fast_find(needle: &[u8], haystack: &[u8]) -> Option<usize> {
         debug_assert!(needle.len() <= 16);
         let mut needle_arr = [0; 16];
         needle_arr[..needle.len()].copy_from_slice(needle);
+        #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
         jetscii::Bytes::new(needle_arr, needle.len() as i32, |b| needle.contains(&b)).find(haystack)
     }
 
