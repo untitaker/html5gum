@@ -147,7 +147,7 @@ pub struct StringReader<'a> {
 }
 
 impl<'a> StringReader<'a> {
-    const fn new(input: &'a [u8]) -> Self {
+    fn new(input: &'a [u8]) -> Self {
         StringReader { input }
     }
 }

@@ -11,8 +11,7 @@
     semicolon_in_expressions_from_macros,
     unreachable_pub,
     unused_extern_crates,
-    variant_size_differences,
-    clippy::missing_const_for_fn
+    variant_size_differences
 )]
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]

@@ -21,7 +21,7 @@ impl Default for MachineHelper {
 }
 
 impl MachineHelper {
-    pub(crate) const fn is_consumed_as_part_of_an_attribute(&self) -> bool {
+    pub(crate) fn is_consumed_as_part_of_an_attribute(&self) -> bool {
         matches!(
             self.return_state,
             Some(
@@ -62,7 +62,7 @@ impl MachineHelper {
         self.switch_to(state);
     }
 
-    pub(crate) const fn state(&self) -> State {
+    pub(crate) fn state(&self) -> State {
         self.state
     }
 
