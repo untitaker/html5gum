@@ -52,6 +52,8 @@ jobs:
           args: '--all-features -- --test-threads 1'
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1.0.2
+        # Disable codecov upload on forks
+        if: ${{ github.repository_owner == 'untitaker' }}
         with:
           token: ${{secrets.CODECOV_TOKEN}}
       - name: Archive code coverage results
