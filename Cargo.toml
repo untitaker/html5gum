@@ -32,6 +32,7 @@ default = ["jetscii"]
 integration-tests = []
 
 [dependencies]
+arrayvec = "0.7.2"
 jetscii = { version = "0.5.1", optional = true }
 
 [[bench]]

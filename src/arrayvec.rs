@@ -1,29 +1,18 @@
-/// This is basically like the arrayvec crate, except crappier, only the subset I need and
-/// therefore without unsafe Rust.
+/// Similar to [`arrayvec::ArrayVec`], but only has limited capabilities that we need.
+///
+/// [`arrayvec::ArrayVec`]: https://docs.rs/arrayvec/latest/arrayvec/struct.ArrayVec.html
+pub(crate) struct ArrayVec<T, const CAP: usize>(arrayvec::ArrayVec<T, CAP>);
 
-pub struct ArrayVec<T: Copy, const CAP: usize> {
-    content: [T; CAP],
-    len: usize,
-}
-
-impl<T: Copy, const CAP: usize> ArrayVec<T, CAP> {
-    pub fn new(filler_item: T) -> Self {
-        // filler_item is there to avoid usage of MaybeUninit, and can literally be anything at
-        // all.
-        ArrayVec {
-            content: [filler_item; CAP],
-            len: 0,
-        }
+impl<T, const CAP: usize> ArrayVec<T, CAP> {
+    pub(crate) fn new() -> Self {
+        Self(arrayvec::ArrayVec::new())
     }
 
-    pub fn push(&mut self, item: T) {
-        self.content[self.len] = item;
-        self.len += 1;
+    pub(crate) fn push(&mut self, element: T) {
+        self.0.push(element);
     }
 
-    pub fn drain(&mut self) -> &[T] {
-        let rv = &self.content[..self.len];
-        self.len = 0;
-        rv
+    pub(crate) fn drain(&mut self) -> arrayvec::Drain<T, CAP> {
+        self.0.drain(0..self.0.len())
     }
 }

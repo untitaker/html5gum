@@ -1,16 +1,18 @@
 use crate::arrayvec::ArrayVec;
 use crate::{Emitter, Error};
 
+const DEF_CAP: usize = 3;
+
 pub(crate) struct CharValidator {
     last_4_bytes: u32,
-    character_error: ArrayVec<Error, 3>,
+    character_error: ArrayVec<Error, DEF_CAP>,
 }
 
 impl Default for CharValidator {
     fn default() -> Self {
         CharValidator {
             last_4_bytes: 0,
-            character_error: ArrayVec::new(Error::EofInTag),
+            character_error: ArrayVec::<Error, DEF_CAP>::new(),
         }
     }
 }
@@ -47,7 +49,7 @@ impl CharValidator {
 
     pub fn flush_character_error<E: Emitter>(&mut self, emitter: &mut E) {
         for e in self.character_error.drain() {
-            emitter.emit_error(*e);
+            emitter.emit_error(e);
         }
     }
 
