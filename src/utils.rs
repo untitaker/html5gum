@@ -49,9 +49,10 @@ macro_rules! noncharacter_pat {
 
 pub(crate) use noncharacter_pat;
 
-// When integration tests are running, this enum is public and we get warnings about missing docs.
-// However, it's not actually part of public API.
-#[allow(missing_docs)]
+// When integration tests are running, this enum is public and we get missing_docs warning.
+// When integration tests are not running, this enum is NOT public and we get unreachable_pub
+// warning.
+#[allow(missing_docs, unreachable_pub)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum State {
     Data,
