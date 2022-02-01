@@ -2,9 +2,11 @@ use crate::char_validator::CharValidator;
 use crate::Emitter;
 use crate::Reader;
 
+#[derive(Debug)]
 pub(crate) struct ReadHelper<R: Reader> {
     reader: R,
     last_character_was_cr: bool,
+    #[allow(clippy::option_option)]
     to_reconsume: Option<Option<u8>>,
 }
 

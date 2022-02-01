@@ -1,10 +1,11 @@
 use crate::utils::{trace_log, State};
 use crate::Emitter;
 
+#[derive(Debug)]
 pub(crate) struct MachineHelper {
-    pub temporary_buffer: Vec<u8>,
-    pub character_reference_code: u32,
-    pub state: State,
+    pub(crate) temporary_buffer: Vec<u8>,
+    pub(crate) character_reference_code: u32,
+    pub(crate) state: State,
     return_state: Option<State>,
 }
 

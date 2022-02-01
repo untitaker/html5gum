@@ -173,7 +173,7 @@ pub trait Emitter {
 }
 
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct DefaultEmitter {
     current_characters: Vec<u8>,
     current_token: Option<Token>,
