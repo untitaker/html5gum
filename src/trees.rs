@@ -42,6 +42,7 @@ enum InsertionMode {
     BeforeHtml,
     BeforeHead,
     InBody,
+    InHead,
 }
 
 struct TreeBuilder<R: Reader> {
@@ -213,7 +214,7 @@ impl<R: Reader> TreeBuilder<R> {
                         self.insert(Some(self.appropriate_place_for_inserting_a_node()), Rc::new(Node::Comment(Comment { data })));
                         Ok(())
                     }
-                    Token::Doctype(doctype) => {
+                    Token::Doctype(_doctype) => {
                         // err: ???
                         Ok(())
                     }
@@ -221,9 +222,25 @@ impl<R: Reader> TreeBuilder<R> {
                         self.process_token_using_the_rules_for(InsertionMode::InBody, Token::StartTag(tag))
                     }
                     Token::StartTag(tag) if tag.name == "head" => {
-                        todo!()
+                        let element = Rc::new(Node::Element(Element { name: "head".to_owned() }));
+                        self.insert(Some(self.appropriate_place_for_inserting_a_node()), element.clone());
+                        self.head_element = Some(element);
+                        self.mode = InsertionMode::InHead;
+                        Ok(())
                     }
-                    _ => todo!()
+                    Token::EndTag(tag) if tag.name != "head" && tag.name != "body" && tag.name != "html" && tag.name != "br" => {
+                        // "any other end tag"
+                        // err: ???
+                        Ok(())
+                    }
+                    _ => {
+                        // "anything else" + "any end tag whose name is one of ..."
+                        let element = Rc::new(Node::Element(Element { name: "head".to_owned() }));
+                        self.insert(Some(self.appropriate_place_for_inserting_a_node()), element.clone());
+                        self.head_element = Some(element);
+                        self.mode = InsertionMode::InHead;
+                        self.process_token(token)
+                    }
                 }
             }
             _ => todo!()
