@@ -49,6 +49,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     ///
     /// Only available with the `integration-tests` feature which is not public API.
     #[cfg(feature = "integration-tests")]
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub fn set_state(&mut self, state: State) {
         self.machine_helper.state = state;
     }
@@ -57,6 +58,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     /// state](https://html.spec.whatwg.org/#plaintext-state).
     ///
     /// This tokenizer never gets into that state naturally.
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub fn set_plaintext_state(&mut self) {
         self.machine_helper.state = State::PlainText;
     }
@@ -106,6 +108,7 @@ impl<R: Reader<Error = Infallible>, E: Emitter> Tokenizer<R, E> {
     /// Statically assert that this iterator is infallible.
     ///
     /// Call this to get rid of error handling when parsing HTML from strings.
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub fn infallible(self) -> InfallibleTokenizer<R, E> {
         InfallibleTokenizer(self)
     }
