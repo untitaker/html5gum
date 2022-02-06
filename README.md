@@ -67,7 +67,7 @@ This allows you to:
 ## Other features
 
 * No unsafe Rust
-* Should not panic -- any panic is a bug
+* Should not panic -- any panic users can encounter is a bug
 * Only dependency is `jetscii`, and can be disabled via crate features (see `Cargo.toml`)
 
 ## Alternative HTML parsers
