@@ -15,7 +15,7 @@ successful testrun, you need to initialize git submodules:
 git submodules update --init
 ```
 
-_Then_, the tests need to be run with `cargo test --all-features`. `--all-features` is critical, without it, the tests won't compile. Why, you ask?
+_Then_, the tests need to be run with `cargo test --features integration-tests`. `--features` is critical, without it, the tests won't compile. Why, you ask?
 
 Because html5gum's testsuite is currently neither integration test nor unit test (see [the Rust book for the Rust-specific definitions of what those are](https://doc.rust-lang.org/book/ch11-03-test-organization.html)).
 

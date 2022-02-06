@@ -34,6 +34,11 @@ integration-tests = []
 [dependencies]
 jetscii = { version = "0.5.1", optional = true }
 
+# Non-default feature to run compile-time assertions about panicking functions.
+# This is something like a dev-dependency: It's only useful in html5gum's own
+# CI, and if you like spurious build failures.
+no-panic = { version = "0.1.15", optional = true }
+
 [[bench]]
 name = "data_state"
 harness = false

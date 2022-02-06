@@ -17,6 +17,7 @@ impl Default for CharValidator {
 }
 
 impl CharValidator {
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub(crate) fn reset(&mut self) {
         self.last_4_bytes = 0;
     }
