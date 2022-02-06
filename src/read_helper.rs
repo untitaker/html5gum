@@ -11,6 +11,7 @@ pub(crate) struct ReadHelper<R: Reader> {
 }
 
 impl<R: Reader> ReadHelper<R> {
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub(crate) fn new(reader: R) -> Self {
         ReadHelper {
             reader,

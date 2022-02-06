@@ -155,6 +155,7 @@ impl<'a> StringReader<'a> {
 impl<'a> Reader for StringReader<'a> {
     type Error = Infallible;
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
         if self.input.is_empty() {
             Ok(None)
@@ -291,6 +292,7 @@ const BUF_SIZE: usize = 16 * 1024;
 
 impl<R: Read> IoReader<R> {
     /// Construct a new `BufReadReader` from any type that implements `Read`.
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub fn new(reader: R) -> Self {
         IoReader {
             buf: Box::new([0; BUF_SIZE]),
@@ -379,6 +381,7 @@ impl<R: Read> Reader for IoReader<R> {
 impl<'a> Readable<'a> for File {
     type Reader = IoReader<File>;
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     fn to_reader(self) -> Self::Reader {
         IoReader::new(self)
     }

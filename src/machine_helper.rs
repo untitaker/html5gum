@@ -21,6 +21,7 @@ impl Default for MachineHelper {
 }
 
 impl MachineHelper {
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub(crate) fn is_consumed_as_part_of_an_attribute(&self) -> bool {
         matches!(
             self.return_state,
@@ -31,6 +32,7 @@ impl MachineHelper {
             )
         )
     }
+
     pub(crate) fn flush_code_points_consumed_as_character_reference<E: Emitter>(
         &mut self,
         emitter: &mut E,
@@ -47,6 +49,7 @@ impl MachineHelper {
         self.temporary_buffer.clear();
     }
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub(crate) fn enter_state(&mut self, state: State) {
         debug_assert!(self.return_state.is_none());
         self.return_state = Some(self.state);
@@ -62,10 +65,12 @@ impl MachineHelper {
         self.switch_to(state);
     }
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub(crate) fn state(&self) -> State {
         self.state
     }
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     pub(crate) fn switch_to(&mut self, state: State) {
         trace_log!("switch_to: {:?} -> {:?}", self.state, state);
         self.state = state;
