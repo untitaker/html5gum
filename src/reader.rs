@@ -107,6 +107,7 @@ pub trait Readable<'a> {
 impl<'a, R: 'a + Reader> Readable<'a> for R {
     type Reader = Self;
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     fn to_reader(self) -> Self::Reader {
         self
     }
@@ -147,6 +148,7 @@ pub struct StringReader<'a> {
 }
 
 impl<'a> StringReader<'a> {
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     fn new(input: &'a [u8]) -> Self {
         StringReader { input }
     }
@@ -192,6 +194,7 @@ impl<'a> Reader for StringReader<'a> {
         }
     }
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     fn try_read_string(&mut self, s1: &[u8], case_sensitive: bool) -> Result<bool, Self::Error> {
         // we do not need to call validate_char here because `s` hopefully does not contain invalid
         // characters
@@ -209,6 +212,7 @@ impl<'a> Reader for StringReader<'a> {
 impl<'a> Readable<'a> for &'a str {
     type Reader = StringReader<'a>;
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     fn to_reader(self) -> Self::Reader {
         StringReader::new(self.as_bytes())
     }
@@ -217,6 +221,7 @@ impl<'a> Readable<'a> for &'a str {
 impl<'a> Readable<'a> for &'a String {
     type Reader = StringReader<'a>;
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     fn to_reader(self) -> Self::Reader {
         StringReader::new(self.as_bytes())
     }
@@ -225,6 +230,7 @@ impl<'a> Readable<'a> for &'a String {
 impl<'a> Readable<'a> for &'a Vec<u8> {
     type Reader = StringReader<'a>;
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     fn to_reader(self) -> Self::Reader {
         StringReader::new(self.as_slice())
     }
@@ -233,6 +239,7 @@ impl<'a> Readable<'a> for &'a Vec<u8> {
 impl<'a> Readable<'a> for &'a [u8] {
     type Reader = StringReader<'a>;
 
+    #[cfg_attr(feature = "no-panic", no_panic::no_panic)]
     fn to_reader(self) -> Self::Reader {
         StringReader::new(self)
     }
