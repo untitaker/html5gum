@@ -52,14 +52,6 @@ jobs:
           args: '--all-features -- --test-threads 1'
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1.0.2
-        with:
-          # GitHub actions' rules for when secrets are available are too
-          # complicated. They're not available in third-party PRs, but then
-          # also not in PRs from dependabot, and there's no way to skip this
-          # step if the secret is just unavailable. Instead we just publish the
-          # secret, there's just not really a ton of risk in uploading random
-          # trash to codecov in the first place.
-          token: 66391fe6-c52d-4f95-9c64-cf7c123f557c
       - name: Archive code coverage results
         uses: actions/upload-artifact@v1
         with:
