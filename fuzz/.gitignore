@@ -1,4 +1,6 @@
+target
+corpus
+artifacts
 /in
 /out
-/target
 /target-afl

@@ -1,34 +1,35 @@
-# Confirm that really only the current html5gum should be fuzzed. This will
-# find panics and segfaults at best, not any other wrong behavior.
+# Configuration of the test target, see README for description.
 export FUZZ_BASIC := 0
-# Add latest released html5gum to fuzzing
 export FUZZ_OLD_HTML5GUM := 0
-# Add html5ever to fuzzing
 export FUZZ_HTML5EVER := 0
-# Ignore errors while diffing to paper over bugs in old html5gum
-#           order = ignore sort order of errors relative to other non-error
-#                   tokens (not relative to each other)
-#               1 = ignore all errors
-# if-reference-contains:XYZ = ignore all errors if one of the ones emitted by old html5gum is equal to XYZ (e.g. "if-reference-contains:duplicate-attribute")
-# any other value = assert exact token equality
 export FUZZ_IGNORE_PARSE_ERRORS := 0
+
 # CLI arguments to pass to AFL. useful for multiprocessing
 export _AFL_OPTS := -M fuzzer01
+# CLI arguments to cargo fuzz
+export _LIBFUZZER_OPTS := -s none
 
-AFL_TARGET_BIN=target-afl/debug/html5gum-fuzz-afl
+AFL_TARGET_BIN=target-afl/release/main_afl
 
 clean:
-	rm -rf target target-afl in out
+	rm -rf target target-afl in out corpus artifacts
 
-in:
+in: Makefile
 	mkdir -p in
-	curl https://www.nytimes.com/ > in/nytimes.html
-	curl https://docs.sentry.io/ > in/sentrydocs.html
-	cat ../tests/html5lib-tests/tokenizer/*.tests | jq -r '.tests[].input' > in/html5lib-tokenizer-tests.html
+	cat ../tests/html5lib-tests/tokenizer/*.test | jq -r '.tests[].input' | split -l 1 - in/html5lib-tokenizer-tests-
+
+afl-requeue:
+	i=0; set -e; for f in in/*; do \
+		dir=out/requeue-$$(shuf -i1-1000 -n1)-$$i/queue; \
+		mkdir -p $$dir; \
+		cp -v $$f $$dir/id:000000,requeued; \
+		i=$$(( i+1 )); \
+	done
+.PHONY: requeue
 
 setup-afl:
 	which cargo-afl || cargo install afl
-	CARGO_TARGET_DIR=./target-afl/ cargo afl build --bin html5gum-fuzz-afl
+	CARGO_TARGET_DIR=./target-afl/ cargo afl build --release --bin main_afl
 
 afl: in setup-afl
 	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
@@ -64,4 +65,11 @@ whatsup:
 	cargo afl whatsup -s out/
 
 cli:
-	cargo run --bin html5gum-fuzz-cli
+	cargo run --bin main_cli
+
+libfuzzer: in
+	mkdir -p out/
+	cargo +nightly fuzz run main_libfuzzer in/ out/ $$_LIBFUZZER_OPTS
+
+sh:
+	$$SHELL
