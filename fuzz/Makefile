@@ -16,7 +16,9 @@ clean:
 
 in: Makefile
 	mkdir -p in
-	cat ../tests/html5lib-tests/tokenizer/*.test | jq -r '.tests[].input' | split -l 1 - in/html5lib-tokenizer-tests-
+	cat ../tests/custom-html5lib-tests/*.test \
+		../tests/html5lib-tests/tokenizer/*.test | \
+		jq -r '.tests[].input' | split -l 1 - in/html5lib-tokenizer-tests-
 
 afl-requeue:
 	i=0; set -e; for f in in/*; do \
