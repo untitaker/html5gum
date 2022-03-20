@@ -36,6 +36,9 @@ target.
   html5lib testsuite and lags behind on
   spec](https://github.com/servo/html5ever/issues/459).
 
+* `FUZZ_LOLHTML=1` to run html5gum and lol-html, and crash when the produced
+  tokens are different.
+
 ## Basic CLI
 
 Run `FUZZ_BASIC=1 make -e cli` to run the fuzz target itself as a barebones CLI

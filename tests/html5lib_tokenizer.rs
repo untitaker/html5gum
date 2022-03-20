@@ -80,26 +80,34 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
                         system_identifier,
                         correctness,
                     ) => Token::Doctype(Doctype {
-                        name: name.unwrap_or_default().0,
-                        public_identifier: public_identifier.map(|x| x.0),
-                        system_identifier: system_identifier.map(|x| x.0),
+                        name: name.unwrap_or_default().0.into(),
+                        public_identifier: public_identifier.map(|x| x.0.into()),
+                        system_identifier: system_identifier.map(|x| x.0.into()),
                         force_quirks: !correctness,
                     }),
                     OutputToken::StartTag(_, name, attributes) => Token::StartTag(StartTag {
                         self_closing: false,
-                        name: name.0,
-                        attributes: attributes.into_iter().map(|(k, v)| (k.0, v.0)).collect(),
+                        name: name.0.into(),
+                        attributes: attributes
+                            .into_iter()
+                            .map(|(k, v)| (k.0.into(), v.0.into()))
+                            .collect(),
                     }),
                     OutputToken::StartTag2(_, name, attributes, self_closing) => {
                         Token::StartTag(StartTag {
                             self_closing,
-                            name: name.0,
-                            attributes: attributes.into_iter().map(|(k, v)| (k.0, v.0)).collect(),
+                            name: name.0.into(),
+                            attributes: attributes
+                                .into_iter()
+                                .map(|(k, v)| (k.0.into(), v.0.into()))
+                                .collect(),
                         })
                     }
-                    OutputToken::EndTag(_, name) => Token::EndTag(EndTag { name: name.0 }),
-                    OutputToken::Comment(_, data) => Token::Comment(data.0),
-                    OutputToken::Character(_, data) => Token::String(data.0),
+                    OutputToken::EndTag(_, name) => Token::EndTag(EndTag {
+                        name: name.0.into(),
+                    }),
+                    OutputToken::Comment(_, data) => Token::Comment(data.0.into()),
+                    OutputToken::Character(_, data) => Token::String(data.0.into()),
                 })
                 .collect::<Vec<Token>>(),
         ))
@@ -284,8 +292,8 @@ fn produce_testcases_from_file(tests: &mut Vec<Test<TestCase>>, path: &Path) {
                 .0
                 .into_iter()
                 .map(|token| match token {
-                    Token::String(x) => Token::String(unescape(x.as_slice())),
-                    Token::Comment(x) => Token::Comment(unescape(x.as_slice())),
+                    Token::String(x) => Token::String(unescape(x.as_slice()).into()),
+                    Token::Comment(x) => Token::Comment(unescape(x.as_slice()).into()),
                     token => token,
                 })
                 .collect();
@@ -325,6 +333,10 @@ fn main() {
     let mut tests = Vec::new();
 
     for entry in glob("tests/html5lib-tests/tokenizer/*.test").unwrap() {
+        produce_testcases_from_file(&mut tests, &entry.unwrap());
+    }
+
+    for entry in glob("tests/custom-html5lib-tests/*.test").unwrap() {
         produce_testcases_from_file(&mut tests, &entry.unwrap());
     }
 

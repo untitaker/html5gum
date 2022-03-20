@@ -1,11 +1,53 @@
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::VecDeque;
+use std::fmt::{Debug, Formatter};
 use std::mem;
+use std::ops::{Deref, DerefMut};
 
 use crate::Error;
 
-type HtmlString = Vec<u8>;
+#[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct HtmlString(pub Vec<u8>);
+
+impl Deref for HtmlString {
+    type Target = Vec<u8>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for HtmlString {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl Debug for HtmlString {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "b\"")?;
+        for &byte in &self.0 {
+            for ch in std::ascii::escape_default(byte) {
+                write!(f, "{}", ch as char)?;
+            }
+        }
+
+        write!(f, "\"")
+    }
+}
+
+impl From<Vec<u8>> for HtmlString {
+    fn from(vec: Vec<u8>) -> HtmlString {
+        HtmlString(vec)
+    }
+}
+
+impl Into<Vec<u8>> for HtmlString {
+    fn into(self) -> Vec<u8> {
+        self.0
+    }
+}
 
 /// An emitter is an object providing methods to the tokenizer to produce tokens.
 ///
@@ -175,9 +217,9 @@ pub trait Emitter {
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
 #[derive(Debug, Default)]
 pub struct DefaultEmitter {
-    current_characters: Vec<u8>,
+    current_characters: HtmlString,
     current_token: Option<Token>,
-    last_start_tag: Vec<u8>,
+    last_start_tag: HtmlString,
     current_attribute: Option<(HtmlString, HtmlString)>,
     seen_attributes: BTreeSet<HtmlString>,
     emitted_tokens: VecDeque<Token>,
@@ -223,7 +265,7 @@ impl DefaultEmitter {
         }
 
         let s = mem::take(&mut self.current_characters);
-        self.emit_token(Token::String(s));
+        self.emit_token(Token::String(s.into()));
     }
 }
 
@@ -263,7 +305,7 @@ impl Emitter for DefaultEmitter {
     }
 
     fn init_comment(&mut self) {
-        self.current_token = Some(Token::Comment(Vec::new()));
+        self.current_token = Some(Token::Comment(Default::default()));
     }
     fn emit_current_tag(&mut self) {
         self.flush_current_attribute();
@@ -344,7 +386,7 @@ impl Emitter for DefaultEmitter {
     }
     fn init_doctype(&mut self) {
         self.current_token = Some(Token::Doctype(Doctype {
-            name: Vec::new(),
+            name: Default::default(),
             force_quirks: false,
             public_identifier: None,
             system_identifier: None,
@@ -353,7 +395,7 @@ impl Emitter for DefaultEmitter {
 
     fn init_attribute(&mut self) {
         self.flush_current_attribute();
-        self.current_attribute = Some((Vec::new(), Vec::new()));
+        self.current_attribute = Some(Default::default());
     }
     fn push_attribute_name(&mut self, s: &[u8]) {
         self.current_attribute.as_mut().unwrap().0.extend(s);
@@ -367,7 +409,7 @@ impl Emitter for DefaultEmitter {
             ..
         })) = self.current_token
         {
-            *public_identifier = Some(value.to_vec());
+            *public_identifier = Some(value.to_vec().into());
         } else {
             debug_assert!(false);
         }
@@ -378,7 +420,7 @@ impl Emitter for DefaultEmitter {
             ..
         })) = self.current_token
         {
-            *system_identifier = Some(value.to_vec());
+            *system_identifier = Some(value.to_vec().into());
         } else {
             debug_assert!(false);
         }

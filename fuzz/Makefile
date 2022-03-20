@@ -3,16 +3,25 @@ export FUZZ_BASIC := 0
 export FUZZ_OLD_HTML5GUM := 0
 export FUZZ_HTML5EVER := 0
 export FUZZ_IGNORE_PARSE_ERRORS := 0
+export FUZZ_LOLHTML := 0
 
 # CLI arguments to pass to AFL. useful for multiprocessing
 export _AFL_OPTS := -M fuzzer01
 # CLI arguments to cargo fuzz
 export _LIBFUZZER_OPTS := -s none
 
+export AFL_MAP_SIZE := 90753
 AFL_TARGET_BIN=target-afl/release/main_afl
 
-clean:
-	rm -rf target target-afl in out corpus artifacts
+all:
+	@echo "no default target"
+	@false
+
+reset:
+	rm -rf in out corpus artifacts
+
+clean: reset
+	rm -rf target target-afl
 
 in: Makefile
 	mkdir -p in

@@ -15,13 +15,19 @@ html5ever = "0.25.1"
 pretty_assertions = "1.0.0"
 
 
+# lol-html and its dependencies
+lol_html = { path = "/home/markus/projects/lol-html/", features = ["integration_test"] }
+encoding_rs = "0.8"
+bytes = "1"
+
+
 # Prevent this from interfering with workspaces
 [workspace]
 members = ["."]
 
 [lib]
 name = "testcase"
-path = "src/testcase.rs"
+path = "src/testcase/mod.rs"
 
 [[bin]]
 name = "main_libfuzzer"
