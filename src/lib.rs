@@ -26,8 +26,8 @@ mod machine;
 mod machine_helper;
 mod read_helper;
 mod reader;
-mod state;
 mod tokenizer;
+mod state;
 mod utils;
 
 #[cfg(feature = "integration-tests")]
@@ -36,5 +36,5 @@ pub mod testutils;
 pub use emitter::{naive_next_state, DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
 pub use reader::{IoReader, Readable, Reader, StringReader};
-pub use state::State;
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};
+pub use state::State;
