@@ -27,7 +27,10 @@ mod machine_helper;
 mod read_helper;
 mod reader;
 mod tokenizer;
+mod state;
 mod utils;
+#[cfg(feature = "html5ever")]
+mod html5ever_emitter;
 
 #[cfg(feature = "integration-tests")]
 pub mod testutils;
@@ -36,3 +39,4 @@ pub use emitter::{DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
 pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};
+pub use state::State;

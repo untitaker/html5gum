@@ -5,8 +5,6 @@
 use crate::Reader;
 use std::cell::Cell;
 
-pub use crate::utils::State;
-
 thread_local! {
     /// Buffer of all debugging output logged internally by html5gum.
     pub static OUTPUT: Cell<String> = Cell::default();
