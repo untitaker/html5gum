@@ -1,8 +1,9 @@
 use crate::entities::try_read_character_reference;
 use crate::read_helper::fast_read_char;
 use crate::utils::{
-    ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken, State,
+    ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken,
 };
+use crate::state::MachineState as State;
 use crate::{Emitter, Error, Reader, Tokenizer};
 
 // Note: This is not implemented as a method on Tokenizer because there's fields on Tokenizer that
@@ -914,17 +915,15 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                             .reader
                             .try_read_string(&mut slf.validator, "CDATA[", true)? =>
                     {
-                        // missing: check for adjusted current element: we don't have an element stack
-                        // at all
-                        //
-                        // missing: cdata transition
-                        //
-                        // let's hope that bogus comment can just sort of skip over cdata
-                        error!(Error::CdataInHtmlContent);
+                        if slf.emitter.adjusted_current_node_present_but_not_in_html_namespace() {
+                            switch_to!(State::CdataSection)
+                        } else {
+                            error!(Error::CdataInHtmlContent);
 
-                        slf.emitter.init_comment();
-                        slf.emitter.push_comment(b"[CDATA[");
-                        switch_to!(State::BogusComment)
+                            slf.emitter.init_comment();
+                            slf.emitter.push_comment(b"[CDATA[");
+                            switch_to!(State::BogusComment)
+                        }
                     }
                     c => {
                         error!(Error::IncorrectlyOpenedComment);

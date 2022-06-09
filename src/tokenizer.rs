@@ -4,8 +4,8 @@ use crate::char_validator::CharValidator;
 use crate::machine;
 use crate::machine_helper::MachineHelper;
 use crate::read_helper::ReadHelper;
-use crate::utils::{ControlToken, State};
-use crate::{DefaultEmitter, Emitter, Readable, Reader};
+use crate::utils::{ControlToken};
+use crate::{State, DefaultEmitter, Emitter, Readable, Reader};
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
 #[derive(Debug)]
@@ -50,7 +50,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     /// Only available with the `integration-tests` feature which is not public API.
     #[cfg(feature = "integration-tests")]
     pub fn set_state(&mut self, state: State) {
-        self.machine_helper.state = state;
+        self.machine_helper.state = state.into();
     }
 
     /// Set the statemachine to start/continue in [plaintext
@@ -58,7 +58,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     ///
     /// This tokenizer never gets into that state naturally.
     pub fn set_plaintext_state(&mut self) {
-        self.machine_helper.state = State::PlainText;
+        self.machine_helper.state = State::PlainText.into();
     }
 
     /// Test-internal function to override internal state.

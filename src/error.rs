@@ -23,15 +23,23 @@ macro_rules! impl_error {
             }
         }
 
-        impl std::fmt::Display for Error {
+        impl Error {
             /// Convert an enum variant back into the `kebap-case` error code as typically written
             /// in the WHATWG spec.
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            pub fn as_str(&self) -> &'static str {
                 match *self {
-                    $( Self::$variant => $string.fmt(f), )*
+                    $( Self::$variant => $string, )*
                 }
             }
         }
+    }
+}
+
+impl std::fmt::Display for Error {
+    /// Convert an enum variant back into the `kebap-case` error code as typically written
+    /// in the WHATWG spec.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.as_str().fmt(f)
     }
 }
 

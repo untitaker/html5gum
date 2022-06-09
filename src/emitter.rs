@@ -5,7 +5,7 @@ use std::fmt::{Debug, Formatter};
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
-use crate::Error;
+use crate::{State, Error};
 
 #[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct HtmlString(pub Vec<u8>);
@@ -212,6 +212,24 @@ pub trait Emitter {
     /// See also [WHATWG's definition of "appropriate end tag
     /// token"](https://html.spec.whatwg.org/#appropriate-end-tag-token).
     fn current_is_appropriate_end_tag_token(&mut self) -> bool;
+
+    /// By default, this always returns false and thus
+    /// all CDATA sections are tokenized as bogus comments.
+    /// 
+    /// See [markup declaration open
+    /// state](https://html.spec.whatwg.org/multipage/#markup-declaration-open-state).
+    fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
+        false
+    }
+
+
+    /// Switch the tokenizer to a new state. Used in tree building.
+    ///
+    /// By default states are never switched, which leads to artifacts like contents of `<script>`
+    /// tags being incorrectly interpreted as HTML.
+    fn pop_next_state(&mut self) -> Option<State> {
+        None
+    }
 }
 
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
