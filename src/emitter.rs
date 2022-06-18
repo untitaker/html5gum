@@ -113,7 +113,24 @@ pub trait Emitter {
     /// If a start tag is emitted, update the _last start tag_.
     ///
     /// If the current token is not a start/end tag, this method may panic.
-    fn emit_current_tag(&mut self);
+    ///
+    /// The return value is used to switch the tokenizer to a new state. Used in tree building.
+    ///
+    /// If this method always returns `None`, states are never switched, which leads to artifacts
+    /// like contents of `<script>` tags being incorrectly interpreted as HTML.
+    ///
+    /// It's not possible to implement this method correctly in line with the spec without
+    /// implementing a full-blown tree builder as per [tree
+    /// construction](https://html.spec.whatwg.org/#tree-construction), which this crate does not
+    /// offer.
+    ///
+    /// You can approximate correct behavior using [`naive_next_state`], but the caveats of doing
+    /// so are not well-understood.
+    ///
+    /// See the `tokenize_with_state_switches` cargo example for a practical example where this
+    /// matters.
+    #[must_use]
+    fn emit_current_tag(&mut self) -> Option<State>;
 
     /// Emit the _current token_, assuming it is a comment.
     ///
@@ -221,14 +238,22 @@ pub trait Emitter {
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
         false
     }
+}
 
-
-    /// Switch the tokenizer to a new state. Used in tree building.
-    ///
-    /// By default states are never switched, which leads to artifacts like contents of `<script>`
-    /// tags being incorrectly interpreted as HTML.
-    fn pop_next_state(&mut self) -> Option<State> {
-        None
+/// Take an educated guess at the next state using the name of a just-now emitted start tag.
+///
+/// This can be used to implement [`Emitter::emit_current_tag`] for most HTML scraping applications,
+/// but is unsuitable for implementing a browser.
+///
+/// The mapping was inspired by `lol-html` which has additional safeguards to detect ambiguous
+/// parsing state.
+pub fn naive_next_state(tag_name: &[u8]) -> Option<State> {
+    match tag_name {
+        b"textarea" | b"title" => Some(State::RcData),
+        b"plaintext" => Some(State::PlainText),
+        b"script" => Some(State::ScriptData),
+        b"style" | b"iframe" | b"xmp" | b"noembed" | b"noframe" | b"noscript" => Some(State::RawText),
+        _ => None
     }
 }
 
@@ -241,9 +266,17 @@ pub struct DefaultEmitter {
     current_attribute: Option<(HtmlString, HtmlString)>,
     seen_attributes: BTreeSet<HtmlString>,
     emitted_tokens: VecDeque<Token>,
+    switch_states: bool,
 }
 
 impl DefaultEmitter {
+    /// Whether to use [`naive_next_state`] to switch states automatically.
+    ///
+    /// The default is off.
+    pub fn switch_states(&mut self, yes: bool) {
+        self.switch_states = yes;
+    }
+
     fn emit_token(&mut self, token: Token) {
         self.flush_current_characters();
         self.emitted_tokens.push_front(token);
@@ -325,7 +358,7 @@ impl Emitter for DefaultEmitter {
     fn init_comment(&mut self) {
         self.current_token = Some(Token::Comment(Default::default()));
     }
-    fn emit_current_tag(&mut self) {
+    fn emit_current_tag(&mut self) -> Option<State> {
         self.flush_current_attribute();
         let mut token = self.current_token.take().unwrap();
         match token {
@@ -341,6 +374,11 @@ impl Emitter for DefaultEmitter {
             _ => debug_assert!(false),
         }
         self.emit_token(token);
+        if self.switch_states {
+            dbg!(naive_next_state(&*self.last_start_tag))
+        } else {
+            None
+        }
     }
     fn emit_current_comment(&mut self) {
         let comment = self.current_token.take().unwrap();

@@ -5,7 +5,10 @@ use crate::machine;
 use crate::machine_helper::MachineHelper;
 use crate::read_helper::ReadHelper;
 use crate::utils::{ControlToken};
-use crate::{State, DefaultEmitter, Emitter, Readable, Reader};
+use crate::{DefaultEmitter, Emitter, Readable, Reader};
+
+#[cfg(feature = "integration-tests")]
+use crate::State;
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
 #[derive(Debug)]
@@ -51,14 +54,6 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     #[cfg(feature = "integration-tests")]
     pub fn set_state(&mut self, state: State) {
         self.machine_helper.state = state.into();
-    }
-
-    /// Set the statemachine to start/continue in [plaintext
-    /// state](https://html.spec.whatwg.org/#plaintext-state).
-    ///
-    /// This tokenizer never gets into that state naturally.
-    pub fn set_plaintext_state(&mut self) {
-        self.machine_helper.state = State::PlainText.into();
     }
 
     /// Test-internal function to override internal state.

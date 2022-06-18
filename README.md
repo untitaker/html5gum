@@ -48,7 +48,7 @@ test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer). S
 * `html5gum` doesn't implement the DOM, and unfortunately in the HTML spec,
   constructing the DOM ("tree construction") influences how tokenization is
   done. For an example of which problems this causes see [issue
-  11](https://github.com/untitaker/html5gum/issues/11).
+  11](https://github.com/untitaker/html5gum/issues/11)
 * `html5gum` **does not** generally qualify as a browser-grade HTML *parser* as
   per the WHATWG spec. This can change in the future, see [issue
   21](https://github.com/untitaker/html5gum/issues/21).
