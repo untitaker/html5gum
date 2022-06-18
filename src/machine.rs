@@ -1,8 +1,7 @@
 use crate::entities::try_read_character_reference;
 use crate::read_helper::fast_read_char;
-use crate::utils::{
-    ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken, State,
-};
+use crate::state::MachineState as State;
+use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken};
 use crate::{Emitter, Error, Reader, Tokenizer};
 
 // Note: This is not implemented as a method on Tokenizer because there's fields on Tokenizer that
@@ -26,6 +25,13 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             };
         };
+    }
+
+    macro_rules! emit_current_tag_and_switch_to {
+        ($state:expr) => {{
+            let state = slf.emitter.emit_current_tag().map(From::from);
+            switch_to!(state.unwrap_or($state))
+        }};
     }
 
     macro_rules! switch_to {
@@ -256,8 +262,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                     switch_to!(State::SelfClosingStartTag)
                 }
                 Some(b">") => {
-                    slf.emitter.emit_current_tag();
-                    switch_to!(State::Data)
+                    emit_current_tag_and_switch_to!(State::Data)
                 }
                 Some(b"\0") => {
                     error!(Error::UnexpectedNullCharacter);
@@ -308,8 +313,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 switch_to!(State::SelfClosingStartTag)
             }
             Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                slf.emitter.emit_current_tag();
-                switch_to!(State::Data)
+                emit_current_tag_and_switch_to!(State::Data)
             }
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
@@ -352,8 +356,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 switch_to!(State::SelfClosingStartTag)
             }
             Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                slf.emitter.emit_current_tag();
-                switch_to!(State::Data)
+                emit_current_tag_and_switch_to!(State::Data)
             }
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
@@ -400,8 +403,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 switch_to!(State::SelfClosingStartTag)
             }
             Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                slf.emitter.emit_current_tag();
-                switch_to!(State::Data)
+                emit_current_tag_and_switch_to!(State::Data)
             }
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
@@ -542,8 +544,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 switch_to!(State::SelfClosingStartTag)
             }
             Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                slf.emitter.emit_current_tag();
-                switch_to!(State::Data)
+                emit_current_tag_and_switch_to!(State::Data)
             }
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
@@ -739,8 +740,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 switch_to!(State::BeforeAttributeValue)
             }
             Some(b'>') => {
-                slf.emitter.emit_current_tag();
-                switch_to!(State::Data)
+                emit_current_tag_and_switch_to!(State::Data)
             }
             None => {
                 error!(Error::EofInTag);
@@ -761,8 +761,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
             }
             Some(b'>') => {
                 error!(Error::MissingAttributeValue);
-                slf.emitter.emit_current_tag();
-                switch_to!(State::Data)
+                emit_current_tag_and_switch_to!(State::Data)
             }
             c => {
                 reconsume_in!(c, State::AttributeValueUnquoted)
@@ -826,8 +825,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                     enter_state!(State::CharacterReference)
                 }
                 Some(b">") => {
-                    slf.emitter.emit_current_tag();
-                    switch_to!(State::Data)
+                    emit_current_tag_and_switch_to!(State::Data)
                 }
                 Some(b"\0") => {
                     error!(Error::UnexpectedNullCharacter);
@@ -861,8 +859,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
         State::SelfClosingStartTag => match read_byte!()? {
             Some(b'>') => {
                 slf.emitter.set_self_closing();
-                slf.emitter.emit_current_tag();
-                switch_to!(State::Data)
+                emit_current_tag_and_switch_to!(State::Data)
             }
             None => {
                 error!(Error::EofInTag);
@@ -895,45 +892,42 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::MarkupDeclarationOpen => {
+        State::MarkupDeclarationOpen => match read_byte!()? {
+            Some(b'-') if slf.reader.try_read_string(&mut slf.validator, "-", true)? => {
+                slf.emitter.init_comment();
+                switch_to!(State::CommentStart)
+            }
+            Some(b'd' | b'D')
+                if slf
+                    .reader
+                    .try_read_string(&mut slf.validator, "octype", false)? =>
             {
-                match read_byte!()? {
-                    Some(b'-') if slf.reader.try_read_string(&mut slf.validator, "-", true)? => {
-                        slf.emitter.init_comment();
-                        switch_to!(State::CommentStart)
-                    }
-                    Some(b'd' | b'D')
-                        if slf
-                            .reader
-                            .try_read_string(&mut slf.validator, "octype", false)? =>
-                    {
-                        switch_to!(State::Doctype)
-                    }
-                    Some(b'[')
-                        if slf
-                            .reader
-                            .try_read_string(&mut slf.validator, "CDATA[", true)? =>
-                    {
-                        // missing: check for adjusted current element: we don't have an element stack
-                        // at all
-                        //
-                        // missing: cdata transition
-                        //
-                        // let's hope that bogus comment can just sort of skip over cdata
-                        error!(Error::CdataInHtmlContent);
+                switch_to!(State::Doctype)
+            }
+            Some(b'[')
+                if slf
+                    .reader
+                    .try_read_string(&mut slf.validator, "CDATA[", true)? =>
+            {
+                if slf
+                    .emitter
+                    .adjusted_current_node_present_but_not_in_html_namespace()
+                {
+                    switch_to!(State::CdataSection)
+                } else {
+                    error!(Error::CdataInHtmlContent);
 
-                        slf.emitter.init_comment();
-                        slf.emitter.push_comment(b"[CDATA[");
-                        switch_to!(State::BogusComment)
-                    }
-                    c => {
-                        error!(Error::IncorrectlyOpenedComment);
-                        slf.emitter.init_comment();
-                        reconsume_in!(c, State::BogusComment)
-                    }
+                    slf.emitter.init_comment();
+                    slf.emitter.push_comment(b"[CDATA[");
+                    switch_to!(State::BogusComment)
                 }
             }
-        }
+            c => {
+                error!(Error::IncorrectlyOpenedComment);
+                slf.emitter.init_comment();
+                reconsume_in!(c, State::BogusComment)
+            }
+        },
         State::CommentStart => match read_byte!()? {
             Some(b'-') => {
                 switch_to!(State::CommentStartDash)

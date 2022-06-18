@@ -1,4 +1,5 @@
-use crate::utils::{trace_log, State};
+use crate::state::MachineState as State;
+use crate::utils::trace_log;
 use crate::Emitter;
 
 #[derive(Debug)]
