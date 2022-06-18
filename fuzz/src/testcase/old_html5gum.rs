@@ -26,6 +26,7 @@ pub fn run_old_html5gum(s: &str) {
         .split(",")
     {
         match instruction {
+            "" => {}
             "1" => {
                 testing_tokens.retain(isnt_error);
                 reference_tokens.retain(isnt_old_error);
