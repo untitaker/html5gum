@@ -33,7 +33,7 @@ mod utils;
 #[cfg(feature = "integration-tests")]
 pub mod testutils;
 
-pub use emitter::{naive_next_state, DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
+pub use emitter::{HtmlString, naive_next_state, DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token};
 pub use error::Error;
 pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use state::State;
