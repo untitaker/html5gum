@@ -8,6 +8,8 @@ use std::ops::{Deref, DerefMut};
 use crate::{Error, State};
 
 /// A wrapper around a bytestring.
+///
+/// This newtype only exists to provide a nicer `Debug` impl
 #[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct HtmlString(pub Vec<u8>);
 
