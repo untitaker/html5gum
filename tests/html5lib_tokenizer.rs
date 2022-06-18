@@ -1,7 +1,9 @@
 use std::ops::Deref;
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
 
-use html5gum::{Doctype, EndTag, Error, IoReader, State, Readable, Reader, StartTag, Token, Tokenizer};
+use html5gum::{
+    Doctype, EndTag, Error, IoReader, Readable, Reader, StartTag, State, Token, Tokenizer,
+};
 
 use html5gum::testutils::{trace_log, SlowReader, OUTPUT};
 

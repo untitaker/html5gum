@@ -15,7 +15,7 @@
 //! behavior for many usecases.
 //!
 //! See [issue 11](https://github.com/untitaker/html5gum/issues/11) for some discussion.
-use html5gum::{IoReader, Tokenizer, DefaultEmitter};
+use html5gum::{DefaultEmitter, IoReader, Tokenizer};
 
 fn main() {
     let mut emitter = DefaultEmitter::default();
