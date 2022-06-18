@@ -1,9 +1,7 @@
 use crate::entities::try_read_character_reference;
 use crate::read_helper::fast_read_char;
-use crate::utils::{
-    ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken,
-};
 use crate::state::MachineState as State;
+use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken};
 use crate::{Emitter, Error, Reader, Tokenizer};
 
 // Note: This is not implemented as a method on Tokenizer because there's fields on Tokenizer that
@@ -894,43 +892,42 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::MarkupDeclarationOpen => {
+        State::MarkupDeclarationOpen => match read_byte!()? {
+            Some(b'-') if slf.reader.try_read_string(&mut slf.validator, "-", true)? => {
+                slf.emitter.init_comment();
+                switch_to!(State::CommentStart)
+            }
+            Some(b'd' | b'D')
+                if slf
+                    .reader
+                    .try_read_string(&mut slf.validator, "octype", false)? =>
             {
-                match read_byte!()? {
-                    Some(b'-') if slf.reader.try_read_string(&mut slf.validator, "-", true)? => {
-                        slf.emitter.init_comment();
-                        switch_to!(State::CommentStart)
-                    }
-                    Some(b'd' | b'D')
-                        if slf
-                            .reader
-                            .try_read_string(&mut slf.validator, "octype", false)? =>
-                    {
-                        switch_to!(State::Doctype)
-                    }
-                    Some(b'[')
-                        if slf
-                            .reader
-                            .try_read_string(&mut slf.validator, "CDATA[", true)? =>
-                    {
-                        if slf.emitter.adjusted_current_node_present_but_not_in_html_namespace() {
-                            switch_to!(State::CdataSection)
-                        } else {
-                            error!(Error::CdataInHtmlContent);
+                switch_to!(State::Doctype)
+            }
+            Some(b'[')
+                if slf
+                    .reader
+                    .try_read_string(&mut slf.validator, "CDATA[", true)? =>
+            {
+                if slf
+                    .emitter
+                    .adjusted_current_node_present_but_not_in_html_namespace()
+                {
+                    switch_to!(State::CdataSection)
+                } else {
+                    error!(Error::CdataInHtmlContent);
 
-                            slf.emitter.init_comment();
-                            slf.emitter.push_comment(b"[CDATA[");
-                            switch_to!(State::BogusComment)
-                        }
-                    }
-                    c => {
-                        error!(Error::IncorrectlyOpenedComment);
-                        slf.emitter.init_comment();
-                        reconsume_in!(c, State::BogusComment)
-                    }
+                    slf.emitter.init_comment();
+                    slf.emitter.push_comment(b"[CDATA[");
+                    switch_to!(State::BogusComment)
                 }
             }
-        }
+            c => {
+                error!(Error::IncorrectlyOpenedComment);
+                slf.emitter.init_comment();
+                reconsume_in!(c, State::BogusComment)
+            }
+        },
         State::CommentStart => match read_byte!()? {
             Some(b'-') => {
                 switch_to!(State::CommentStartDash)

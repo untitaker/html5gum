@@ -5,7 +5,7 @@ use std::fmt::{Debug, Formatter};
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
-use crate::{State, Error};
+use crate::{Error, State};
 
 #[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct HtmlString(pub Vec<u8>);
@@ -43,9 +43,9 @@ impl From<Vec<u8>> for HtmlString {
     }
 }
 
-impl Into<Vec<u8>> for HtmlString {
-    fn into(self) -> Vec<u8> {
-        self.0
+impl From<HtmlString> for Vec<u8> {
+    fn from(other: HtmlString) -> Vec<u8> {
+        other.0
     }
 }
 
@@ -232,7 +232,7 @@ pub trait Emitter {
 
     /// By default, this always returns false and thus
     /// all CDATA sections are tokenized as bogus comments.
-    /// 
+    ///
     /// See [markup declaration open
     /// state](https://html.spec.whatwg.org/multipage/#markup-declaration-open-state).
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
@@ -247,13 +247,16 @@ pub trait Emitter {
 ///
 /// The mapping was inspired by `lol-html` which has additional safeguards to detect ambiguous
 /// parsing state.
+#[must_use]
 pub fn naive_next_state(tag_name: &[u8]) -> Option<State> {
     match tag_name {
         b"textarea" | b"title" => Some(State::RcData),
         b"plaintext" => Some(State::PlainText),
         b"script" => Some(State::ScriptData),
-        b"style" | b"iframe" | b"xmp" | b"noembed" | b"noframe" | b"noscript" => Some(State::RawText),
-        _ => None
+        b"style" | b"iframe" | b"xmp" | b"noembed" | b"noframe" | b"noscript" => {
+            Some(State::RawText)
+        }
+        _ => None,
     }
 }
 
@@ -316,7 +319,7 @@ impl DefaultEmitter {
         }
 
         let s = mem::take(&mut self.current_characters);
-        self.emit_token(Token::String(s.into()));
+        self.emit_token(Token::String(s));
     }
 }
 
@@ -356,7 +359,7 @@ impl Emitter for DefaultEmitter {
     }
 
     fn init_comment(&mut self) {
-        self.current_token = Some(Token::Comment(Default::default()));
+        self.current_token = Some(Token::Comment(HtmlString::default()));
     }
     fn emit_current_tag(&mut self) -> Option<State> {
         self.flush_current_attribute();
@@ -442,7 +445,7 @@ impl Emitter for DefaultEmitter {
     }
     fn init_doctype(&mut self) {
         self.current_token = Some(Token::Doctype(Doctype {
-            name: Default::default(),
+            name: HtmlString::default(),
             force_quirks: false,
             public_identifier: None,
             system_identifier: None,

@@ -4,7 +4,7 @@ use crate::char_validator::CharValidator;
 use crate::machine;
 use crate::machine_helper::MachineHelper;
 use crate::read_helper::ReadHelper;
-use crate::utils::{ControlToken};
+use crate::utils::ControlToken;
 use crate::{DefaultEmitter, Emitter, Readable, Reader};
 
 #[cfg(feature = "integration-tests")]
