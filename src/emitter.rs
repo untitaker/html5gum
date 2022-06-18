@@ -7,6 +7,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::{Error, State};
 
+/// A wrapper around a bytestring.
 #[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct HtmlString(pub Vec<u8>);
 
