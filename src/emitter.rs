@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::VecDeque;
+use std::borrow::{Borrow, BorrowMut};
 use std::fmt::{Debug, Formatter};
 use std::mem;
 use std::ops::{Deref, DerefMut};
@@ -39,6 +40,28 @@ impl Debug for HtmlString {
         write!(f, "\"")
     }
 }
+
+impl Borrow<[u8]> for HtmlString {
+    fn borrow(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+
+impl BorrowMut<[u8]> for HtmlString {
+    fn borrow_mut(&mut self) -> &mut [u8] {
+        &mut self.0
+    }
+}
+
+
+#[test]
+fn test_borrowing() {
+    // demonstrate a usecase for Borrow/BorrowMut
+    let tag = StartTag::default();
+    assert!(tag.attributes.get(b"href".as_slice()).is_none());
+}
+
 
 impl From<Vec<u8>> for HtmlString {
     fn from(vec: Vec<u8>) -> HtmlString {
