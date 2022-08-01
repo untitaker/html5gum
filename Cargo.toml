@@ -13,7 +13,7 @@ include = ["src/**/*", "LICENSE", "README.md", "benches"]
 
 [dev-dependencies]
 # For examples/tokenize_with_html5ever_treebuilder.rs
-html5ever = "0.25.0"
+html5ever = "0.26.0"
 markup5ever_rcdom = "0.1.0"
 
 pretty_assertions = "1.0.0"
