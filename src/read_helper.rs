@@ -149,11 +149,10 @@ impl<R: Reader> ReadHelper<R> {
 ///
 /// An extremely limited subset of match patterns is supported.
 ///
-/// ```rust
-/// # This documentation example isnt actually running. See
-/// # https://users.rust-lang.org/t/rustdoc-doctests-and-private-documentation/20955/6
-///
-/// use crate::{Reader, Tokenizer};
+/// ```ignore
+/// // I'm hitting multiple issues trying to get this test example to compile for doctests.
+/// // Example: https://users.rust-lang.org/t/rustdoc-doctests-and-private-documentation/20955/6
+/// use html5gum::{Reader, Tokenizer};
 ///
 /// fn before<R: Reader>(slf: &mut Tokenizer<R>) {
 ///     match slf.reader.read_char() {
