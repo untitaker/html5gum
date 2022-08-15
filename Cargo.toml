@@ -27,10 +27,6 @@ iai = "0.1.1"
 # This may come in handy if you encounter packaging/build problems.
 default = ["jetscii"]
 
-# If this feature is enabled, html5gum will expose private APIs and start
-# printing debug information to stdout.
-integration-tests = []
-
 [dependencies]
 jetscii = { version = "0.5.1", optional = true }
 

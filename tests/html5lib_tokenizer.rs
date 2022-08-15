@@ -12,11 +12,6 @@ use libtest_mimic::{self, Arguments, Failed, Trial};
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
 
-#[cfg(not(feature = "integration-tests"))]
-compile_error!(
-    "integration tests need the integration-tests feature enabled. Run cargo test --all-features"
-);
-
 #[derive(Clone)]
 struct ExpectedOutputTokens(Vec<Token>);
 

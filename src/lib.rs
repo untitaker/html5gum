@@ -30,7 +30,7 @@ mod state;
 mod tokenizer;
 mod utils;
 
-#[cfg(feature = "integration-tests")]
+#[cfg(debug_assertions)]
 pub mod testutils;
 
 pub use emitter::{
