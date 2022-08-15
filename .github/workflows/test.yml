@@ -17,7 +17,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - run: cargo check --examples --tests
+      - run: cargo check --examples
   check_minimal:
     name: Check (no default features)
     runs-on: ubuntu-latest
