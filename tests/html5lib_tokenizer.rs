@@ -8,7 +8,7 @@ use html5gum::{
 use html5gum::testutils::{trace_log, SlowReader, OUTPUT};
 
 use glob::glob;
-use libtest_mimic::{run_tests, Arguments, Outcome, Test};
+use libtest_mimic::{self, Arguments, Failed, Trial};
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
 
@@ -206,6 +206,81 @@ struct TestCase {
     declaration: TestFileEntry,
 }
 
+impl TestCase {
+    fn run(&self) -> Result<(), Failed> {
+        let result = std::panic::catch_unwind(move || {
+            trace_log(&format!(
+                "==== FILE {}, TEST {}, STATE {:?}, TOKENIZER {:?} ====",
+                self.filename, self.test_i, self.state, self.reader_type,
+            ));
+            trace_log(&format!("description: {}", self.declaration.description));
+
+            let string = self.declaration.input.0.as_slice();
+
+            match self.reader_type {
+                ReaderType::String => self.run_inner(Tokenizer::new(string.to_reader())),
+                ReaderType::SlowString => {
+                    self.run_inner(Tokenizer::new(SlowReader(string.to_reader())));
+                }
+                ReaderType::BufRead => self.run_inner(Tokenizer::new(IoReader::new(string))),
+                ReaderType::SlowBufRead => self.run_inner(Tokenizer::new(SlowReader(
+                    IoReader::new(string).to_reader(),
+                ))),
+            }
+        });
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                let mut msg = String::new();
+
+                OUTPUT.with(|cell| {
+                    let mut buf = cell.take();
+                    msg.push_str(&buf);
+                    buf.clear();
+                    cell.set(buf);
+                });
+
+                msg.push('\n');
+                if let Some(s) = e
+                    // Try to convert it to a String, then turn that into a str
+                    .downcast_ref::<String>()
+                    .map(String::as_str)
+                    // If that fails, try to turn it into a &'static str
+                    .or_else(|| e.downcast_ref::<&'static str>().map(Deref::deref))
+                {
+                    msg.push_str(s);
+                }
+
+                Err(msg.into())
+            }
+        }
+    }
+
+    fn run_inner<R: Reader>(&self, mut tokenizer: Tokenizer<R>) {
+        tokenizer.set_state(self.state);
+        tokenizer.set_last_start_tag(self.declaration.last_start_tag.as_deref());
+
+        let mut actual_tokens = Vec::new();
+        let mut actual_errors = Vec::new();
+
+        for token in tokenizer {
+            let token = token.unwrap();
+
+            if let Token::Error(e) = token {
+                actual_errors.push(ParseError {
+                    code: ParseErrorInner(e),
+                });
+            } else {
+                actual_tokens.push(token);
+            }
+        }
+
+        assert_eq!(actual_tokens, self.declaration.output.0);
+        assert_eq!(actual_errors, self.declaration.errors);
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 enum ReaderType {
     SlowString,
@@ -266,7 +341,7 @@ fn unescape(data: &[u8]) -> Vec<u8> {
     rv
 }
 
-fn produce_testcases_from_file(tests: &mut Vec<Test<TestCase>>, path: &Path) {
+fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
     let fname = path.file_name().unwrap().to_str().unwrap();
 
     if matches!(
@@ -308,22 +383,25 @@ fn produce_testcases_from_file(tests: &mut Vec<Test<TestCase>>, path: &Path) {
                 ReaderType::BufRead,
                 ReaderType::SlowBufRead,
             ] {
-                tests.push(Test {
-                    name: format!(
+                let filename = fname.to_owned();
+                let declaration = declaration.clone();
+                let state = state.0;
+                tests.push(Trial::test(
+                    format!(
                         "{}:{}:{:?}:{:?}",
-                        fname, declaration.description, state.0, reader_type
+                        fname, declaration.description, state, reader_type
                     ),
-                    kind: "".into(),
-                    is_ignored: false,
-                    is_bench: false,
-                    data: TestCase {
-                        state: state.0,
-                        reader_type,
-                        filename: fname.to_owned(),
-                        test_i,
-                        declaration: declaration.clone(),
+                    move || {
+                        TestCase {
+                            state,
+                            reader_type,
+                            filename,
+                            test_i,
+                            declaration,
+                        }
+                        .run()
                     },
-                });
+                ));
             }
         }
     }
@@ -342,80 +420,5 @@ fn main() {
         produce_testcases_from_file(&mut tests, &entry.unwrap());
     }
 
-    run_tests(&args, tests, |test| {
-        let result = std::panic::catch_unwind(move || {
-            let test = &test.data;
-
-            trace_log(&format!(
-                "==== FILE {}, TEST {}, STATE {:?}, TOKENIZER {:?} ====",
-                test.filename, test.test_i, test.state, test.reader_type,
-            ));
-            trace_log(&format!("description: {}", test.declaration.description));
-
-            let string = test.declaration.input.0.as_slice();
-
-            match test.reader_type {
-                ReaderType::String => run_test(test, Tokenizer::new(string.to_reader())),
-                ReaderType::SlowString => {
-                    run_test(test, Tokenizer::new(SlowReader(string.to_reader())));
-                }
-                ReaderType::BufRead => run_test(test, Tokenizer::new(IoReader::new(string))),
-                ReaderType::SlowBufRead => run_test(
-                    test,
-                    Tokenizer::new(SlowReader(IoReader::new(string).to_reader())),
-                ),
-            }
-        });
-
-        match result {
-            Ok(_) => Outcome::Passed,
-            Err(e) => {
-                let mut msg = String::new();
-
-                OUTPUT.with(|cell| {
-                    let mut buf = cell.take();
-                    msg.push_str(&buf);
-                    buf.clear();
-                    cell.set(buf);
-                });
-
-                msg.push('\n');
-                if let Some(s) = e
-                    // Try to convert it to a String, then turn that into a str
-                    .downcast_ref::<String>()
-                    .map(String::as_str)
-                    // If that fails, try to turn it into a &'static str
-                    .or_else(|| e.downcast_ref::<&'static str>().map(Deref::deref))
-                {
-                    msg.push_str(s);
-                }
-
-                Outcome::Failed { msg: Some(msg) }
-            }
-        }
-    })
-    .exit();
-}
-
-fn run_test<R: Reader>(test: &TestCase, mut tokenizer: Tokenizer<R>) {
-    tokenizer.set_state(test.state);
-    tokenizer.set_last_start_tag(test.declaration.last_start_tag.as_deref());
-
-    let mut actual_tokens = Vec::new();
-    let mut actual_errors = Vec::new();
-
-    for token in tokenizer {
-        let token = token.unwrap();
-
-        if let Token::Error(e) = token {
-            actual_errors.push(ParseError {
-                code: ParseErrorInner(e),
-            });
-        } else {
-            actual_tokens.push(token);
-        }
-    }
-
-    assert_eq!(actual_tokens, test.declaration.output.0);
-    assert_eq!(actual_errors, test.declaration.errors);
+    libtest_mimic::run(&args, tests).exit();
 }
