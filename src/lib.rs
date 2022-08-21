@@ -29,6 +29,7 @@ mod reader;
 mod state;
 mod tokenizer;
 mod utils;
+pub mod trees;
 
 #[cfg(debug_assertions)]
 pub mod testutils;
