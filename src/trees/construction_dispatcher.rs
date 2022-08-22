@@ -21,6 +21,7 @@ enum InsertionMode {
     InHeadNoscript,
     Text,
     AfterHead,
+    InTemplate
 }
 
 fn strip_prefix_chars(value: &mut Vec<u8>, cond: impl Fn(u8) -> bool) {
@@ -124,6 +125,11 @@ impl Element {
     }
 }
 
+enum ElementOrMarker {
+    Element(Node),
+    Marker,
+}
+
 pub struct TreeConstructionDispatcher<R: Reader> {
     tokenizer: Tokenizer<R>,
     stack_of_open_elements: Vec<Node>,
@@ -136,6 +142,9 @@ pub struct TreeConstructionDispatcher<R: Reader> {
     fragment_parsing: bool,
     // "if the parser was invoked via document.write() or document.writeln() methods"
     invoked_via_document_write: bool,
+    list_of_active_formatting_elements: Vec<ElementOrMarker>,
+    frameset_ok: bool,
+    stack_of_template_insertion_modes: Vec<InsertionMode>,
 }
 
 impl<R: Reader> TreeConstructionDispatcher<R> {
@@ -151,6 +160,9 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             scripting: false,
             fragment_parsing: false,
             invoked_via_document_write: false,
+            list_of_active_formatting_elements: Vec::new(),
+            frameset_ok: true,
+            stack_of_template_insertion_modes: Vec::new(),
         }
     }
 
@@ -160,6 +172,10 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
 
     fn adjusted_current_node(&self) -> Option<&Node> {
         self.context_element.as_ref().or_else(|| self.current_node())
+    }
+
+    fn current_template_insertion_mode(&self) -> Option<&InsertionMode> {
+        self.stack_of_template_insertion_modes.last()
     }
 
     pub fn run(mut self) -> Result<(), R::Error> {
@@ -437,7 +453,53 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         // any other end tag
                         self.parse_error();
                     }
-                    _ => todo!()
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"template" => {
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.list_of_active_formatting_elements.push(ElementOrMarker::Marker);
+                        self.frameset_ok = false;
+                        self.insertion_mode = InsertionMode::InTemplate;
+                        self.stack_of_template_insertion_modes.push(InsertionMode::InTemplate);
+                    }
+                    Some(Token::EndTag(ref tag)) if *tag.name == b"template" => {
+                        if self.stack_of_open_elements.iter().filter_map(|x| x.as_element()).filter(|elem| *elem.tag_name == b"template").next().is_none() {
+                            self.parse_error();
+                            return;
+                        }
+
+                        self.generate_all_implied_end_tags_thoroughly();
+
+                        let mut emitted_parse_error = false;
+
+                        let template_elem = loop {
+                            match self.stack_of_open_elements.pop() {
+                                Some(node) => {
+                                    if node.as_element().map_or(false, |x| *x.tag_name == b"template") {
+                                        break node;
+                                    } else if !emitted_parse_error {
+                                        self.parse_error();
+                                        emitted_parse_error = true;
+                                    }
+                                }
+                                None => {
+                                    unreachable!("checked stack of open elements before");
+                                }
+                            }
+                        };
+
+                        self.clear_list_of_active_formatting_elements_up_to_the_last_marker();
+                        self.stack_of_template_insertion_modes.pop().expect("no template insertion mode?");
+                        self.reset_the_insertion_mode_appropriately();
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"head" => {
+                        self.parse_error();
+                    }
+                    token => {
+                        let head_element = self.stack_of_open_elements.pop().expect("expected head element");
+                        debug_assert_eq!(*head_element.as_element().unwrap().tag_name, b"head");
+                        debug_assert_eq!(*head_element.as_element().unwrap().local_name, b"head");
+                        self.insertion_mode = InsertionMode::AfterHead;
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
                 }
             }
             _ => todo!()
@@ -477,6 +539,18 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
 
     fn insert_element(&mut self, node: Node, position: InsertPosition) {
+        todo!()
+    }
+
+    fn generate_all_implied_end_tags_thoroughly(&mut self) {
+        todo!()
+    }
+
+    fn clear_list_of_active_formatting_elements_up_to_the_last_marker(&mut self) {
+        todo!()
+    }
+
+    fn reset_the_insertion_mode_appropriately(&mut self) {
         todo!()
     }
 }
