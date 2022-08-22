@@ -1,4 +1,4 @@
-#![warn(missing_docs)]
+// #![warn(missing_docs)]
 // This is an HTML parser. HTML can be untrusted input from the internet.
 #![forbid(unsafe_code)]
 #![doc = include_str!("../README.md")]
@@ -6,8 +6,8 @@
 #![warn(
     absolute_paths_not_starting_with_crate,
     rustdoc::invalid_html_tags,
-    missing_copy_implementations,
-    missing_debug_implementations,
+   // missing_copy_implementations,
+   // missing_debug_implementations,
     semicolon_in_expressions_from_macros,
     unreachable_pub,
     unused_extern_crates,

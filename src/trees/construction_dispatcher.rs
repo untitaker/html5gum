@@ -1,4 +1,4 @@
-use crate::{Reader, Token, Tokenizer};
+use crate::{Reader, Token, Tokenizer, HtmlString};
 
 enum ElementNamespace {
     HTML,
@@ -12,11 +12,12 @@ enum ElementNamespace {
 
 enum InsertionMode {
     Initial,
+    BeforeHtml
 }
 
 fn strip_prefix_chars(value: &mut Vec<u8>, cond: impl Fn(u8) -> bool) {
     let split_at_i = value
-        .iter().enumerate().find(|(i, x)| !cond(x))
+        .iter().enumerate().find(|(_, x)| !cond(**x))
         .map(|(i, _)| i)
         .unwrap_or(value.len());
 
@@ -25,9 +26,9 @@ fn strip_prefix_chars(value: &mut Vec<u8>, cond: impl Fn(u8) -> bool) {
 }
 
 macro_rules! skip_over_chars {
-    ($token:expr, $chars:pat) => {
-        if let Token::String(mut string) = $token {
-            strip_prefix_chars($token, |x| matches!(x, $chars));
+    ($token:expr, $($chars:pat)|*) => {
+        if let Some(Token::String(ref mut string)) = $token {
+            strip_prefix_chars(&mut *string, |x| matches!(x, $($chars)|*));
             if string.is_empty() {
                 return;
             }
@@ -39,24 +40,31 @@ enum InsertPosition {
     DocumentLastChild,
 }
 
-impl InsertionMode {
-    fn process(&self, ctor: &mut TreeConstructionDispatcher, token: Token) {
-        match InsertionMode {
-            InsertionMode::Initial => {
-                skip_over_chars!(token, (b'\t' | b'\x0A' | b'\x0C' | b' '));
-                match token {
-                    Token::Comment(s) => {
-                        ctor.insert_a_comment(s, InsertPosition::DocumentLastChild);
-                    }
-                    Token::Doctype(doctype) => {
-                        if doctype.name != b"html" || doctype.public_identifier.is_some() || (doctype.system_identifier.as_ref().map_or(false, |x| x != b"about:legacy-compat")) {
-                            ctor.parse_error();
-                        }
+#[derive(Default)]
+struct Document {
+    quirks_mode: bool,
+    limited_quirks_mode: bool,
+    parser_cannot_change_the_mode: bool,
+    nodes: Vec<Node>,
+    srcdoc: Option<HtmlString>,
+}
 
-                        todo!()
-                    }
-                }
-            }
+struct Doctype {
+    name: HtmlString,
+    public_identifier: Option<HtmlString>,
+    system_identifier: Option<HtmlString>,
+}
+
+enum Node {
+    Element(Element),
+    Doctype(Doctype),
+}
+
+impl Node {
+    fn as_element(&self) -> Option<&Element> {
+        match self {
+            Node::Element(elem) => Some(elem),
+            _ => None
         }
     }
 }
@@ -82,9 +90,10 @@ impl Element {
 pub struct TreeConstructionDispatcher<R: Reader> {
     tokenizer: Tokenizer<R>,
     stack_of_open_elements: Vec<Element>,
-    context_element: Option<Element>,
-    current_node: Option<Element>,
+    context_element: Option<Node>,
+    current_node: Option<Node>,
     insertion_mode: InsertionMode,
+    document: Document,
 }
 
 impl<R: Reader> TreeConstructionDispatcher<R> {
@@ -94,14 +103,15 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             stack_of_open_elements: Vec::new(),
             context_element: None,
             current_node: None,
-            insertion_mode: InsertionMode::Initial
+            insertion_mode: InsertionMode::Initial,
+            document: Document::default(),
         }
     }
-    fn adjusted_current_node(&self) -> &Element {
-        self.context_element.as_ref().unwrap_or(&self.current_node)
+    fn adjusted_current_node(&self) -> Option<&Node> {
+        self.context_element.as_ref().or(self.current_node.as_ref())
     }
 
-    fn run(mut self) -> Result<(), R::Error> {
+    pub fn run(mut self) -> Result<(), R::Error> {
         while let Some(token) = self.tokenizer.next() {
             self.process_token(token?);
         }
@@ -112,17 +122,16 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
 
     fn process_token(&mut self, token: Token) {
+        let adjusted_current_elem = self.adjusted_current_node().and_then(|node| node.as_element());
         if self.stack_of_open_elements.is_empty()
-            || matches!(self.adjusted_current_node().namespace, Some(ElementNamespace::HTML))
-            || (self
-                .adjusted_current_node()
-                .is_mathml_text_integration_point()
+            || matches!(adjusted_current_elem.and_then(|elem| elem.namespace.as_ref()), Some(ElementNamespace::HTML))
+            || (adjusted_current_elem.map_or(false, |elem| elem.is_mathml_text_integration_point())
                 && (matches!(token, Token::StartTag(ref tag) if !matches!(&tag.name[..], b"mglyph" | b"malignmark"))
                     || matches!(token, Token::String(_))))
-            || (matches!(self.adjusted_current_node().namespace, Some(ElementNamespace::MathML))
-                && self.adjusted_current_node().local_name == "annotation-xml"
+            || (matches!(adjusted_current_elem.and_then(|elem| elem.namespace.as_ref()), Some(ElementNamespace::MathML))
+                && adjusted_current_elem.map_or(false, |elem| elem.local_name == "annotation-xml")
                 && matches!(token, Token::StartTag(ref tag) if *tag.name == b"svg"))
-            || (self.adjusted_current_node().is_html_integration_point()
+            || (adjusted_current_elem.map_or(false, |elem| elem.is_html_integration_point())
                 && matches!(token, Token::StartTag(_) | Token::String(_)))
         {
             self.process_token_via_insertion_mode(Some(token))
@@ -131,15 +140,120 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
         }
     }
 
-    fn process_token_via_insertion_mode(&mut self, _token: Option<Token>) {
-        todo!()
+    fn process_token_via_insertion_mode(&mut self, mut token: Option<Token>) {
+        match self.insertion_mode {
+            InsertionMode::Initial => {
+                skip_over_chars!(token, b'\t' | b'\x0A' | b'\x0C' | b' ');
+                match token {
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, InsertPosition::DocumentLastChild);
+                    }
+                    Some(Token::Doctype(doctype)) => {
+                        if *doctype.name != b"html" || doctype.public_identifier.is_some() || (doctype.system_identifier.as_ref().map_or(false, |x| **x != b"about:legacy-compat".as_slice())) {
+                            self.parse_error();
+                        }
+
+                        let public_str = doctype.public_identifier.as_ref().map_or(b"".as_slice(), |x| x.as_slice());
+                        let system_str = doctype.system_identifier.as_ref().map_or(b"".as_slice(), |x| x.as_slice());
+
+                        if self.document.srcdoc.is_none() && self.document.parser_cannot_change_the_mode && (
+                            doctype.force_quirks
+                            // TODO case insensitive comparisons
+                            || *doctype.name != b"html"
+                            || public_str == b"-//W3O//DTD W3 HTML Strict 3.0//EN//"
+                            || public_str== b"-/W3C/DTD HTML 4.0 Transitional/EN" 
+                            || public_str== b"HTML"
+                            || system_str == b"http://www.ibm.com/data/dtd/v11/ibmxhtml1-transitional.dtd"
+                            || public_str.starts_with(b"+//Silmaril//dtd html Pro v0r11 19970101//")
+                            || public_str.starts_with(b"-//AS//DTD HTML 3.0 asWedit + extensions//")
+                            || public_str.starts_with(b"-//AdvaSoft Ltd//DTD HTML 3.0 asWedit + extensions//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 2.0 Level 1//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 2.0 Level 2//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 2.0 Strict Level 1//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 2.0 Strict Level 2//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 2.0 Strict//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 2.0//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 2.1E//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 3.0//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 3.2 Final//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 3.2//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML 3//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML Level 0//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML Level 1//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML Level 2//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML Level 3//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML Strict Level 0//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML Strict Level 1//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML Strict Level 2//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML Strict Level 3//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML Strict//")
+                            || public_str.starts_with(b"-//IETF//DTD HTML//")
+                            || public_str.starts_with(b"-//Metrius//DTD Metrius Presentational//")
+                            || public_str.starts_with(b"-//Microsoft//DTD Internet Explorer 2.0 HTML Strict//")
+                            || public_str.starts_with(b"-//Microsoft//DTD Internet Explorer 2.0 HTML//")
+                            || public_str.starts_with(b"-//Microsoft//DTD Internet Explorer 2.0 Tables//")
+                            || public_str.starts_with(b"-//Microsoft//DTD Internet Explorer 3.0 HTML Strict//")
+                            || public_str.starts_with(b"-//Microsoft//DTD Internet Explorer 3.0 HTML//")
+                            || public_str.starts_with(b"-//Microsoft//DTD Internet Explorer 3.0 Tables//")
+                            || public_str.starts_with(b"-//Netscape Comm. Corp.//DTD HTML//")
+                            || public_str.starts_with(b"-//Netscape Comm. Corp.//DTD Strict HTML//")
+                            || public_str.starts_with(b"-//O'Reilly and Associates//DTD HTML 2.0//")
+                            || public_str.starts_with(b"-//O'Reilly and Associates//DTD HTML Extended 1.0//")
+                            || public_str.starts_with(b"-//O'Reilly and Associates//DTD HTML Extended Relaxed 1.0//")
+                            || public_str.starts_with(b"-//SQ//DTD HTML 2.0 HoTMetaL + extensions//")
+                            || public_str.starts_with(b"-//SoftQuad Software//DTD HoTMetaL PRO 6.0::19990601::extensions to HTML 4.0//")
+                            || public_str.starts_with(b"-//SoftQuad//DTD HoTMetaL PRO 4.0::19971010::extensions to HTML 4.0//")
+                            || public_str.starts_with(b"-//Spyglass//DTD HTML 2.0 Extended//")
+                            || public_str.starts_with(b"-//Sun Microsystems Corp.//DTD HotJava HTML//")
+                            || public_str.starts_with(b"-//Sun Microsystems Corp.//DTD HotJava Strict HTML//")
+                            || public_str.starts_with(b"-//W3C//DTD HTML 3 1995-03-24//")
+                            || public_str.starts_with(b"-//W3C//DTD HTML 3.2 Draft//")
+                            || public_str.starts_with(b"-//W3C//DTD HTML 3.2 Final//")
+                            || public_str.starts_with(b"-//W3C//DTD HTML 3.2//")
+                            || public_str.starts_with(b"-//W3C//DTD HTML 3.2S Draft//")
+                            || public_str.starts_with(b"-//W3C//DTD HTML 4.0 Frameset//")
+                            || public_str.starts_with(b"-//W3C//DTD HTML 4.0 Transitional//")
+                            || public_str.starts_with(b"-//W3C//DTD HTML Experimental 19960712//")
+                            || public_str.starts_with(b"-//W3C//DTD HTML Experimental 970421//")
+                            || public_str.starts_with(b"-//W3C//DTD W3 HTML//")
+                            || public_str.starts_with(b"-//W3O//DTD W3 HTML 3.0//")
+                            || public_str.starts_with(b"-//WebTechs//DTD Mozilla HTML 2.0//")
+                            || public_str.starts_with(b"-//WebTechs//DTD Mozilla HTML//")
+                            || (doctype.system_identifier.is_none() && public_str.starts_with(b"-//W3C//DTD HTML 4.01 Frameset//"))
+                            || (doctype.system_identifier.is_none() && public_str.starts_with(b"-//W3C//DTD HTML 4.01 Transitional//" ))
+                        ) {
+                            self.document.quirks_mode = true;
+                        } else if self.document.srcdoc.is_none() && !self.document.parser_cannot_change_the_mode && (
+                            // TODO case insensitive comparisons
+                            public_str.starts_with(b"-//W3C//DTD XHTML 1.0 Frameset//")
+                            || public_str.starts_with(b"-//W3C//DTD XHTML 1.0 Transitional//")
+                            || (doctype.system_identifier.is_some() && public_str.starts_with(b"-//W3C//DTD HTML 4.01 Frameset//"))
+                            || (doctype.system_identifier.is_some() && public_str.starts_with(b"-//W3C//DTD HTML 4.01 Transitional//" ))
+                        ) {
+                            self.document.limited_quirks_mode = true;
+                        }
+
+                        let node = Node::Doctype(Doctype {
+                            name: doctype.name,
+                            public_identifier: doctype.public_identifier,
+                            system_identifier: doctype.system_identifier,
+                        });
+                        self.document.nodes.push(node);
+
+                        self.insertion_mode = InsertionMode::BeforeHtml;
+                    }
+                    _ => todo!()
+                }
+            }
+            _ => todo!()
+        }
     }
 
     fn process_token_via_foreign_content(&mut self, _token: Token) {
         todo!()
     }
 
-    fn insert_a_comment(&mut self, comment_string: Vec<u8>, position: InsertPosition) {
+    fn insert_a_comment(&mut self, _comment_string: HtmlString, _position: InsertPosition) {
         todo!()
     }
     
