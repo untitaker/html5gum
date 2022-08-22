@@ -1,5 +1,6 @@
 use crate::{Reader, Token, Tokenizer, HtmlString};
 
+#[derive(Clone)]
 enum ElementNamespace {
     HTML,
     MathML,
@@ -12,7 +13,8 @@ enum ElementNamespace {
 
 enum InsertionMode {
     Initial,
-    BeforeHtml
+    BeforeHtml,
+    BeforeHead,
 }
 
 fn strip_prefix_chars(value: &mut Vec<u8>, cond: impl Fn(u8) -> bool) {
@@ -40,7 +42,7 @@ enum InsertPosition {
     DocumentLastChild,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct Document {
     quirks_mode: bool,
     limited_quirks_mode: bool,
@@ -49,37 +51,62 @@ struct Document {
     srcdoc: Option<HtmlString>,
 }
 
+#[derive(Clone)]
 struct Doctype {
     name: HtmlString,
     public_identifier: Option<HtmlString>,
     system_identifier: Option<HtmlString>,
 }
 
-enum Node {
+#[derive(Clone)]
+struct Node {
+    node_document: Option<Document>,
+    inner: NodeInner,
+}
+
+#[derive(Clone)]
+enum NodeInner {
     Element(Element),
     Doctype(Doctype),
+    Document(Document),
 }
 
 impl Node {
+    fn element(element: Element) -> Self {
+        Node {
+            node_document: None,
+            inner: NodeInner::Element(element)
+        }
+    }
+
+    fn document(document: Document) -> Self {
+        Node{ node_document: None, inner: NodeInner::Document(document) }
+    }
+
+    fn doctype(doctype: Doctype) -> Self {
+        Node{ node_document: None, inner: NodeInner::Doctype(doctype) }
+    }
+
     fn as_element(&self) -> Option<&Element> {
-        match self {
-            Node::Element(elem) => Some(elem),
+        match self.inner {
+            NodeInner::Element(ref elem) => Some(elem),
             _ => None
         }
     }
 }
 
+#[derive(Clone)]
 struct Element {
     namespace: Option<ElementNamespace>,
     prefix: Option<String>,
-    local_name: String,
-    tag_name: String,
+    local_name: HtmlString,
+    tag_name: HtmlString,
 }
 
 impl Element {
     fn is_mathml_text_integration_point(&self) -> bool {
         matches!(self.namespace, Some(ElementNamespace::MathML))
-            && (matches!(self.local_name.as_str(), "mi" | "mo" | "mn" | "ms" | "mtext"))
+            && (matches!(self.local_name.as_slice(), b"mi" | b"mo" | b"mn" | b"ms" | b"mtext"))
     }
 
     fn is_html_integration_point(&self) -> bool {
@@ -129,7 +156,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                 && (matches!(token, Token::StartTag(ref tag) if !matches!(&tag.name[..], b"mglyph" | b"malignmark"))
                     || matches!(token, Token::String(_))))
             || (matches!(adjusted_current_elem.and_then(|elem| elem.namespace.as_ref()), Some(ElementNamespace::MathML))
-                && adjusted_current_elem.map_or(false, |elem| elem.local_name == "annotation-xml")
+                && adjusted_current_elem.map_or(false, |elem| *elem.local_name == b"annotation-xml")
                 && matches!(token, Token::StartTag(ref tag) if *tag.name == b"svg"))
             || (adjusted_current_elem.map_or(false, |elem| elem.is_html_integration_point())
                 && matches!(token, Token::StartTag(_) | Token::String(_)))
@@ -233,7 +260,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             self.document.limited_quirks_mode = true;
                         }
 
-                        let node = Node::Doctype(Doctype {
+                        let node = Node::doctype(Doctype {
                             name: doctype.name,
                             public_identifier: doctype.public_identifier,
                             system_identifier: doctype.system_identifier,
@@ -242,7 +269,49 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
 
                         self.insertion_mode = InsertionMode::BeforeHtml;
                     }
-                    _ => todo!()
+                    token => {
+                        if self.document.srcdoc.is_none() {
+                            self.parse_error();
+                        }
+
+                        if self.document.parser_cannot_change_the_mode {
+                            self.document.quirks_mode = true;
+                        }
+
+                        self.insertion_mode = InsertionMode::BeforeHtml;
+                        self.process_token_via_insertion_mode(token);
+                    }
+                }
+            }
+            InsertionMode::BeforeHtml => {
+                skip_over_chars!(token, b'\t' | b'\x0A' | b'\x0C' | b' ');
+                match token {
+                    Some(Token::Doctype(_)) => {
+                        // ignore the token
+                    }
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, InsertPosition::DocumentLastChild);
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"html" => {
+                        let element = self.create_an_element_for_the_token(token.unwrap(), ElementNamespace::HTML, Some(&Node::document(self.document.clone())));
+                        self.document.nodes.push(Node::element(element.clone()));
+                        self.stack_of_open_elements.push(element);
+                        self.insertion_mode = InsertionMode::BeforeHead;
+                    }
+                    Some(Token::EndTag(ref tag)) if *tag.name != b"head" && *tag.name != b"body" && *tag.name != b"html" && *tag.name != b"br" => {
+                        self.parse_error();
+                    }
+                    _ => {
+                        let element = Element {
+                            namespace: Some(ElementNamespace::HTML),
+                            prefix: None,
+                            local_name: b"html".as_slice().to_owned().into(),
+                            tag_name: b"html".as_slice().to_owned().into(),
+                        };
+
+                        let node = Node::element(element);
+                        self.insertion_mode = InsertionMode::BeforeHead;
+                    }
                 }
             }
             _ => todo!()
@@ -258,6 +327,10 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
     
     fn parse_error(&mut self) {
+        todo!()
+    }
+
+    fn create_an_element_for_the_token(&mut self, _token: Token, _namespace: ElementNamespace, _intended_parent: Option<&Node>) -> Element {
         todo!()
     }
 }
