@@ -1,4 +1,4 @@
-use crate::{Reader, Token, Tokenizer, HtmlString};
+use crate::{Reader, Token, Tokenizer, HtmlString, StartTag, State};
 
 #[derive(Clone)]
 enum ElementNamespace {
@@ -11,10 +11,16 @@ enum ElementNamespace {
     Custom(String),
 }
 
+#[derive(Clone, Copy)]
 enum InsertionMode {
     Initial,
     BeforeHtml,
     BeforeHead,
+    InBody,
+    InHead,
+    InHeadNoscript,
+    Text,
+    AfterHead,
 }
 
 fn strip_prefix_chars(value: &mut Vec<u8>, cond: impl Fn(u8) -> bool) {
@@ -95,12 +101,16 @@ impl Node {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct Element {
     namespace: Option<ElementNamespace>,
     prefix: Option<String>,
     local_name: HtmlString,
     tag_name: HtmlString,
+    // TODO: script-only
+    parser_document: Option<Document>,
+    force_async: bool,
+    already_started: bool,
 }
 
 impl Element {
@@ -116,11 +126,16 @@ impl Element {
 
 pub struct TreeConstructionDispatcher<R: Reader> {
     tokenizer: Tokenizer<R>,
-    stack_of_open_elements: Vec<Element>,
+    stack_of_open_elements: Vec<Node>,
     context_element: Option<Node>,
-    current_node: Option<Node>,
+    head_element_pointer: Option<Node>,
     insertion_mode: InsertionMode,
+    original_insertion_mode: Option<InsertionMode>,
     document: Document,
+    scripting: bool,
+    fragment_parsing: bool,
+    // "if the parser was invoked via document.write() or document.writeln() methods"
+    invoked_via_document_write: bool,
 }
 
 impl<R: Reader> TreeConstructionDispatcher<R> {
@@ -129,13 +144,22 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             tokenizer,
             stack_of_open_elements: Vec::new(),
             context_element: None,
-            current_node: None,
+            head_element_pointer: None,
             insertion_mode: InsertionMode::Initial,
+            original_insertion_mode: None,
             document: Document::default(),
+            scripting: false,
+            fragment_parsing: false,
+            invoked_via_document_write: false,
         }
     }
+
+    fn current_node(&self) -> Option<&Node> {
+        self.stack_of_open_elements.last()
+    }
+
     fn adjusted_current_node(&self) -> Option<&Node> {
-        self.context_element.as_ref().or(self.current_node.as_ref())
+        self.context_element.as_ref().or_else(|| self.current_node())
     }
 
     pub fn run(mut self) -> Result<(), R::Error> {
@@ -144,7 +168,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
         }
 
         // eof token
-        self.process_token_via_insertion_mode(None);
+        self.process_token_via_insertion_mode(self.insertion_mode, None);
         Ok(())
     }
 
@@ -161,19 +185,19 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             || (adjusted_current_elem.map_or(false, |elem| elem.is_html_integration_point())
                 && matches!(token, Token::StartTag(_) | Token::String(_)))
         {
-            self.process_token_via_insertion_mode(Some(token))
+            self.process_token_via_insertion_mode(self.insertion_mode, Some(token))
         } else {
             self.process_token_via_foreign_content(token)
         }
     }
 
-    fn process_token_via_insertion_mode(&mut self, mut token: Option<Token>) {
-        match self.insertion_mode {
+    fn process_token_via_insertion_mode(&mut self, insertion_mode: InsertionMode, mut token: Option<Token>) {
+        match insertion_mode {
             InsertionMode::Initial => {
                 skip_over_chars!(token, b'\t' | b'\x0A' | b'\x0C' | b' ');
                 match token {
                     Some(Token::Comment(s)) => {
-                        self.insert_a_comment(s, InsertPosition::DocumentLastChild);
+                        self.insert_a_comment(s, Some(InsertPosition::DocumentLastChild));
                     }
                     Some(Token::Doctype(doctype)) => {
                         if *doctype.name != b"html" || doctype.public_identifier.is_some() || (doctype.system_identifier.as_ref().map_or(false, |x| **x != b"about:legacy-compat".as_slice())) {
@@ -279,7 +303,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         }
 
                         self.insertion_mode = InsertionMode::BeforeHtml;
-                        self.process_token_via_insertion_mode(token);
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
                     }
                 }
             }
@@ -290,12 +314,13 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         // ignore the token
                     }
                     Some(Token::Comment(s)) => {
-                        self.insert_a_comment(s, InsertPosition::DocumentLastChild);
+                        self.insert_a_comment(s, Some(InsertPosition::DocumentLastChild));
                     }
                     Some(Token::StartTag(ref tag)) if *tag.name == b"html" => {
                         let element = self.create_an_element_for_the_token(token.unwrap(), ElementNamespace::HTML, Some(&Node::document(self.document.clone())));
-                        self.document.nodes.push(Node::element(element.clone()));
-                        self.stack_of_open_elements.push(element);
+                        let node = Node::element(element);
+                        self.document.nodes.push(node.clone());
+                        self.stack_of_open_elements.push(node);
                         self.insertion_mode = InsertionMode::BeforeHead;
                     }
                     Some(Token::EndTag(ref tag)) if *tag.name != b"head" && *tag.name != b"body" && *tag.name != b"html" && *tag.name != b"br" => {
@@ -307,11 +332,112 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             prefix: None,
                             local_name: b"html".as_slice().to_owned().into(),
                             tag_name: b"html".as_slice().to_owned().into(),
+                            ..Element::default()
                         };
 
-                        let node = Node::element(element);
+                        let mut node = Node::element(element);
+                        node.node_document = Some(self.document.clone());
+                        self.document.nodes.push(node.clone());
+                        self.stack_of_open_elements.push(node);
                         self.insertion_mode = InsertionMode::BeforeHead;
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
                     }
+                }
+            }
+            InsertionMode::BeforeHead => {
+                skip_over_chars!(token, b'\t' | b'\x0A' | b'\x0C' | b' ');
+                match token {
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, None);
+                    }
+                    Some(Token::Doctype(doctype)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"html" => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if *tag.name != b"head" && *tag.name != b"body" && *tag.name != b"html" && *tag.name != b"br" => {
+                        self.parse_error();
+                    }
+                    token => {
+                        let node = self.insert_an_element_for_a_token(Token::StartTag(StartTag {
+                            name: b"head".as_slice().to_owned().into(),
+                            ..StartTag::default()
+                        }));
+                        self.head_element_pointer = Some(node.clone());
+                        self.insertion_mode = InsertionMode::InHead;
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
+                }
+            }
+            InsertionMode::InHead => {
+                // TODO: incorrect, we should "insert a character"
+                skip_over_chars!(token, b'\t' | b'\x0A' | b'\x0C' | b' ');
+                match token {
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, None);
+                    }
+                    Some(Token::Doctype(doctype)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"html" => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"base" | b"basefont" | b"bgsound" | b"link") => {
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.stack_of_open_elements.pop().expect("no current node");
+                        // TODO: acknowledge self-closing flag
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"meta" => {
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.stack_of_open_elements.pop().expect("no current node");
+                        // TODO: acknowledge self-closing flag
+                        // TODO: speculative HTML parsing related to meta charset
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"title" => {
+                        self.generic_rcdata_element_parsing_algorithm(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"noframes" | b"style") => {
+                        self.generic_rawtext_element_parsing_algorithm(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"noscript" => {
+                        if self.scripting {
+                            self.generic_rawtext_element_parsing_algorithm(token.unwrap());
+                        } else {
+                            self.insert_an_element_for_a_token(token.unwrap());
+                            self.insertion_mode = InsertionMode::InHeadNoscript;
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"script" => {
+                        let adjusted_insert_location = self.appropriate_place_for_inserting_a_node();
+                        let mut elem = self.create_an_element_for_the_token(token.unwrap(), ElementNamespace::HTML, None);
+                        elem.parser_document = Some(self.document.clone());
+                        elem.force_async = false;
+                        if self.fragment_parsing {
+                            elem.already_started = true;
+                        }
+                        if self.invoked_via_document_write {
+                            elem.already_started = true;
+                        }
+                        let node = Node::element(elem);
+                        self.insert_element(node.clone(), adjusted_insert_location);
+                        self.stack_of_open_elements.push(node);
+                        // TODO: use emitter API
+                        self.tokenizer.set_state(State::ScriptData);
+                        self.original_insertion_mode = Some(self.insertion_mode);
+                        self.insertion_mode = InsertionMode::Text;
+                    }
+                    Some(Token::EndTag(ref tag)) if *tag.name == b"head" => {
+                        let head_element = self.stack_of_open_elements.pop().unwrap();
+                        debug_assert_eq!(*head_element.as_element().unwrap().tag_name, b"head");
+                        debug_assert_eq!(*head_element.as_element().unwrap().local_name, b"head");
+                        self.insertion_mode = InsertionMode::AfterHead;
+                    }
+                    Some(Token::EndTag(ref tag)) if !matches!(tag.name.as_slice(), b"body" | b"html" | b"br") => {
+                        // any other end tag
+                        self.parse_error();
+                    }
+                    _ => todo!()
                 }
             }
             _ => todo!()
@@ -322,7 +448,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
         todo!()
     }
 
-    fn insert_a_comment(&mut self, _comment_string: HtmlString, _position: InsertPosition) {
+    fn insert_a_comment(&mut self, _comment_string: HtmlString, _position: Option<InsertPosition>) {
         todo!()
     }
     
@@ -331,6 +457,26 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
 
     fn create_an_element_for_the_token(&mut self, _token: Token, _namespace: ElementNamespace, _intended_parent: Option<&Node>) -> Element {
+        todo!()
+    }
+
+    fn insert_an_element_for_a_token(&mut self, token: Token) -> Node {
+        todo!()
+    }
+
+    fn generic_rcdata_element_parsing_algorithm(&mut self, _token: Token) {
+        todo!()
+    }
+
+    fn generic_rawtext_element_parsing_algorithm(&mut self, _token: Token) {
+        todo!()
+    }
+
+    fn appropriate_place_for_inserting_a_node(&mut self) -> InsertPosition {
+        todo!()
+    }
+
+    fn insert_element(&mut self, node: Node, position: InsertPosition) {
         todo!()
     }
 }
