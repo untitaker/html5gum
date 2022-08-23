@@ -24,23 +24,20 @@ enum InsertionMode {
     InTemplate
 }
 
-fn strip_prefix_chars(value: &mut Vec<u8>, cond: impl Fn(u8) -> bool) {
-    let split_at_i = value
-        .iter().enumerate().find(|(_, x)| !cond(**x))
-        .map(|(i, _)| i)
-        .unwrap_or(value.len());
-
-    value.copy_within(split_at_i.., 0);
-    value.truncate(split_at_i);
-}
-
 macro_rules! skip_over_chars {
     ($token:expr, $($chars:pat)|*) => {
+        handle_string_prefix!($token, $($chars)|*, |_| ());
+    }
+}
+
+macro_rules! handle_string_prefix {
+    ($token:expr, $($chars:pat)|*, $callback:expr) => {
         if let Some(Token::String(ref mut string)) = $token {
-            strip_prefix_chars(&mut *string, |x| matches!(x, $($chars)|*));
-            if string.is_empty() {
-                return;
-            }
+            let index = string.iter().enumerate().find(|(_, x)| !matches!(x, $($chars)|*)).map(|(i, _)| i).unwrap_or(string.len());
+            let substring: &[u8] = &string[..index];
+            $callback(substring);
+            string.copy_within(index.., 0);
+            string.truncate(index);
         }
     }
 }
@@ -387,8 +384,9 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                 }
             }
             InsertionMode::InHead => {
-                // TODO: incorrect, we should "insert a character"
-                skip_over_chars!(token, b'\t' | b'\x0A' | b'\x0C' | b' ');
+                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |substring| {
+                    self.insert_a_character(substring);
+                });
                 match token {
                     Some(Token::Comment(s)) => {
                         self.insert_a_comment(s, None);
@@ -503,8 +501,11 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                 }
             }
             InsertionMode::InHeadNoscript => {
-                // TODO: wrong, should use "in body" insertion mode
-                skip_over_chars!(token, b'\t' | b'\x0A' | b'\x0C' | b' ');
+                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |substring: &[u8]| {
+                    let new_token = Some(Token::String(substring.to_owned().into()));
+                    self.process_token_via_insertion_mode(InsertionMode::InHead, new_token);
+                });
+
                 match token {
                     Some(Token::Doctype(_)) => {
                         self.parse_error();
@@ -553,6 +554,10 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
     
     fn parse_error(&mut self) {
+        todo!()
+    }
+
+    fn insert_a_character(&mut self, characters: &[u8]) {
         todo!()
     }
 
