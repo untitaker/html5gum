@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::{Reader, Token, Tokenizer, HtmlString, StartTag, State};
 
 #[derive(Clone)]
@@ -99,6 +101,12 @@ impl Node {
             _ => None
         }
     }
+    fn as_element_mut(&mut self) -> Option<&mut Element> {
+        match self.inner {
+            NodeInner::Element(ref mut elem) => Some(elem),
+            _ => None
+        }
+    }
 }
 
 #[derive(Clone, Default)]
@@ -111,6 +119,7 @@ struct Element {
     parser_document: Option<Document>,
     force_async: bool,
     already_started: bool,
+    attributes: BTreeMap<HtmlString, HtmlString>
 }
 
 impl Element {
@@ -595,6 +604,95 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::InBody => {
+                handle_string_prefix!(token, b'\0', |substring: &[u8]| {
+                    self.parse_error();
+                });
+
+                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |substring: &[u8]| {
+                    self.reconstruct_the_active_formatting_elements();
+                    self.insert_a_character(&substring);
+                });
+
+                match token {
+                    Some(Token::String(s)) => {
+                        self.reconstruct_the_active_formatting_elements();
+                        self.insert_a_character(&s);
+                        self.frameset_ok = false;
+                    }
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, None);
+                    }
+                    Some(Token::Doctype(_)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(tag)) if *tag.name == b"html" => {
+                        self.parse_error();
+                        // TODO: node needs to become shared on clone
+                        let has_template_elem = self.stack_of_open_elements.iter().any(|node| node.as_element().map_or(false, |elem| *elem.tag_name == b"template"));
+                        if !has_template_elem {
+                            if let Some(node) = self.stack_of_open_elements.first_mut() {
+                                if let Some(elem) = node.as_element_mut() {
+                                    for (key, value) in tag.attributes {
+                                        elem.attributes.entry(key).or_insert(value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"base" | b"basefont" | b"bgsound" | b"link" | b"meta" | b"noframes" | b"script" | b"style" | b"template" | b"title") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"template") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::StartTag(tag)) if matches!(tag.name.as_slice(), b"body") => {
+                        self.parse_error();
+
+                        let has_template_elem = self.stack_of_open_elements.iter().any(|node| node.as_element().map_or(false, |elem| *elem.tag_name == b"template"));
+
+                        if !has_template_elem {
+                            if let Some(node) = self.stack_of_open_elements.get_mut(1) {
+                                if let Some(elem) = node.as_element_mut() {
+                                    if *elem.tag_name == b"body" {
+                                        self.frameset_ok = false;
+                                        for (key, value) in tag.attributes {
+                                            elem.attributes.entry(key).or_insert(value);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"frameset") => {
+                        self.parse_error();
+                        let dont_ignore_token = self.frameset_ok && self.stack_of_open_elements.get(1).and_then(|node| node.as_element()).map(|elem| *elem.tag_name == b"body").unwrap_or(false);
+
+                        if dont_ignore_token {
+                            self.stack_of_open_elements.truncate(2);
+                            self.stack_of_open_elements.pop().expect("no body element?");
+                            self.insert_an_element_for_a_token(token.unwrap());
+                            self.insertion_mode = InsertionMode::InFrameset;
+                        }
+                    }
+                    None => {
+                        if !self.stack_of_open_elements.is_empty() {
+                            self.process_token_via_insertion_mode(InsertionMode::InTemplate, token);
+                        } else {
+                            for node in &self.stack_of_open_elements {
+                                if let Some(elem) = node.as_element() {
+                                    if !matches!(elem.tag_name.as_slice(), b"dd" | b"dt" | b"li" | b"optgroup" | b"option" | b"p" | b"rb" | b"rp" | b"rt" | b"rtc" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr" | b"body" | b"html") {
+                                        self.parse_error();
+                                        break;
+                                    }
+                                }
+                            }
+                            self.stop_parsing();
+                        }
+                    }
+                    _ => todo!()
+                }
+            }
             _ => todo!()
         }
     }
@@ -648,6 +746,14 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
 
     fn reset_the_insertion_mode_appropriately(&mut self) {
+        todo!()
+    }
+
+    fn reconstruct_the_active_formatting_elements(&mut self) {
+        todo!()
+    }
+
+    fn stop_parsing(&mut self) {
         todo!()
     }
 }
