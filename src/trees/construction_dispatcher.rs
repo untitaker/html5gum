@@ -502,6 +502,44 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::InHeadNoscript => {
+                // TODO: wrong, should use "in body" insertion mode
+                skip_over_chars!(token, b'\t' | b'\x0A' | b'\x0C' | b' ');
+                match token {
+                    Some(Token::Doctype(_)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"html" => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if *tag.name == b"noscript" => {
+                        let node = self.stack_of_open_elements.pop().expect("no current node?");
+                        debug_assert_eq!(*node.as_element().unwrap().tag_name, b"noscript");
+                        debug_assert_eq!(*node.as_element().unwrap().local_name, b"noscript");
+                        debug_assert_eq!(*self.current_node().unwrap().as_element().unwrap().tag_name, b"head");
+                        self.insertion_mode = InsertionMode::InHead;
+                    }
+                    Some(Token::Comment(_)) => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"basefont" | b"bgsound" | b"link" | b"meta" | b"noframes" | b"style") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if *tag.name != b"br" => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"head" | b"noscript") => {
+                        self.parse_error();
+                    }
+                    token => {
+                        self.parse_error();
+                        let node = self.stack_of_open_elements.pop().expect("no current node");
+                        debug_assert_eq!(*self.current_node().unwrap().as_element().unwrap().tag_name, b"head");
+                        self.insertion_mode = InsertionMode::InHead;
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
+                }
+            }
             _ => todo!()
         }
     }
