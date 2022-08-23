@@ -21,7 +21,9 @@ enum InsertionMode {
     InHeadNoscript,
     Text,
     AfterHead,
-    InTemplate
+    InTemplate,
+    InFrameset
+        
 }
 
 macro_rules! skip_over_chars {
@@ -537,6 +539,58 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         let node = self.stack_of_open_elements.pop().expect("no current node");
                         debug_assert_eq!(*self.current_node().unwrap().as_element().unwrap().tag_name, b"head");
                         self.insertion_mode = InsertionMode::InHead;
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
+                }
+            }
+            InsertionMode::AfterHead => {
+                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |substring| {
+                    self.insert_a_character(substring);
+                });
+
+                match token {
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, None);
+                    }
+                    Some(Token::Doctype(_)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"html" => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"body" => {
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.frameset_ok = false;
+                        self.insertion_mode = InsertionMode::InBody;
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"frameset" => {
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.insertion_mode = InsertionMode::InFrameset;
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"base" | b"basefont" | b"bgsound" | b"link" | b"meta" | b"noframes" | b"script" | b"style" | b"template" | b"title") => {
+                        self.parse_error();
+                        let node = self.head_element_pointer.clone().unwrap();
+                        let i = self.stack_of_open_elements.len();
+                        self.stack_of_open_elements.push(node);
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                        // XXX: unclear if this is correct
+                        self.stack_of_open_elements.remove(i);
+                    }
+                    Some(Token::EndTag(ref tag)) if *tag.name == b"template" => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if !matches!(tag.name.as_slice(), b"body" | b"html" | b"br") => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if *tag.name == b"head" => {
+                        self.parse_error();
+                    }
+                    token => {
+                        self.insert_an_element_for_a_token(Token::StartTag(StartTag {
+                            name: b"body".as_slice().to_owned().into(),
+                            ..StartTag::default()
+                        }));
+                        self.insertion_mode = InsertionMode::InBody;
                         self.process_token_via_insertion_mode(self.insertion_mode, token);
                     }
                 }
