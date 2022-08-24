@@ -26,6 +26,13 @@ enum InsertionMode {
     InTemplate,
     InFrameset,
     AfterBody,
+    InTable,
+    InSelect,
+    InSelectInTable,
+    InRow,
+    InTableBody,
+    InCaption,
+    InCell,
 }
 
 macro_rules! skip_over_chars {
@@ -115,6 +122,10 @@ impl Node {
     fn is_special(&self) -> bool {
         todo!()
     }
+
+    fn same_identity(&self, other: &Node) -> bool {
+        todo!()
+    }
 }
 
 #[derive(Clone, Default)]
@@ -144,6 +155,15 @@ impl Element {
 enum ElementOrMarker {
     Element(Node),
     Marker,
+}
+
+impl ElementOrMarker {
+    fn as_element(&self) -> Option<&Node> {
+        match self {
+            ElementOrMarker::Element(elem) => Some(elem),
+            ElementOrMarker::Marker => None
+        }
+    }
 }
 
 pub struct TreeConstructionDispatcher<R: Reader> {
@@ -906,6 +926,359 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             }
                         }
                     }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"form") => {
+                        let has_template_elem = self.stack_of_open_elements.iter().any(|node| node.as_element().map_or(false, |elem| *elem.tag_name == b"template"));
+                        if !has_template_elem {
+                            let mut node = self.form_element_pointer.take();
+                            if node.as_ref().map_or(true, |node| !self.has_element_in_scope2(|node2| node.same_identity(node2))) {
+                                self.parse_error();
+                                return;
+                            }
+                            self.generate_implied_end_tags(&[]);
+                            match (self.current_node(), &node) {
+                                (Some(a), Some(b)) if a.same_identity(b) => (),
+                                (None, None) => (),
+                                _ => {
+                                    self.parse_error();
+                                }
+                            }
+                            if let Some(ref node) = node {
+                                self.stack_of_open_elements.retain(|node2| {
+                                    !node2.same_identity(node)
+                                });
+                            }
+                        } else {
+                            if !self.has_element_in_scope(b"form") {
+                                self.parse_error();
+                                return;
+                            }
+                            self.generate_implied_end_tags(&[]);
+                            if !self.current_node().map_or(false, |node| node.is_element(b"form")) {
+                                self.parse_error();
+                            }
+
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(b"form") {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"p") => {
+                        if !self.has_element_in_button_scope(b"p") {
+                            self.parse_error();
+                            self.insert_an_element_for_a_token(Token::StartTag(StartTag {
+                                name: b"p".as_slice().to_owned().into(),
+                                ..StartTag::default()
+                            }));
+                        }
+
+                        self.close_a_p_element();
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"li") => {
+                        if !self.has_element_in_list_item_scope(b"li") {
+                            self.parse_error();
+                        } else {
+                            self.generate_implied_end_tags(&[b"li"]);
+                            if !self.current_node().map_or(false, |node| node.is_element(b"li")) {
+                                self.parse_error();
+                            }
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(b"li") {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"dd" | b"dt") => {
+                        if !self.has_element_in_scope(&tag.name) {
+                            self.parse_error();
+                        } else {
+                            self.generate_implied_end_tags(&[&tag.name]);
+                            if !self.current_node().map_or(false, |node| node.is_element(&tag.name)) {
+                                self.parse_error();
+                            }
+
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(&tag.name) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"h1" | b"h2" | b"h3" | b"h4" | b"h5" | b"h6") => {
+                        fn is_heading(node: &Node) -> bool {
+                            node.is_element(b"h1") || node.is_element(b"h2") || node.is_element(b"h3") || node.is_element(b"h4") || node.is_element(b"h5") || node.is_element(b"h6")
+                        }
+
+                        if !self.has_element_in_scope2(is_heading) {
+                            self.parse_error();
+                        } else {
+                            self.generate_implied_end_tags(&[]);
+                            if !self.current_node().map_or(false, |node| node.is_element(&tag.name)) {
+                                self.parse_error();
+                            }
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if is_heading(&node) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    // > An end tag whose tag name is "sarcasm": Take a deep breath, then act as
+                    // > described in the "any other end tag" entry below.
+                    //
+                    // Already handled by the fallthrough case. There are no other branches before
+                    // that that could "catch" this case.
+                    //
+                    // Also already took many deep breaths while writing this code.
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"a") => {
+                        let mut found_a_element = None;
+                        for (i, element_or_marker) in self.list_of_active_formatting_elements.iter().enumerate().rev() {
+                            match element_or_marker {
+                                ElementOrMarker::Marker => break,
+                                ElementOrMarker::Element(elem) => {
+                                    if elem.is_element(b"a") {
+                                        found_a_element = Some(i);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if let Some(i) = found_a_element {
+                            self.parse_error();
+                            // TODO: can i pass a reference to a token here?
+                            self.run_adoption_agency_algorithm(token.clone().unwrap());
+                            // TODO: wrong assumptions?
+                            debug_assert!(self.list_of_active_formatting_elements.remove(i).as_element().unwrap().is_element(b"a"));
+                        }
+
+                        self.reconstruct_the_active_formatting_elements();
+                        let node = self.insert_an_element_for_a_token(token.unwrap());
+                        self.list_of_active_formatting_elements.push(ElementOrMarker::Element(node));
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"b" | b"big" | b"code" | b"em" | b"font" | b"i" | b"s" | b"small" | b"strike" | b"strong" | b"tt" | b"u") => {
+                        self.reconstruct_the_active_formatting_elements();
+                        let node = self.insert_an_element_for_a_token(token.unwrap());
+                        self.list_of_active_formatting_elements.push(ElementOrMarker::Element(node));
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"nobr") => {
+                        self.reconstruct_the_active_formatting_elements();
+                        if self.has_element_in_scope(b"nobr") {
+                            self.parse_error();
+                            self.run_adoption_agency_algorithm(token.clone().unwrap());
+                            self.reconstruct_the_active_formatting_elements();
+                        }
+                        let node = self.insert_an_element_for_a_token(token.unwrap());
+                        self.list_of_active_formatting_elements.push(ElementOrMarker::Element(node));
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"a" | b"b" | b"big" | b"code" | b"em" | b"font" | b"i" | b"nobr" | b"s" | b"small" | b"strike" | b"strong" | b"tt" | b"u") => {
+                        self.run_adoption_agency_algorithm(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"applet" | b"marquee" | b"object") => {
+                        self.reconstruct_the_active_formatting_elements();
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.list_of_active_formatting_elements.push(ElementOrMarker::Marker);
+                        self.frameset_ok = false;
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"applet" | b"marquee" | b"object") => {
+                        if !self.has_element_in_scope(&tag.name) {
+                            self.parse_error();
+                        } else {
+                            self.generate_implied_end_tags(&[]);
+                            if !self.current_node().map_or(false, |node| node.is_element(&tag.name)) {
+                                self.parse_error();
+                            }
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(&tag.name) {
+                                    break;
+                                }
+                            }
+                            self.clear_list_of_active_formatting_elements_up_to_the_last_marker();
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
+                        if !self.document.quirks_mode && self.has_element_in_button_scope(b"p") {
+                            self.close_a_p_element();
+                        }
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.frameset_ok = false;
+                        self.insertion_mode = InsertionMode::InTable;
+                    }
+                    Some(Token::EndTag(tag)) if matches!(tag.name.as_slice(), b"br") => {
+                        self.parse_error();
+                        self.process_token_via_insertion_mode(self.insertion_mode, Some(Token::StartTag(StartTag {
+                            name: tag.name,
+                            ..StartTag::default()
+                        })));
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"area" | b"br" | b"embed" | b"img" | b"keygen" | b"wbr") => {
+                        self.reconstruct_the_active_formatting_elements();
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.stack_of_open_elements.pop().unwrap();
+                        // TODO: acknowledge self-closing flag
+                        self.frameset_ok = false;
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"input") => {
+                        self.reconstruct_the_active_formatting_elements();
+                        // TODO: assumption: token is not mutated by insert_an_element_for_a_token
+                        let type_is_hidden = !tag.attributes.get(b"type".as_slice()).map_or(false, |value| **value == b"hidden".as_slice());
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.stack_of_open_elements.pop().unwrap();
+                        // TODO: acknowledge self-closing flag
+                        if type_is_hidden {
+                            self.frameset_ok = false;
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"param" | b"source" | b"track") => {
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.stack_of_open_elements.pop().unwrap();
+                        // TODO: acknowledge self-closing flag
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"hr") => {
+                        if self.has_element_in_button_scope(b"p") {
+                            self.close_a_p_element();
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.stack_of_open_elements.pop().unwrap();
+                        // TODO: acknowledge self-closing flag
+                        self.frameset_ok = false;
+                    }
+                    Some(Token::StartTag(ref mut tag)) if matches!(tag.name.as_slice(), b"image") => {
+                        self.parse_error();
+                        // "change the token's tag name to img and reprocess it. (Don't ask)"
+                        tag.name = b"img".as_slice().to_owned().into();
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"textarea") => {
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        if let Some(Token::String(ref mut string)) = self.peek_token() {
+                            if string.starts_with(b"\n") {
+                                let len = string.len();
+                                string.copy_within(1.., 0);
+                                string.truncate(len - 1);
+                            }
+                        }
+                        self.tokenizer.set_state(State::RcData);
+                        self.original_insertion_mode = Some(self.insertion_mode);
+                        self.frameset_ok = false;
+                        self.insertion_mode = InsertionMode::Text;
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"xmp") => {
+                        if self.has_element_in_button_scope(b"p") {
+                            self.close_a_p_element();
+                        }
+                        self.reconstruct_the_active_formatting_elements();
+                        self.frameset_ok = false;
+                        self.generic_rawtext_element_parsing_algorithm(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"iframe") => {
+                        self.frameset_ok = false;
+                        self.generic_rawtext_element_parsing_algorithm(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"noembed") => {
+                        self.generic_rawtext_element_parsing_algorithm(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if self.scripting && matches!(tag.name.as_slice(), b"noscript") => {
+                        self.generic_rawtext_element_parsing_algorithm(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"select") => {
+                        self.reconstruct_the_active_formatting_elements();
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.frameset_ok = false;
+                        if matches!(self.insertion_mode, InsertionMode::InTable | InsertionMode::InCaption | InsertionMode::InTableBody | InsertionMode::InRow | InsertionMode::InCell) {
+                            self.insertion_mode = InsertionMode::InSelectInTable;
+                        } else {
+                            self.insertion_mode = InsertionMode::InSelect;
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"optgroup" | b"option") => {
+                        if self.current_node().map_or(false, |node| node.is_element(b"option")) {
+                            self.stack_of_open_elements.pop().unwrap();
+                        }
+
+                        self.reconstruct_the_active_formatting_elements();
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"rb" | b"rtc") => {
+                        if self.has_element_in_scope(b"ruby") {
+                            self.generate_implied_end_tags(&[]);
+                            // TODO: perhaps this needs to be run un-nested?
+                            if !self.current_node().map_or(false, |node| node.is_element(b"ruby")) {
+                                self.parse_error();
+                            }
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"rp" | b"rt") => {
+                        if self.has_element_in_scope(b"ruby") {
+                            self.generate_implied_end_tags(&[b"rtc"]);
+                            // TODO: perhaps this needs to be run un-nested?
+                            if !self.current_node().map_or(false, |node| node.is_element(b"ruby") || node.is_element(b"rtc")) {
+                                self.parse_error();
+                            }
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"math") => {
+                        // TODO: perhaps this attribute gets modified later?
+                        let self_closing = tag.self_closing;
+                        self.reconstruct_the_active_formatting_elements();
+                        let mut token = token.unwrap();
+                        self.adjust_mathml_attributes(&mut token);
+                        self.adjust_foreign_attributes(&mut token);
+                        self.insert_a_foreign_element(token, ElementNamespace::MathML);
+                        if self_closing {
+                            self.stack_of_open_elements.pop().unwrap();
+                            // TODO: acknowledge self-closing flag
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"svg") => {
+                        // TODO: perhaps this attribute gets modiifed later?
+                        let self_closing = tag.self_closing;
+                        self.reconstruct_the_active_formatting_elements();
+                        let mut token = token.unwrap();
+                        self.adjust_svg_attributes(&mut token);
+                        self.adjust_foreign_attributes(&mut token);
+                        self.insert_a_foreign_element(token, ElementNamespace::SVG);
+                        if self_closing {
+                            self.stack_of_open_elements.pop().unwrap();
+                            // TODO: acknowledge self-closing flag
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"col" | b"colgroup" | b"frame" | b"head" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr") => {
+                        self.parse_error();
+                    }
+                    Some(token @ Token::StartTag(_)) => {
+                        self.reconstruct_the_active_formatting_elements();
+                        self.insert_an_element_for_a_token(token);
+                        // TODO: debug assert for "ordinary" element
+                    }
+                    Some(Token::EndTag(ref tag)) => {
+                        let mut node = self.current_node().unwrap().clone();
+                        // Loop:
+                        loop {
+                            if node.is_element(&tag.name) {
+                                self.generate_implied_end_tags(&[&tag.name]);
+                                if self.current_node().map_or(false, |node2| node2.same_identity(&node)) {
+                                    self.parse_error();
+                                }
+                                while let Some(node2) = self.stack_of_open_elements.pop() {
+                                    if node.same_identity(&node2) {
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+
+                            // TODO: "set node to the previous entry in the stack of open elements"
+                            todo!();
+                        }
+                    }
                     _ => todo!()
                 }
             }
@@ -917,7 +1290,15 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
         todo!()
     }
 
+    fn has_element_in_scope2(&self, matcher: impl Fn(&Node) -> bool) -> bool {
+        todo!()
+    }
+
     fn has_element_in_button_scope(&self, name: &[u8]) -> bool {
+        todo!()
+    }
+
+    fn has_element_in_list_item_scope(&self, name: &[u8]) -> bool {
         todo!()
     }
 
@@ -990,6 +1371,26 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
 
     fn generate_implied_end_tags(&mut self, except_for_tags: &[&[u8]]) {
+        todo!()
+    }
+
+    fn run_adoption_agency_algorithm(&mut self, token: Token) {
+        todo!()
+    }
+
+    fn adjust_mathml_attributes(&mut self, token: &mut Token) {
+        todo!()
+    }
+
+    fn adjust_foreign_attributes(&mut self, token: &mut Token) {
+        todo!()
+    }
+
+    fn adjust_svg_attributes(&mut self, token: &mut Token) {
+        todo!()
+    }
+
+    fn insert_a_foreign_element(&mut self, token: Token, namespace: ElementNamespace) {
         todo!()
     }
 }
