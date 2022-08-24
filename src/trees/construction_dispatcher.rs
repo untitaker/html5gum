@@ -24,8 +24,8 @@ enum InsertionMode {
     Text,
     AfterHead,
     InTemplate,
-    InFrameset
-        
+    InFrameset,
+    AfterBody,
 }
 
 macro_rules! skip_over_chars {
@@ -107,6 +107,14 @@ impl Node {
             _ => None
         }
     }
+
+    fn is_element(&self, tag_name: &[u8]) -> bool {
+        self.as_element().map_or(false, |elem| *elem.tag_name == tag_name)
+    }
+
+    fn is_special(&self) -> bool {
+        todo!()
+    }
 }
 
 #[derive(Clone, Default)]
@@ -143,6 +151,7 @@ pub struct TreeConstructionDispatcher<R: Reader> {
     stack_of_open_elements: Vec<Node>,
     context_element: Option<Node>,
     head_element_pointer: Option<Node>,
+    form_element_pointer: Option<Node>,
     insertion_mode: InsertionMode,
     original_insertion_mode: Option<InsertionMode>,
     document: Document,
@@ -162,6 +171,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             stack_of_open_elements: Vec::new(),
             context_element: None,
             head_element_pointer: None,
+            form_element_pointer: None,
             insertion_mode: InsertionMode::Initial,
             original_insertion_mode: None,
             document: Document::default(),
@@ -690,11 +700,133 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             self.stop_parsing();
                         }
                     }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"html") => {
+                        if !self.has_element_in_scope(b"body") {
+                            self.parse_error();
+                        } else {
+                            for node in &self.stack_of_open_elements {
+                                if let Some(elem) = node.as_element() {
+                                    if !matches!(elem.tag_name.as_slice(), b"dd" | b"dt" | b"li" | b"optgroup" | b"option" | b"p" | b"rb" | b"rp" | b"rt" | b"rtc" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr" | b"body" | b"html") {
+                                        self.parse_error();
+                                        break;
+                                    }
+                                }
+                            }
+
+                            self.insertion_mode = InsertionMode::AfterBody;
+
+                            if tag.name.as_slice() == b"html" {
+                                self.process_token_via_insertion_mode(self.insertion_mode, token);
+                            }
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"address" | b"article" | b"aside" | b"blockquote" | b"center" | b"details" | b"dialog" | b"dir" | b"div" | b"dl" | b"fieldset" | b"figcaption" | b"figure" | b"footer" | b"header" | b"hgroup" | b"main" | b"menu" | b"nav" | b"ol" | b"p" | b"section" | b"summary" | b"ul") => {
+                        if self.has_element_in_button_scope(b"p") {
+                            self.close_a_p_element();
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"h1" | b"h2" | b"h3" | b"h4" | b"h5" | b"h6") => {
+                        if self.has_element_in_button_scope(b"p") {
+                            self.close_a_p_element();
+                        }
+
+                        if self.current_node().and_then(|node| node.as_element()).map_or(false, |elem| matches!(elem.tag_name.as_slice(), b"h1" | b"h2" | b"h3" | b"h4" | b"h5" | b"h6")) {
+                            self.parse_error();
+                            self.stack_of_open_elements.pop().unwrap();
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"pre" | b"listing") => {
+                        if self.has_element_in_button_scope(b"p") {
+                            self.close_a_p_element();
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+
+                        if let Some(Token::String(ref mut string)) = self.peek_token() {
+                            if string.starts_with(b"\n") {
+                                let len = string.len();
+                                string.copy_within(1.., 0);
+                                string.truncate(len - 1);
+                            }
+                        }
+
+                        self.frameset_ok = false;
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"form") => {
+                        let has_template_elem = self.stack_of_open_elements.iter().any(|node| node.as_element().map_or(false, |elem| *elem.tag_name == b"template"));
+                        if self.form_element_pointer.is_none() && !has_template_elem {
+                            self.parse_error();
+                        } else {
+                            if self.has_element_in_button_scope(b"p") {
+                                self.close_a_p_element();
+                            }
+
+                            let node = self.insert_an_element_for_a_token(token.unwrap());
+                            if !has_template_elem {
+                                self.form_element_pointer = Some(node);
+                            }
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"li") => {
+                        self.frameset_ok = false;
+                        let node = self.current_node().unwrap().clone();
+
+                        // Loop:
+                        loop {
+                            if node.is_element(b"li") {
+                                self.generate_implied_end_tags(&[b"li"]);
+                                if !self.current_node().map_or(false, |node| node.is_element(b"li")) {
+                                    self.parse_error();
+                                }
+
+                                while let Some(node) = self.stack_of_open_elements.pop() {
+                                    if node.is_element(b"li") {
+                                        break;
+                                    }
+                                }
+
+                                // "jump to the step labeled done below"
+                                break;
+                            }
+
+                            if node.is_special() && !node.is_element(b"address") && !node.is_element(b"div") && !node.is_element(b"p")  {
+                                // "jump to the step labeled done below"
+                                break;
+                            } else {
+                                // "Otherwise, set node to the previous entry in the stack of open elements and return to the step labeled loop."
+                                // TODO: what does "previous" mean
+                                todo!();
+                            }
+                        }
+
+                        // Done:
+                        if self.has_element_in_button_scope(b"p") {
+                            self.close_a_p_element();
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
                     _ => todo!()
                 }
             }
             _ => todo!()
         }
+    }
+
+    fn has_element_in_scope(&self, name: &[u8]) -> bool {
+        todo!()
+    }
+
+    fn has_element_in_button_scope(&self, name: &[u8]) -> bool {
+        todo!()
+    }
+
+    fn close_a_p_element(&mut self) {
+        todo!()
     }
 
     fn process_token_via_foreign_content(&mut self, _token: Token) {
@@ -754,6 +886,14 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
 
     fn stop_parsing(&mut self) {
+        todo!()
+    }
+
+    fn peek_token(&mut self) -> &mut Option<Token> {
+        todo!()
+    }
+
+    fn generate_implied_end_tags(&mut self, except_for_tags: &[&[u8]]) {
         todo!()
     }
 }
