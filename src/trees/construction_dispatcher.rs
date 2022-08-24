@@ -615,6 +615,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                 }
             }
             InsertionMode::InBody => {
+                // TODO: this is bogus, doesn't handle "\t\0somethingelse" correctly
                 handle_string_prefix!(token, b'\0', |substring: &[u8]| {
                     self.parse_error();
                 });
@@ -809,6 +810,101 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         }
 
                         self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"dd" | b"dt") => {
+                        self.frameset_ok = false;
+                        let node = self.current_node().unwrap().clone();
+                        // Loop:
+                        loop {
+                            if node.is_element(b"dd") {
+                                self.generate_implied_end_tags(&[b"dd"]);
+                                if !self.current_node().map_or(false, |node| node.is_element(b"dd")) {
+                                    self.parse_error();
+                                }
+
+                                while let Some(node) = self.stack_of_open_elements.pop() {
+                                    if node.is_element(b"dd") {
+                                        break;
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            if node.is_element(b"dt") {
+                                self.generate_implied_end_tags(&[b"dt"]);
+                                if !self.current_node().map_or(false, |node| node.is_element(b"dt")) {
+                                    self.parse_error();
+                                }
+
+                                while let Some(node) = self.stack_of_open_elements.pop() {
+                                    if node.is_element(b"dt") {
+                                        break;
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            if node.is_special() && !node.is_element(b"address") && !node.is_element(b"div") && !node.is_element(b"p")  {
+                                break;
+                            } else {
+                                // "Otherwise, set node to the previous entry in the stack of open elements and return to the step labeled loop."
+                                // TODO: what does "previous" mean
+                                todo!();
+                            }
+                        }
+
+                        // Done:
+                        if self.has_element_in_button_scope(b"p") {
+                            self.close_a_p_element();
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"plaintext") => {
+                        if self.has_element_in_button_scope(b"p") {
+                            self.close_a_p_element();
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        // TODO: use emitter API
+                        self.tokenizer.set_state(State::PlainText);
+                        // TODO: re-read note in spec, optimization potential?
+                        //
+                        // 'Once a start tag with the tag name "plaintext" has been seen, that will
+                        // be the last token ever seen other than character tokens (and the
+                        // end-of-file token), because there is no way to switch out of the
+                        // PLAINTEXT state.'
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"button") => {
+                        if self.has_element_in_scope(b"button") {
+                            self.parse_error();
+                            self.generate_implied_end_tags(&[]);
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(b"button") {
+                                    break;
+                                }
+                            }
+                            self.reconstruct_the_active_formatting_elements();
+                            self.insert_an_element_for_a_token(token.unwrap());
+                            self.frameset_ok = false;
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"address" | b"article" | b"blockquote" | b"button" | b"center" | b"details" | b"dir" | b"div" | b"dl" | b"fieldset" | b"figcaption" | b"figure" | b"footer" | b"header" | b"hgroup" | b"listing" | b"main" | b"menu" | b"nav" | b"ol" | b"pre" | b"section" | b"summary" | b"ul") => {
+                        if !self.has_element_in_scope(tag.name.as_slice()) {
+                            self.parse_error();
+                        } else {
+                            self.generate_implied_end_tags(&[]);
+                            if !self.current_node().map_or(false, |node| node.is_element(tag.name.as_slice())) {
+                                self.parse_error();
+                            }
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(tag.name.as_slice()) {
+                                    break;
+                                }
+                            }
+                        }
                     }
                     _ => todo!()
                 }
