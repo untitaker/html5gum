@@ -1,6 +1,9 @@
+#![allow(unused)]
+
 use std::collections::BTreeMap;
 
 use crate::{Reader, Token, Tokenizer, HtmlString, StartTag, State};
+
 
 #[derive(Clone)]
 enum ElementNamespace {
@@ -33,6 +36,8 @@ enum InsertionMode {
     InTableBody,
     InCaption,
     InCell,
+    InTableText,
+    InColumnGroup,
 }
 
 macro_rules! skip_over_chars {
@@ -182,6 +187,8 @@ pub struct TreeConstructionDispatcher<R: Reader> {
     list_of_active_formatting_elements: Vec<ElementOrMarker>,
     frameset_ok: bool,
     stack_of_template_insertion_modes: Vec<InsertionMode>,
+    pending_table_character_tokens: Vec<Token>,
+    foster_parenting: bool,
 }
 
 impl<R: Reader> TreeConstructionDispatcher<R> {
@@ -201,6 +208,8 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             list_of_active_formatting_elements: Vec::new(),
             frameset_ok: true,
             stack_of_template_insertion_modes: Vec::new(),
+            pending_table_character_tokens: Vec::new(),
+            foster_parenting: false,
         }
     }
 
@@ -208,12 +217,12 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
         self.stack_of_open_elements.last()
     }
 
-    fn adjusted_current_node(&self) -> Option<&Node> {
-        self.context_element.as_ref().or_else(|| self.current_node())
+    fn current_node_mut(&mut self) -> Option<&mut Node> {
+        self.stack_of_open_elements.last_mut()
     }
 
-    fn current_template_insertion_mode(&self) -> Option<&InsertionMode> {
-        self.stack_of_template_insertion_modes.last()
+    fn adjusted_current_node(&self) -> Option<&Node> {
+        self.context_element.as_ref().or_else(|| self.current_node())
     }
 
     pub fn run(mut self) -> Result<(), R::Error> {
@@ -1279,6 +1288,151 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             todo!();
                         }
                     }
+                    Some(Token::Error(_)) => todo!(),
+                }
+            }
+            InsertionMode::Text => {
+                match token {
+                    Some(Token::String(s)) => {
+                        debug_assert!(s.iter().all(|&x| x != b'\0'));
+                        self.insert_a_character(&s);
+                    }
+                    None => {
+                        self.parse_error();
+                        if let Some(current_node) = self.current_node_mut() {
+                            if current_node.is_element(b"script") {
+                                current_node.as_element_mut().unwrap().already_started = true;
+                            }
+                        }
+
+                        self.stack_of_open_elements.pop().unwrap();
+                        self.insertion_mode = self.original_insertion_mode.unwrap();
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"script") => {
+                        // TODO: implement this entire state. we don't really support scripting
+                        let node = self.stack_of_open_elements.pop().unwrap();
+                        debug_assert!(node.is_element(b"script"));
+                    }
+                    Some(Token::EndTag(ref tag)) => {
+                        self.stack_of_open_elements.pop().unwrap();
+                        self.insertion_mode = self.original_insertion_mode.unwrap();
+                    }
+                    _ => {
+                        // undefined transitions in spec
+                        unreachable!();
+                    }
+                }
+            }
+            InsertionMode::InTable => {
+                match token {
+                    Some(Token::String(_)) if self.current_node().map_or(false, |node| node.is_element(b"table") || node.is_element(b"tbody") || node.is_element(b"tfoot") || node.is_element(b"thead") || node.is_element(b"tr")) => {
+                        self.pending_table_character_tokens.clear();
+                        self.original_insertion_mode = Some(self.insertion_mode);
+                        self.insertion_mode = InsertionMode::InTableText;
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, None);
+                    }
+                    Some(Token::Doctype(doctype)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption") => {
+                        self.clear_stack_back_to_a_table_context();
+                        self.list_of_active_formatting_elements.push(ElementOrMarker::Marker);
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.insertion_mode = InsertionMode::InCaption;
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"colgroup") => {
+                        self.clear_stack_back_to_a_table_context();
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.insertion_mode = InsertionMode::InColumnGroup;
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"col") => {
+                        self.clear_stack_back_to_a_table_context();
+                        self.insert_an_element_for_a_token(Token::StartTag(StartTag {
+                            name: b"colgroup".as_slice().to_owned().into(),
+                            ..StartTag::default()
+                        }));
+                        self.insertion_mode = InsertionMode::InColumnGroup;
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"tbody" | b"tfoot" | b"thead") => {
+                        self.clear_stack_back_to_a_table_context();
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.insertion_mode = InsertionMode::InTableBody;
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"td" | b"th" | b"tr") => {
+                        self.clear_stack_back_to_a_table_context();
+                        self.insert_an_element_for_a_token(Token::StartTag(StartTag {
+                            name: b"tbody".as_slice().to_owned().into(),
+                            ..StartTag::default()
+                        }));
+                        self.insertion_mode = InsertionMode::InTableBody;
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
+                        self.parse_error();
+                        if self.has_element_in_table_scope(b"table") {
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(b"table") {
+                                    break;
+                                }
+                            }
+
+                            self.reset_the_insertion_mode_appropriately();
+                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
+                        if !self.has_element_in_table_scope(b"table") {
+                            self.parse_error();
+                        } else {
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(b"table") {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"caption" | b"col" | b"colgroup" | b"html" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr") => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"style" | b"script" | b"template") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"template") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    // TODO: ascii-case insensitive match for "hidden"
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"input") && tag.attributes.get(b"type".as_slice()).map_or(false, |value| **value == b"hidden") => {
+                        self.parse_error();
+                        let node = self.insert_an_element_for_a_token(token.unwrap());
+                        let node2 = self.stack_of_open_elements.pop().unwrap();
+                        debug_assert!(node.same_identity(&node2));
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"form") => {
+                        self.parse_error();
+                        if self.stack_of_open_elements.iter().any(|node| node.is_element(b"template")) || self.form_element_pointer.is_some() {
+                            // ignore the token
+                        } else {
+                            let node = self.insert_an_element_for_a_token(token.unwrap());
+                            let node2 = self.stack_of_open_elements.pop().unwrap();
+                            debug_assert!(node.same_identity(&node2));
+                            self.form_element_pointer = Some(node);
+                        }
+
+                    }
+                    None => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    token => {
+                        self.parse_error();
+                        self.foster_parenting = true;
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                        self.foster_parenting = false;
+                    }
                 }
             }
             _ => todo!()
@@ -1298,6 +1452,10 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
 
     fn has_element_in_list_item_scope(&self, name: &[u8]) -> bool {
+        todo!()
+    }
+
+    fn has_element_in_table_scope(&self, name: &[u8]) -> bool {
         todo!()
     }
 
@@ -1390,6 +1548,10 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
 
     fn insert_a_foreign_element(&mut self, token: Token, namespace: ElementNamespace) {
+        todo!()
+    }
+
+    fn clear_stack_back_to_a_table_context(&mut self) {
         todo!()
     }
 }
