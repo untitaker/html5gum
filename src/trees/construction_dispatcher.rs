@@ -187,7 +187,7 @@ pub struct TreeConstructionDispatcher<R: Reader> {
     list_of_active_formatting_elements: Vec<ElementOrMarker>,
     frameset_ok: bool,
     stack_of_template_insertion_modes: Vec<InsertionMode>,
-    pending_table_character_tokens: Vec<Token>,
+    pending_table_character_tokens: Vec<u8>,
     foster_parenting: bool,
 }
 
@@ -1432,6 +1432,44 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         self.foster_parenting = true;
                         self.process_token_via_insertion_mode(InsertionMode::InBody, token);
                         self.foster_parenting = false;
+                    }
+                }
+            }
+            InsertionMode::InTableText => {
+                match token {
+                    Some(Token::String(s)) => {
+                        for &c in &*s {
+                            if c == b'\0' {
+                                self.parse_error();
+                            } else {
+                                self.pending_table_character_tokens.push(c);
+                            }
+                        }
+                    }
+                    token => {
+                        if self.pending_table_character_tokens.iter().any(|x| !x.is_ascii_whitespace()) {
+                            // > [...] then this is a parse error: reprocess the character tokens in the
+                            // > pending table character tokens list using the rules given in the
+                            // > "anything else" entry in the "in table" insertion mode.
+                            //
+                            // TODO: two parse errors? the InTable insertion mode also emits a
+                            // parse error
+                            self.parse_error();
+                            self.foster_parenting = true;
+                            // XXX: inefficient clone
+                            let pending = self.pending_table_character_tokens.clone();
+                            // TODO: clear pending characters?
+                            self.process_token_via_insertion_mode(InsertionMode::InBody, Some(Token::String(pending.into())));
+                            self.foster_parenting = false;
+                        } else {
+                            // XXX: inefficient clone
+                            let pending = self.pending_table_character_tokens.clone();
+                            // TODO: clear pending characters?
+                            self.insert_a_character(&pending);
+                        }
+
+                        self.insertion_mode = self.original_insertion_mode.unwrap();
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
                     }
                 }
             }
