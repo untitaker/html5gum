@@ -1279,7 +1279,6 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             todo!();
                         }
                     }
-                    _ => todo!()
                 }
             }
             _ => todo!()
