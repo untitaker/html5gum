@@ -1927,11 +1927,21 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                 }
             }
             InsertionMode::InFrameset => {
-                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |string| {
-                    self.insert_a_character(string);
-                });
-
                 match token {
+                    Some(Token::String(mut s)) => {
+                        s.retain(|c| {
+                            if matches!(c , b'\t' | b'\x0A' | b'\x0C' | b' ') {
+                                self.parse_error();
+                                false
+                            } else {
+                                true
+                            }
+                        });
+
+                        if !s.is_empty() {
+                            self.insert_a_character(&s);
+                        }
+                    }
                     Some(Token::Comment(s)) => {
                         self.insert_a_comment(s, None);
                     }
@@ -1968,6 +1978,43 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             self.parse_error();
                         }
                     }
+                    _ => {
+                        self.parse_error();
+                    }
+                }
+            }
+            InsertionMode::AfterFrameset => {
+                match token {
+                    Some(Token::String(mut s)) => {
+                        s.retain(|c| {
+                            if matches!(c , b'\t' | b'\x0A' | b'\x0C' | b' ') {
+                                self.parse_error();
+                                false
+                            } else {
+                                true
+                            }
+                        });
+
+                        if !s.is_empty() {
+                            self.insert_a_character(&s);
+                        }
+                    }
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, None);
+                    }
+                    Some(Token::Doctype(_)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"html") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"html") => {
+                        self.insertion_mode = InsertionMode::AfterAfterFrameset;
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"noframes") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    None => (),
                     _ => {
                         self.parse_error();
                     }
