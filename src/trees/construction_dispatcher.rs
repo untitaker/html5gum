@@ -2045,6 +2045,37 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::AfterAfterFrameset => {
+                match token {
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, InsertPosition::DocumentLastChild);
+                    }
+                    Some(Token::Doctype(_)) => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::String(s)) => {
+                        for c in s {
+                            if matches!(c , b'\t' | b'\x0A' | b'\x0C' | b' ') {
+                                // XXX: inefficient
+                                let new_token = Token::String(&[c].as_slice().to_owned().into());
+                                self.process_token_via_insertion_mode(InsertionMode::InBody, token)
+                            } else {
+                                self.parse_error();
+                            }
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"html") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    None => (),
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"noframes") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    _ => {
+                        self.parse_error();
+                    }
+                }
+            }
             _ => todo!()
         }
     }
