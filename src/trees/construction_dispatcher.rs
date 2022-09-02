@@ -1828,6 +1828,70 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::InTemplate => {
+                match token {
+                    Some(Token::String(_) | Token::Comment(_) | Token::Doctype(_)) => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"base" | b"basefont" | b"bgsound" | b"link" | b"meta" | b"noframes" | b"script" | b"style" | b"template" | b"title") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"template") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"colgroup" | b"tbody" | b"tfoot" | b"thead") => {
+                        self.stack_of_template_insertion_modes.pop();
+                        self.stack_of_template_insertion_modes.push(InsertionMode::InTable);
+                        self.insertion_mode = InsertionMode::InTable;
+                        self.reprocess_token(token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"col") => {
+                        self.stack_of_template_insertion_modes.pop();
+                        self.stack_of_template_insertion_modes.push(InsertionMode::InColumnGroup);
+                        self.insertion_mode = InsertionMode::InColumnGroup;
+                        self.reprocess_token(token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"tr") => {
+                        self.stack_of_template_insertion_modes.pop();
+                        self.stack_of_template_insertion_modes.push(InsertionMode::InTableBody);
+                        self.insertion_mode = InsertionMode::InTableBody;
+                        self.reprocess_token(token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"td" | b"th") => {
+                        self.stack_of_template_insertion_modes.pop();
+                        self.stack_of_template_insertion_modes.push(InsertionMode::InRow);
+                        self.insertion_mode = InsertionMode::InRow;
+                        self.reprocess_token(token);
+                    }
+                    Some(Token::StartTag(_)) => {
+                        self.stack_of_template_insertion_modes.pop();
+                        self.stack_of_template_insertion_modes.push(InsertionMode::InBody);
+                        self.insertion_mode = InsertionMode::InBody;
+                        self.reprocess_token(token);
+                    }
+                    Some(Token::EndTag(_)) => {
+                        self.parse_error();
+                    }
+                    None => {
+                        if !self.stack_of_open_elements.iter().any(|node| node.is_element(b"template")) {
+                            return;
+                        }
+
+                        self.parse_error();
+                        while let Some(node) = self.stack_of_open_elements.pop() {
+                            if node.is_element(b"template") {
+                                break;
+                            }
+                        }
+
+                        self.clear_list_of_active_formatting_elements_up_to_the_last_marker();
+                        self.stack_of_template_insertion_modes.pop();
+                        self.reset_the_insertion_mode_appropriately();
+                        self.reprocess_token(token);
+                    }
+                    Some(Token::Error(_)) => todo!(),
+                }
+            }
             _ => todo!()
         }
     }
