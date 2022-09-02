@@ -2076,7 +2076,6 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
-            _ => todo!()
         }
     }
 
