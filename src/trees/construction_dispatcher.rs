@@ -2021,6 +2021,30 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::AfterAfterBody => {
+                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |substring: &[u8]| {
+                    let new_token = Some(Token::String(substring.to_owned().into()));
+                    self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                });
+
+                match token {
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, InsertPosition::DocumentLastChild);
+                    }
+                    Some(Token::Doctype(_)) => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"html") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    None => (),
+                    _ => {
+                        self.parse_error();
+                        self.insertion_mode = InsertionMode::InBody;
+                        self.reprocess_token(token);
+                    }
+                }
+            }
             _ => todo!()
         }
     }
