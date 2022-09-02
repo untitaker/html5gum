@@ -1480,16 +1480,16 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             InsertionMode::InCaption => {
                 match token {
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"caption") => {
-                        self.handle_in_caption_inner(token);
+                        self.handle_in_caption_inner();
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"col" | b"colgroup" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr") => {
-                        if self.handle_in_caption_inner(token) {
-                            self.process_token_via_insertion_mode(self.insertion_mode);
+                        if self.handle_in_caption_inner() {
+                            self.process_token_via_insertion_mode(self.insertion_mode, token);
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
-                        if self.handle_in_caption_inner(token) {
-                            self.process_token_via_insertion_mode(self.insertion_mode);
+                        if self.handle_in_caption_inner() {
+                            self.process_token_via_insertion_mode(self.insertion_mode, token);
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"col" | b"colgroup" | b"html" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr") => {
@@ -1516,7 +1516,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         self.process_token_via_insertion_mode(InsertionMode::InBody, token);
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"col") => {
-                        self.insert_an_element_for_a_token(token);
+                        self.insert_an_element_for_a_token(token.unwrap());
                         self.stack_of_open_elements.pop();
                         // TODO: acknowledge self-closing flag
                     }
@@ -1555,7 +1555,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                 match token {
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"tr") => {
                         self.clear_stack_back_to_a_table_context();
-                        self.insert_an_element_for_a_token(token);
+                        self.insert_an_element_for_a_token(token.unwrap());
                         self.insertion_mode = InsertionMode::InRow;
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"th" | b"td") => {
@@ -1609,13 +1609,13 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
         }
     }
 
-    fn handle_in_caption_inner(&mut self, token: Token) -> bool {
-        if !slf.has_element_in_table_scope(b"caption") {
-            slf.parse_error();
+    fn handle_in_caption_inner(&mut self) -> bool {
+        if !self.has_element_in_table_scope(b"caption") {
+            self.parse_error();
             false
         } else {
-            slf.generate_implied_end_tags(&[]);
-            if slf.current_node().map_or(false, |node| node.is_element(b"caption")) {
+            self.generate_implied_end_tags(&[]);
+            if self.current_node().map_or(false, |node| node.is_element(b"caption")) {
                 self.parse_error();
             }
 
