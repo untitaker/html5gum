@@ -39,6 +39,7 @@ enum InsertionMode {
     InTableText,
     InColumnGroup,
     AfterAfterBody,
+    AfterFrameset,
 }
 
 macro_rules! skip_over_chars {
@@ -1922,6 +1923,53 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     _ => {
                         self.insertion_mode = InsertionMode::InBody;
                         self.reprocess_token(token);
+                    }
+                }
+            }
+            InsertionMode::InFrameset => {
+                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |string| {
+                    self.insert_a_character(string);
+                });
+
+                match token {
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, None);
+                    }
+                    Some(Token::Doctype(_)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"html") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"frameset") => {
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"frameset") => {
+                        if self.current_node().map_or(false, |node| node.is_element(b"html")) {
+                            self.parse_error();
+                            return;
+                        }
+
+                        self.stack_of_open_elements.pop();
+                        if self.fragment_parsing && !self.current_node().map_or(false, |node| node.is_element(b"frameset")) {
+                            self.insertion_mode = InsertionMode::AfterFrameset;
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"frame") => {
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.stack_of_open_elements.pop();
+                        // TODO: acknowledge self-closing flag
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"noframes") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    None => {
+                        if !self.current_node().map_or(false, |node| node.is_element(b"html")) {
+                            self.parse_error();
+                        }
+                    }
+                    _ => {
+                        self.parse_error();
                     }
                 }
             }
