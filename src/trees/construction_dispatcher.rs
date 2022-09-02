@@ -370,7 +370,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         }
 
                         self.insertion_mode = InsertionMode::BeforeHtml;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                 }
             }
@@ -407,7 +407,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         self.document.nodes.push(node.clone());
                         self.stack_of_open_elements.push(node);
                         self.insertion_mode = InsertionMode::BeforeHead;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                 }
             }
@@ -433,7 +433,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         }));
                         self.head_element_pointer = Some(node.clone());
                         self.insertion_mode = InsertionMode::InHead;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                 }
             }
@@ -550,7 +550,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         debug_assert_eq!(*head_element.as_element().unwrap().tag_name, b"head");
                         debug_assert_eq!(*head_element.as_element().unwrap().local_name, b"head");
                         self.insertion_mode = InsertionMode::AfterHead;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                 }
             }
@@ -591,7 +591,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         let node = self.stack_of_open_elements.pop().expect("no current node");
                         debug_assert_eq!(*self.current_node().unwrap().as_element().unwrap().tag_name, b"head");
                         self.insertion_mode = InsertionMode::InHead;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                 }
             }
@@ -643,7 +643,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             ..StartTag::default()
                         }));
                         self.insertion_mode = InsertionMode::InBody;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                 }
             }
@@ -750,7 +750,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             self.insertion_mode = InsertionMode::AfterBody;
 
                             if tag.name.as_slice() == b"html" {
-                                self.process_token_via_insertion_mode(self.insertion_mode, token);
+                                self.reprocess_token(token);
                             }
                         }
                     }
@@ -1163,7 +1163,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         self.parse_error();
                         // "change the token's tag name to img and reprocess it. (Don't ask)"
                         tag.name = b"img".as_slice().to_owned().into();
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"textarea") => {
                         self.insert_an_element_for_a_token(token.unwrap());
@@ -1311,7 +1311,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
 
                         self.stack_of_open_elements.pop().unwrap();
                         self.insertion_mode = self.original_insertion_mode.unwrap();
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"script") => {
                         // TODO: implement this entire state. we don't really support scripting
@@ -1334,7 +1334,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         self.pending_table_character_tokens.clear();
                         self.original_insertion_mode = Some(self.insertion_mode);
                         self.insertion_mode = InsertionMode::InTableText;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                     Some(Token::Comment(s)) => {
                         self.insert_a_comment(s, None);
@@ -1360,7 +1360,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             ..StartTag::default()
                         }));
                         self.insertion_mode = InsertionMode::InColumnGroup;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"tbody" | b"tfoot" | b"thead") => {
                         self.clear_stack_back_to_a_table_context();
@@ -1374,7 +1374,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             ..StartTag::default()
                         }));
                         self.insertion_mode = InsertionMode::InTableBody;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
                         self.parse_error();
@@ -1386,7 +1386,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             }
 
                             self.reset_the_insertion_mode_appropriately();
-                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                            self.reprocess_token(token);
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
@@ -1473,7 +1473,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         }
 
                         self.insertion_mode = self.original_insertion_mode.unwrap();
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                 }
             }
@@ -1484,12 +1484,12 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"col" | b"colgroup" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr") => {
                         if self.handle_in_caption_inner() {
-                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                            self.reprocess_token(token);
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
                         if self.handle_in_caption_inner() {
-                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                            self.reprocess_token(token);
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"col" | b"colgroup" | b"html" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr") => {
@@ -1546,7 +1546,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         } else {
                             self.stack_of_open_elements.pop();
                             self.insertion_mode = InsertionMode::InTable;
-                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                            self.reprocess_token(token);
                         }
                     }
                 }
@@ -1566,7 +1566,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             ..StartTag::default()
                         }));
                         self.insertion_mode = InsertionMode::InRow;
-                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        self.reprocess_token(token);
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"tbody" | b"tfoot" | b"thead") => {
                         if !self.has_element_in_table_scope(&tag.name) {
@@ -1584,7 +1584,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             self.clear_stack_back_to_a_table_body_context();
                             self.stack_of_open_elements.pop();
                             self.insertion_mode = InsertionMode::InTable;
-                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                            self.reprocess_token(token);
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
@@ -1594,7 +1594,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             self.clear_stack_back_to_a_table_body_context();
                             self.stack_of_open_elements.pop();
                             self.insertion_mode = InsertionMode::InTable;
-                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                            self.reprocess_token(token);
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"caption" | b"col" | b"colgroup" | b"html" | b"td" | b"th" | b"tr") => {
@@ -1618,12 +1618,12 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"col" | b"colgroup" | b"tbody" | b"tfoot" | b"thead" | b"tr") => {
                         if self.handle_in_row_inner(b"tr") {
-                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                            self.reprocess_token(token);
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
                         if self.handle_in_row_inner(b"tr") {
-                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                            self.reprocess_token(token);
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"tbody" | b"tfoot" | b"thead") => {
@@ -1801,7 +1801,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
         todo!()
     }
 
-    fn reprocess_the_token(&mut self, token: Option<Token>) {
+    fn reprocess_token(&mut self, token: Option<Token>) {
         self.process_token_via_insertion_mode(self.insertion_mode, token);
     }
 }
