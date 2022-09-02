@@ -2024,12 +2024,12 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             InsertionMode::AfterAfterBody => {
                 handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |substring: &[u8]| {
                     let new_token = Some(Token::String(substring.to_owned().into()));
-                    self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    self.process_token_via_insertion_mode(InsertionMode::InBody, new_token);
                 });
 
                 match token {
                     Some(Token::Comment(s)) => {
-                        self.insert_a_comment(s, InsertPosition::DocumentLastChild);
+                        self.insert_a_comment(s, Some(InsertPosition::DocumentLastChild));
                     }
                     Some(Token::Doctype(_)) => {
                         self.process_token_via_insertion_mode(InsertionMode::InBody, token);
