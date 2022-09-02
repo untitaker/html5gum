@@ -40,6 +40,7 @@ enum InsertionMode {
     InColumnGroup,
     AfterAfterBody,
     AfterFrameset,
+    AfterAfterFrameset
 }
 
 macro_rules! skip_over_chars {
