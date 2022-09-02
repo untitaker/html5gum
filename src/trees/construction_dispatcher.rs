@@ -1682,6 +1682,119 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::InSelect => {
+                match token {
+                    Some(Token::String(mut s)) => {
+                        s.retain(|c| {
+                            if c == b'\0' {
+                                self.parse_error();
+                                false
+                            } else {
+                                true
+                            }
+                        });
+
+                        if !s.is_empty() {
+                            self.insert_a_character(s);
+                        }
+                    }
+                    Some(Token::Commment(s)) => {
+                        self.insert_a_comment(s);
+                    }
+                    Some(Token::Doctype(_)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"html") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"option") => {
+                        if self.current_node().map_or(false, |node| node.is_element(b"option")) {
+                            self.stack_of_open_elements.pop();
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"optgroup") => {
+                        if self.current_node().map_or(false, |node| node.is_element(b"option")) {
+                            self.stack_of_open_elements.pop();
+                        }
+
+                        if self.current_node().map_or(false, |node| node.is_element(b"optgroup")) {
+                            self.stack_of_open_elements.pop();
+                        }
+
+                        self.insert_an_element_for_a_token(token.unwrap());
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"optgroup") => {
+                        if self.current_node().map_or(false, |node| node.is_element(b"option")) && self.stack_of_open_elements.get(self.stack_of_open_elements.len() - 2).map_or(false, |node| node.is_element(b"optgroup")) {
+                            self.stack_of_open_elements.pop();
+                        }
+
+                        if self.current_node().map_or(false, |node| node.is_element(b"optgroup")) {
+                            self.stack_of_open_elements.pop();
+                        } else {
+                            self.parse_error();
+                        }
+                    }
+                    Some(Token::Endtag(ref tag)) if matches!(tag.name.as_slice(), b"option") => {
+                        if self.current_node().map_or(false, |node| node.is_element(b"option")) {
+                            self.stack_of_open_elements.pop();
+                        } else {
+                            self.parse_error();
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"select") => {
+                        if !self.has_element_in_select_scope(b"select") {
+                            self.parse_error();
+                        } else {
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(b"select") {
+                                    break;
+                                }
+                            }
+
+                            self.reset_the_insertion_mode_appropriately();
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"select") => {
+                        self.parse_error();
+                        if self.has_element_in_select_scope(b"select") {
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(b"select") {
+                                    break;
+                                }
+                            }
+
+                            self.reset_the_insertion_mode_appropriately();
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"input" | b"keygen" | b"textarea") => {
+                        self.parse_error();
+                        if self.has_element_in_select_scope(b"select") {
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(b"select") {
+                                    break;
+                                }
+                            }
+
+                            self.reset_the_insertion_mode_appropriately();
+                            self.reprocess_token(token);
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"script" | b"template") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"template") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    None => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    _ => {
+                        self.parse_error();
+                    }
+                }
+            }
             _ => todo!()
         }
     }
@@ -1739,6 +1852,10 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
     }
 
     fn has_element_in_table_scope(&self, name: &[u8]) -> bool {
+        todo!()
+    }
+
+    fn has_element_in_select_scope(&self, name: &[u8]) -> bool {
         todo!()
     }
 
