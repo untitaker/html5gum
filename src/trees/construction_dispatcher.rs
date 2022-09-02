@@ -1685,7 +1685,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             InsertionMode::InSelect => {
                 match token {
                     Some(Token::String(mut s)) => {
-                        s.retain(|c| {
+                        s.retain(|&c| {
                             if c == b'\0' {
                                 self.parse_error();
                                 false
@@ -1695,11 +1695,11 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         });
 
                         if !s.is_empty() {
-                            self.insert_a_character(s);
+                            self.insert_a_character(&s);
                         }
                     }
-                    Some(Token::Commment(s)) => {
-                        self.insert_a_comment(s);
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, None);
                     }
                     Some(Token::Doctype(_)) => {
                         self.parse_error();
@@ -1736,7 +1736,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             self.parse_error();
                         }
                     }
-                    Some(Token::Endtag(ref tag)) if matches!(tag.name.as_slice(), b"option") => {
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"option") => {
                         if self.current_node().map_or(false, |node| node.is_element(b"option")) {
                             self.stack_of_open_elements.pop();
                         } else {
