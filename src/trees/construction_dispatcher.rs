@@ -54,6 +54,9 @@ macro_rules! handle_string_prefix {
             $callback(substring);
             string.copy_within(index.., 0);
             string.truncate(index);
+            if string.is_empty() {
+                return
+            }
         }
     }
 }
@@ -1494,6 +1497,57 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                     _ => {
                         self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                }
+            }
+            InsertionMode::InColumnGroup => {
+                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |string| {
+                    self.insert_a_character(string);
+                });
+
+                match token {
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, None);
+                    }
+                    Some(Token::Doctype(_)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"html") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"col") => {
+                        self.insert_an_element_for_a_token(token);
+                        self.stack_of_open_elements.pop();
+                        // TODO: acknowledge self-closing flag
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"colgroup") => {
+                        if !self.current_node().map_or(false, |node| node.is_element(b"colgroup")) {
+                            self.parse_error();
+                        } else {
+                            self.stack_of_open_elements.pop();
+                            self.insertion_mode = InsertionMode::InTable;
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"col") => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"template") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"template") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InHead, token);
+                    }
+                    None => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    _ => {
+                        if !self.current_node().map_or(false, |node| node.is_element(b"colgroup")) {
+                            self.parse_error();
+                        } else {
+                            self.stack_of_open_elements.pop();
+                            self.insertion_mode = InsertionMode::InTable;
+                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        }
                     }
                 }
             }
