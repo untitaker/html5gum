@@ -58,6 +58,7 @@ macro_rules! handle_string_prefix {
     }
 }
 
+
 enum InsertPosition {
     DocumentLastChild,
 }
@@ -1473,7 +1474,52 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::InCaption => {
+                match token {
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"caption") => {
+                        self.handle_in_caption_inner(token);
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"col" | b"colgroup" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr") => {
+                        if self.handle_in_caption_inner(token) {
+                            self.process_token_via_insertion_mode(self.insertion_mode);
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
+                        if self.handle_in_caption_inner(token) {
+                            self.process_token_via_insertion_mode(self.insertion_mode);
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"col" | b"colgroup" | b"html" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr") => {
+                        self.parse_error();
+                    }
+                    _ => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                }
+            }
             _ => todo!()
+        }
+    }
+
+    fn handle_in_caption_inner(&mut self, token: Token) -> bool {
+        if !slf.has_element_in_table_scope(b"caption") {
+            slf.parse_error();
+            false
+        } else {
+            slf.generate_implied_end_tags(&[]);
+            if slf.current_node().map_or(false, |node| node.is_element(b"caption")) {
+                self.parse_error();
+            }
+
+            while let Some(node) = self.stack_of_open_elements.pop() {
+                if node.is_element(b"caption") {
+                    break;
+                }
+            }
+
+            self.clear_list_of_active_formatting_elements_up_to_the_last_marker();
+            self.insertion_mode = InsertionMode::InTable;
+            true
         }
     }
 
