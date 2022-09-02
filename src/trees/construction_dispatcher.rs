@@ -55,7 +55,7 @@ macro_rules! handle_string_prefix {
             string.copy_within(index.., 0);
             string.truncate(index);
             if string.is_empty() {
-                return
+                return;
             }
         }
     }
@@ -64,6 +64,7 @@ macro_rules! handle_string_prefix {
 
 enum InsertPosition {
     DocumentLastChild,
+    HtmlLastChild,
 }
 
 #[derive(Default, Clone)]
@@ -1890,6 +1891,37 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         self.reprocess_token(token);
                     }
                     Some(Token::Error(_)) => todo!(),
+                }
+            }
+            InsertionMode::AfterBody => {
+                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |string| {
+                    let new_token = Token::String(string.to_owned().into());
+                    self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                });
+
+                match token {
+                    Some(Token::Comment(s)) => {
+                        self.insert_a_comment(s, InsertPosition::HtmlLastChild);
+                    }
+                    Some(Token::Doctype(_)) => {
+                        self.parse_error();
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"html") => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"html") => {
+                        if self.fragment_parsing {
+                            self.parse_error();
+                            return;
+                        }
+
+                        self.insertion_mode = InsertionMode::AfterAfterBody;
+                    }
+                    None => (),
+                    _ => {
+                        self.insertion_mode = InsertionMode::InBody;
+                        self.reprocess_token(token);
+                    }
                 }
             }
             _ => todo!()
