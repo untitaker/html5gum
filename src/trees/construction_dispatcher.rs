@@ -1578,7 +1578,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         }
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"col" | b"colgroup" | b"tbody" | b"tfoot" | b"thead") => {
-                        if !self.has_element_in_table_scope(b"tbody") || !self.has_element_in_table_scope(b"thead") || !self.has_element_in_table_scope(b"tfoot") {
+                        if !self.has_element_in_table_scope(b"tbody") && !self.has_element_in_table_scope(b"thead") && !self.has_element_in_table_scope(b"tfoot") {
                             self.parse_error();
                         } else {
                             self.clear_stack_back_to_a_table_body_context();
@@ -1634,6 +1634,51 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                     _ => {
                         self.process_token_via_insertion_mode(InsertionMode::InTable, token);
+                    }
+                }
+            }
+            InsertionMode::InCell => {
+                match token {
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"td" | b"th") => {
+                        if !self.has_element_in_table_scope(&tag.name) {
+                            self.parse_error();
+                        } else {
+                            self.generate_implied_end_tags(&[]);
+                            if !self.current_node().map_or(false, |node| node.is_element(&tag.name)) {
+                                self.parse_error();
+                            }
+
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(&tag.name) {
+                                    break;
+                                }
+                            }
+
+                            self.clear_list_of_active_formatting_elements_up_to_the_last_marker();
+                            self.insertion_mode = InsertionMode::InRow;
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"col" | b"colgroup" | b"tbody" | b"td" | b"tfoot" | b"th" | b"thead" | b"tr") => {
+                        if !self.has_element_in_table_scope(b"td") && !self.has_element_in_table_scope(b"td") {
+                            self.parse_error();
+                        } else {
+                            self.close_the_cell();
+                            self.reprocess_token(token);
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"caption" | b"col" | b"colgroup" | b"html") => {
+                        self.parse_error();
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table" | b"tbody" | b"tfoot" | b"thead" | b"tr") => {
+                        if !self.has_element_in_table_scope(&tag.name) {
+                            self.parse_error();
+                        } else {
+                            self.close_the_cell();
+                            self.reprocess_token(token);
+                        }
+                    }
+                    _ => {
+                        self.process_token_via_insertion_mode(InsertionMode::InBody, token);
                     }
                 }
             }
@@ -1803,5 +1848,20 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
 
     fn reprocess_token(&mut self, token: Option<Token>) {
         self.process_token_via_insertion_mode(self.insertion_mode, token);
+    }
+    
+    fn close_the_cell(&mut self) {
+        self.generate_implied_end_tags(&[]);
+        if !self.current_node().map_or(false, |node| node.is_element(b"td") || node.is_element(b"th")) {
+            self.parse_error();
+        }
+
+        while let Some(node) = self.stack_of_open_elements.pop() {
+            if node.is_element(b"td") || node.is_element(b"th") {
+                break;
+            }
+        }
+        self.clear_list_of_active_formatting_elements_up_to_the_last_marker();
+        self.insertion_mode = InsertionMode::InRow;
     }
 }
