@@ -1554,13 +1554,13 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
             InsertionMode::InTableBody => {
                 match token {
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"tr") => {
-                        self.clear_stack_back_to_a_table_context();
+                        self.clear_stack_back_to_a_table_body_context();
                         self.insert_an_element_for_a_token(token.unwrap());
                         self.insertion_mode = InsertionMode::InRow;
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"th" | b"td") => {
                         self.parse_error();
-                        self.clear_stack_back_to_a_table_context();
+                        self.clear_stack_back_to_a_table_body_context();
                         self.insert_an_element_for_a_token(Token::StartTag(StartTag {
                             name: b"tr".as_slice().to_owned().into(),
                             ..StartTag::default()
@@ -1572,7 +1572,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         if !self.has_element_in_table_scope(&tag.name) {
                             self.parse_error();
                         } else {
-                            self.clear_stack_back_to_a_table_context();
+                            self.clear_stack_back_to_a_table_body_context();
                             self.stack_of_open_elements.pop();
                             self.insertion_mode = InsertionMode::InTable;
                         }
@@ -1581,7 +1581,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         if !self.has_element_in_table_scope(b"tbody") || !self.has_element_in_table_scope(b"thead") || !self.has_element_in_table_scope(b"tfoot") {
                             self.parse_error();
                         } else {
-                            self.clear_stack_back_to_a_table_context();
+                            self.clear_stack_back_to_a_table_body_context();
                             self.stack_of_open_elements.pop();
                             self.insertion_mode = InsertionMode::InTable;
                             self.process_token_via_insertion_mode(self.insertion_mode, token);
@@ -1591,7 +1591,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         if !self.has_element_in_table_scope(b"tbody") || !self.has_element_in_table_scope(b"thead") || !self.has_element_in_table_scope(b"tfoot") {
                             self.parse_error();
                         } else {
-                            self.clear_stack_back_to_a_table_context();
+                            self.clear_stack_back_to_a_table_body_context();
                             self.stack_of_open_elements.pop();
                             self.insertion_mode = InsertionMode::InTable;
                             self.process_token_via_insertion_mode(self.insertion_mode, token);
@@ -1605,7 +1605,53 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::InRow => {
+                match token {
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"th" | b"td") => {
+                        self.clear_stack_back_to_a_table_row_context();
+                        self.insert_an_element_for_a_token(token.unwrap());
+                        self.insertion_mode = InsertionMode::InCell;
+                        self.list_of_active_formatting_elements.push(ElementOrMarker::Marker);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"tr") => {
+                        self.handle_in_row_inner(b"tr");
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"col" | b"colgroup" | b"tbody" | b"tfoot" | b"thead" | b"tr") => {
+                        if self.handle_in_row_inner(b"tr") {
+                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
+                        if self.handle_in_row_inner(b"tr") {
+                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"tbody" | b"tfoot" | b"thead") => {
+                        self.handle_in_row_inner(&tag.name);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"caption" | b"col" | b"colgroup" | b"html" | b"td" | b"th") => {
+                        self.parse_error();
+                    }
+                    _ => {
+                        self.process_token_via_insertion_mode(InsertionMode::InTable, token);
+                    }
+                }
+            }
             _ => todo!()
+        }
+    }
+
+    fn handle_in_row_inner(&mut self, tag_for_scope: &[u8]) ->  bool {
+        if !self.has_element_in_table_scope(tag_for_scope) {
+            self.parse_error();
+            false
+        } else if tag_for_scope != b"tr" && !self.has_element_in_table_scope(b"tr") {
+            false
+        } else {
+            self.clear_stack_back_to_a_table_row_context();
+            self.stack_of_open_elements.pop();
+            self.insertion_mode = InsertionMode::InTableBody;
+            true
         }
     }
 
@@ -1745,5 +1791,17 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
 
     fn clear_stack_back_to_a_table_context(&mut self) {
         todo!()
+    }
+
+    fn clear_stack_back_to_a_table_body_context(&mut self) {
+        todo!()
+    }
+
+    fn clear_stack_back_to_a_table_row_context(&mut self) {
+        todo!()
+    }
+
+    fn reprocess_the_token(&mut self, token: Option<Token>) {
+        self.process_token_via_insertion_mode(self.insertion_mode, token);
     }
 }
