@@ -38,6 +38,7 @@ enum InsertionMode {
     InCell,
     InTableText,
     InColumnGroup,
+    AfterAfterBody,
 }
 
 macro_rules! skip_over_chars {
@@ -1894,14 +1895,14 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                 }
             }
             InsertionMode::AfterBody => {
-                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |string| {
+                handle_string_prefix!(token, b'\t' | b'\x0A' | b'\x0C' | b' ', |string: &[u8]| {
                     let new_token = Token::String(string.to_owned().into());
-                    self.process_token_via_insertion_mode(InsertionMode::InBody, token);
+                    self.process_token_via_insertion_mode(InsertionMode::InBody, Some(new_token));
                 });
 
                 match token {
                     Some(Token::Comment(s)) => {
-                        self.insert_a_comment(s, InsertPosition::HtmlLastChild);
+                        self.insert_a_comment(s, Some(InsertPosition::HtmlLastChild));
                     }
                     Some(Token::Doctype(_)) => {
                         self.parse_error();
