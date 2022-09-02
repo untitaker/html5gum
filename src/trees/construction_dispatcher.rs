@@ -1551,6 +1551,60 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::InTableBody => {
+                match token {
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"tr") => {
+                        self.clear_stack_back_to_a_table_context();
+                        self.insert_an_element_for_a_token(token);
+                        self.insertion_mode = InsertionMode::InRow;
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"th" | b"td") => {
+                        self.parse_error();
+                        self.clear_stack_back_to_a_table_context();
+                        self.insert_an_element_for_a_token(Token::StartTag(StartTag {
+                            name: b"tr".as_slice().to_owned().into(),
+                            ..StartTag::default()
+                        }));
+                        self.insertion_mode = InsertionMode::InRow;
+                        self.process_token_via_insertion_mode(self.insertion_mode, token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"tbody" | b"tfoot" | b"thead") => {
+                        if !self.has_element_in_table_scope(&tag.name) {
+                            self.parse_error();
+                        } else {
+                            self.clear_stack_back_to_a_table_context();
+                            self.stack_of_open_elements.pop();
+                            self.insertion_mode = InsertionMode::InTable;
+                        }
+                    }
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"col" | b"colgroup" | b"tbody" | b"tfoot" | b"thead") => {
+                        if !self.has_element_in_table_scope(b"tbody") || !self.has_element_in_table_scope(b"thead") || !self.has_element_in_table_scope(b"tfoot") {
+                            self.parse_error();
+                        } else {
+                            self.clear_stack_back_to_a_table_context();
+                            self.stack_of_open_elements.pop();
+                            self.insertion_mode = InsertionMode::InTable;
+                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"table") => {
+                        if !self.has_element_in_table_scope(b"tbody") || !self.has_element_in_table_scope(b"thead") || !self.has_element_in_table_scope(b"tfoot") {
+                            self.parse_error();
+                        } else {
+                            self.clear_stack_back_to_a_table_context();
+                            self.stack_of_open_elements.pop();
+                            self.insertion_mode = InsertionMode::InTable;
+                            self.process_token_via_insertion_mode(self.insertion_mode, token);
+                        }
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"caption" | b"col" | b"colgroup" | b"html" | b"td" | b"th" | b"tr") => {
+                        self.parse_error();
+                    }
+                    _ => {
+                        self.process_token_via_insertion_mode(InsertionMode::InTable, token);
+                    }
+                }
+            }
             _ => todo!()
         }
     }
