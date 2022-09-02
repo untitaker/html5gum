@@ -1795,6 +1795,39 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                 }
             }
+            InsertionMode::InSelectInTable => {
+                match token {
+                    Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"table" | b"tbody" | b"tfoot" | b"thead" | b"tr" | b"td" | b"th") => {
+                        self.parse_error();
+
+                        while let Some(node) = self.stack_of_open_elements.pop() {
+                            if node.is_element(b"select") {
+                                break;
+                            }
+                        }
+
+                        self.reset_the_insertion_mode_appropriately();
+                        self.reprocess_token(token);
+                    }
+                    Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"caption" | b"table" | b"tfoot" | b"thead" | b"tr" | b"td" | b"th") => {
+                        self.parse_error();
+
+                        if self.has_element_in_table_scope(&tag.name) {
+                            while let Some(node) = self.stack_of_open_elements.pop() {
+                                if node.is_element(b"select") {
+                                    break;
+                                }
+                            }
+
+                            self.reset_the_insertion_mode_appropriately();
+                            self.reprocess_token(token);
+                        }
+                    }
+                    _ => {
+                        self.process_token_via_insertion_mode(InsertionMode::InSelect, token);
+                    }
+                }
+            }
             _ => todo!()
         }
     }
