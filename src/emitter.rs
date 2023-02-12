@@ -402,7 +402,7 @@ impl Emitter for DefaultEmitter {
         }
         self.emit_token(token);
         if self.switch_states {
-            naive_next_state(&*self.last_start_tag)
+            naive_next_state(&self.last_start_tag)
         } else {
             None
         }

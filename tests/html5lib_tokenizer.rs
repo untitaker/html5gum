@@ -177,7 +177,7 @@ impl<'de> Deserialize<'de> for ParseErrorInner {
         let str_err = String::deserialize(deserializer)?;
         let err: Error = str_err
             .parse()
-            .map_err(|_| D::Error::custom(&format!("failed to deserialize error: {}", str_err)))?;
+            .map_err(|_| D::Error::custom(format!("failed to deserialize error: {}", str_err)))?;
         Ok(ParseErrorInner(err))
     }
 }

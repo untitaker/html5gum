@@ -317,7 +317,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
             }
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
-                slf.machine_helper.temporary_buffer.push(x as u8);
+                slf.machine_helper.temporary_buffer.push(x);
                 cont!()
             }
             c => {
@@ -360,7 +360,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
             }
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
-                slf.machine_helper.temporary_buffer.push(x as u8);
+                slf.machine_helper.temporary_buffer.push(x);
                 cont!()
             }
             c => {
@@ -409,7 +409,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
                 slf.machine_helper
                     .temporary_buffer
-                    .push(x.to_ascii_lowercase() as u8);
+                    .push(x.to_ascii_lowercase());
                 cont!()
             }
             c => {
@@ -569,7 +569,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.machine_helper
                     .temporary_buffer
-                    .push(x.to_ascii_lowercase() as u8);
+                    .push(x.to_ascii_lowercase());
                 slf.emitter.emit_string(&[x]);
                 cont!()
             }
@@ -676,7 +676,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
             Some(x) if x.is_ascii_alphabetic() => {
                 slf.machine_helper
                     .temporary_buffer
-                    .push(x.to_ascii_lowercase() as u8);
+                    .push(x.to_ascii_lowercase());
                 slf.emitter.emit_string(&[x]);
                 cont!()
             }
@@ -1646,7 +1646,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
 
             match read_byte!()? {
                 Some(x @ (b'x' | b'X')) => {
-                    slf.machine_helper.temporary_buffer.push(x as u8);
+                    slf.machine_helper.temporary_buffer.push(x);
                     switch_to!(State::HexadecimalCharacterReferenceStart)
                 }
                 Some(x @ b'0'..=b'9') => {
