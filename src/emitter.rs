@@ -393,6 +393,7 @@ impl Emitter for DefaultEmitter {
                     self.emit_error(Error::EndTagWithAttributes);
                 }
                 self.seen_attributes.clear();
+                self.set_last_start_tag(None);
             }
             Token::StartTag(ref mut tag) => {
                 self.set_last_start_tag(Some(&tag.name));
@@ -401,7 +402,7 @@ impl Emitter for DefaultEmitter {
         }
         self.emit_token(token);
         if self.switch_states {
-            dbg!(naive_next_state(&*self.last_start_tag))
+            naive_next_state(&*self.last_start_tag)
         } else {
             None
         }
