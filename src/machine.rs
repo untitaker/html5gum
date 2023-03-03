@@ -5,7 +5,7 @@ use crate::machine_helper::{
     ControlToken,
 };
 use crate::read_helper::{fast_read_char, slow_read_byte};
-use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str};
+use crate::utils::{ctostr, noncharacter_pat, surrogate_pat};
 use crate::{Emitter, Error, Reader, Tokenizer};
 
 macro_rules! define_state {
@@ -222,11 +222,7 @@ pub(crate) mod states {
                     cont!()
                 }
                 Some(xs) => {
-                    let emitter = &mut slf.emitter;
-                    with_lowercase_str(xs, |x| {
-                        emitter.push_tag_name(x);
-                    });
-
+                    slf.emitter.push_tag_name(xs);
                     cont!()
                 }
                 None => {
@@ -813,10 +809,7 @@ pub(crate) mod states {
                     cont!()
                 }
                 Some(xs) => {
-                    let emitter = &mut slf.emitter;
-                    with_lowercase_str(xs, |xs| {
-                        emitter.push_attribute_name(xs);
-                    });
+                    slf.emitter.push_attribute_name(xs);
                     cont!()
                 }
                 None => {
@@ -1350,10 +1343,7 @@ pub(crate) mod states {
                     cont!()
                 }
                 Some(xs) => {
-                    let emitter = &mut slf.emitter;
-                    with_lowercase_str(xs, |x| {
-                        emitter.push_doctype_name(x);
-                    });
+                    slf.emitter.push_doctype_name(xs);
                     cont!()
                 }
                 None => {
