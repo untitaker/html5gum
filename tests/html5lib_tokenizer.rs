@@ -1,5 +1,5 @@
 use std::ops::Deref;
-use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
+use std::{collections::BTreeMap};
 
 use html5gum::{
     Doctype, EndTag, Error, IoReader, Readable, Reader, StartTag, State, Token, Tokenizer,
@@ -7,8 +7,6 @@ use html5gum::{
 
 use html5gum::testutils::{trace_log, SlowReader, OUTPUT};
 
-use glob::glob;
-use libtest_mimic::{self, Arguments, Failed, Trial};
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
 
@@ -111,53 +109,12 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
     }
 }
 
-#[derive(Clone)]
-struct InitialState(State);
-
-impl<'de> Deserialize<'de> for InitialState {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        enum RawInitialState {
-            #[serde(rename = "Data state")]
-            Data,
-            #[serde(rename = "PLAINTEXT state")]
-            PlainText,
-            #[serde(rename = "RCDATA state")]
-            RcData,
-            #[serde(rename = "RAWTEXT state")]
-            RawText,
-            #[serde(rename = "Script data state")]
-            ScriptData,
-            #[serde(rename = "CDATA section state")]
-            CdataSection,
-        }
-
-        Ok(Self(match RawInitialState::deserialize(deserializer)? {
-            RawInitialState::Data => State::Data,
-            RawInitialState::PlainText => State::PlainText,
-            RawInitialState::RcData => State::RcData,
-            RawInitialState::RawText => State::RawText,
-            RawInitialState::ScriptData => State::ScriptData,
-            RawInitialState::CdataSection => State::CdataSection,
-        }))
-    }
-}
-
-fn initial_states_default() -> Vec<InitialState> {
-    vec![InitialState(State::Data)]
-}
-
 #[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct TestFileEntry {
     description: String,
     input: HtmlString,
     output: ExpectedOutputTokens,
-    #[serde(default = "initial_states_default")]
-    initial_states: Vec<InitialState>,
     #[serde(default)]
     double_escaped: bool,
     #[serde(default)]
@@ -168,6 +125,7 @@ struct TestFileEntry {
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 struct ParseErrorInner(Error);
+
 
 impl<'de> Deserialize<'de> for ParseErrorInner {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -188,11 +146,6 @@ struct ParseError {
     code: ParseErrorInner,
 }
 
-#[derive(Deserialize)]
-struct TestFile {
-    tests: Vec<TestFileEntry>,
-}
-
 struct TestCase {
     state: State,
     reader_type: ReaderType,
@@ -202,7 +155,22 @@ struct TestCase {
 }
 
 impl TestCase {
-    fn run(&self) -> Result<(), Failed> {
+    fn run(mut self) {
+        if self.declaration.double_escaped {
+            self.declaration.input.0 = unescape(&self.declaration.input.0);
+
+            self.declaration.output.0 = self.declaration
+                .output
+                .0
+                .into_iter()
+                .map(|token| match token {
+                    Token::String(x) => Token::String(unescape(x.as_slice()).into()),
+                    Token::Comment(x) => Token::Comment(unescape(x.as_slice()).into()),
+                    token => token,
+                })
+                .collect();
+        }
+
         let result = std::panic::catch_unwind(move || {
             trace_log(&format!(
                 "==== FILE {}, TEST {}, STATE {:?}, TOKENIZER {:?} ====",
@@ -224,31 +192,28 @@ impl TestCase {
             }
         });
 
-        match result {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                let mut msg = String::new();
+        if let Err(e) = result {
+            let mut msg = String::new();
 
-                OUTPUT.with(|cell| {
-                    let mut buf = cell.take();
-                    msg.push_str(&buf);
-                    buf.clear();
-                    cell.set(buf);
-                });
+            OUTPUT.with(|cell| {
+                let mut buf = cell.take();
+                msg.push_str(&buf);
+                buf.clear();
+                cell.set(buf);
+            });
 
-                msg.push('\n');
-                if let Some(s) = e
-                    // Try to convert it to a String, then turn that into a str
-                    .downcast_ref::<String>()
+            msg.push('\n');
+            if let Some(s) = e
+                // Try to convert it to a String, then turn that into a str
+                .downcast_ref::<String>()
                     .map(String::as_str)
                     // If that fails, try to turn it into a &'static str
                     .or_else(|| e.downcast_ref::<&'static str>().map(Deref::deref))
-                {
-                    msg.push_str(s);
-                }
-
-                Err(msg.into())
+            {
+                msg.push_str(s);
             }
+
+            panic!("{}", msg);
         }
     }
 
@@ -336,84 +301,69 @@ fn unescape(data: &[u8]) -> Vec<u8> {
     rv
 }
 
-fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
-    let fname = path.file_name().unwrap().to_str().unwrap();
+script_macro::run_script!(r###"
+    fn convert_state_enum(state) {
+        let state_enum = #{
+            "Data state": "State::Data",
+            "PLAINTEXT state": "State::PlainText",
+            "RCDATA state": "State::RcData",
+            "RAWTEXT state": "State::RawText",
+            "Script data state": "State::ScriptData",
+            "CDATA section state": "State::CdataSection"
+        };
+        return state_enum[state];
+    }
 
-    if matches!(
-        fname,
+    fn produce_testcases_from_file(entry) {
+        let output = "";
+        let fname = basename(entry);
+
         // We don't implement "Coercing an HTML DOM into an infoset" section
-        "xmlViolation.test"
+        if fname == "xmlViolation.test" {
+            return;
+        }
+
         // We don't detect surrogates
-        | "unicodeCharsProblematic.test"
-    ) {
-        return;
-    }
-
-    let f = File::open(path).unwrap();
-    let bf = BufReader::new(f);
-    let TestFile {
-        tests: declarations,
-    } = serde_json::from_reader(bf).unwrap();
-
-    for (test_i, mut declaration) in declarations.into_iter().enumerate() {
-        if declaration.double_escaped {
-            declaration.input.0 = unescape(&declaration.input.0);
-
-            declaration.output.0 = declaration
-                .output
-                .0
-                .into_iter()
-                .map(|token| match token {
-                    Token::String(x) => Token::String(unescape(x.as_slice()).into()),
-                    Token::Comment(x) => Token::Comment(unescape(x.as_slice()).into()),
-                    token => token,
-                })
-                .collect();
+        if fname == "unicodeCharsProblematic.test" {
+            return;
         }
 
-        for state in &declaration.initial_states {
-            for &reader_type in &[
-                ReaderType::SlowString,
-                ReaderType::String,
-                ReaderType::BufRead,
-                ReaderType::SlowBufRead,
-            ] {
-                let filename = fname.to_owned();
-                let declaration = declaration.clone();
-                let state = state.0;
-                tests.push(Trial::test(
-                    format!(
-                        "{}:{}:{:?}:{:?}",
-                        fname, declaration.description, state, reader_type
-                    ),
-                    move || {
-                        TestCase {
-                            state,
-                            reader_type,
-                            filename,
-                            test_i,
-                            declaration,
+        let test_i = 0;
+        for declaration in parse_json(open_file(entry).read_string())["tests"] {
+            for state in declaration["initialStates"] ?? ["Data state"] {
+                for reader_type in ["SlowString", "String", "BufRead", "SlowBufRead"] {
+                    let test_name = slugify_ident(`test_${fname}${declaration["description"]}:${state}:${reader_type}:${test_i}`);
+                    let state_enum = convert_state_enum(state);
+
+                    output += `
+                        #[test]
+                        fn ${test_name}() {
+                            TestCase {
+                                state: ${state_enum},
+                                reader_type: ReaderType::${reader_type},
+                                filename: "${fname}".to_string(),
+                                test_i: ${test_i},
+                                declaration: serde_json::from_str(r##"${stringify_json(declaration)}"##).unwrap(),
+                            }.run();
                         }
-                        .run()
-                    },
-                ));
+                    `;
+                }
             }
+            test_i += 1;
         }
-    }
-}
 
-fn main() {
-    let args = Arguments::from_args();
-
-    let mut tests = Vec::new();
-
-    for entry in glob("tests/html5lib-tests/tokenizer/*.test").unwrap() {
-        produce_testcases_from_file(&mut tests, &entry.unwrap());
+        return output;
     }
 
-    for entry in glob("tests/custom-html5lib-tests/*.test").unwrap() {
-        produce_testcases_from_file(&mut tests, &entry.unwrap());
+    let output = "";
+
+    for entry in glob("tests/html5lib-tests/tokenizer/*.test") {
+        output += produce_testcases_from_file(entry);
     }
 
-    libtest_mimic::run(&args, tests).exit();
-}
+    for entry in glob("tests/custom-html5lib-tests/*.test") {
+        output += produce_testcases_from_file(entry);
+    }
+
+    return output;
+"###);
