@@ -3,7 +3,7 @@ use lol_html::errors::RewritingError;
 use lol_html::html_content::DocumentEnd;
 use lol_html::{
     LocalName, MemoryLimiter, Namespace, StartTagHandlingResult, Token as Token2,
-    TokenCaptureFlags, TransformController, TransformStream, TransformStreamSettings,
+    TokenCaptureFlags, TransformController, TransformStream, TransformStreamSettings, SharedEncoding, AsciiCompatibleEncoding,
 };
 
 use pretty_assertions::assert_eq;
@@ -44,12 +44,11 @@ pub fn run_lolhtml(data: &[u8]) {
             output_sink: |_: &[u8]| (),
             preallocated_parsing_buffer_size: 0,
             memory_limiter,
-            encoding: encoding_rs::UTF_8,
+            encoding: SharedEncoding::new(AsciiCompatibleEncoding::new(encoding_rs::UTF_8).unwrap()),
             // we need the dumb, insecure behavior of lolhtml to match what a tokenizer does
             strict: false,
         });
 
-        let _parser = transform_stream.parser();
         transform_stream.write(data).unwrap();
         transform_stream.end().unwrap();
     }
