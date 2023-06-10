@@ -8,7 +8,7 @@ keywords = ["html", "html5", "whatwg", "parser", "tokenizer"]
 categories = [ "parser-implementations", "web-programming" ]
 license = "MIT"
 repository = "https://github.com/untitaker/html5gum"
-version = "0.5.2"
+version = "0.5.3"
 include = ["src/**/*", "LICENSE", "README.md", "benches"]
 
 [dev-dependencies]
