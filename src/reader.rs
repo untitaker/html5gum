@@ -282,8 +282,8 @@ impl<'a> Readable<'a> for &'a [u8] {
 #[derive(Debug)]
 pub struct IoReader<R: Read> {
     buf: Box<[u8; BUF_SIZE]>,
-    buf_offset: usize,
-    buf_len: usize,
+    read_cursor: usize,
+    write_cursor: usize,
     reader: R,
 }
 
@@ -294,30 +294,34 @@ impl<R: Read> IoReader<R> {
     pub fn new(reader: R) -> Self {
         IoReader {
             buf: Box::new([0; BUF_SIZE]),
-            buf_offset: 0,
-            buf_len: 0,
+            read_cursor: 0,
+            write_cursor: 0,
             reader,
         }
     }
 
-    fn prepare_buf(&mut self, min_len: usize) -> Result<(), io::Error> {
-        let mut len = self.buf_len - self.buf_offset;
-        debug_assert!(min_len < self.buf.len());
-        debug_assert!(len < self.buf.len());
-        if len < min_len {
+    /// Ensure that the buffer contains at leaast `min_read_len` bytes to read.
+    ///
+    /// Shift all to-be-read buffer contents between `self.read_cursor` and `self.write_cursor` to
+    /// the beginning of the buffer, and read extra bytes if necessary.
+    fn prepare_buf(&mut self, min_read_len: usize) -> Result<(), io::Error> {
+        let mut readable_len = self.write_cursor - self.read_cursor;
+        debug_assert!(min_read_len <= self.buf.len());
+        debug_assert!(readable_len <= self.buf.len());
+        if readable_len < min_read_len {
             let mut raw_buf = &mut self.buf[..];
-            raw_buf.copy_within(self.buf_offset..self.buf_len, 0);
-            raw_buf = &mut raw_buf[len..];
-            while len < min_len {
+            raw_buf.copy_within(self.read_cursor..self.write_cursor, 0);
+            raw_buf = &mut raw_buf[readable_len..];
+            while readable_len < min_read_len {
                 let n = self.reader.read(raw_buf)?;
                 if n == 0 {
                     break;
                 }
-                len += n;
+                readable_len += n;
                 raw_buf = &mut raw_buf[n..];
             }
-            self.buf_len = len;
-            self.buf_offset = 0;
+            self.write_cursor = readable_len;
+            self.read_cursor = 0;
         }
         Ok(())
     }
@@ -328,12 +332,12 @@ impl<R: Read> Reader for IoReader<R> {
 
     fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
         self.prepare_buf(1)?;
-        if self.buf_offset == self.buf_len {
+        if self.read_cursor == self.write_cursor {
             return Ok(None);
         }
-        let rv = self.buf.get(self.buf_offset).copied();
+        let rv = self.buf.get(self.read_cursor).copied();
         if rv.is_some() {
-            self.buf_offset += 1;
+            self.read_cursor += 1;
         }
         Ok(rv)
     }
@@ -343,9 +347,9 @@ impl<R: Read> Reader for IoReader<R> {
         debug_assert!(!s1.contains(&b'\n'));
 
         self.prepare_buf(s1.len())?;
-        let s2 = &self.buf[self.buf_offset..min(self.buf_offset + s1.len(), self.buf_len)];
+        let s2 = &self.buf[self.read_cursor..min(self.read_cursor + s1.len(), self.write_cursor)];
         if s1 == s2 || (!case_sensitive && s1.eq_ignore_ascii_case(s2)) {
-            self.buf_offset += s1.len();
+            self.read_cursor += s1.len();
             Ok(true)
         } else {
             Ok(false)
@@ -358,19 +362,19 @@ impl<R: Read> Reader for IoReader<R> {
         _: &'b mut [u8; 4],
     ) -> Result<Option<&'b [u8]>, Self::Error> {
         self.prepare_buf(4)?;
-        let buf = &self.buf[self.buf_offset..self.buf_len];
+        let buf = &self.buf[self.read_cursor..self.write_cursor];
         if buf.is_empty() {
             Ok(None)
         } else if let Some(needle_pos) = fast_find(needle, buf) {
             if needle_pos == 0 {
-                self.buf_offset += 1;
+                self.read_cursor += 1;
                 Ok(Some(&buf[..1]))
             } else {
-                self.buf_offset += needle_pos;
+                self.read_cursor += needle_pos;
                 Ok(Some(&buf[..needle_pos]))
             }
         } else {
-            self.buf_offset += buf.len();
+            self.read_cursor += buf.len();
             Ok(Some(buf))
         }
     }

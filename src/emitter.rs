@@ -269,7 +269,7 @@ pub trait Emitter {
 /// but is unsuitable for implementing a browser.
 ///
 /// The mapping was inspired by `lol-html` which has additional safeguards to detect ambiguous
-/// parsing state: https://github.com/cloudflare/lol-html/blob/f40a9f767c41caf07851548d7470649a6019548c/src/parser/tree_builder_simulator/mod.rs#L73-L86
+/// parsing state: <https://github.com/cloudflare/lol-html/blob/f40a9f767c41caf07851548d7470649a6019548c/src/parser/tree_builder_simulator/mod.rs#L73-L86>
 #[must_use]
 pub fn naive_next_state(tag_name: &[u8]) -> Option<State> {
     match tag_name {
