@@ -29,7 +29,6 @@ mod machine_helper;
 mod read_helper;
 mod reader;
 mod state;
-mod state;
 mod tokenizer;
 mod utils;
 
@@ -41,6 +40,5 @@ pub use emitter::{
 };
 pub use error::Error;
 pub use reader::{IoReader, Readable, Reader, StringReader};
-pub use state::State;
 pub use state::State;
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};
