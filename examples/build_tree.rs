@@ -45,13 +45,24 @@ fn walk(indent: usize, handle: &Handle) {
 
 fn main() {
     let rcdom = RcDom::default();
-    let tree_builder = TreeBuilder::new(rcdom, Default::default());
-    let token_emitter = Html5everEmitter::new(tree_builder);
+    let mut tree_builder = TreeBuilder::new(rcdom, Default::default());
+    let mut token_emitter = Html5everEmitter::new(&mut tree_builder);
 
     let tokenizer =
         Tokenizer::new_with_emitter(IoReader::new(std::io::stdin().lock()), token_emitter);
 
     for result in tokenizer {
         result.unwrap();
+    }
+
+    let rcdom = tree_builder.sink;
+
+    walk(0, &rcdom.document);
+
+    if !rcdom.errors.is_empty() {
+        println!("\nParse errors:");
+        for err in rcdom.errors.iter() {
+            println!("    {}", err);
+        }
     }
 }
