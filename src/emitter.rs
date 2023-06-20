@@ -6,7 +6,7 @@ use std::fmt::{Debug, Formatter};
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
-use crate::{State, Error};
+use crate::{Error, State};
 
 /// A wrapper around a bytestring.
 ///
@@ -261,7 +261,6 @@ pub trait Emitter {
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
         false
     }
-
 
     /// Switch the tokenizer to a new state. Used in tree building.
     ///
