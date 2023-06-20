@@ -1,16 +1,15 @@
 use std::{
-    collections::BTreeMap,
-    fs::{read_to_string, File},
-    io::{BufRead, BufReader, Read},
+    fs::{File},
+    io::{BufRead, BufReader},
     path::Path,
 };
 
 use glob::glob;
-use libtest_mimic::{self, Arguments, Failed, Trial};
+use libtest_mimic::{self, Arguments, Trial};
 
 use html5ever::tree_builder::TreeBuilder;
-use html5gum::{Html5everEmitter, IoReader, Tokenizer};
-use markup5ever_rcdom::{Handle, NodeData, RcDom};
+use html5gum::{Html5everEmitter, Tokenizer};
+use markup5ever_rcdom::{RcDom};
 
 #[derive(Default, Debug)]
 struct Testcase {
@@ -100,7 +99,7 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
         }
 
         tests.push(Trial::test(
-            format!("{:?}:{} -- {:?}", path, i, testcase),
+            format!("{:?}:{} -- {:?}", fname, i, testcase),
             move || {
                 let rcdom = RcDom::default();
                 let mut tree_builder = TreeBuilder::new(rcdom, Default::default());
@@ -114,7 +113,7 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
                     result.unwrap();
                 }
 
-                let rcdom = tree_builder.sink;
+                let _rcdom = tree_builder.sink;
                 Ok(())
             },
         ));
