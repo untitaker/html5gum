@@ -1,17 +1,16 @@
-#[macro_use] extern crate html5ever;
+#[macro_use]
+extern crate html5ever;
 
-use std::{iter::repeat, collections::HashMap};
+use std::{collections::HashMap, iter::repeat};
 
-use html5gum::{Html5everEmitter, IoReader, Tokenizer};
+use html5ever::tendril::*;
+use html5ever::tokenizer::{CharacterTokens, EndTag, NullCharacterToken, StartTag, TagToken};
+use html5ever::tokenizer::{ParseError, Token, TokenSink, TokenSinkResult, TokenizerOpts};
 use html5ever::tree_builder::{
     AppendNode, AppendText, ElementFlags, NodeOrText, QuirksMode, TreeSink,
 };
 use html5ever::{Attribute, ExpandedName, QualName};
-use html5ever::tokenizer::{CharacterTokens, EndTag, NullCharacterToken, StartTag, TagToken};
-use html5ever::tokenizer::{
-    ParseError, Token, TokenSink, TokenSinkResult, TokenizerOpts,
-};
-use html5ever::tendril::*;
+use html5gum::{Html5everEmitter, IoReader, Tokenizer};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
 #[derive(Copy, Clone)]
@@ -44,7 +43,7 @@ impl TokenSink for TokenPrinter {
                 for c in b.chars() {
                     self.do_char(c);
                 }
-            },
+            }
             NullCharacterToken => self.do_char('\0'),
             TagToken(tag) => {
                 self.is_char(false);
@@ -63,15 +62,15 @@ impl TokenSink for TokenPrinter {
                     print!(" \x1b[31m/\x1b[0m");
                 }
                 println!(">");
-            },
+            }
             ParseError(err) => {
                 self.is_char(false);
                 println!("ERROR: {}", err);
-            },
+            }
             _ => {
                 self.is_char(false);
                 println!("OTHER: {:?}", token);
-            },
+            }
         }
         TokenSinkResult::Continue
     }

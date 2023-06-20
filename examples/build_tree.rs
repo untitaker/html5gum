@@ -1,7 +1,7 @@
 use std::iter::repeat;
 
-use html5gum::{Html5everEmitter, IoReader, Tokenizer};
 use html5ever::tree_builder::TreeBuilder;
+use html5gum::{Html5everEmitter, IoReader, Tokenizer};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
 fn walk(indent: usize, handle: &Handle) {
