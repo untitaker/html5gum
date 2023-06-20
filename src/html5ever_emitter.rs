@@ -7,6 +7,14 @@ use html5ever::{Attribute, QualName};
 
 const BOGUS_LINENO: u64 = 1;
 
+/// A compatibility layer that allows you to plug the TreeBuilder from html5ever into the tokenizer
+/// from html5gum.
+///
+/// This code is experimental, it's not really clear whether it will stick around for v1.0. For now
+/// it is just there for demonstration purposes and for running testsuites.
+///
+/// See [`examples/build_tree.rs`] for usage.
+#[derive(Debug)]
 pub struct Html5everEmitter<'a, S: TokenSink> {
     next_state: Option<State>,
     sink: &'a mut S,
@@ -15,6 +23,7 @@ pub struct Html5everEmitter<'a, S: TokenSink> {
 }
 
 impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
+    /// Construct the compatibility layer.
     pub fn new(sink: &'a mut S) -> Self {
         Html5everEmitter {
             next_state: None,

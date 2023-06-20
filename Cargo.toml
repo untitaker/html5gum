@@ -48,9 +48,5 @@ harness = false
 name = "build_tree"
 required-features = ["html5ever", "markup5ever_rcdom"]
 
-[[example]]
-name = "print_html5ever_actions"
-required-features = ["html5ever"]
-
 [lib]
 bench = false

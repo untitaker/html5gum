@@ -46,7 +46,7 @@ fn walk(indent: usize, handle: &Handle) {
 fn main() {
     let rcdom = RcDom::default();
     let mut tree_builder = TreeBuilder::new(rcdom, Default::default());
-    let mut token_emitter = Html5everEmitter::new(&mut tree_builder);
+    let token_emitter = Html5everEmitter::new(&mut tree_builder);
 
     let tokenizer =
         Tokenizer::new_with_emitter(IoReader::new(std::io::stdin().lock()), token_emitter);
