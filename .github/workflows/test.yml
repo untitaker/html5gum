@@ -35,7 +35,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - run: cargo test
+      - run: cargo test --all-features
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
