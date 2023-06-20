@@ -7,11 +7,21 @@ use html5ever::{Attribute, QualName};
 
 const BOGUS_LINENO: u64 = 1;
 
-struct Html5everEmitter<S: TokenSink> {
+pub struct Html5everEmitter<S: TokenSink> {
     next_state: Option<State>,
     sink: S,
     // TODO: get rid of default emitter, construct html5ever tokens directly
     emitter_inner: DefaultEmitter,
+}
+
+impl<S: TokenSink> Html5everEmitter<S> {
+    pub fn new(sink: S) -> Self {
+        Html5everEmitter {
+            next_state: None,
+            sink,
+            emitter_inner: DefaultEmitter::default(),
+        }
+    }
 }
 
 impl<S: TokenSink> Emitter for Html5everEmitter<S> {
@@ -81,8 +91,8 @@ impl<S: TokenSink> Emitter for Html5everEmitter<S> {
         self.emitter_inner.init_comment();
     }
 
-    fn emit_current_tag(&mut self) {
-        self.emitter_inner.emit_current_tag();
+    fn emit_current_tag(&mut self) -> Option<State> {
+        self.emitter_inner.emit_current_tag()
     }
 
     fn emit_current_comment(&mut self) {

@@ -55,14 +55,6 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
         self.machine_helper.state = state.into();
     }
 
-    /// Set the statemachine to start/continue in [plaintext
-    /// state](https://html.spec.whatwg.org/#plaintext-state).
-    ///
-    /// This tokenizer never gets into that state naturally.
-    pub fn set_plaintext_state(&mut self) {
-        self.machine_helper.state = State::PlainText.into();
-    }
-
     /// Test-internal function to override internal state.
     #[cfg(debug_assertions)]
     #[doc(hidden)]

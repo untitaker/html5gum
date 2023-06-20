@@ -42,3 +42,6 @@ pub use error::Error;
 pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use state::State;
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};
+
+#[cfg(feature = "html5ever")]
+pub use html5ever_emitter::Html5everEmitter;
