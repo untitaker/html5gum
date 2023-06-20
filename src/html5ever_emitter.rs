@@ -33,6 +33,7 @@ impl<S: TokenSink> Emitter for Html5everEmitter<S> {
 
     fn emit_eof(&mut self) {
         self.emitter_inner.emit_eof();
+        self.pop_token();
         let _ignored = self
             .sink
             .process_token(Html5everToken::EOFToken, BOGUS_LINENO);
