@@ -49,7 +49,6 @@ macro_rules! noncharacter_pat {
 
 pub(crate) use noncharacter_pat;
 
-
 pub(crate) enum ControlToken {
     Eof,
     Continue,
@@ -86,7 +85,7 @@ pub(crate) fn with_lowercase_str(s: &[u8], mut f: impl FnMut(&[u8])) {
 // format!() + its string allocation still exists in resulting code
 macro_rules! trace_log {
     ($($tt:tt)*) => {{
-        #[cfg(feature = "integration-tests")]
+        #[cfg(debug_assertions)]
         crate::testutils::trace_log(&format!($($tt)*));
     }};
 }

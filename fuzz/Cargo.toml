@@ -9,14 +9,14 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 html5gum = { path = "../" }
-html5gum_old = { version = "0.3.0", package = "html5gum" }
+html5gum_old = { version = "0.4.0", package = "html5gum" }
 afl = "0.11.0"
 html5ever = "0.25.1"
 pretty_assertions = "1.0.0"
 
 
 # lol-html and its dependencies
-lol_html = { path = "/home/markus/projects/lol-html/", features = ["integration_test"] }
+lol_html = { version = "0.4", features = ["integration_test"] }
 encoding_rs = "0.8"
 bytes = "1"
 

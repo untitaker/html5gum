@@ -2,7 +2,7 @@
 export FUZZ_BASIC := 0
 export FUZZ_OLD_HTML5GUM := 0
 export FUZZ_HTML5EVER := 0
-export FUZZ_IGNORE_PARSE_ERRORS := 0
+export FUZZ_IGNORE_PARSE_ERRORS :=
 export FUZZ_LOLHTML := 0
 
 # CLI arguments to pass to AFL. useful for multiprocessing

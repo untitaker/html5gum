@@ -26,6 +26,7 @@ pub fn run_old_html5gum(s: &str) {
         .split(",")
     {
         match instruction {
+            "" => {}
             "1" => {
                 testing_tokens.retain(isnt_error);
                 reference_tokens.retain(isnt_old_error);
@@ -49,26 +50,26 @@ pub fn run_old_html5gum(s: &str) {
     let reference_tokens: Vec<_> = reference_tokens
         .into_iter()
         .map(|x| match x {
-            html5gum_old::Token::String(x) => Token::String(x.into_bytes().into()),
-            html5gum_old::Token::Comment(x) => Token::Comment(x.into_bytes().into()),
+            html5gum_old::Token::String(x) => Token::String(x.into()),
+            html5gum_old::Token::Comment(x) => Token::Comment(x.into()),
             html5gum_old::Token::StartTag(x) => Token::StartTag(StartTag {
-                name: x.name.into_bytes().into(),
+                name: x.name.into(),
                 attributes: x
                     .attributes
                     .into_iter()
-                    .map(|(k, v)| (k.into_bytes().into(), v.into_bytes().into()))
+                    .map(|(k, v)| (k.into(), v.into()))
                     .collect(),
                 self_closing: x.self_closing,
             }),
             html5gum_old::Token::EndTag(x) => Token::EndTag(EndTag {
-                name: x.name.into_bytes().into(),
+                name: x.name.into(),
             }),
             html5gum_old::Token::Error(x) => Token::Error(x.to_string().parse().unwrap()),
             html5gum_old::Token::Doctype(x) => Token::Doctype(Doctype {
-                name: x.name.into_bytes().into(),
+                name: x.name.into(),
                 force_quirks: x.force_quirks,
-                public_identifier: x.public_identifier.map(String::into_bytes).map(From::from),
-                system_identifier: x.system_identifier.map(String::into_bytes).map(From::from),
+                public_identifier: x.public_identifier.map(From::from),
+                system_identifier: x.system_identifier.map(From::from),
             }),
         })
         .collect();

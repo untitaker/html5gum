@@ -4,8 +4,11 @@ use crate::char_validator::CharValidator;
 use crate::machine;
 use crate::machine_helper::MachineHelper;
 use crate::read_helper::ReadHelper;
-use crate::utils::{ControlToken};
-use crate::{State, DefaultEmitter, Emitter, Readable, Reader};
+use crate::utils::ControlToken;
+use crate::{DefaultEmitter, Emitter, Readable, Reader};
+
+#[cfg(debug_assertions)]
+use crate::State;
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
 #[derive(Debug)]
@@ -46,9 +49,8 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     }
 
     /// Test-internal function to override internal state.
-    ///
-    /// Only available with the `integration-tests` feature which is not public API.
-    #[cfg(feature = "integration-tests")]
+    #[cfg(debug_assertions)]
+    #[doc(hidden)]
     pub fn set_state(&mut self, state: State) {
         self.machine_helper.state = state.into();
     }
@@ -62,9 +64,8 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     }
 
     /// Test-internal function to override internal state.
-    ///
-    /// Only available with the `integration-tests` feature which is not public API.
-    #[cfg(feature = "integration-tests")]
+    #[cfg(debug_assertions)]
+    #[doc(hidden)]
     pub fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
         self.emitter
             .set_last_start_tag(last_start_tag.map(str::as_bytes));

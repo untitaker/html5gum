@@ -26,6 +26,7 @@ macro_rules! impl_error {
         impl Error {
             /// Convert an enum variant back into the `kebap-case` error code as typically written
             /// in the WHATWG spec.
+            #[must_use]
             pub fn as_str(&self) -> &'static str {
                 match *self {
                     $( Self::$variant => $string, )*

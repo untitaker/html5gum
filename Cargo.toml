@@ -8,7 +8,7 @@ keywords = ["html", "html5", "whatwg", "parser", "tokenizer"]
 categories = [ "parser-implementations", "web-programming" ]
 license = "MIT"
 repository = "https://github.com/untitaker/html5gum"
-version = "0.4.0"
+version = "0.5.3"
 include = ["src/**/*", "LICENSE", "README.md", "benches"]
 
 [dev-dependencies]
@@ -18,7 +18,7 @@ serde_json = "1.0.71"
 test-generator = "0.3.0"
 serde_bytes = "0.11.5"
 glob = "0.3.0"
-libtest-mimic = "0.4.0"
+libtest-mimic = "0.6.0"
 iai = "0.1.1"
 
 [features]
@@ -26,10 +26,6 @@ iai = "0.1.1"
 # Disabling this feature will leave you with 100% safe Rust and no dependencies.
 # This may come in handy if you encounter packaging/build problems.
 default = ["jetscii"]
-
-# If this feature is enabled, html5gum will expose private APIs and start
-# printing debug information to stdout.
-integration-tests = []
 
 [dependencies]
 # The html5ever feature contains utilities to use html5ever's DOM and tree
