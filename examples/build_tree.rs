@@ -1,6 +1,7 @@
 use std::iter::repeat;
 
 use html5gum::{Html5everEmitter, IoReader, Tokenizer};
+use html5ever::tree_builder::TreeBuilder;
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
 fn walk(indent: usize, handle: &Handle) {
@@ -44,7 +45,7 @@ fn walk(indent: usize, handle: &Handle) {
 
 fn main() {
     let rcdom = RcDom::default();
-    let tree_builder = html5ever::tree_builder::TreeBuilder::new(rcdom, Default::default());
+    let tree_builder = TreeBuilder::new(rcdom, Default::default());
     let token_emitter = Html5everEmitter::new(tree_builder);
 
     let tokenizer =

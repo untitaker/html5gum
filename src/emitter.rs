@@ -261,14 +261,6 @@ pub trait Emitter {
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
         false
     }
-
-    /// Switch the tokenizer to a new state. Used in tree building.
-    ///
-    /// By default states are never switched, which leads to artifacts like contents of `<script>`
-    /// tags being incorrectly interpreted as HTML.
-    fn pop_next_state(&mut self) -> Option<State> {
-        None
-    }
 }
 
 /// Take an educated guess at the next state using the name of a just-now emitted start tag.

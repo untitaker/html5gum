@@ -92,7 +92,8 @@ impl<S: TokenSink> Emitter for Html5everEmitter<S> {
     }
 
     fn emit_current_tag(&mut self) -> Option<State> {
-        self.emitter_inner.emit_current_tag()
+        assert!(self.emitter_inner.emit_current_tag().is_none());
+        self.next_state.take()
     }
 
     fn emit_current_comment(&mut self) {
@@ -162,10 +163,6 @@ impl<S: TokenSink> Emitter for Html5everEmitter<S> {
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
         self.sink
             .adjusted_current_node_present_but_not_in_html_namespace()
-    }
-
-    fn pop_next_state(&mut self) -> Option<State> {
-        self.next_state.take()
     }
 }
 
