@@ -33,6 +33,7 @@ mod tokenizer;
 mod utils;
 
 #[cfg(debug_assertions)]
+#[doc(hidden)]
 pub mod testutils;
 
 pub use emitter::{
