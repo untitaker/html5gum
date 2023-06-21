@@ -1,5 +1,5 @@
 use std::{
-    fs::{File},
+    fs::File,
     io::{BufRead, BufReader},
     path::Path,
 };
@@ -8,8 +8,10 @@ use glob::glob;
 use libtest_mimic::{self, Arguments, Trial};
 
 use html5ever::tree_builder::TreeBuilder;
-use html5gum::{Html5everEmitter, Tokenizer};
-use markup5ever_rcdom::{RcDom};
+use html5gum::{testutils::trace_log, Html5everEmitter, Tokenizer};
+use markup5ever_rcdom::RcDom;
+
+mod testutils;
 
 #[derive(Default, Debug)]
 struct Testcase {
@@ -98,9 +100,9 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
             continue;
         }
 
-        tests.push(Trial::test(
-            format!("{:?}:{} -- {:?}", fname, i, testcase),
-            move || {
+        tests.push(Trial::test(format!("{:?}:{}", fname, i), move || {
+            testutils::catch_unwind_and_report(move || {
+                trace_log(&format!("{:#?}", testcase));
                 let rcdom = RcDom::default();
                 let mut tree_builder = TreeBuilder::new(rcdom, Default::default());
                 let token_emitter = Html5everEmitter::new(&mut tree_builder);
@@ -114,9 +116,8 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
                 }
 
                 let _rcdom = tree_builder.sink;
-                Ok(())
-            },
-        ));
+            })
+        }));
     }
 }
 

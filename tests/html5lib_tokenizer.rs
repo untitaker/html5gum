@@ -1,16 +1,17 @@
-use std::ops::Deref;
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
 
 use html5gum::{
     Doctype, EndTag, Error, IoReader, Readable, Reader, StartTag, State, Token, Tokenizer,
 };
 
-use html5gum::testutils::{trace_log, SlowReader, OUTPUT};
+use html5gum::testutils::{trace_log, SlowReader};
 
 use glob::glob;
 use libtest_mimic::{self, Arguments, Failed, Trial};
 use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
+
+mod testutils;
 
 #[derive(Clone)]
 struct ExpectedOutputTokens(Vec<Token>);
@@ -203,7 +204,7 @@ struct TestCase {
 
 impl TestCase {
     fn run(&self) -> Result<(), Failed> {
-        let result = std::panic::catch_unwind(move || {
+        testutils::catch_unwind_and_report(move || {
             trace_log(&format!(
                 "==== FILE {}, TEST {}, STATE {:?}, TOKENIZER {:?} ====",
                 self.filename, self.test_i, self.state, self.reader_type,
@@ -222,34 +223,7 @@ impl TestCase {
                     IoReader::new(string).to_reader(),
                 ))),
             }
-        });
-
-        match result {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                let mut msg = String::new();
-
-                OUTPUT.with(|cell| {
-                    let mut buf = cell.take();
-                    msg.push_str(&buf);
-                    buf.clear();
-                    cell.set(buf);
-                });
-
-                msg.push('\n');
-                if let Some(s) = e
-                    // Try to convert it to a String, then turn that into a str
-                    .downcast_ref::<String>()
-                    .map(String::as_str)
-                    // If that fails, try to turn it into a &'static str
-                    .or_else(|| e.downcast_ref::<&'static str>().map(Deref::deref))
-                {
-                    msg.push_str(s);
-                }
-
-                Err(msg.into())
-            }
-        }
+        })
     }
 
     fn run_inner<R: Reader>(&self, mut tokenizer: Tokenizer<R>) {
