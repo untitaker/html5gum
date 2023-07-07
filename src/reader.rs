@@ -1,5 +1,6 @@
 use std::cmp::min;
 use std::convert::Infallible;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::{self, Read};
 
@@ -280,20 +281,46 @@ impl<'a> Readable<'a> for &'a [u8] {
 /// assert_eq!(new_html, "<title>hello world</title>");
 /// ```
 #[derive(Debug)]
-pub struct IoReader<R: Read> {
-    buf: Box<[u8; BUF_SIZE]>,
+pub struct IoReader<R: Read, Buffer: AsMut<[u8]> = Box<[u8]>> {
+    buf: Buffer,
     read_cursor: usize,
     write_cursor: usize,
     reader: R,
 }
 
-const BUF_SIZE: usize = 16 * 1024;
-
 impl<R: Read> IoReader<R> {
     /// Construct a new `BufReadReader` from any type that implements `Read`.
     pub fn new(reader: R) -> Self {
+        Self::new_with_buffer_size::<16384>(reader)
+    }
+
+    /// Construct a new `BufReadReader` with a specific internal buffer size.
+    ///
+    /// `new` defaults to a heap-allocated buffer of size 16kB.
+    pub fn new_with_buffer_size<const BUF_SIZE: usize>(reader: R) -> Self {
+        Self::new_with_buffer_impl(reader, Box::new([0; BUF_SIZE]))
+    }
+}
+
+impl<'a, R: Read> IoReader<R, &'a mut [u8]> {
+    /// Instantiate IoReader with a custom kind of buffer.
+    ///
+    /// Buffers do not need to be zero-initialized.
+    pub fn new_with_buffer(reader: R, buf: &'a mut [u8]) -> Self {
+        Self::new_with_buffer_impl(reader, buf)
+    }
+}
+
+impl<R: Read, Buffer: AsMut<[u8]>> IoReader<R, Buffer> {
+    // new_with_buffer_impl is not exposed because we cannot use any kind of AsMut. It has to be
+    // one where we can be sure that the size of the buffer does not change with repeated calls to
+    // `as_mut()`. There are complex solutions to this sort of thing, but for now it seems simpler
+    // to allow either Box<[u8; _]> or &mut [u8], and nothing else.
+    //
+    // See discussion at https://users.rust-lang.org/t/cowmut-or-borrowed-owned-mutable-temp-buffers/96595
+    fn new_with_buffer_impl(reader: R, buf: Buffer) -> Self {
         IoReader {
-            buf: Box::new([0; BUF_SIZE]),
+            buf,
             read_cursor: 0,
             write_cursor: 0,
             reader,
@@ -306,10 +333,10 @@ impl<R: Read> IoReader<R> {
     /// the beginning of the buffer, and read extra bytes if necessary.
     fn prepare_buf(&mut self, min_read_len: usize) -> Result<(), io::Error> {
         let mut readable_len = self.write_cursor - self.read_cursor;
-        debug_assert!(min_read_len <= self.buf.len());
-        debug_assert!(readable_len <= self.buf.len());
+        debug_assert!(min_read_len <= self.buf.as_mut().len());
+        debug_assert!(readable_len <= self.buf.as_mut().len());
         if readable_len < min_read_len {
-            let mut raw_buf = &mut self.buf[..];
+            let mut raw_buf = &mut self.buf.as_mut()[..];
             raw_buf.copy_within(self.read_cursor..self.write_cursor, 0);
             raw_buf = &mut raw_buf[readable_len..];
             while readable_len < min_read_len {
@@ -327,7 +354,7 @@ impl<R: Read> IoReader<R> {
     }
 }
 
-impl<R: Read> Reader for IoReader<R> {
+impl<R: Read, Buffer: AsMut<[u8]>> Reader for IoReader<R, Buffer> {
     type Error = io::Error;
 
     fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
@@ -335,7 +362,7 @@ impl<R: Read> Reader for IoReader<R> {
         if self.read_cursor == self.write_cursor {
             return Ok(None);
         }
-        let rv = self.buf.get(self.read_cursor).copied();
+        let rv = self.buf.as_mut().get(self.read_cursor).copied();
         if rv.is_some() {
             self.read_cursor += 1;
         }
@@ -347,7 +374,8 @@ impl<R: Read> Reader for IoReader<R> {
         debug_assert!(!s1.contains(&b'\n'));
 
         self.prepare_buf(s1.len())?;
-        let s2 = &self.buf[self.read_cursor..min(self.read_cursor + s1.len(), self.write_cursor)];
+        let s2 = &self.buf.as_mut()
+            [self.read_cursor..min(self.read_cursor + s1.len(), self.write_cursor)];
         if s1 == s2 || (!case_sensitive && s1.eq_ignore_ascii_case(s2)) {
             self.read_cursor += s1.len();
             Ok(true)
@@ -362,7 +390,7 @@ impl<R: Read> Reader for IoReader<R> {
         _: &'b mut [u8; 4],
     ) -> Result<Option<&'b [u8]>, Self::Error> {
         self.prepare_buf(4)?;
-        let buf = &self.buf[self.read_cursor..self.write_cursor];
+        let buf = &self.buf.as_mut()[self.read_cursor..self.write_cursor];
         if buf.is_empty() {
             Ok(None)
         } else if let Some(needle_pos) = fast_find(needle, buf) {

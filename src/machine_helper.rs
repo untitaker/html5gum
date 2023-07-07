@@ -4,6 +4,7 @@ use crate::Emitter;
 
 #[derive(Debug)]
 pub(crate) struct MachineHelper {
+    // XXX: allocation that cannot be controlled/reused by the user
     pub(crate) temporary_buffer: Vec<u8>,
     pub(crate) character_reference_code: u32,
     pub(crate) state: State,
