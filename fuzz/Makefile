@@ -27,7 +27,9 @@ in: Makefile
 	mkdir -p in
 	set -e && cat ../tests/custom-html5lib-tests/*.test \
 		../tests/html5lib-tests/tokenizer/*.test | \
-		jq -r '(if .tests == null then [] else .tests end) | .[].input' | split -l 1 - in/html5lib-tokenizer-tests-
+		jq -r '(if .tests == null then [] else .tests end) | .[].input | (. + "\nAFL_END\n")' | \
+		csplit --quiet --suppress-matched --elide-empty-files --prefix in/html5lib-tokenizer-tests- \
+		- "/AFL_END/" "{*}"
 
 afl-requeue:
 	i=0; set -e; for f in in/*; do \
