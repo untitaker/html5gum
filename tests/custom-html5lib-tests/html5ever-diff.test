@@ -1,0 +1,12 @@
+{"tests": [
+
+{"description": "Nested HTML comment",
+"input": "<j 0=\r\n>",
+"output": [
+    ["StartTag", "j", {"0": ""}]
+],
+"errors": [
+    {"code": "missing-attribute-value"}
+]}
+
+]}
