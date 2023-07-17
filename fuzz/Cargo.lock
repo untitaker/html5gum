@@ -259,7 +259,7 @@ dependencies = [
 [[package]]
 name = "html5ever"
 version = "0.26.0"
-source = "git+https://github.com/untitaker/html5ever?branch=html5lib-tests-update#07b41217594f26dcf8d90d67cd04e1fe7bda7143"
+source = "git+https://github.com/untitaker/html5ever?branch=html5lib-tests-update#a9c372639a012c92e49613bfd6f9e186be7c8588"
 dependencies = [
  "log",
  "mac",
@@ -395,7 +395,7 @@ checksum = "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4"
 [[package]]
 name = "markup5ever"
 version = "0.11.0"
-source = "git+https://github.com/untitaker/html5ever?branch=html5lib-tests-update#07b41217594f26dcf8d90d67cd04e1fe7bda7143"
+source = "git+https://github.com/untitaker/html5ever?branch=html5lib-tests-update#a9c372639a012c92e49613bfd6f9e186be7c8588"
 dependencies = [
  "log",
  "phf 0.11.2",
