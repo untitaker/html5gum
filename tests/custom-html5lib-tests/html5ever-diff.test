@@ -19,6 +19,13 @@
     {"code": "missing-whitespace-before-doctype-name"},
     {"code": "missing-whitespace-after-doctype-public-keyword"},
     {"code": "eof-in-doctype"}
+]},
+
+{"description": "abrupt end to charref",
+"input": "<l 0=&\r0='>",
+"output": [],
+"errors": [
+    {"code": "eof-in-tag"}
 ]}
 
 ]}
