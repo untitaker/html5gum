@@ -7,6 +7,18 @@
 ],
 "errors": [
     {"code": "missing-attribute-value"}
+]},
+
+{"description": "Windows newline in docstring",
+"input": "<!DOCTYPE0\r\nPUBLIC'",
+
+"output": [
+    ["DOCTYPE", "0", "", null, false]
+],
+"errors": [
+    {"code": "missing-whitespace-before-doctype-name"},
+    {"code": "missing-whitespace-after-doctype-public-keyword"},
+    {"code": "eof-in-doctype"}
 ]}
 
 ]}
