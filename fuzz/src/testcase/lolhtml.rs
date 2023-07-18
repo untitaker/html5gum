@@ -2,8 +2,9 @@ use html5gum::{Doctype, EndTag, StartTag, Token};
 use lol_html::errors::RewritingError;
 use lol_html::html_content::DocumentEnd;
 use lol_html::{
-    LocalName, MemoryLimiter, Namespace, StartTagHandlingResult, Token as Token2,
-    TokenCaptureFlags, TransformController, TransformStream, TransformStreamSettings, SharedEncoding, AsciiCompatibleEncoding,
+    AsciiCompatibleEncoding, LocalName, MemoryLimiter, Namespace, SharedEncoding,
+    StartTagHandlingResult, Token as Token2, TokenCaptureFlags, TransformController,
+    TransformStream, TransformStreamSettings,
 };
 
 use pretty_assertions::assert_eq;
@@ -44,7 +45,9 @@ pub fn run_lolhtml(data: &[u8]) {
             output_sink: |_: &[u8]| (),
             preallocated_parsing_buffer_size: 0,
             memory_limiter,
-            encoding: SharedEncoding::new(AsciiCompatibleEncoding::new(encoding_rs::UTF_8).unwrap()),
+            encoding: SharedEncoding::new(
+                AsciiCompatibleEncoding::new(encoding_rs::UTF_8).unwrap(),
+            ),
             // we need the dumb, insecure behavior of lolhtml to match what a tokenizer does
             strict: false,
         });
