@@ -93,10 +93,12 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
         i += 1;
 
         if testcase.document_fragment.is_some() {
+            // TODO
             continue;
         }
 
         if testcase.script_on.is_some() {
+            // TODO
             continue;
         }
 
