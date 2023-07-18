@@ -53,7 +53,7 @@ impl<R: Reader, E: Emitter<Token = Token>> html5ever::tokenizer::TokenSink for T
             break token;
         };
 
-        match dbg!((token, reference_token)) {
+        match (token, reference_token) {
             (Some(Token::StartTag(tag)), Token2::TagToken(tag2)) => {
                 assert_eq!(tag2.kind, TagKind::StartTag);
                 assert_eq!(tag.name, tag2.name.as_ref().as_bytes().to_owned().into());
