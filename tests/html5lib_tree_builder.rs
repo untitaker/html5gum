@@ -100,7 +100,7 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
             continue;
         }
 
-        tests.push(Trial::test(format!("{:?}:{}", fname, i), move || {
+        tests.push(Trial::test(format!("{}:{}", fname, i), move || {
             testutils::catch_unwind_and_report(move || {
                 trace_log(&format!("{:#?}", testcase));
                 let rcdom = RcDom::default();

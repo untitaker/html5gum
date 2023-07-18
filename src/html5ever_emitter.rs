@@ -31,6 +31,39 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
             emitter_inner: DefaultEmitter::default(),
         }
     }
+
+    fn pop_token_inner(&mut self) {
+        debug_assert!(self.next_state.is_none());
+        let token = match self.emitter_inner.pop_token() {
+            Some(x) => x,
+            None => return,
+        };
+
+        match self
+            .sink
+            .process_token(token_to_html5ever(token), BOGUS_LINENO)
+        {
+            TokenSinkResult::Continue => {}
+            TokenSinkResult::Script(_) => {
+                todo!()
+            }
+            TokenSinkResult::Plaintext => {
+                self.next_state = Some(State::PlainText);
+            }
+            TokenSinkResult::RawData(RawKind::Rcdata) => {
+                self.next_state = Some(State::RcData);
+            }
+            TokenSinkResult::RawData(RawKind::Rawtext) => {
+                self.next_state = Some(State::RawText);
+            }
+            TokenSinkResult::RawData(RawKind::ScriptData) => {
+                self.next_state = Some(State::ScriptData);
+            }
+            TokenSinkResult::RawData(RawKind::ScriptDataEscaped(_)) => {
+                todo!()
+            }
+        }
+    }
 }
 
 impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
@@ -42,7 +75,7 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
 
     fn emit_eof(&mut self) {
         self.emitter_inner.emit_eof();
-        self.pop_token();
+        self.pop_token_inner();
         let _ignored = self
             .sink
             .process_token(Html5everToken::EOFToken, BOGUS_LINENO);
@@ -54,35 +87,7 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
     }
 
     fn pop_token(&mut self) -> Option<()> {
-        let token = self.emitter_inner.pop_token()?;
-        match self
-            .sink
-            .process_token(token_to_html5ever(token), BOGUS_LINENO)
-        {
-            TokenSinkResult::Continue => None,
-            TokenSinkResult::Script(_) => {
-                todo!()
-            }
-            TokenSinkResult::Plaintext => {
-                self.next_state = Some(State::PlainText);
-                None
-            }
-            TokenSinkResult::RawData(RawKind::Rcdata) => {
-                self.next_state = Some(State::RcData);
-                None
-            }
-            TokenSinkResult::RawData(RawKind::Rawtext) => {
-                self.next_state = Some(State::RawText);
-                None
-            }
-            TokenSinkResult::RawData(RawKind::ScriptData) => {
-                self.next_state = Some(State::ScriptData);
-                None
-            }
-            TokenSinkResult::RawData(RawKind::ScriptDataEscaped(_)) => {
-                todo!()
-            }
-        }
+        None
     }
 
     fn emit_string(&mut self, c: &[u8]) {
@@ -103,6 +108,7 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
 
     fn emit_current_tag(&mut self) -> Option<State> {
         assert!(self.emitter_inner.emit_current_tag().is_none());
+        self.pop_token_inner();
         self.next_state.take()
     }
 

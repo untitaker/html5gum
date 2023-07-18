@@ -1,7 +1,9 @@
 use crate::entities::try_read_character_reference;
 use crate::read_helper::fast_read_char;
 use crate::state::MachineState as State;
-use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken};
+use crate::utils::{
+    ctostr, noncharacter_pat, surrogate_pat, trace_log, with_lowercase_str, ControlToken,
+};
 use crate::{Emitter, Error, Reader, Tokenizer};
 
 // Note: This is not implemented as a method on Tokenizer because there's fields on Tokenizer that
@@ -30,6 +32,9 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
     macro_rules! emit_current_tag_and_switch_to {
         ($state:expr) => {{
             let state = slf.emitter.emit_current_tag().map(From::from);
+            if let Some(state) = state {
+                trace_log!("emitter asked for state switch {:?}", state);
+            }
             switch_to!(state.unwrap_or($state))
         }};
     }
