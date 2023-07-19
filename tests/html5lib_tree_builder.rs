@@ -118,6 +118,7 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
                 }
 
                 let _rcdom = tree_builder.sink;
+                // TODO: actually validate the rcdom output
             })
         }));
     }
