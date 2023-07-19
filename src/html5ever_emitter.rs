@@ -33,7 +33,6 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
     }
 
     fn pop_token_inner(&mut self) {
-        debug_assert!(self.next_state.is_none());
         let token = match self.emitter_inner.pop_token() {
             Some(x) => x,
             None => return,
@@ -45,7 +44,8 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
         {
             TokenSinkResult::Continue => {}
             TokenSinkResult::Script(_) => {
-                todo!()
+                self.next_state = Some(State::Data);
+                // TODO: suspend tokenizer for script
             }
             TokenSinkResult::Plaintext => {
                 self.next_state = Some(State::PlainText);
