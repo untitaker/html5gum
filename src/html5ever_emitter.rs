@@ -84,6 +84,7 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
 
     fn emit_error(&mut self, error: Error) {
         self.emitter_inner.emit_error(error);
+        self.pop_token_inner();
     }
 
     fn pop_token(&mut self) -> Option<()> {
@@ -114,10 +115,12 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
 
     fn emit_current_comment(&mut self) {
         self.emitter_inner.emit_current_comment();
+        self.pop_token_inner();
     }
 
     fn emit_current_doctype(&mut self) {
         self.emitter_inner.emit_current_doctype();
+        self.pop_token_inner();
     }
 
     fn set_self_closing(&mut self) {
