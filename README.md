@@ -69,6 +69,9 @@ This allows you to:
   you, you can implement the respective trait methods as noop and therefore
   avoid any overhead creating plaintext tokens.
 
+See [the `custom_emitter` example](./examples/custom_emitter.rs) for how this
+looks like in practice.
+
 ## Other features
 
 * No unsafe Rust
