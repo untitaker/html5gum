@@ -1,6 +1,6 @@
 use html5ever::buffer_queue::BufferQueue;
 use html5ever::tendril::format_tendril;
-use html5ever::tokenizer::{TagKind, Token as Token2, TokenSinkResult, TokenizerResult};
+use html5ever::tokenizer::{TagKind, Token as Token2, TokenSinkResult, TokenizerResult, TokenizerOpts};
 use html5gum::{Emitter, Reader, Token};
 
 use pretty_assertions::assert_eq;
@@ -11,7 +11,13 @@ pub fn run_html5ever(s: &str) {
             testing_tokenizer: html5gum::Tokenizer::new(s),
             carried_over_token: None,
         },
-        Default::default(),
+        TokenizerOpts {
+            // the html5gum tokenizer does not handle the BOM, and also not discarding a BOM is
+            // what the test suite expects, see https://github.com/html5lib/html5lib-tests/issues/2
+            discard_bom: false,
+
+            ..Default::default()
+        },
     );
     let mut queue = BufferQueue::new();
     queue.push_back(format_tendril!("{}", s));
