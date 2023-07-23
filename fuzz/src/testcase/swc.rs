@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use swc_common::{input::StringInput, BytePos};
 use swc_html_ast::*;
 use swc_html_parser::lexer::Lexer;
@@ -9,7 +11,6 @@ pub fn run_swc(s: &str) {
     let mut lexer = Lexer::new(lexer_str_input);
 
     let mut swc_tokens = vec![];
-
 
     #[allow(clippy::while_let_on_iterator)]
     while let Some(token_and_span) = lexer.next() {
@@ -43,20 +44,23 @@ pub fn run_swc(s: &str) {
                 transformed_swc_tokens.push(html5gum::Token::StartTag(html5gum::StartTag {
                     self_closing: is_self_closing,
                     name: tag_name.to_string().into_bytes().into(),
-                    attributes: attributes
-                        .into_iter()
-                        .map(|token| {
-                            (
-                                token.name.to_string().into_bytes().into(),
-                                token
-                                    .value
-                                    .unwrap_or_default()
-                                    .to_string()
-                                    .into_bytes()
-                                    .into(),
-                            )
-                        })
-                        .collect(),
+                    attributes: {
+                        let mut gum_attributes = BTreeMap::new();
+                        for token in attributes {
+                            gum_attributes
+                                .entry(token.name.to_string().into_bytes().into())
+                                .or_insert(
+                                    token
+                                        .value
+                                        .unwrap_or_default()
+                                        .to_string()
+                                        .into_bytes()
+                                        .into(),
+                                );
+                        }
+
+                        gum_attributes
+                    },
                 }));
             }
             Token::EndTag { tag_name, .. } => {
