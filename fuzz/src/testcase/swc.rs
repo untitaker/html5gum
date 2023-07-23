@@ -6,7 +6,7 @@ use swc_html_parser::lexer::Lexer;
 
 use pretty_assertions::assert_eq;
 
-pub fn run_swc(mut s: &str) {
+pub fn run_swc(s: &str) {
     if s.starts_with("\u{feff}") {
         // ignore any tests with leading BOM
         return;
