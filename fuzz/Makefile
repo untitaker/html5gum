@@ -4,6 +4,7 @@ export FUZZ_OLD_HTML5GUM := 0
 export FUZZ_HTML5EVER := 0
 export FUZZ_IGNORE_PARSE_ERRORS :=
 export FUZZ_LOLHTML := 0
+export FUZZ_SWC := 0
 
 # CLI arguments to pass to AFL. useful for multiprocessing
 export _AFL_OPTS := -M fuzzer01
@@ -42,7 +43,7 @@ afl-requeue:
 
 setup-afl:
 	which cargo-afl || cargo install afl
-	CARGO_TARGET_DIR=./target-afl/ cargo afl build --release --bin main_afl
+	CARGO_TARGET_DIR=./target-afl/ cargo afl build --release --bin main_afl --features afl
 
 afl: in setup-afl
 	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
