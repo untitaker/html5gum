@@ -1,6 +1,8 @@
 use html5ever::buffer_queue::BufferQueue;
 use html5ever::tendril::format_tendril;
-use html5ever::tokenizer::{TagKind, Token as Token2, TokenSinkResult, TokenizerResult, TokenizerOpts};
+use html5ever::tokenizer::{
+    TagKind, Token as Token2, TokenSinkResult, TokenizerOpts, TokenizerResult,
+};
 use html5gum::{Emitter, Reader, Token};
 
 use pretty_assertions::assert_eq;
