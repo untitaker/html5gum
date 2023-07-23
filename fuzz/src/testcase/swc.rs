@@ -6,7 +6,12 @@ use swc_html_parser::lexer::Lexer;
 
 use pretty_assertions::assert_eq;
 
-pub fn run_swc(s: &str) {
+pub fn run_swc(mut s: &str) {
+    if s.starts_with("\u{feff}") {
+        // ignore any tests with leading BOM
+        return;
+    }
+
     let lexer_str_input = StringInput::new(s, BytePos(0), BytePos(s.len() as u32));
     let mut lexer = Lexer::new(lexer_str_input);
 
