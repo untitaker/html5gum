@@ -43,7 +43,7 @@ afl-requeue:
 
 setup-afl:
 	which cargo-afl || cargo install afl
-	CARGO_TARGET_DIR=./target-afl/ cargo afl build --release --bin main_afl
+	CARGO_TARGET_DIR=./target-afl/ cargo afl build --release --bin main_afl --features afl
 
 afl: in setup-afl
 	CARGO_TARGET_DIR=./target-afl/ AFL_AUTORESUME=1 cargo afl fuzz $$_AFL_OPTS -i in -o out ${AFL_TARGET_BIN}
