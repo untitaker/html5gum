@@ -112,6 +112,13 @@ pub trait Emitter {
     /// A (probably recoverable) parsing error has occured.
     fn emit_error(&mut self, error: Error);
 
+    /// Whether the emitter cares about errors at all.
+    ///
+    /// Override this function to return false to aid the compiler in optimizing out dead code.
+    fn should_emit_errors() -> bool {
+        true
+    }
+
     /// After every state change, the tokenizer calls this method to retrieve a new token that can
     /// be returned via the tokenizer's iterator interface.
     fn pop_token(&mut self) -> Option<Self::Token>;

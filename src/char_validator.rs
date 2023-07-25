@@ -23,6 +23,10 @@ impl CharValidator {
 
     #[inline]
     pub(crate) fn validate_bytes<E: Emitter>(&mut self, emitter: &mut E, next_bytes: &[u8]) {
+        if !E::should_emit_errors() {
+            return;
+        }
+
         for &x in next_bytes {
             self.validate_byte(emitter, x);
         }
