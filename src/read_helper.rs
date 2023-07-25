@@ -181,7 +181,7 @@ macro_rules! fast_read_char {
         $(Some($($lit:literal)|*) => $arm:block)*
         Some($xs:ident) => $catchall:block
         None => $eof_catchall:block
-    }) => {{
+    }) => { loop {
         let mut char_buf = [0; 4];
         let $read_char = $slf.reader.read_until(
             &[ $($({
@@ -210,7 +210,21 @@ macro_rules! fast_read_char {
                 }
             None => $eof_catchall
         }
-    }};
+    } };
 }
 
 pub(crate) use fast_read_char;
+
+macro_rules! slow_read_byte {
+    ($slf:expr, match c {
+        $($tt:tt)*
+    }) => {
+        loop {
+            match $slf.reader.read_byte(&mut $slf.validator, &mut $slf.emitter)? {
+                $($tt)*
+            }
+        }
+    };
+}
+
+pub(crate) use slow_read_byte;

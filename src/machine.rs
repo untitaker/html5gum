@@ -1,5 +1,5 @@
 use crate::entities::try_read_character_reference;
-use crate::read_helper::fast_read_char;
+use crate::read_helper::{fast_read_char, slow_read_byte};
 use crate::state::MachineState as State;
 use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken};
 use crate::{Emitter, Error, Reader, Tokenizer};
@@ -37,21 +37,21 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
     macro_rules! switch_to {
         ($state:expr) => {{
             slf.machine_helper.switch_to($state);
-            cont!()
+            return Ok(ControlToken::Continue);
         }};
     }
 
     macro_rules! enter_state {
         ($state:expr) => {{
             slf.machine_helper.enter_state($state);
-            cont!()
+            return Ok(ControlToken::Continue);
         }};
     }
 
     macro_rules! exit_state {
         () => {{
             slf.machine_helper.exit_state();
-            cont!()
+            return Ok(ControlToken::Continue);
         }};
     }
 
@@ -61,13 +61,13 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
             let c = $c;
             slf.reader.unread_byte(c);
             slf.machine_helper.switch_to(new_state);
-            cont!()
+            return Ok(ControlToken::Continue);
         }};
     }
 
     macro_rules! cont {
         () => {{
-            Ok(ControlToken::Continue)
+            continue;
         }};
     }
 
@@ -205,53 +205,59 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::TagOpen => match read_byte!()? {
-            Some(b'!') => {
-                switch_to!(State::MarkupDeclarationOpen)
+        State::TagOpen => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'!') => {
+                    switch_to!(State::MarkupDeclarationOpen)
+                }
+                Some(b'/') => {
+                    switch_to!(State::EndTagOpen)
+                }
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.init_start_tag();
+                    reconsume_in!(Some(x), State::TagName)
+                }
+                c @ Some(b'?') => {
+                    error!(Error::UnexpectedQuestionMarkInsteadOfTagName);
+                    slf.emitter.init_comment();
+                    reconsume_in!(c, State::BogusComment)
+                }
+                None => {
+                    error!(Error::EofBeforeTagName);
+                    slf.emitter.emit_string(b"<");
+                    eof!()
+                }
+                c @ Some(_) => {
+                    error!(Error::InvalidFirstCharacterOfTagName);
+                    slf.emitter.emit_string(b"<");
+                    reconsume_in!(c, State::Data)
+                }
             }
-            Some(b'/') => {
-                switch_to!(State::EndTagOpen)
+        ),
+        State::EndTagOpen => slow_read_byte!(
+            slf,
+            match c {
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.init_end_tag();
+                    reconsume_in!(Some(x), State::TagName)
+                }
+                Some(b'>') => {
+                    error!(Error::MissingEndTagName);
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofBeforeTagName);
+                    slf.emitter.emit_string(b"</");
+                    eof!()
+                }
+                Some(x) => {
+                    error!(Error::InvalidFirstCharacterOfTagName);
+                    slf.emitter.init_comment();
+                    reconsume_in!(Some(x), State::BogusComment)
+                }
             }
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_start_tag();
-                reconsume_in!(Some(x), State::TagName)
-            }
-            c @ Some(b'?') => {
-                error!(Error::UnexpectedQuestionMarkInsteadOfTagName);
-                slf.emitter.init_comment();
-                reconsume_in!(c, State::BogusComment)
-            }
-            None => {
-                error!(Error::EofBeforeTagName);
-                slf.emitter.emit_string(b"<");
-                eof!()
-            }
-            c @ Some(_) => {
-                error!(Error::InvalidFirstCharacterOfTagName);
-                slf.emitter.emit_string(b"<");
-                reconsume_in!(c, State::Data)
-            }
-        },
-        State::EndTagOpen => match read_byte!()? {
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
-                reconsume_in!(Some(x), State::TagName)
-            }
-            Some(b'>') => {
-                error!(Error::MissingEndTagName);
-                switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofBeforeTagName);
-                slf.emitter.emit_string(b"</");
-                eof!()
-            }
-            Some(x) => {
-                error!(Error::InvalidFirstCharacterOfTagName);
-                slf.emitter.init_comment();
-                reconsume_in!(Some(x), State::BogusComment)
-            }
-        },
+        ),
         State::TagName => fast_read_char!(
             slf,
             match xs {
@@ -283,159 +289,192 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::RcDataLessThanSign => match read_byte!()? {
-            Some(b'/') => {
-                slf.machine_helper.temporary_buffer.clear();
-                switch_to!(State::RcDataEndTagOpen)
+        State::RcDataLessThanSign => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'/') => {
+                    slf.machine_helper.temporary_buffer.clear();
+                    switch_to!(State::RcDataEndTagOpen)
+                }
+                c => {
+                    slf.emitter.emit_string(b"<");
+                    reconsume_in!(c, State::RcData)
+                }
             }
-            c => {
-                slf.emitter.emit_string(b"<");
-                reconsume_in!(c, State::RcData)
+        ),
+        State::RcDataEndTagOpen => slow_read_byte!(
+            slf,
+            match c {
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.init_end_tag();
+                    reconsume_in!(Some(x), State::RcDataEndTagName)
+                }
+                c => {
+                    slf.emitter.emit_string(b"</");
+                    reconsume_in!(c, State::RcData)
+                }
             }
-        },
-        State::RcDataEndTagOpen => match read_byte!()? {
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
-                reconsume_in!(Some(x), State::RcDataEndTagName)
+        ),
+        State::RcDataEndTagName => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
+                    if slf.emitter.current_is_appropriate_end_tag_token() =>
+                {
+                    switch_to!(State::BeforeAttributeName)
+                }
+                Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
+                    switch_to!(State::SelfClosingStartTag)
+                }
+                Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
+                    emit_current_tag_and_switch_to!(State::Data)
+                }
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                    slf.machine_helper.temporary_buffer.push(x);
+                    cont!()
+                }
+                c => {
+                    slf.emitter.emit_string(b"</");
+                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    reconsume_in!(c, State::RcData)
+                }
             }
-            c => {
-                slf.emitter.emit_string(b"</");
-                reconsume_in!(c, State::RcData)
+        ),
+        State::RawTextLessThanSign => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'/') => {
+                    slf.machine_helper.temporary_buffer.clear();
+                    switch_to!(State::RawTextEndTagOpen)
+                }
+                c => {
+                    slf.emitter.emit_string(b"<");
+                    reconsume_in!(c, State::RawText)
+                }
             }
-        },
-        State::RcDataEndTagName => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
-                if slf.emitter.current_is_appropriate_end_tag_token() =>
-            {
-                switch_to!(State::BeforeAttributeName)
+        ),
+        State::RawTextEndTagOpen => slow_read_byte!(
+            slf,
+            match c {
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.init_end_tag();
+                    reconsume_in!(Some(x), State::RawTextEndTagName)
+                }
+                c => {
+                    slf.emitter.emit_string(b"</");
+                    reconsume_in!(c, State::RawText)
+                }
             }
-            Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                switch_to!(State::SelfClosingStartTag)
+        ),
+        State::RawTextEndTagName => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
+                    if slf.emitter.current_is_appropriate_end_tag_token() =>
+                {
+                    switch_to!(State::BeforeAttributeName)
+                }
+                Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
+                    switch_to!(State::SelfClosingStartTag)
+                }
+                Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
+                    emit_current_tag_and_switch_to!(State::Data)
+                }
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                    slf.machine_helper.temporary_buffer.push(x);
+                    cont!()
+                }
+                c => {
+                    slf.emitter.emit_string(b"</");
+                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    reconsume_in!(c, State::RawText)
+                }
             }
-            Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                emit_current_tag_and_switch_to!(State::Data)
+        ),
+        State::ScriptDataLessThanSign => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'/') => {
+                    slf.machine_helper.temporary_buffer.clear();
+                    switch_to!(State::ScriptDataEndTagOpen)
+                }
+                Some(b'!') => {
+                    slf.emitter.emit_string(b"<!");
+                    switch_to!(State::ScriptDataEscapeStart)
+                }
+                c => {
+                    slf.emitter.emit_string(b"<");
+                    reconsume_in!(c, State::ScriptData)
+                }
             }
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
-                slf.machine_helper.temporary_buffer.push(x);
-                cont!()
+        ),
+        State::ScriptDataEndTagOpen => slow_read_byte!(
+            slf,
+            match c {
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.init_end_tag();
+                    reconsume_in!(Some(x), State::ScriptDataEndTagName)
+                }
+                c => {
+                    slf.emitter.emit_string(b"</");
+                    reconsume_in!(c, State::ScriptData)
+                }
             }
-            c => {
-                slf.emitter.emit_string(b"</");
-                slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
-                reconsume_in!(c, State::RcData)
+        ),
+        State::ScriptDataEndTagName => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
+                    if slf.emitter.current_is_appropriate_end_tag_token() =>
+                {
+                    switch_to!(State::BeforeAttributeName)
+                }
+                Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
+                    switch_to!(State::SelfClosingStartTag)
+                }
+                Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
+                    emit_current_tag_and_switch_to!(State::Data)
+                }
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                    slf.machine_helper
+                        .temporary_buffer
+                        .push(x.to_ascii_lowercase());
+                    cont!()
+                }
+                c => {
+                    slf.emitter.emit_string(b"</");
+                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    reconsume_in!(c, State::Data)
+                }
             }
-        },
-        State::RawTextLessThanSign => match read_byte!()? {
-            Some(b'/') => {
-                slf.machine_helper.temporary_buffer.clear();
-                switch_to!(State::RawTextEndTagOpen)
+        ),
+        State::ScriptDataEscapeStart => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    slf.emitter.emit_string(b"-");
+                    switch_to!(State::ScriptDataEscapeStartDash)
+                }
+                c => {
+                    reconsume_in!(c, State::ScriptData)
+                }
             }
-            c => {
-                slf.emitter.emit_string(b"<");
-                reconsume_in!(c, State::RawText)
+        ),
+        State::ScriptDataEscapeStartDash => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    slf.emitter.emit_string(b"-");
+                    switch_to!(State::ScriptDataEscapedDashDash)
+                }
+                c => {
+                    reconsume_in!(c, State::ScriptData)
+                }
             }
-        },
-        State::RawTextEndTagOpen => match read_byte!()? {
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
-                reconsume_in!(Some(x), State::RawTextEndTagName)
-            }
-            c => {
-                slf.emitter.emit_string(b"</");
-                reconsume_in!(c, State::RawText)
-            }
-        },
-        State::RawTextEndTagName => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
-                if slf.emitter.current_is_appropriate_end_tag_token() =>
-            {
-                switch_to!(State::BeforeAttributeName)
-            }
-            Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                switch_to!(State::SelfClosingStartTag)
-            }
-            Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                emit_current_tag_and_switch_to!(State::Data)
-            }
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
-                slf.machine_helper.temporary_buffer.push(x);
-                cont!()
-            }
-            c => {
-                slf.emitter.emit_string(b"</");
-                slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
-                reconsume_in!(c, State::RawText)
-            }
-        },
-        State::ScriptDataLessThanSign => match read_byte!()? {
-            Some(b'/') => {
-                slf.machine_helper.temporary_buffer.clear();
-                switch_to!(State::ScriptDataEndTagOpen)
-            }
-            Some(b'!') => {
-                slf.emitter.emit_string(b"<!");
-                switch_to!(State::ScriptDataEscapeStart)
-            }
-            c => {
-                slf.emitter.emit_string(b"<");
-                reconsume_in!(c, State::ScriptData)
-            }
-        },
-        State::ScriptDataEndTagOpen => match read_byte!()? {
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
-                reconsume_in!(Some(x), State::ScriptDataEndTagName)
-            }
-            c => {
-                slf.emitter.emit_string(b"</");
-                reconsume_in!(c, State::ScriptData)
-            }
-        },
-        State::ScriptDataEndTagName => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
-                if slf.emitter.current_is_appropriate_end_tag_token() =>
-            {
-                switch_to!(State::BeforeAttributeName)
-            }
-            Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                switch_to!(State::SelfClosingStartTag)
-            }
-            Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                emit_current_tag_and_switch_to!(State::Data)
-            }
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
-                slf.machine_helper
-                    .temporary_buffer
-                    .push(x.to_ascii_lowercase());
-                cont!()
-            }
-            c => {
-                slf.emitter.emit_string(b"</");
-                slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
-                reconsume_in!(c, State::Data)
-            }
-        },
-        State::ScriptDataEscapeStart => match read_byte!()? {
-            Some(b'-') => {
-                slf.emitter.emit_string(b"-");
-                switch_to!(State::ScriptDataEscapeStartDash)
-            }
-            c => {
-                reconsume_in!(c, State::ScriptData)
-            }
-        },
-        State::ScriptDataEscapeStartDash => match read_byte!()? {
-            Some(b'-') => {
-                slf.emitter.emit_string(b"-");
-                switch_to!(State::ScriptDataEscapedDashDash)
-            }
-            c => {
-                reconsume_in!(c, State::ScriptData)
-            }
-        },
+        ),
         State::ScriptDataEscaped => fast_read_char!(
             slf,
             match xs {
@@ -461,122 +500,140 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::ScriptDataEscapedDash => match read_byte!()? {
-            Some(b'-') => {
-                slf.emitter.emit_string(b"-");
-                switch_to!(State::ScriptDataEscapedDashDash)
-            }
-            Some(b'<') => {
-                switch_to!(State::ScriptDataEscapedLessThanSign)
-            }
-            Some(b'\0') => {
-                error!(Error::UnexpectedNullCharacter);
-                slf.emitter.emit_string("\u{fffd}".as_bytes());
-                switch_to!(State::ScriptDataEscaped)
-            }
-            Some(x) => {
-                slf.emitter.emit_string(&[x]);
-                switch_to!(State::ScriptDataEscaped)
-            }
-            None => {
-                error!(Error::EofInScriptHtmlCommentLikeText);
-                eof!()
-            }
-        },
-        State::ScriptDataEscapedDashDash => match read_byte!()? {
-            Some(b'-') => {
-                slf.emitter.emit_string(b"-");
-                cont!()
-            }
-            Some(b'<') => {
-                switch_to!(State::ScriptDataEscapedLessThanSign)
-            }
-            Some(b'>') => {
-                slf.emitter.emit_string(b">");
-                switch_to!(State::ScriptData)
-            }
-            Some(b'\0') => {
-                error!(Error::UnexpectedNullCharacter);
-                slf.emitter.emit_string("\u{fffd}".as_bytes());
-                switch_to!(State::ScriptDataEscaped)
-            }
-            Some(x) => {
-                slf.emitter.emit_string(&[x]);
-                switch_to!(State::ScriptDataEscaped)
-            }
-            None => {
-                error!(Error::EofInScriptHtmlCommentLikeText);
-                eof!()
-            }
-        },
-        State::ScriptDataEscapedLessThanSign => match read_byte!()? {
-            Some(b'/') => {
-                slf.machine_helper.temporary_buffer.clear();
-                switch_to!(State::ScriptDataEscapedEndTagOpen)
-            }
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.machine_helper.temporary_buffer.clear();
-                slf.emitter.emit_string(b"<");
-                reconsume_in!(Some(x), State::ScriptDataDoubleEscapeStart)
-            }
-            c => {
-                slf.emitter.emit_string(b"<");
-                reconsume_in!(c, State::ScriptDataEscaped)
-            }
-        },
-        State::ScriptDataEscapedEndTagOpen => match read_byte!()? {
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.init_end_tag();
-                reconsume_in!(Some(x), State::ScriptDataEscapedEndTagName)
-            }
-            c => {
-                slf.emitter.emit_string(b"</");
-                reconsume_in!(c, State::ScriptDataEscaped)
-            }
-        },
-        State::ScriptDataEscapedEndTagName => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
-                if slf.emitter.current_is_appropriate_end_tag_token() =>
-            {
-                switch_to!(State::BeforeAttributeName)
-            }
-            Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                switch_to!(State::SelfClosingStartTag)
-            }
-            Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
-                emit_current_tag_and_switch_to!(State::Data)
-            }
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
-                slf.machine_helper.temporary_buffer.extend(&[x]);
-                cont!()
-            }
-            c => {
-                slf.emitter.emit_string(b"</");
-                slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
-                reconsume_in!(c, State::ScriptDataEscaped)
-            }
-        },
-        State::ScriptDataDoubleEscapeStart => match read_byte!()? {
-            Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
-                slf.emitter.emit_string(&[x]);
-                if slf.machine_helper.temporary_buffer == b"script" {
-                    switch_to!(State::ScriptDataDoubleEscaped)
-                } else {
+        State::ScriptDataEscapedDash => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    slf.emitter.emit_string(b"-");
+                    switch_to!(State::ScriptDataEscapedDashDash)
+                }
+                Some(b'<') => {
+                    switch_to!(State::ScriptDataEscapedLessThanSign)
+                }
+                Some(b'\0') => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
                     switch_to!(State::ScriptDataEscaped)
                 }
+                Some(x) => {
+                    slf.emitter.emit_string(&[x]);
+                    switch_to!(State::ScriptDataEscaped)
+                }
+                None => {
+                    error!(Error::EofInScriptHtmlCommentLikeText);
+                    eof!()
+                }
             }
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.machine_helper
-                    .temporary_buffer
-                    .push(x.to_ascii_lowercase());
-                slf.emitter.emit_string(&[x]);
-                cont!()
+        ),
+        State::ScriptDataEscapedDashDash => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    slf.emitter.emit_string(b"-");
+                    cont!()
+                }
+                Some(b'<') => {
+                    switch_to!(State::ScriptDataEscapedLessThanSign)
+                }
+                Some(b'>') => {
+                    slf.emitter.emit_string(b">");
+                    switch_to!(State::ScriptData)
+                }
+                Some(b'\0') => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    switch_to!(State::ScriptDataEscaped)
+                }
+                Some(x) => {
+                    slf.emitter.emit_string(&[x]);
+                    switch_to!(State::ScriptDataEscaped)
+                }
+                None => {
+                    error!(Error::EofInScriptHtmlCommentLikeText);
+                    eof!()
+                }
             }
-            c => {
-                reconsume_in!(c, State::ScriptDataEscaped)
+        ),
+        State::ScriptDataEscapedLessThanSign => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'/') => {
+                    slf.machine_helper.temporary_buffer.clear();
+                    switch_to!(State::ScriptDataEscapedEndTagOpen)
+                }
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.machine_helper.temporary_buffer.clear();
+                    slf.emitter.emit_string(b"<");
+                    reconsume_in!(Some(x), State::ScriptDataDoubleEscapeStart)
+                }
+                c => {
+                    slf.emitter.emit_string(b"<");
+                    reconsume_in!(c, State::ScriptDataEscaped)
+                }
             }
-        },
+        ),
+        State::ScriptDataEscapedEndTagOpen => slow_read_byte!(
+            slf,
+            match c {
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.init_end_tag();
+                    reconsume_in!(Some(x), State::ScriptDataEscapedEndTagName)
+                }
+                c => {
+                    slf.emitter.emit_string(b"</");
+                    reconsume_in!(c, State::ScriptDataEscaped)
+                }
+            }
+        ),
+        State::ScriptDataEscapedEndTagName => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
+                    if slf.emitter.current_is_appropriate_end_tag_token() =>
+                {
+                    switch_to!(State::BeforeAttributeName)
+                }
+                Some(b'/') if slf.emitter.current_is_appropriate_end_tag_token() => {
+                    switch_to!(State::SelfClosingStartTag)
+                }
+                Some(b'>') if slf.emitter.current_is_appropriate_end_tag_token() => {
+                    emit_current_tag_and_switch_to!(State::Data)
+                }
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                    slf.machine_helper.temporary_buffer.extend(&[x]);
+                    cont!()
+                }
+                c => {
+                    slf.emitter.emit_string(b"</");
+                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    reconsume_in!(c, State::ScriptDataEscaped)
+                }
+            }
+        ),
+        State::ScriptDataDoubleEscapeStart => slow_read_byte!(
+            slf,
+            match c {
+                Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
+                    slf.emitter.emit_string(&[x]);
+                    if slf.machine_helper.temporary_buffer == b"script" {
+                        switch_to!(State::ScriptDataDoubleEscaped)
+                    } else {
+                        switch_to!(State::ScriptDataEscaped)
+                    }
+                }
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.machine_helper
+                        .temporary_buffer
+                        .push(x.to_ascii_lowercase());
+                    slf.emitter.emit_string(&[x]);
+                    cont!()
+                }
+                c => {
+                    reconsume_in!(c, State::ScriptDataEscaped)
+                }
+            }
+        ),
         State::ScriptDataDoubleEscaped => fast_read_char!(
             slf,
             match xs {
@@ -603,103 +660,118 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::ScriptDataDoubleEscapedDash => match read_byte!()? {
-            Some(b'-') => {
-                slf.emitter.emit_string(b"-");
-                switch_to!(State::ScriptDataDoubleEscapedDashDash)
-            }
-            Some(b'<') => {
-                slf.emitter.emit_string(b"<");
-                switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
-            }
-            Some(b'\0') => {
-                error!(Error::UnexpectedNullCharacter);
-                slf.emitter.emit_string("\u{fffd}".as_bytes());
-                switch_to!(State::ScriptDataDoubleEscaped)
-            }
-            Some(x) => {
-                slf.emitter.emit_string(&[x]);
-                switch_to!(State::ScriptDataDoubleEscaped)
-            }
-            None => {
-                error!(Error::EofInScriptHtmlCommentLikeText);
-                eof!()
-            }
-        },
-        State::ScriptDataDoubleEscapedDashDash => match read_byte!()? {
-            Some(b'-') => {
-                slf.emitter.emit_string(b"-");
-                cont!()
-            }
-            Some(b'<') => {
-                slf.emitter.emit_string(b"<");
-                switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
-            }
-            Some(b'>') => {
-                slf.emitter.emit_string(b">");
-                switch_to!(State::ScriptData)
-            }
-            Some(b'\0') => {
-                error!(Error::UnexpectedNullCharacter);
-                slf.emitter.emit_string("\u{fffd}".as_bytes());
-                switch_to!(State::ScriptDataDoubleEscaped)
-            }
-            Some(x) => {
-                slf.emitter.emit_string(&[x]);
-                switch_to!(State::ScriptDataDoubleEscaped)
-            }
-            None => {
-                error!(Error::EofInScriptHtmlCommentLikeText);
-                eof!()
-            }
-        },
-        State::ScriptDataDoubleEscapedLessThanSign => match read_byte!()? {
-            Some(b'/') => {
-                slf.machine_helper.temporary_buffer.clear();
-                slf.emitter.emit_string(b"/");
-                switch_to!(State::ScriptDataDoubleEscapeEnd)
-            }
-            c => {
-                reconsume_in!(c, State::ScriptDataDoubleEscaped)
-            }
-        },
-        State::ScriptDataDoubleEscapeEnd => match read_byte!()? {
-            Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
-                slf.emitter.emit_string(&[x]);
-
-                if slf.machine_helper.temporary_buffer == b"script" {
-                    switch_to!(State::ScriptDataEscaped)
-                } else {
+        State::ScriptDataDoubleEscapedDash => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    slf.emitter.emit_string(b"-");
+                    switch_to!(State::ScriptDataDoubleEscapedDashDash)
+                }
+                Some(b'<') => {
+                    slf.emitter.emit_string(b"<");
+                    switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
+                }
+                Some(b'\0') => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
                     switch_to!(State::ScriptDataDoubleEscaped)
                 }
+                Some(x) => {
+                    slf.emitter.emit_string(&[x]);
+                    switch_to!(State::ScriptDataDoubleEscaped)
+                }
+                None => {
+                    error!(Error::EofInScriptHtmlCommentLikeText);
+                    eof!()
+                }
             }
-            Some(x) if x.is_ascii_alphabetic() => {
-                slf.machine_helper
-                    .temporary_buffer
-                    .push(x.to_ascii_lowercase());
-                slf.emitter.emit_string(&[x]);
-                cont!()
+        ),
+        State::ScriptDataDoubleEscapedDashDash => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    slf.emitter.emit_string(b"-");
+                    cont!()
+                }
+                Some(b'<') => {
+                    slf.emitter.emit_string(b"<");
+                    switch_to!(State::ScriptDataDoubleEscapedLessThanSign)
+                }
+                Some(b'>') => {
+                    slf.emitter.emit_string(b">");
+                    switch_to!(State::ScriptData)
+                }
+                Some(b'\0') => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    switch_to!(State::ScriptDataDoubleEscaped)
+                }
+                Some(x) => {
+                    slf.emitter.emit_string(&[x]);
+                    switch_to!(State::ScriptDataDoubleEscaped)
+                }
+                None => {
+                    error!(Error::EofInScriptHtmlCommentLikeText);
+                    eof!()
+                }
             }
-            c => {
-                reconsume_in!(c, State::ScriptDataDoubleEscaped)
+        ),
+        State::ScriptDataDoubleEscapedLessThanSign => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'/') => {
+                    slf.machine_helper.temporary_buffer.clear();
+                    slf.emitter.emit_string(b"/");
+                    switch_to!(State::ScriptDataDoubleEscapeEnd)
+                }
+                c => {
+                    reconsume_in!(c, State::ScriptDataDoubleEscaped)
+                }
             }
-        },
-        State::BeforeAttributeName => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            c @ (Some(b'/' | b'>') | None) => {
-                reconsume_in!(c, State::AfterAttributeName)
+        ),
+        State::ScriptDataDoubleEscapeEnd => slow_read_byte!(
+            slf,
+            match c {
+                Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
+                    slf.emitter.emit_string(&[x]);
+
+                    if slf.machine_helper.temporary_buffer == b"script" {
+                        switch_to!(State::ScriptDataEscaped)
+                    } else {
+                        switch_to!(State::ScriptDataDoubleEscaped)
+                    }
+                }
+                Some(x) if x.is_ascii_alphabetic() => {
+                    slf.machine_helper
+                        .temporary_buffer
+                        .push(x.to_ascii_lowercase());
+                    slf.emitter.emit_string(&[x]);
+                    cont!()
+                }
+                c => {
+                    reconsume_in!(c, State::ScriptDataDoubleEscaped)
+                }
             }
-            Some(b'=') => {
-                error!(Error::UnexpectedEqualsSignBeforeAttributeName);
-                slf.emitter.init_attribute();
-                slf.emitter.push_attribute_name("=".as_bytes());
-                switch_to!(State::AttributeName)
+        ),
+        State::BeforeAttributeName => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                c @ (Some(b'/' | b'>') | None) => {
+                    reconsume_in!(c, State::AfterAttributeName)
+                }
+                Some(b'=') => {
+                    error!(Error::UnexpectedEqualsSignBeforeAttributeName);
+                    slf.emitter.init_attribute();
+                    slf.emitter.push_attribute_name("=".as_bytes());
+                    switch_to!(State::AttributeName)
+                }
+                Some(x) => {
+                    slf.emitter.init_attribute();
+                    reconsume_in!(Some(x), State::AttributeName)
+                }
             }
-            Some(x) => {
-                slf.emitter.init_attribute();
-                reconsume_in!(Some(x), State::AttributeName)
-            }
-        },
+        ),
         State::AttributeName => fast_read_char!(
             slf,
             match xs {
@@ -731,42 +803,48 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::AfterAttributeName => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            Some(b'/') => {
-                switch_to!(State::SelfClosingStartTag)
+        State::AfterAttributeName => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                Some(b'/') => {
+                    switch_to!(State::SelfClosingStartTag)
+                }
+                Some(b'=') => {
+                    switch_to!(State::BeforeAttributeValue)
+                }
+                Some(b'>') => {
+                    emit_current_tag_and_switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInTag);
+                    eof!()
+                }
+                Some(x) => {
+                    slf.emitter.init_attribute();
+                    reconsume_in!(Some(x), State::AttributeName)
+                }
             }
-            Some(b'=') => {
-                switch_to!(State::BeforeAttributeValue)
+        ),
+        State::BeforeAttributeValue => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                Some(b'"') => {
+                    switch_to!(State::AttributeValueDoubleQuoted)
+                }
+                Some(b'\'') => {
+                    switch_to!(State::AttributeValueSingleQuoted)
+                }
+                Some(b'>') => {
+                    error!(Error::MissingAttributeValue);
+                    emit_current_tag_and_switch_to!(State::Data)
+                }
+                c => {
+                    reconsume_in!(c, State::AttributeValueUnquoted)
+                }
             }
-            Some(b'>') => {
-                emit_current_tag_and_switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofInTag);
-                eof!()
-            }
-            Some(x) => {
-                slf.emitter.init_attribute();
-                reconsume_in!(Some(x), State::AttributeName)
-            }
-        },
-        State::BeforeAttributeValue => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            Some(b'"') => {
-                switch_to!(State::AttributeValueDoubleQuoted)
-            }
-            Some(b'\'') => {
-                switch_to!(State::AttributeValueSingleQuoted)
-            }
-            Some(b'>') => {
-                error!(Error::MissingAttributeValue);
-                emit_current_tag_and_switch_to!(State::Data)
-            }
-            c => {
-                reconsume_in!(c, State::AttributeValueUnquoted)
-            }
-        },
+        ),
         State::AttributeValueDoubleQuoted => fast_read_char!(
             slf,
             match xs {
@@ -847,29 +925,35 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::AfterAttributeValueQuoted => match read_byte!()? {
-            c @ (Some(b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>') | None) => {
-                reconsume_in!(c, State::BeforeAttributeName)
+        State::AfterAttributeValueQuoted => slow_read_byte!(
+            slf,
+            match c {
+                c @ (Some(b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>') | None) => {
+                    reconsume_in!(c, State::BeforeAttributeName)
+                }
+                c => {
+                    error!(Error::MissingWhitespaceBetweenAttributes);
+                    reconsume_in!(c, State::BeforeAttributeName)
+                }
             }
-            c => {
-                error!(Error::MissingWhitespaceBetweenAttributes);
-                reconsume_in!(c, State::BeforeAttributeName)
+        ),
+        State::SelfClosingStartTag => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'>') => {
+                    slf.emitter.set_self_closing();
+                    emit_current_tag_and_switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInTag);
+                    eof!()
+                }
+                Some(x) => {
+                    error_immediate!(Error::UnexpectedSolidusInTag);
+                    reconsume_in!(Some(x), State::BeforeAttributeName)
+                }
             }
-        },
-        State::SelfClosingStartTag => match read_byte!()? {
-            Some(b'>') => {
-                slf.emitter.set_self_closing();
-                emit_current_tag_and_switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofInTag);
-                eof!()
-            }
-            Some(x) => {
-                error_immediate!(Error::UnexpectedSolidusInTag);
-                reconsume_in!(Some(x), State::BeforeAttributeName)
-            }
-        },
+        ),
         State::BogusComment => fast_read_char!(
             slf,
             match xs {
@@ -892,74 +976,83 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::MarkupDeclarationOpen => match read_byte!()? {
-            Some(b'-') if slf.reader.try_read_string(&mut slf.validator, "-", true)? => {
-                slf.emitter.init_comment();
-                switch_to!(State::CommentStart)
-            }
-            Some(b'd' | b'D')
-                if slf
-                    .reader
-                    .try_read_string(&mut slf.validator, "octype", false)? =>
-            {
-                switch_to!(State::Doctype)
-            }
-            Some(b'[')
-                if slf
-                    .reader
-                    .try_read_string(&mut slf.validator, "CDATA[", true)? =>
-            {
-                if slf
-                    .emitter
-                    .adjusted_current_node_present_but_not_in_html_namespace()
-                {
-                    switch_to!(State::CdataSection)
-                } else {
-                    error!(Error::CdataInHtmlContent);
-
+        State::MarkupDeclarationOpen => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') if slf.reader.try_read_string(&mut slf.validator, "-", true)? => {
                     slf.emitter.init_comment();
-                    slf.emitter.push_comment(b"[CDATA[");
-                    switch_to!(State::BogusComment)
+                    switch_to!(State::CommentStart)
+                }
+                Some(b'd' | b'D')
+                    if slf
+                        .reader
+                        .try_read_string(&mut slf.validator, "octype", false)? =>
+                {
+                    switch_to!(State::Doctype)
+                }
+                Some(b'[')
+                    if slf
+                        .reader
+                        .try_read_string(&mut slf.validator, "CDATA[", true)? =>
+                {
+                    if slf
+                        .emitter
+                        .adjusted_current_node_present_but_not_in_html_namespace()
+                    {
+                        switch_to!(State::CdataSection)
+                    } else {
+                        error!(Error::CdataInHtmlContent);
+
+                        slf.emitter.init_comment();
+                        slf.emitter.push_comment(b"[CDATA[");
+                        switch_to!(State::BogusComment)
+                    }
+                }
+                c => {
+                    error!(Error::IncorrectlyOpenedComment);
+                    slf.emitter.init_comment();
+                    reconsume_in!(c, State::BogusComment)
                 }
             }
-            c => {
-                error!(Error::IncorrectlyOpenedComment);
-                slf.emitter.init_comment();
-                reconsume_in!(c, State::BogusComment)
+        ),
+        State::CommentStart => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    switch_to!(State::CommentStartDash)
+                }
+                Some(b'>') => {
+                    error!(Error::AbruptClosingOfEmptyComment);
+                    slf.emitter.emit_current_comment();
+                    switch_to!(State::Data)
+                }
+                c => {
+                    reconsume_in!(c, State::Comment)
+                }
             }
-        },
-        State::CommentStart => match read_byte!()? {
-            Some(b'-') => {
-                switch_to!(State::CommentStartDash)
+        ),
+        State::CommentStartDash => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    switch_to!(State::CommentEnd)
+                }
+                Some(b'>') => {
+                    error!(Error::AbruptClosingOfEmptyComment);
+                    slf.emitter.emit_current_comment();
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInComment);
+                    slf.emitter.emit_current_comment();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    slf.emitter.push_comment(b"-");
+                    reconsume_in!(c, State::Comment)
+                }
             }
-            Some(b'>') => {
-                error!(Error::AbruptClosingOfEmptyComment);
-                slf.emitter.emit_current_comment();
-                switch_to!(State::Data)
-            }
-            c => {
-                reconsume_in!(c, State::Comment)
-            }
-        },
-        State::CommentStartDash => match read_byte!()? {
-            Some(b'-') => {
-                switch_to!(State::CommentEnd)
-            }
-            Some(b'>') => {
-                error!(Error::AbruptClosingOfEmptyComment);
-                slf.emitter.emit_current_comment();
-                switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofInComment);
-                slf.emitter.emit_current_comment();
-                eof!()
-            }
-            c @ Some(_) => {
-                slf.emitter.push_comment(b"-");
-                reconsume_in!(c, State::Comment)
-            }
-        },
+        ),
         State::Comment => fast_read_char!(
             slf,
             match xs {
@@ -986,147 +1079,174 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::CommentLessThanSign => match read_byte!()? {
-            Some(b'!') => {
-                slf.emitter.push_comment(b"!");
-                switch_to!(State::CommentLessThanSignBang)
+        State::CommentLessThanSign => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'!') => {
+                    slf.emitter.push_comment(b"!");
+                    switch_to!(State::CommentLessThanSignBang)
+                }
+                Some(b'<') => {
+                    slf.emitter.push_comment(b"<");
+                    cont!()
+                }
+                c => {
+                    reconsume_in!(c, State::Comment)
+                }
             }
-            Some(b'<') => {
-                slf.emitter.push_comment(b"<");
-                cont!()
+        ),
+        State::CommentLessThanSignBang => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    switch_to!(State::CommentLessThanSignBangDash)
+                }
+                c => {
+                    reconsume_in!(c, State::Comment)
+                }
             }
-            c => {
-                reconsume_in!(c, State::Comment)
+        ),
+        State::CommentLessThanSignBangDash => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    switch_to!(State::CommentLessThanSignBangDashDash)
+                }
+                c => {
+                    reconsume_in!(c, State::CommentEndDash)
+                }
             }
-        },
-        State::CommentLessThanSignBang => match read_byte!()? {
-            Some(b'-') => {
-                switch_to!(State::CommentLessThanSignBangDash)
+        ),
+        State::CommentLessThanSignBangDashDash => slow_read_byte!(
+            slf,
+            match c {
+                c @ (Some(b'>') | None) => {
+                    reconsume_in!(c, State::CommentEnd)
+                }
+                c => {
+                    error!(Error::NestedComment);
+                    reconsume_in!(c, State::CommentEnd)
+                }
             }
-            c => {
-                reconsume_in!(c, State::Comment)
+        ),
+        State::CommentEndDash => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    switch_to!(State::CommentEnd)
+                }
+                None => {
+                    error!(Error::EofInComment);
+                    slf.emitter.emit_current_comment();
+                    eof!()
+                }
+                c => {
+                    slf.emitter.push_comment(b"-");
+                    reconsume_in!(c, State::Comment)
+                }
             }
-        },
-        State::CommentLessThanSignBangDash => match read_byte!()? {
-            Some(b'-') => {
-                switch_to!(State::CommentLessThanSignBangDashDash)
+        ),
+        State::CommentEnd => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'>') => {
+                    slf.emitter.emit_current_comment();
+                    switch_to!(State::Data)
+                }
+                Some(b'!') => {
+                    switch_to!(State::CommentEndBang)
+                }
+                Some(b'-') => {
+                    slf.emitter.push_comment(b"-");
+                    cont!()
+                }
+                None => {
+                    error!(Error::EofInComment);
+                    slf.emitter.emit_current_comment();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    slf.emitter.push_comment(b"--");
+                    reconsume_in!(c, State::Comment)
+                }
             }
-            c => {
-                reconsume_in!(c, State::CommentEndDash)
+        ),
+        State::CommentEndBang => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'-') => {
+                    slf.emitter.push_comment(b"--!");
+                    switch_to!(State::CommentEndDash)
+                }
+                Some(b'>') => {
+                    error!(Error::IncorrectlyClosedComment);
+                    slf.emitter.emit_current_comment();
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInComment);
+                    slf.emitter.emit_current_comment();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    slf.emitter.push_comment(b"--!");
+                    reconsume_in!(c, State::Comment)
+                }
             }
-        },
-        State::CommentLessThanSignBangDashDash => match read_byte!()? {
-            c @ (Some(b'>') | None) => {
-                reconsume_in!(c, State::CommentEnd)
+        ),
+        State::Doctype => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
+                    switch_to!(State::BeforeDoctypeName)
+                }
+                c @ Some(b'>') => {
+                    reconsume_in!(c, State::BeforeDoctypeName)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.init_doctype();
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    error!(Error::MissingWhitespaceBeforeDoctypeName);
+                    reconsume_in!(c, State::BeforeDoctypeName)
+                }
             }
-            c => {
-                error!(Error::NestedComment);
-                reconsume_in!(c, State::CommentEnd)
+        ),
+        State::BeforeDoctypeName => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                Some(b'\0') => {
+                    error!(Error::UnexpectedNullCharacter);
+                    slf.emitter.init_doctype();
+                    slf.emitter.push_doctype_name("\u{fffd}".as_bytes());
+                    switch_to!(State::DoctypeName)
+                }
+                Some(b'>') => {
+                    error!(Error::MissingDoctypeName);
+                    slf.emitter.init_doctype();
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.init_doctype();
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                Some(x) => {
+                    slf.emitter.init_doctype();
+                    slf.emitter.push_doctype_name(&[x.to_ascii_lowercase()]);
+                    switch_to!(State::DoctypeName)
+                }
             }
-        },
-        State::CommentEndDash => match read_byte!()? {
-            Some(b'-') => {
-                switch_to!(State::CommentEnd)
-            }
-            None => {
-                error!(Error::EofInComment);
-                slf.emitter.emit_current_comment();
-                eof!()
-            }
-            c => {
-                slf.emitter.push_comment(b"-");
-                reconsume_in!(c, State::Comment)
-            }
-        },
-        State::CommentEnd => match read_byte!()? {
-            Some(b'>') => {
-                slf.emitter.emit_current_comment();
-                switch_to!(State::Data)
-            }
-            Some(b'!') => {
-                switch_to!(State::CommentEndBang)
-            }
-            Some(b'-') => {
-                slf.emitter.push_comment(b"-");
-                cont!()
-            }
-            None => {
-                error!(Error::EofInComment);
-                slf.emitter.emit_current_comment();
-                eof!()
-            }
-            c @ Some(_) => {
-                slf.emitter.push_comment(b"--");
-                reconsume_in!(c, State::Comment)
-            }
-        },
-        State::CommentEndBang => match read_byte!()? {
-            Some(b'-') => {
-                slf.emitter.push_comment(b"--!");
-                switch_to!(State::CommentEndDash)
-            }
-            Some(b'>') => {
-                error!(Error::IncorrectlyClosedComment);
-                slf.emitter.emit_current_comment();
-                switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofInComment);
-                slf.emitter.emit_current_comment();
-                eof!()
-            }
-            c @ Some(_) => {
-                slf.emitter.push_comment(b"--!");
-                reconsume_in!(c, State::Comment)
-            }
-        },
-        State::Doctype => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
-                switch_to!(State::BeforeDoctypeName)
-            }
-            c @ Some(b'>') => {
-                reconsume_in!(c, State::BeforeDoctypeName)
-            }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.init_doctype();
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
-            }
-            c @ Some(_) => {
-                error!(Error::MissingWhitespaceBeforeDoctypeName);
-                reconsume_in!(c, State::BeforeDoctypeName)
-            }
-        },
-        State::BeforeDoctypeName => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            Some(b'\0') => {
-                error!(Error::UnexpectedNullCharacter);
-                slf.emitter.init_doctype();
-                slf.emitter.push_doctype_name("\u{fffd}".as_bytes());
-                switch_to!(State::DoctypeName)
-            }
-            Some(b'>') => {
-                error!(Error::MissingDoctypeName);
-                slf.emitter.init_doctype();
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.init_doctype();
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
-            }
-            Some(x) => {
-                slf.emitter.init_doctype();
-                slf.emitter.push_doctype_name(&[x.to_ascii_lowercase()]);
-                switch_to!(State::DoctypeName)
-            }
-        },
+        ),
         State::DoctypeName => fast_read_char!(
             slf,
             match xs {
@@ -1157,98 +1277,107 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::AfterDoctypeName => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            Some(b'>') => {
-                slf.emitter.emit_current_doctype();
-                switch_to!(State::Data)
+        State::AfterDoctypeName => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                Some(b'>') => {
+                    slf.emitter.emit_current_doctype();
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                Some(b'p' | b'P')
+                    if slf
+                        .reader
+                        .try_read_string(&mut slf.validator, "ublic", false)? =>
+                {
+                    switch_to!(State::AfterDoctypePublicKeyword)
+                }
+                Some(b's' | b'S')
+                    if slf
+                        .reader
+                        .try_read_string(&mut slf.validator, "ystem", false)? =>
+                {
+                    switch_to!(State::AfterDoctypeSystemKeyword)
+                }
+                c @ Some(_) => {
+                    error!(Error::InvalidCharacterSequenceAfterDoctypeName);
+                    slf.emitter.set_force_quirks();
+                    reconsume_in!(c, State::BogusDoctype)
+                }
             }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
+        ),
+        State::AfterDoctypePublicKeyword => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
+                    switch_to!(State::BeforeDoctypePublicIdentifier)
+                }
+                Some(b'"') => {
+                    error!(Error::MissingWhitespaceAfterDoctypePublicKeyword);
+                    slf.emitter.set_doctype_public_identifier(b"");
+                    switch_to!(State::DoctypePublicIdentifierDoubleQuoted)
+                }
+                Some(b'\'') => {
+                    error!(Error::MissingWhitespaceAfterDoctypePublicKeyword);
+                    slf.emitter.set_doctype_public_identifier(b"");
+                    switch_to!(State::DoctypePublicIdentifierSingleQuoted)
+                }
+                Some(b'>') => {
+                    error!(Error::MissingDoctypePublicIdentifier);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    error!(Error::MissingQuoteBeforeDoctypePublicIdentifier);
+                    slf.emitter.set_force_quirks();
+                    reconsume_in!(c, State::BogusDoctype)
+                }
             }
-            Some(b'p' | b'P')
-                if slf
-                    .reader
-                    .try_read_string(&mut slf.validator, "ublic", false)? =>
-            {
-                switch_to!(State::AfterDoctypePublicKeyword)
+        ),
+        State::BeforeDoctypePublicIdentifier => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                Some(b'"') => {
+                    slf.emitter.set_doctype_public_identifier(b"");
+                    switch_to!(State::DoctypePublicIdentifierDoubleQuoted)
+                }
+                Some(b'\'') => {
+                    slf.emitter.set_doctype_public_identifier(b"");
+                    switch_to!(State::DoctypePublicIdentifierSingleQuoted)
+                }
+                Some(b'>') => {
+                    error!(Error::MissingDoctypePublicIdentifier);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    error!(Error::MissingQuoteBeforeDoctypePublicIdentifier);
+                    slf.emitter.set_force_quirks();
+                    reconsume_in!(c, State::BogusDoctype)
+                }
             }
-            Some(b's' | b'S')
-                if slf
-                    .reader
-                    .try_read_string(&mut slf.validator, "ystem", false)? =>
-            {
-                switch_to!(State::AfterDoctypeSystemKeyword)
-            }
-            c @ Some(_) => {
-                error!(Error::InvalidCharacterSequenceAfterDoctypeName);
-                slf.emitter.set_force_quirks();
-                reconsume_in!(c, State::BogusDoctype)
-            }
-        },
-        State::AfterDoctypePublicKeyword => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
-                switch_to!(State::BeforeDoctypePublicIdentifier)
-            }
-            Some(b'"') => {
-                error!(Error::MissingWhitespaceAfterDoctypePublicKeyword);
-                slf.emitter.set_doctype_public_identifier(b"");
-                switch_to!(State::DoctypePublicIdentifierDoubleQuoted)
-            }
-            Some(b'\'') => {
-                error!(Error::MissingWhitespaceAfterDoctypePublicKeyword);
-                slf.emitter.set_doctype_public_identifier(b"");
-                switch_to!(State::DoctypePublicIdentifierSingleQuoted)
-            }
-            Some(b'>') => {
-                error!(Error::MissingDoctypePublicIdentifier);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
-            }
-            c @ Some(_) => {
-                error!(Error::MissingQuoteBeforeDoctypePublicIdentifier);
-                slf.emitter.set_force_quirks();
-                reconsume_in!(c, State::BogusDoctype)
-            }
-        },
-        State::BeforeDoctypePublicIdentifier => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            Some(b'"') => {
-                slf.emitter.set_doctype_public_identifier(b"");
-                switch_to!(State::DoctypePublicIdentifierDoubleQuoted)
-            }
-            Some(b'\'') => {
-                slf.emitter.set_doctype_public_identifier(b"");
-                switch_to!(State::DoctypePublicIdentifierSingleQuoted)
-            }
-            Some(b'>') => {
-                error!(Error::MissingDoctypePublicIdentifier);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
-            }
-            c @ Some(_) => {
-                error!(Error::MissingQuoteBeforeDoctypePublicIdentifier);
-                slf.emitter.set_force_quirks();
-                reconsume_in!(c, State::BogusDoctype)
-            }
-        },
+        ),
         State::DoctypePublicIdentifierDoubleQuoted => fast_read_char!(
             slf,
             match xs {
@@ -1309,122 +1438,134 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::AfterDoctypePublicIdentifier => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
-                switch_to!(State::BetweenDoctypePublicAndSystemIdentifiers)
+        State::AfterDoctypePublicIdentifier => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
+                    switch_to!(State::BetweenDoctypePublicAndSystemIdentifiers)
+                }
+                Some(b'>') => {
+                    slf.emitter.emit_current_doctype();
+                    switch_to!(State::Data)
+                }
+                Some(b'"') => {
+                    error!(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
+                    slf.emitter.set_doctype_system_identifier(b"");
+                    switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
+                }
+                Some(b'\'') => {
+                    error!(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
+                    slf.emitter.set_doctype_system_identifier(b"");
+                    switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                    slf.emitter.set_force_quirks();
+                    reconsume_in!(c, State::BogusDoctype)
+                }
             }
-            Some(b'>') => {
-                slf.emitter.emit_current_doctype();
-                switch_to!(State::Data)
+        ),
+        State::BetweenDoctypePublicAndSystemIdentifiers => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                Some(b'>') => {
+                    slf.emitter.emit_current_doctype();
+                    switch_to!(State::Data)
+                }
+                Some(b'"') => {
+                    slf.emitter.set_doctype_system_identifier(b"");
+                    switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
+                }
+                Some(b'\'') => {
+                    slf.emitter.set_doctype_system_identifier(b"");
+                    switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                    slf.emitter.set_force_quirks();
+                    reconsume_in!(c, State::BogusDoctype)
+                }
             }
-            Some(b'"') => {
-                error!(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
-                slf.emitter.set_doctype_system_identifier(b"");
-                switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
+        ),
+        State::AfterDoctypeSystemKeyword => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
+                    switch_to!(State::BeforeDoctypeSystemIdentifier)
+                }
+                Some(b'"') => {
+                    error!(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
+                    slf.emitter.set_doctype_system_identifier(b"");
+                    switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
+                }
+                Some(b'\'') => {
+                    error!(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
+                    slf.emitter.set_doctype_system_identifier(b"");
+                    switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
+                }
+                Some(b'>') => {
+                    error!(Error::MissingDoctypeSystemIdentifier);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                    slf.emitter.set_force_quirks();
+                    reconsume_in!(c, State::BogusDoctype)
+                }
             }
-            Some(b'\'') => {
-                error!(Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers);
-                slf.emitter.set_doctype_system_identifier(b"");
-                switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
+        ),
+        State::BeforeDoctypeSystemIdentifier => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                Some(b'"') => {
+                    slf.emitter.set_doctype_system_identifier(b"");
+                    switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
+                }
+                Some(b'\'') => {
+                    slf.emitter.set_doctype_system_identifier(b"");
+                    switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
+                }
+                Some(b'>') => {
+                    error!(Error::MissingDoctypeSystemIdentifier);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                    slf.emitter.set_force_quirks();
+                    reconsume_in!(c, State::BogusDoctype)
+                }
             }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
-            }
-            c @ Some(_) => {
-                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                slf.emitter.set_force_quirks();
-                reconsume_in!(c, State::BogusDoctype)
-            }
-        },
-        State::BetweenDoctypePublicAndSystemIdentifiers => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            Some(b'>') => {
-                slf.emitter.emit_current_doctype();
-                switch_to!(State::Data)
-            }
-            Some(b'"') => {
-                slf.emitter.set_doctype_system_identifier(b"");
-                switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
-            }
-            Some(b'\'') => {
-                slf.emitter.set_doctype_system_identifier(b"");
-                switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
-            }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
-            }
-            c @ Some(_) => {
-                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                slf.emitter.set_force_quirks();
-                reconsume_in!(c, State::BogusDoctype)
-            }
-        },
-        State::AfterDoctypeSystemKeyword => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
-                switch_to!(State::BeforeDoctypeSystemIdentifier)
-            }
-            Some(b'"') => {
-                error!(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
-                slf.emitter.set_doctype_system_identifier(b"");
-                switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
-            }
-            Some(b'\'') => {
-                error!(Error::MissingWhitespaceAfterDoctypeSystemKeyword);
-                slf.emitter.set_doctype_system_identifier(b"");
-                switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
-            }
-            Some(b'>') => {
-                error!(Error::MissingDoctypeSystemIdentifier);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
-            }
-            c @ Some(_) => {
-                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                slf.emitter.set_force_quirks();
-                reconsume_in!(c, State::BogusDoctype)
-            }
-        },
-        State::BeforeDoctypeSystemIdentifier => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            Some(b'"') => {
-                slf.emitter.set_doctype_system_identifier(b"");
-                switch_to!(State::DoctypeSystemIdentifierDoubleQuoted)
-            }
-            Some(b'\'') => {
-                slf.emitter.set_doctype_system_identifier(b"");
-                switch_to!(State::DoctypeSystemIdentifierSingleQuoted)
-            }
-            Some(b'>') => {
-                error!(Error::MissingDoctypeSystemIdentifier);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                switch_to!(State::Data)
-            }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
-            }
-            c @ Some(_) => {
-                error!(Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                slf.emitter.set_force_quirks();
-                reconsume_in!(c, State::BogusDoctype)
-            }
-        },
+        ),
         State::DoctypeSystemIdentifierDoubleQuoted => fast_read_char!(
             slf,
             match xs {
@@ -1485,23 +1626,26 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::AfterDoctypeSystemIdentifier => match read_byte!()? {
-            Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-            Some(b'>') => {
-                slf.emitter.emit_current_doctype();
-                switch_to!(State::Data)
+        State::AfterDoctypeSystemIdentifier => slow_read_byte!(
+            slf,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                Some(b'>') => {
+                    slf.emitter.emit_current_doctype();
+                    switch_to!(State::Data)
+                }
+                None => {
+                    error!(Error::EofInDoctype);
+                    slf.emitter.set_force_quirks();
+                    slf.emitter.emit_current_doctype();
+                    eof!()
+                }
+                c @ Some(_) => {
+                    error!(Error::UnexpectedCharacterAfterDoctypeSystemIdentifier);
+                    reconsume_in!(c, State::BogusDoctype)
+                }
             }
-            None => {
-                error!(Error::EofInDoctype);
-                slf.emitter.set_force_quirks();
-                slf.emitter.emit_current_doctype();
-                eof!()
-            }
-            c @ Some(_) => {
-                error!(Error::UnexpectedCharacterAfterDoctypeSystemIdentifier);
-                reconsume_in!(c, State::BogusDoctype)
-            }
-        },
+        ),
         State::BogusDoctype => fast_read_char!(
             slf,
             match xs {
@@ -1538,46 +1682,55 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 }
             }
         ),
-        State::CdataSectionBracket => match read_byte!()? {
-            Some(b']') => {
-                switch_to!(State::CdataSectionEnd)
+        State::CdataSectionBracket => slow_read_byte!(
+            slf,
+            match c {
+                Some(b']') => {
+                    switch_to!(State::CdataSectionEnd)
+                }
+                c => {
+                    slf.emitter.emit_string(b"]");
+                    reconsume_in!(c, State::CdataSection)
+                }
             }
-            c => {
-                slf.emitter.emit_string(b"]");
-                reconsume_in!(c, State::CdataSection)
+        ),
+        State::CdataSectionEnd => slow_read_byte!(
+            slf,
+            match c {
+                Some(b']') => {
+                    slf.emitter.emit_string(b"]");
+                    cont!()
+                }
+                Some(b'>') => {
+                    switch_to!(State::Data)
+                }
+                c => {
+                    slf.emitter.emit_string(b"]]");
+                    reconsume_in!(c, State::CdataSection)
+                }
             }
-        },
-        State::CdataSectionEnd => match read_byte!()? {
-            Some(b']') => {
-                slf.emitter.emit_string(b"]");
-                cont!()
-            }
-            Some(b'>') => {
-                switch_to!(State::Data)
-            }
-            c => {
-                slf.emitter.emit_string(b"]]");
-                reconsume_in!(c, State::CdataSection)
-            }
-        },
+        ),
         State::CharacterReference => {
             slf.machine_helper.temporary_buffer.clear();
             slf.machine_helper.temporary_buffer.push(b'&');
 
-            match read_byte!()? {
-                Some(x) if x.is_ascii_alphanumeric() => {
-                    reconsume_in!(Some(x), State::NamedCharacterReference)
+            slow_read_byte!(
+                slf,
+                match c {
+                    Some(x) if x.is_ascii_alphanumeric() => {
+                        reconsume_in!(Some(x), State::NamedCharacterReference)
+                    }
+                    Some(b'#') => {
+                        slf.machine_helper.temporary_buffer.push(b'#');
+                        switch_to!(State::NumericCharacterReference)
+                    }
+                    c => {
+                        slf.machine_helper
+                            .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                        reconsume_in!(c, slf.machine_helper.pop_return_state())
+                    }
                 }
-                Some(b'#') => {
-                    slf.machine_helper.temporary_buffer.push(b'#');
-                    switch_to!(State::NumericCharacterReference)
-                }
-                c => {
-                    slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                    reconsume_in!(c, slf.machine_helper.pop_return_state())
-                }
-            }
+            )
         }
         State::NamedCharacterReference => {
             let c = read_byte!()?;
@@ -1623,34 +1776,54 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                 reconsume_in!(c, State::AmbiguousAmpersand)
             }
         }
-        State::AmbiguousAmpersand => match read_byte!()? {
-            Some(x) if x.is_ascii_alphanumeric() => {
-                if slf.machine_helper.is_consumed_as_part_of_an_attribute() {
-                    slf.emitter.push_attribute_value(&[x]);
-                } else {
-                    slf.emitter.emit_string(&[x]);
-                }
+        State::AmbiguousAmpersand => slow_read_byte!(
+            slf,
+            match c {
+                Some(x) if x.is_ascii_alphanumeric() => {
+                    if slf.machine_helper.is_consumed_as_part_of_an_attribute() {
+                        slf.emitter.push_attribute_value(&[x]);
+                    } else {
+                        slf.emitter.emit_string(&[x]);
+                    }
 
-                cont!()
+                    cont!()
+                }
+                c @ Some(b';') => {
+                    error!(Error::UnknownNamedCharacterReference);
+                    reconsume_in!(c, slf.machine_helper.pop_return_state())
+                }
+                c => {
+                    reconsume_in!(c, slf.machine_helper.pop_return_state())
+                }
             }
-            c @ Some(b';') => {
-                error!(Error::UnknownNamedCharacterReference);
-                reconsume_in!(c, slf.machine_helper.pop_return_state())
-            }
-            c => {
-                reconsume_in!(c, slf.machine_helper.pop_return_state())
-            }
-        },
+        ),
         State::NumericCharacterReference => {
             slf.machine_helper.character_reference_code = 0;
 
-            match read_byte!()? {
-                Some(x @ (b'x' | b'X')) => {
-                    slf.machine_helper.temporary_buffer.push(x);
-                    switch_to!(State::HexadecimalCharacterReferenceStart)
+            slow_read_byte!(
+                slf,
+                match c {
+                    Some(x @ (b'x' | b'X')) => {
+                        slf.machine_helper.temporary_buffer.push(x);
+                        switch_to!(State::HexadecimalCharacterReferenceStart)
+                    }
+                    Some(x @ b'0'..=b'9') => {
+                        reconsume_in!(Some(x), State::DecimalCharacterReference)
+                    }
+                    c => {
+                        error!(Error::AbsenceOfDigitsInNumericCharacterReference);
+                        slf.machine_helper
+                            .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                        reconsume_in!(c, slf.machine_helper.pop_return_state())
+                    }
                 }
-                Some(x @ b'0'..=b'9') => {
-                    reconsume_in!(Some(x), State::DecimalCharacterReference)
+            )
+        }
+        State::HexadecimalCharacterReferenceStart => slow_read_byte!(
+            slf,
+            match c {
+                c @ Some(b'0'..=b'9' | b'A'..=b'F' | b'a'..=b'f') => {
+                    reconsume_in!(c, State::HexadecimalCharacterReference)
                 }
                 c => {
                     error!(Error::AbsenceOfDigitsInNumericCharacterReference);
@@ -1659,52 +1832,47 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
                     reconsume_in!(c, slf.machine_helper.pop_return_state())
                 }
             }
-        }
-        State::HexadecimalCharacterReferenceStart => match read_byte!()? {
-            c @ Some(b'0'..=b'9' | b'A'..=b'F' | b'a'..=b'f') => {
-                reconsume_in!(c, State::HexadecimalCharacterReference)
+        ),
+        State::HexadecimalCharacterReference => slow_read_byte!(
+            slf,
+            match c {
+                Some(x @ b'0'..=b'9') => {
+                    mutate_character_reference!(*16 + x - 0x0030);
+                    cont!()
+                }
+                Some(x @ b'A'..=b'F') => {
+                    mutate_character_reference!(*16 + x - 0x0037);
+                    cont!()
+                }
+                Some(x @ b'a'..=b'f') => {
+                    mutate_character_reference!(*16 + x - 0x0057);
+                    cont!()
+                }
+                Some(b';') => {
+                    switch_to!(State::NumericCharacterReferenceEnd)
+                }
+                c => {
+                    error!(Error::MissingSemicolonAfterCharacterReference);
+                    reconsume_in!(c, State::NumericCharacterReferenceEnd)
+                }
             }
-            c => {
-                error!(Error::AbsenceOfDigitsInNumericCharacterReference);
-                slf.machine_helper
-                    .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                reconsume_in!(c, slf.machine_helper.pop_return_state())
+        ),
+        State::DecimalCharacterReference => slow_read_byte!(
+            slf,
+            match c {
+                Some(x @ b'0'..=b'9') => {
+                    mutate_character_reference!(*10 + x - 0x0030);
+                    cont!()
+                }
+                Some(b';') => {
+                    switch_to!(State::NumericCharacterReferenceEnd)
+                }
+                c => {
+                    error!(Error::MissingSemicolonAfterCharacterReference);
+                    reconsume_in!(c, State::NumericCharacterReferenceEnd)
+                }
             }
-        },
-        State::HexadecimalCharacterReference => match read_byte!()? {
-            Some(x @ b'0'..=b'9') => {
-                mutate_character_reference!(*16 + x - 0x0030);
-                cont!()
-            }
-            Some(x @ b'A'..=b'F') => {
-                mutate_character_reference!(*16 + x - 0x0037);
-                cont!()
-            }
-            Some(x @ b'a'..=b'f') => {
-                mutate_character_reference!(*16 + x - 0x0057);
-                cont!()
-            }
-            Some(b';') => {
-                switch_to!(State::NumericCharacterReferenceEnd)
-            }
-            c => {
-                error!(Error::MissingSemicolonAfterCharacterReference);
-                reconsume_in!(c, State::NumericCharacterReferenceEnd)
-            }
-        },
-        State::DecimalCharacterReference => match read_byte!()? {
-            Some(x @ b'0'..=b'9') => {
-                mutate_character_reference!(*10 + x - 0x0030);
-                cont!()
-            }
-            Some(b';') => {
-                switch_to!(State::NumericCharacterReferenceEnd)
-            }
-            c => {
-                error!(Error::MissingSemicolonAfterCharacterReference);
-                reconsume_in!(c, State::NumericCharacterReferenceEnd)
-            }
-        },
+        ),
         State::NumericCharacterReferenceEnd => {
             match slf.machine_helper.character_reference_code {
                 0x00 => {

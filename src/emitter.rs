@@ -114,7 +114,9 @@ pub trait Emitter {
 
     /// Whether the emitter cares about errors at all.
     ///
-    /// Override this function to return false to aid the compiler in optimizing out dead code.
+    /// Override this function to return false and decorate it with #[inline] to aid the compiler
+    /// in optimizing out dead code.
+    #[inline]
     fn should_emit_errors() -> bool {
         true
     }
