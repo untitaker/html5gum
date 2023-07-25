@@ -303,7 +303,7 @@ impl<R: Read> IoReader<R> {
 }
 
 impl<'a, R: Read> IoReader<R, &'a mut [u8]> {
-    /// Instantiate IoReader with a custom kind of buffer.
+    /// Instantiate `IoReader` with a custom kind of buffer.
     ///
     /// Buffers do not need to be zero-initialized.
     pub fn new_with_buffer(reader: R, buf: &'a mut [u8]) -> Self {
