@@ -37,21 +37,21 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
     macro_rules! switch_to {
         ($state:expr) => {{
             slf.machine_helper.switch_to($state);
-            return Ok(ControlToken::Continue);
+            Ok(ControlToken::Continue)
         }};
     }
 
     macro_rules! enter_state {
         ($state:expr) => {{
             slf.machine_helper.enter_state($state);
-            return Ok(ControlToken::Continue);
+            Ok(ControlToken::Continue)
         }};
     }
 
     macro_rules! exit_state {
         () => {{
             slf.machine_helper.exit_state();
-            return Ok(ControlToken::Continue);
+            Ok(ControlToken::Continue)
         }};
     }
 
@@ -61,7 +61,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
             let c = $c;
             slf.reader.unread_byte(c);
             slf.machine_helper.switch_to(new_state);
-            return Ok(ControlToken::Continue);
+            Ok(ControlToken::Continue)
         }};
     }
 
@@ -73,7 +73,7 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
 
     macro_rules! eof {
         () => {{
-            return Ok(ControlToken::Eof);
+            Ok(ControlToken::Eof)
         }};
     }
 
