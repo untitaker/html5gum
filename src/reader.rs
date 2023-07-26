@@ -76,6 +76,7 @@ pub trait Reader {
     /// ```text
     /// ["h", "e", "l", "l", "o", " ", "w", "o", "r", "l", "d"]
     /// ```
+    #[inline(always)]
     fn read_until<'b>(
         &'b mut self,
         needle: &[u8],
@@ -156,6 +157,7 @@ impl<'a> StringReader<'a> {
 impl<'a> Reader for StringReader<'a> {
     type Error = Infallible;
 
+    #[inline(always)]
     fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
         if self.input.is_empty() {
             Ok(None)
@@ -166,6 +168,7 @@ impl<'a> Reader for StringReader<'a> {
         }
     }
 
+    #[inline(always)]
     fn read_until<'b>(
         &'b mut self,
         needle: &[u8],
@@ -192,6 +195,7 @@ impl<'a> Reader for StringReader<'a> {
         }
     }
 
+    #[inline(always)]
     fn try_read_string(&mut self, s1: &[u8], case_sensitive: bool) -> Result<bool, Self::Error> {
         // we do not need to call validate_char here because `s` hopefully does not contain invalid
         // characters
@@ -331,6 +335,7 @@ impl<R: Read, Buffer: AsMut<[u8]>> IoReader<R, Buffer> {
     ///
     /// Shift all to-be-read buffer contents between `self.read_cursor` and `self.write_cursor` to
     /// the beginning of the buffer, and read extra bytes if necessary.
+    #[inline(always)]
     fn prepare_buf(&mut self, min_read_len: usize) -> Result<(), io::Error> {
         let mut readable_len = self.write_cursor - self.read_cursor;
         debug_assert!(min_read_len <= self.buf.as_mut().len());
@@ -357,6 +362,7 @@ impl<R: Read, Buffer: AsMut<[u8]>> IoReader<R, Buffer> {
 impl<R: Read, Buffer: AsMut<[u8]>> Reader for IoReader<R, Buffer> {
     type Error = io::Error;
 
+    #[inline(always)]
     fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
         self.prepare_buf(1)?;
         if self.read_cursor == self.write_cursor {
@@ -369,6 +375,7 @@ impl<R: Read, Buffer: AsMut<[u8]>> Reader for IoReader<R, Buffer> {
         Ok(rv)
     }
 
+    #[inline(always)]
     fn try_read_string(&mut self, s1: &[u8], case_sensitive: bool) -> Result<bool, Self::Error> {
         debug_assert!(!s1.contains(&b'\r'));
         debug_assert!(!s1.contains(&b'\n'));
@@ -384,6 +391,7 @@ impl<R: Read, Buffer: AsMut<[u8]>> Reader for IoReader<R, Buffer> {
         }
     }
 
+    #[inline(always)]
     fn read_until<'b>(
         &'b mut self,
         needle: &[u8],

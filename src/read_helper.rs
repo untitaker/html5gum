@@ -19,6 +19,7 @@ impl<R: Reader> ReadHelper<R> {
         }
     }
 
+    #[inline(always)]
     pub(crate) fn read_byte<E: Emitter>(
         &mut self,
         char_validator: &mut CharValidator,
@@ -47,6 +48,7 @@ impl<R: Reader> ReadHelper<R> {
         c
     }
 
+    #[inline(always)]
     pub(crate) fn try_read_string(
         &mut self,
         char_validator: &mut CharValidator,
@@ -84,6 +86,7 @@ impl<R: Reader> ReadHelper<R> {
         }
     }
 
+    #[inline(always)]
     pub(crate) fn read_until<'b, E>(
         &'b mut self,
         needle: &[u8],

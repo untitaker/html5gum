@@ -6,7 +6,6 @@ use crate::{Emitter, Error, Reader, Tokenizer};
 
 // Note: This is not implemented as a method on Tokenizer because there's fields on Tokenizer that
 // should not be available in this method, such as Tokenizer.to_reconsume or the Reader instance
-#[inline]
 pub(crate) fn consume<R: Reader, E: Emitter>(
     slf: &mut Tokenizer<R, E>,
 ) -> Result<ControlToken, R::Error> {
