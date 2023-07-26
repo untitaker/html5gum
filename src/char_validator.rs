@@ -23,7 +23,7 @@ impl CharValidator {
 
     #[inline]
     pub(crate) fn validate_bytes<E: Emitter>(&mut self, emitter: &mut E, next_bytes: &[u8]) {
-        if !E::should_emit_errors() {
+        if !emitter.should_emit_errors() {
             return;
         }
 
@@ -34,7 +34,7 @@ impl CharValidator {
 
     #[inline]
     pub(crate) fn validate_byte<E: Emitter>(&mut self, emitter: &mut E, next_byte: u8) {
-        if !E::should_emit_errors() {
+        if !emitter.should_emit_errors() {
             return;
         }
 
@@ -55,7 +55,7 @@ impl CharValidator {
     }
 
     pub(crate) fn flush_character_error<E: Emitter>(&mut self, emitter: &mut E) {
-        if !E::should_emit_errors() {
+        if !emitter.should_emit_errors() {
             return;
         }
 
@@ -65,7 +65,7 @@ impl CharValidator {
     }
 
     pub(crate) fn set_character_error<E: Emitter>(&mut self, emitter: &mut E, error: Error) {
-        if !E::should_emit_errors() {
+        if !emitter.should_emit_errors() {
             return;
         }
 

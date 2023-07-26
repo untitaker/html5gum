@@ -112,13 +112,20 @@ pub trait Emitter {
     /// A (probably recoverable) parsing error has occured.
     fn emit_error(&mut self, error: Error);
 
-    /// Whether the emitter cares about errors at all.
+    /// Whether this emitter cares about errors at all.
     ///
-    /// Override this function to return false and decorate it with #[inline] to aid the compiler
-    /// in optimizing out dead code.
+    /// If your implementation of `emit_error` is a noop, you can override this function to return
+    /// `false` and decorate it with #[inline] to aid the compiler in optimizing out more dead
+    /// code.
+    ///
+    /// This method should return the same value at all times. Returning different values on each
+    /// call might cause bogus errors to be emitted.
     #[inline]
     #[must_use]
-    fn should_emit_errors() -> bool {
+    fn should_emit_errors(&mut self) -> bool {
+        // should_emit_errors takes self so that users can implement it as a runtime option in
+        // their program. It takes &mut for no particular reason other than _potential_
+        // convenience, and just because we can provide that guarantee to the emitter.
         true
     }
 
