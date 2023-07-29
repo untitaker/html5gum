@@ -16,6 +16,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::too_many_lines)]
+#![allow(clippy::inline_always)]
 
 mod arrayvec;
 mod char_validator;
