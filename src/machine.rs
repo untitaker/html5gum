@@ -38,7 +38,7 @@ pub(crate)  mod states {
                     enter_state!(slf, CharacterReference)
                 }
                 Some(b"<") => {
-                    switch_to!(slf, TagOpen)?.inline_next_state(slf)
+                    switch_to!(slf, TagOpen)
                 }
                 Some(b"\0") => {
                     error!(slf, Error::UnexpectedNullCharacter);
@@ -156,7 +156,7 @@ pub(crate)  mod states {
                     switch_to!(slf, MarkupDeclarationOpen)
                 }
                 Some(b'/') => {
-                    switch_to!(slf, EndTagOpen)?.inline_next_state(slf)
+                    switch_to!(slf, EndTagOpen)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.init_start_tag();
@@ -212,7 +212,7 @@ pub(crate)  mod states {
             slf,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
-                    switch_to!(slf, BeforeAttributeName)?.inline_next_state(slf)
+                    switch_to!(slf, BeforeAttributeName)
                 }
                 Some(b"/") => {
                     switch_to!(slf, SelfClosingStartTag)
@@ -804,7 +804,7 @@ pub(crate)  mod states {
                     reconsume_in!(slf, Some(xs.unwrap()[0]), AfterAttributeName)
                 }
                 Some(b"=") => {
-                    switch_to!(slf, BeforeAttributeValue)?.inline_next_state(slf)
+                    switch_to!(slf, BeforeAttributeValue)
                 }
                 Some(b"\0") => {
                     error!(slf, Error::UnexpectedNullCharacter);
@@ -862,7 +862,7 @@ pub(crate)  mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
-                    switch_to!(slf, AttributeValueDoubleQuoted)?.inline_next_state(slf)
+                    switch_to!(slf, AttributeValueDoubleQuoted)
                 }
                 Some(b'\'') => {
                     switch_to!(slf, AttributeValueSingleQuoted)
@@ -883,7 +883,7 @@ pub(crate)  mod states {
             slf,
             match xs {
                 Some(b"\"") => {
-                    switch_to!(slf, AfterAttributeValueQuoted)?.inline_next_state(slf)
+                    switch_to!(slf, AfterAttributeValueQuoted)
                 }
                 Some(b"&") => {
                     enter_state!(slf, CharacterReference)

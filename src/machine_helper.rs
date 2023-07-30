@@ -176,8 +176,7 @@ macro_rules! reconsume_in {
         let new_state = $crate::machine_helper::state_ref!($state);
         let c = $c;
         $slf.reader.unread_byte(c);
-        $slf.machine_helper.switch_to(new_state);
-        Ok(ControlToken::Continue)
+        Ok(ControlToken::SwitchTo(new_state))
     }};
 }
 
