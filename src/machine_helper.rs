@@ -44,6 +44,7 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
             None => false,
         }
     }
+
     pub(crate) fn flush_code_points_consumed_as_character_reference(
         &mut self,
         emitter: &mut E,
@@ -55,6 +56,7 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
             self.flush_buffer_characters(emitter);
         }
     }
+
     pub(crate) fn flush_buffer_characters(&mut self, emitter: &mut E) {
         emitter.emit_string(&self.temporary_buffer);
         self.temporary_buffer.clear();
@@ -120,7 +122,8 @@ pub(crate) use emit_current_tag_and_switch_to;
 
 macro_rules! switch_to {
     ($slf:expr, $state:ident) => {{
-        $slf.machine_helper.switch_to($crate::machine_helper::state_ref!($state));
+        let new_state = $crate::machine_helper::state_ref!($state);
+        $slf.machine_helper.switch_to(new_state);
         Ok(ControlToken::Continue)
     }};
 }
@@ -151,7 +154,8 @@ macro_rules! reconsume_in {
         let c = $c;
         $slf.reader.unread_byte(c);
         $slf.machine_helper.switch_to(new_state);
-        Ok(ControlToken::Continue)
+        // call state directly so that it gets inlined into current fn
+        new_state($slf)
     }};
 }
 
@@ -163,7 +167,8 @@ macro_rules! reconsume_in_return_state {
         let c = $c;
         $slf.reader.unread_byte(c);
         $slf.machine_helper.switch_to(new_state);
-        Ok(ControlToken::Continue)
+        // call state directly so that it gets inlined into current fn
+        new_state($slf)
     }}
 }
 

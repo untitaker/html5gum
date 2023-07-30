@@ -18,6 +18,7 @@ macro_rules! define_state {
         pub(crate) mod $state {
             use super::*;
 
+            #[inline(always)]
             pub(crate) fn run<R: Reader, E: Emitter>($slf: &mut Tokenizer<R, E>) -> Result<ControlToken, R::Error> {
                 $($body)*
             }
