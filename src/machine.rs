@@ -105,9 +105,6 @@ pub(crate) fn consume<R: Reader, E: Emitter>(
     slf: &mut Tokenizer<R, E>,
 ) -> Result<ControlToken, R::Error> {
     match slf.machine_helper.state() {
-        State::Data => call_state!(Data, slf),
-        State::RcData => call_state!(RcData, slf),
-        State::RawText => call_state!(RawText, slf),
         State::ScriptData => fast_read_char!(
             slf,
             match xs {
