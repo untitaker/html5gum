@@ -1,10 +1,11 @@
 use crate::entities::try_read_character_reference;
 use crate::machine_helper::{
+    ControlToken,
     cont, emit_current_tag_and_switch_to, enter_state, eof, error, error_immediate, exit_state,
     mutate_character_reference, read_byte, reconsume_in, switch_to, reconsume_in_return_state
 };
 use crate::read_helper::{fast_read_char, slow_read_byte};
-use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken};
+use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str};
 use crate::{Emitter, Error, Reader, Tokenizer};
 
 
@@ -19,7 +20,7 @@ macro_rules! define_state {
             use super::*;
 
             #[inline(always)]
-            pub(crate) fn run<R: Reader, E: Emitter>($slf: &mut Tokenizer<R, E>) -> Result<ControlToken, R::Error> {
+            pub(crate) fn run<R: Reader, E: Emitter>($slf: &mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, R::Error> {
                 $($body)*
             }
         }
@@ -37,7 +38,7 @@ pub(crate)  mod states {
                     enter_state!(slf, CharacterReference)
                 }
                 Some(b"<") => {
-                    switch_to!(slf, TagOpen)
+                    switch_to!(slf, TagOpen)?.inline_next_state(slf)
                 }
                 Some(b"\0") => {
                     error!(slf, Error::UnexpectedNullCharacter);
@@ -155,7 +156,7 @@ pub(crate)  mod states {
                     switch_to!(slf, MarkupDeclarationOpen)
                 }
                 Some(b'/') => {
-                    switch_to!(slf, EndTagOpen)
+                    switch_to!(slf, EndTagOpen)?.inline_next_state(slf)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.init_start_tag();
@@ -211,7 +212,7 @@ pub(crate)  mod states {
             slf,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
-                    switch_to!(slf, BeforeAttributeName)
+                    switch_to!(slf, BeforeAttributeName)?.inline_next_state(slf)
                 }
                 Some(b"/") => {
                     switch_to!(slf, SelfClosingStartTag)
@@ -803,7 +804,7 @@ pub(crate)  mod states {
                     reconsume_in!(slf, Some(xs.unwrap()[0]), AfterAttributeName)
                 }
                 Some(b"=") => {
-                    switch_to!(slf, BeforeAttributeValue)
+                    switch_to!(slf, BeforeAttributeValue)?.inline_next_state(slf)
                 }
                 Some(b"\0") => {
                     error!(slf, Error::UnexpectedNullCharacter);
@@ -861,7 +862,7 @@ pub(crate)  mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
-                    switch_to!(slf, AttributeValueDoubleQuoted)
+                    switch_to!(slf, AttributeValueDoubleQuoted)?.inline_next_state(slf)
                 }
                 Some(b'\'') => {
                     switch_to!(slf, AttributeValueSingleQuoted)
@@ -882,7 +883,7 @@ pub(crate)  mod states {
             slf,
             match xs {
                 Some(b"\"") => {
-                    switch_to!(slf, AfterAttributeValueQuoted)
+                    switch_to!(slf, AfterAttributeValueQuoted)?.inline_next_state(slf)
                 }
                 Some(b"&") => {
                     enter_state!(slf, CharacterReference)

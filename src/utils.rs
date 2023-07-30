@@ -49,10 +49,6 @@ macro_rules! noncharacter_pat {
 
 pub(crate) use noncharacter_pat;
 
-pub(crate) enum ControlToken {
-    Eof,
-    Continue,
-}
 
 macro_rules! ctostr {
     ($c:expr) => {

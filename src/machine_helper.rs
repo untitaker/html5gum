@@ -1,7 +1,31 @@
-use crate::utils::{ControlToken, trace_log};
+use crate::utils::{trace_log};
 use crate::{Reader, Emitter, State, Tokenizer};
 
-pub(crate) type MachineState<R, E> = fn(&mut Tokenizer<R, E>) -> Result<ControlToken, <R as Reader>::Error>;
+pub(crate) type MachineState<R, E> = fn(&mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, <R as Reader>::Error>;
+
+pub(crate) enum ControlToken<R: Reader, E: Emitter> {
+    Eof,
+    Continue,
+    SwitchTo(MachineState<R, E>)
+}
+
+impl<R: Reader, E: Emitter> ControlToken<R, E> {
+    #[inline]
+    pub(crate) fn inline_next_state(self, slf: &mut Tokenizer<R, E>) -> Result<Self, R::Error> {
+        match self {
+            ControlToken::SwitchTo(state) => {
+                slf.machine_helper.switch_to(state);
+                state(slf)
+            },
+            _ => {
+                #[cfg(debug)]
+                panic!("use of inline_next_state is invalid in this context as no state switch is happening");
+
+                Ok(self)
+            }
+        }
+    }
+}
 
 impl<R: Reader, E: Emitter> Into<MachineState<R, E>> for State {
     fn into(self) -> MachineState<R, E> {
@@ -123,8 +147,7 @@ pub(crate) use emit_current_tag_and_switch_to;
 macro_rules! switch_to {
     ($slf:expr, $state:ident) => {{
         let new_state = $crate::machine_helper::state_ref!($state);
-        $slf.machine_helper.switch_to(new_state);
-        Ok(ControlToken::Continue)
+        Ok(ControlToken::SwitchTo(new_state))
     }};
 }
 
@@ -154,8 +177,7 @@ macro_rules! reconsume_in {
         let c = $c;
         $slf.reader.unread_byte(c);
         $slf.machine_helper.switch_to(new_state);
-        // call state directly so that it gets inlined into current fn
-        new_state($slf)
+        Ok(ControlToken::Continue)
     }};
 }
 
@@ -166,9 +188,7 @@ macro_rules! reconsume_in_return_state {
         let new_state = $slf.machine_helper.pop_return_state();
         let c = $c;
         $slf.reader.unread_byte(c);
-        $slf.machine_helper.switch_to(new_state);
-        // call state directly so that it gets inlined into current fn
-        new_state($slf)
+        Ok(ControlToken::SwitchTo(new_state))
     }}
 }
 
