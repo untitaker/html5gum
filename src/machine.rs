@@ -8,79 +8,106 @@ use crate::state::MachineState as State;
 use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str, ControlToken};
 use crate::{Emitter, Error, Reader, Tokenizer};
 
+macro_rules! define_state {
+    ($state:ident, $slf:ident, $($body:tt)*) => {
+        #[allow(non_snake_case)]
+        mod $state {
+            use super::*;
+
+            pub(crate) fn run<R: Reader, E: Emitter>($slf: &mut Tokenizer<R, E>) -> Result<ControlToken, R::Error> {
+                $($body)*
+            }
+        }
+    };
+}
+
+macro_rules! call_state {
+    ($state:ident, $slf:expr) => {
+        $state::run($slf)
+    };
+}
+
+define_state!(Data, slf, {
+    fast_read_char!(slf, match xs {
+        Some(b"&") => {
+            enter_state!(slf, State::CharacterReference)
+        }
+        Some(b"<") => {
+            switch_to!(slf, State::TagOpen)
+        }
+        Some(b"\0") => {
+            error!(slf, Error::UnexpectedNullCharacter);
+            slf.emitter.emit_string(b"\0");
+            cont!()
+        }
+        Some(xs) => {
+            slf.emitter.emit_string(xs);
+            cont!()
+        }
+        None => {
+            eof!()
+        }
+    })
+});
+
+define_state!(RcData, slf, {
+    fast_read_char!(
+        slf,
+        match xs {
+            Some(b"&") => {
+                enter_state!(slf, State::CharacterReference)
+            }
+            Some(b"<") => {
+                switch_to!(slf, State::RcDataLessThanSign)
+            }
+            Some(b"\0") => {
+                error!(slf, Error::UnexpectedNullCharacter);
+                slf.emitter.emit_string("\u{fffd}".as_bytes());
+                cont!()
+            }
+            Some(xs) => {
+                slf.emitter.emit_string(xs);
+                cont!()
+            }
+            None => {
+                eof!()
+            }
+        }
+    )
+});
+
+define_state!(RawText, slf, {
+    fast_read_char!(
+        slf,
+        match xs {
+            Some(b"<") => {
+                switch_to!(slf, State::RawTextLessThanSign)
+            }
+            Some(b"\0") => {
+                error!(slf, Error::UnexpectedNullCharacter);
+                slf.emitter.emit_string("\u{fffd}".as_bytes());
+                cont!()
+            }
+            Some(xs) => {
+                slf.emitter.emit_string(xs);
+                cont!()
+            }
+            None => {
+                eof!()
+            }
+        }
+    )
+});
+
 // Note: This is not implemented as a method on Tokenizer because there's fields on Tokenizer that
 // should not be available in this method, such as Tokenizer.to_reconsume or the Reader instance
 pub(crate) fn consume<R: Reader, E: Emitter>(
     slf: &mut Tokenizer<R, E>,
 ) -> Result<ControlToken, R::Error> {
     match slf.machine_helper.state() {
-        State::Data => fast_read_char!(
-            slf,
-            match xs {
-                Some(b"&") => {
-                    enter_state!(slf, State::CharacterReference)
-                }
-                Some(b"<") => {
-                    switch_to!(slf, State::TagOpen)
-                }
-                Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string(b"\0");
-                    cont!()
-                }
-                Some(xs) => {
-                    slf.emitter.emit_string(xs);
-                    cont!()
-                }
-                None => {
-                    eof!()
-                }
-            }
-        ),
-
-        State::RcData => fast_read_char!(
-            slf,
-            match xs {
-                Some(b"&") => {
-                    enter_state!(slf, State::CharacterReference)
-                }
-                Some(b"<") => {
-                    switch_to!(slf, State::RcDataLessThanSign)
-                }
-                Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
-                    cont!()
-                }
-                Some(xs) => {
-                    slf.emitter.emit_string(xs);
-                    cont!()
-                }
-                None => {
-                    eof!()
-                }
-            }
-        ),
-        State::RawText => fast_read_char!(
-            slf,
-            match xs {
-                Some(b"<") => {
-                    switch_to!(slf, State::RawTextLessThanSign)
-                }
-                Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
-                    cont!()
-                }
-                Some(xs) => {
-                    slf.emitter.emit_string(xs);
-                    cont!()
-                }
-                None => {
-                    eof!()
-                }
-            }
-        ),
+        State::Data => call_state!(Data, slf),
+        State::RcData => call_state!(RcData, slf),
+        State::RawText => call_state!(RawText, slf),
         State::ScriptData => fast_read_char!(
             slf,
             match xs {
