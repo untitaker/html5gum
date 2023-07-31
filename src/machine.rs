@@ -35,7 +35,7 @@ pub(crate)  mod states {
             slf,
             match xs {
                 Some(b"&") => {
-                    enter_state!(slf, CharacterReference)
+                    enter_state!(slf, CharacterReference, false)
                 }
                 Some(b"<") => {
                     switch_to!(slf, TagOpen)
@@ -61,7 +61,7 @@ pub(crate)  mod states {
             slf,
             match xs {
                 Some(b"&") => {
-                    enter_state!(slf, CharacterReference)
+                    enter_state!(slf, CharacterReference, false)
                 }
                 Some(b"<") => {
                     switch_to!(slf, RcDataLessThanSign)
@@ -886,7 +886,7 @@ pub(crate)  mod states {
                     switch_to!(slf, AfterAttributeValueQuoted)
                 }
                 Some(b"&") => {
-                    enter_state!(slf, CharacterReference)
+                    enter_state!(slf, CharacterReference, true)
                 }
                 Some(b"\0") => {
                     error!(slf, Error::UnexpectedNullCharacter);
@@ -913,7 +913,7 @@ pub(crate)  mod states {
                     switch_to!(slf, AfterAttributeValueQuoted)
                 }
                 Some(b"&") => {
-                    enter_state!(slf, CharacterReference)
+                    enter_state!(slf, CharacterReference, true)
                 }
                 Some(b"\0") => {
                     error!(slf, Error::UnexpectedNullCharacter);
@@ -940,7 +940,7 @@ pub(crate)  mod states {
                     switch_to!(slf, BeforeAttributeName)
                 }
                 Some(b"&") => {
-                    enter_state!(slf, CharacterReference)
+                    enter_state!(slf, CharacterReference, true)
                 }
                 Some(b">") => {
                     emit_current_tag_and_switch_to!(slf, Data)

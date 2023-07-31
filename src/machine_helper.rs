@@ -47,7 +47,7 @@ pub(crate) struct MachineHelper<R: Reader, E: Emitter> {
     pub(crate) temporary_buffer: Vec<u8>,
     pub(crate) character_reference_code: u32,
     pub(crate) state: MachineState<R, E>,
-    return_state: Option<MachineState<R, E>>,
+    return_state: Option<(MachineState<R, E>, bool)>,
 }
 
 impl<R: Reader, E: Emitter> Default for MachineHelper<R, E> {
@@ -64,7 +64,7 @@ impl<R: Reader, E: Emitter> Default for MachineHelper<R, E> {
 impl<R: Reader, E: Emitter> MachineHelper<R, E> {
     pub(crate) fn is_consumed_as_part_of_an_attribute(&self) -> bool {
         match self.return_state {
-            Some(state) => state == state_ref!(AttributeValueDoubleQuoted) || state == state_ref!(AttributeValueSingleQuoted) || state == state_ref!(AttributeValueUnquoted),
+            Some((_state, is_attribute)) => is_attribute,
             None => false,
         }
     }
@@ -86,14 +86,14 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
         self.temporary_buffer.clear();
     }
 
-    pub(crate) fn enter_state(&mut self, state: MachineState<R, E>) {
+    pub(crate) fn enter_state(&mut self, state: MachineState<R, E>, is_attribute: bool) {
         debug_assert!(self.return_state.is_none());
-        self.return_state = Some(self.state);
+        self.return_state = Some((self.state, is_attribute));
         self.switch_to(state);
     }
 
     pub(crate) fn pop_return_state(&mut self) -> MachineState<R, E> {
-        self.return_state.take().unwrap()
+        self.return_state.take().unwrap().0
     }
 
     pub(crate) fn exit_state(&mut self) {
@@ -154,8 +154,8 @@ macro_rules! switch_to {
 pub(crate) use switch_to;
 
 macro_rules! enter_state {
-    ($slf:expr, $state:ident) => {{
-        $slf.machine_helper.enter_state($crate::machine_helper::state_ref!($state));
+    ($slf:expr, $state:ident, $is_attribute:expr) => {{
+        $slf.machine_helper.enter_state($crate::machine_helper::state_ref!($state), $is_attribute);
         Ok(ControlToken::Continue)
     }};
 }
