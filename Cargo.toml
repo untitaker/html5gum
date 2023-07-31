@@ -21,15 +21,6 @@ glob = "0.3.0"
 libtest-mimic = "0.6.0"
 iai = "0.1.1"
 
-[features]
-# By default this crate depends on the jetscii library for best performance.
-# Disabling this feature will leave you with 100% safe Rust and no dependencies.
-# This may come in handy if you encounter packaging/build problems.
-default = ["jetscii"]
-
-[dependencies]
-jetscii = { version = "0.5.1", optional = true }
-
 [[bench]]
 name = "patterns"
 harness = false
