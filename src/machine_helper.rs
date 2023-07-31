@@ -220,7 +220,7 @@ pub(crate) use reconsume_in_return_state;
 
 macro_rules! cont {
     () => {{
-        continue;
+        Ok(ControlToken::Continue)
     }};
 }
 
