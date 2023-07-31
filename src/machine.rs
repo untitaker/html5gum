@@ -23,9 +23,12 @@ macro_rules! define_state {
 }
 
 pub(crate) mod states {
+    use std::thread::sleep_ms;
+
     use super::*;
 
     define_state!(Data, slf, {
+        sleep_ms(1000);
         fast_read_char!(
             slf,
             match xs {
