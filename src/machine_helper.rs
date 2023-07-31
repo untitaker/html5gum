@@ -22,7 +22,7 @@ pub(crate) enum ControlToken<R: Reader, E: Emitter> {
 }
 
 impl<R: Reader, E: Emitter> ControlToken<R, E> {
-    #[inline]
+    #[inline(always)]
     pub(crate) fn inline_next_state(self, slf: &mut Tokenizer<R, E>) -> Result<Self, R::Error> {
         match self {
             ControlToken::SwitchTo(state) => {

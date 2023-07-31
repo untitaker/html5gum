@@ -38,7 +38,7 @@ pub(crate)  mod states {
                     enter_state!(slf, CharacterReference, false)
                 }
                 Some(b"<") => {
-                    switch_to!(slf, TagOpen)
+                    switch_to!(slf, TagOpen)?.inline_next_state(slf)
                 }
                 Some(b"\0") => {
                     error!(slf, Error::UnexpectedNullCharacter);
@@ -156,11 +156,11 @@ pub(crate)  mod states {
                     switch_to!(slf, MarkupDeclarationOpen)
                 }
                 Some(b'/') => {
-                    switch_to!(slf, EndTagOpen)
+                    switch_to!(slf, EndTagOpen)?.inline_next_state(slf)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.init_start_tag();
-                    reconsume_in!(slf, Some(x), TagName)
+                    reconsume_in!(slf, Some(x), TagName)?.inline_next_state(slf)
                 }
                 c @ Some(b'?') => {
                     error!(slf, Error::UnexpectedQuestionMarkInsteadOfTagName);
@@ -218,6 +218,7 @@ pub(crate)  mod states {
                     switch_to!(slf, SelfClosingStartTag)
                 }
                 Some(b">") => {
+                    // candidate for inline_next_state except it'd be cyclic
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(b"\0") => {
@@ -780,7 +781,7 @@ pub(crate)  mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 c @ (Some(b'/' | b'>') | None) => {
-                    reconsume_in!(slf, c, AfterAttributeName)
+                    reconsume_in!(slf, c, AfterAttributeName)?.inline_next_state(slf)
                 }
                 Some(b'=') => {
                     error!(slf, Error::UnexpectedEqualsSignBeforeAttributeName);
@@ -790,7 +791,7 @@ pub(crate)  mod states {
                 }
                 Some(x) => {
                     slf.emitter.init_attribute();
-                    reconsume_in!(slf, Some(x), AttributeName)
+                    reconsume_in!(slf, Some(x), AttributeName)?.inline_next_state(slf)
                 }
             }
         )
@@ -804,7 +805,7 @@ pub(crate)  mod states {
                     reconsume_in!(slf, Some(xs.unwrap()[0]), AfterAttributeName)
                 }
                 Some(b"=") => {
-                    switch_to!(slf, BeforeAttributeValue)
+                    switch_to!(slf, BeforeAttributeValue)?.inline_next_state(slf)
                 }
                 Some(b"\0") => {
                     error!(slf, Error::UnexpectedNullCharacter);
@@ -862,7 +863,7 @@ pub(crate)  mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
-                    switch_to!(slf, AttributeValueDoubleQuoted)
+                    switch_to!(slf, AttributeValueDoubleQuoted)?.inline_next_state(slf)
                 }
                 Some(b'\'') => {
                     switch_to!(slf, AttributeValueSingleQuoted)
@@ -883,7 +884,7 @@ pub(crate)  mod states {
             slf,
             match xs {
                 Some(b"\"") => {
-                    switch_to!(slf, AfterAttributeValueQuoted)
+                    switch_to!(slf, AfterAttributeValueQuoted)?.inline_next_state(slf)
                 }
                 Some(b"&") => {
                     enter_state!(slf, CharacterReference, true)
@@ -972,7 +973,7 @@ pub(crate)  mod states {
             slf,
             match c {
                 c @ (Some(b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>') | None) => {
-                    reconsume_in!(slf, c, BeforeAttributeName)
+                    reconsume_in!(slf, c, BeforeAttributeName)?.inline_next_state(slf)
                 }
                 c => {
                     error!(slf, Error::MissingWhitespaceBetweenAttributes);
