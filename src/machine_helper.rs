@@ -3,6 +3,7 @@ use crate::{Emitter, Reader, State, Tokenizer};
 
 #[derive(Debug)]
 pub(crate) struct MachineState<R: Reader, E: Emitter> {
+    #[allow(clippy::type_complexity)]
     pub function: fn(&mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, R::Error>,
     #[cfg(debug_assertions)]
     pub debug_name: &'static str,
@@ -23,11 +24,14 @@ pub(crate) enum ControlToken<R: Reader, E: Emitter> {
 
 impl<R: Reader, E: Emitter> ControlToken<R, E> {
     #[inline(always)]
-    pub(crate) fn inline_next_state(self, slf: &mut Tokenizer<R, E>) -> Result<Self, R::Error> {
+    pub(crate) fn inline_next_state(
+        self,
+        tokenizer: &mut Tokenizer<R, E>,
+    ) -> Result<Self, R::Error> {
         match self {
             ControlToken::SwitchTo(state) => {
-                slf.machine_helper.switch_to(state);
-                (state.function)(slf)
+                tokenizer.machine_helper.switch_to(state);
+                (state.function)(tokenizer)
             }
             _ => {
                 #[cfg(debug_assertions)]
@@ -40,6 +44,7 @@ impl<R: Reader, E: Emitter> ControlToken<R, E> {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl<R: Reader, E: Emitter> Into<MachineState<R, E>> for State {
     fn into(self) -> MachineState<R, E> {
         // TODO: instead of this conversion, can we rig the enums to be of same layout?
