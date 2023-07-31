@@ -28,7 +28,7 @@ pub(crate) mod states {
     use super::*;
 
     define_state!(Data, slf, {
-        sleep_ms(1000);
+        sleep_ms(10);
         fast_read_char!(
             slf,
             match xs {
