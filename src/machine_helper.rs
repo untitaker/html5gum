@@ -1,7 +1,19 @@
 use crate::utils::{trace_log};
 use crate::{Reader, Emitter, State, Tokenizer};
 
-pub(crate) type MachineState<R, E> = fn(&mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, <R as Reader>::Error>;
+#[derive(Debug)]
+pub(crate) struct MachineState<R: Reader, E: Emitter> {
+    pub function: fn(&mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, R::Error>,
+    #[cfg(debug_assertions)]
+    pub debug_name: &'static str,
+}
+
+impl<R: Reader, E: Emitter> Copy for MachineState<R, E> {}
+impl<R: Reader, E: Emitter> Clone for MachineState<R, E> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
 
 pub(crate) enum ControlToken<R: Reader, E: Emitter> {
     Eof,
@@ -15,12 +27,13 @@ impl<R: Reader, E: Emitter> ControlToken<R, E> {
         match self {
             ControlToken::SwitchTo(state) => {
                 slf.machine_helper.switch_to(state);
-                state(slf)
+                (state.function)(slf)
             },
             _ => {
-                #[cfg(debug)]
+                #[cfg(debug_assertions)]
                 panic!("use of inline_next_state is invalid in this context as no state switch is happening");
 
+                #[cfg(not(debug_assertions))]
                 Ok(self)
             }
         }
@@ -102,15 +115,19 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
     }
 
     pub(crate) fn switch_to(&mut self, state: MachineState<R, E>) {
-        trace_log!("switch_to: {:?} -> {:?}", self.state, state);
+        trace_log!("switch_to: {} -> {}", self.state.debug_name, state.debug_name);
         self.state = state;
     }
 }
 
 macro_rules! state_ref {
-    ($state:ident) => {
-        crate::machine::states::$state::run
-    }
+    ($state:ident) => {{
+        crate::machine_helper::MachineState {
+            function: crate::machine::states::$state::run,
+            #[cfg(debug_assertions)]
+            debug_name: stringify!($state),
+        }
+    }}
 }
 
 pub(crate) use state_ref;

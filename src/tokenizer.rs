@@ -70,7 +70,7 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
             if let Some(token) = self.emitter.pop_token() {
                 break Some(Ok(token));
             } else if !self.eof {
-                match (self.machine_helper.state)(self) {
+                match (self.machine_helper.state.function)(self) {
                     Ok(ControlToken::Continue) => (),
                     Ok(ControlToken::SwitchTo(next_state)) => {
                         self.machine_helper.switch_to(next_state);
