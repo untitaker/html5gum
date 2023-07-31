@@ -1,10 +1,8 @@
 use std::convert::Infallible;
 
 use crate::char_validator::CharValidator;
-use crate::machine;
-use crate::machine_helper::MachineHelper;
+use crate::machine_helper::{ControlToken, MachineHelper};
 use crate::read_helper::ReadHelper;
-use crate::utils::ControlToken;
 use crate::{DefaultEmitter, Emitter, Readable, Reader};
 
 #[cfg(debug_assertions)]
@@ -17,7 +15,7 @@ pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
     pub(crate) validator: CharValidator,
     pub(crate) emitter: E,
     pub(crate) reader: ReadHelper<R>,
-    pub(crate) machine_helper: MachineHelper,
+    pub(crate) machine_helper: MachineHelper<R, E>,
 }
 
 impl<R: Reader> Tokenizer<R> {
@@ -72,8 +70,11 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
             if let Some(token) = self.emitter.pop_token() {
                 break Some(Ok(token));
             } else if !self.eof {
-                match machine::consume(self) {
+                match (self.machine_helper.state.function)(self) {
                     Ok(ControlToken::Continue) => (),
+                    Ok(ControlToken::SwitchTo(next_state)) => {
+                        self.machine_helper.switch_to(next_state);
+                    }
                     Ok(ControlToken::Eof) => {
                         self.validator.flush_character_error(&mut self.emitter);
                         self.eof = true;
