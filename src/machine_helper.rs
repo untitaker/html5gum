@@ -1,5 +1,5 @@
-use crate::utils::{trace_log};
-use crate::{Reader, Emitter, State, Tokenizer};
+use crate::utils::trace_log;
+use crate::{Emitter, Reader, State, Tokenizer};
 
 #[derive(Debug)]
 pub(crate) struct MachineState<R: Reader, E: Emitter> {
@@ -18,7 +18,7 @@ impl<R: Reader, E: Emitter> Clone for MachineState<R, E> {
 pub(crate) enum ControlToken<R: Reader, E: Emitter> {
     Eof,
     Continue,
-    SwitchTo(MachineState<R, E>)
+    SwitchTo(MachineState<R, E>),
 }
 
 impl<R: Reader, E: Emitter> ControlToken<R, E> {
@@ -28,7 +28,7 @@ impl<R: Reader, E: Emitter> ControlToken<R, E> {
             ControlToken::SwitchTo(state) => {
                 slf.machine_helper.switch_to(state);
                 (state.function)(slf)
-            },
+            }
             _ => {
                 #[cfg(debug_assertions)]
                 panic!("use of inline_next_state is invalid in this context as no state switch is happening");
@@ -82,10 +82,7 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
         }
     }
 
-    pub(crate) fn flush_code_points_consumed_as_character_reference(
-        &mut self,
-        emitter: &mut E,
-    ) {
+    pub(crate) fn flush_code_points_consumed_as_character_reference(&mut self, emitter: &mut E) {
         if self.is_consumed_as_part_of_an_attribute() {
             emitter.push_attribute_value(&self.temporary_buffer);
             self.temporary_buffer.clear();
@@ -115,7 +112,11 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
     }
 
     pub(crate) fn switch_to(&mut self, state: MachineState<R, E>) {
-        trace_log!("switch_to: {} -> {}", self.state.debug_name, state.debug_name);
+        trace_log!(
+            "switch_to: {} -> {}",
+            self.state.debug_name,
+            state.debug_name
+        );
         self.state = state;
     }
 }
@@ -127,7 +128,7 @@ macro_rules! state_ref {
             #[cfg(debug_assertions)]
             debug_name: stringify!($state),
         }
-    }}
+    }};
 }
 
 pub(crate) use state_ref;
@@ -154,7 +155,8 @@ pub(crate) use mutate_character_reference;
 macro_rules! emit_current_tag_and_switch_to {
     ($slf:expr, $state:ident) => {{
         let state = $slf.emitter.emit_current_tag().map(Into::into);
-        $slf.machine_helper.switch_to(state.unwrap_or($crate::machine_helper::state_ref!($state)));
+        $slf.machine_helper
+            .switch_to(state.unwrap_or($crate::machine_helper::state_ref!($state)));
         Ok(ControlToken::Continue)
     }};
 }
@@ -172,7 +174,8 @@ pub(crate) use switch_to;
 
 macro_rules! enter_state {
     ($slf:expr, $state:ident, $is_attribute:expr) => {{
-        $slf.machine_helper.enter_state($crate::machine_helper::state_ref!($state), $is_attribute);
+        $slf.machine_helper
+            .enter_state($crate::machine_helper::state_ref!($state), $is_attribute);
         Ok(ControlToken::Continue)
     }};
 }
@@ -205,11 +208,10 @@ macro_rules! reconsume_in_return_state {
         let c = $c;
         $slf.reader.unread_byte(c);
         Ok(ControlToken::SwitchTo(new_state))
-    }}
+    }};
 }
 
 pub(crate) use reconsume_in_return_state;
-
 
 macro_rules! cont {
     () => {{
@@ -252,7 +254,7 @@ macro_rules! error_immediate {
     ($slf:expr, $e:expr) => {
         error!($slf, $e);
         $slf.validator.flush_character_error(&mut $slf.emitter);
-    }
+    };
 }
 
 pub(crate) use error_immediate;

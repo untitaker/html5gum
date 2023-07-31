@@ -1,17 +1,12 @@
 use crate::entities::try_read_character_reference;
 use crate::machine_helper::{
-    ControlToken,
     cont, emit_current_tag_and_switch_to, enter_state, eof, error, error_immediate, exit_state,
-    mutate_character_reference, read_byte, reconsume_in, switch_to, reconsume_in_return_state
+    mutate_character_reference, read_byte, reconsume_in, reconsume_in_return_state, switch_to,
+    ControlToken,
 };
 use crate::read_helper::{fast_read_char, slow_read_byte};
 use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str};
 use crate::{Emitter, Error, Reader, Tokenizer};
-
-
-
-
-
 
 macro_rules! define_state {
     ($state:ident, $slf:ident, $($body:tt)*) => {
@@ -27,7 +22,7 @@ macro_rules! define_state {
     };
 }
 
-pub(crate)  mod states {
+pub(crate) mod states {
     use super::*;
 
     define_state!(Data, slf, {

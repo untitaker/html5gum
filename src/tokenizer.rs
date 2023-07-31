@@ -74,7 +74,7 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
                     Ok(ControlToken::Continue) => (),
                     Ok(ControlToken::SwitchTo(next_state)) => {
                         self.machine_helper.switch_to(next_state);
-                    },
+                    }
                     Ok(ControlToken::Eof) => {
                         self.validator.flush_character_error(&mut self.emitter);
                         self.eof = true;

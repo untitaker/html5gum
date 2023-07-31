@@ -49,7 +49,6 @@ macro_rules! noncharacter_pat {
 
 pub(crate) use noncharacter_pat;
 
-
 macro_rules! ctostr {
     ($c:expr) => {
         &*$c.encode_utf8(&mut [0; 4])
