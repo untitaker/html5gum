@@ -112,6 +112,23 @@ pub trait Emitter {
     /// A (probably recoverable) parsing error has occured.
     fn emit_error(&mut self, error: Error);
 
+    /// Whether this emitter cares about errors at all.
+    ///
+    /// If your implementation of `emit_error` is a noop, you can override this function to return
+    /// `false` and decorate it with #[inline] to aid the compiler in optimizing out more dead
+    /// code.
+    ///
+    /// This method should return the same value at all times. Returning different values on each
+    /// call might cause bogus errors to be emitted.
+    #[inline]
+    #[must_use]
+    fn should_emit_errors(&mut self) -> bool {
+        // should_emit_errors takes self so that users can implement it as a runtime option in
+        // their program. It takes &mut for no particular reason other than _potential_
+        // convenience, and just because we can provide that guarantee to the emitter.
+        true
+    }
+
     /// After every state change, the tokenizer calls this method to retrieve a new token that can
     /// be returned via the tokenizer's iterator interface.
     fn pop_token(&mut self) -> Option<Self::Token>;

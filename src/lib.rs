@@ -2,7 +2,7 @@
 // This is an HTML parser. HTML can be untrusted input from the internet.
 #![forbid(unsafe_code)]
 #![doc = include_str!("../README.md")]
-#![warn(clippy::all, clippy::pedantic)]
+#![warn(clippy::all)]
 #![warn(
     absolute_paths_not_starting_with_crate,
     rustdoc::invalid_html_tags,
@@ -15,7 +15,6 @@
 )]
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]
-#![allow(clippy::too_many_lines)]
 
 mod arrayvec;
 mod char_validator;

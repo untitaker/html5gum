@@ -23,7 +23,7 @@ pub fn run_old_html5gum(s: &str) {
         .unwrap()
         .as_str()
         .trim()
-        .split(",")
+        .split(',')
     {
         match instruction {
             "" => {}
