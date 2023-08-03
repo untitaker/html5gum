@@ -20,6 +20,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - run: cargo install --git https://github.com/bencherdev/bencher/
+      - uses: baptiste0928/cargo-install@v2
+        with:
+          crate: bencher
+          git: https://github.com/bencherdev/bencher
       - run: sudo apt-get install -y valgrind
       - run: bencher run --if-branch "$GITHUB_REF_NAME" --else-if-branch "$GITHUB_BASE_REF" --else-if-branch main --err --github-actions ${{ secrets.GITHUB_TOKEN }} --ci-only-on-alert "cargo bench"
