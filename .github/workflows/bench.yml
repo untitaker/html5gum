@@ -20,6 +20,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - uses: bencherdev/bencher@v0.3.5
+      - uses: bencherdev/bencher@main
       - run: sudo apt-get install -y valgrind
-      - run: bencher run --if-branch "$GITHUB_REF_NAME" --else-if-branch "$GITHUB_BASE_REF" --else-if-branch main --err "cargo bench"
+      - run: bencher run --if-branch "$GITHUB_REF_NAME" --else-if-branch "$GITHUB_BASE_REF" --else-if-branch main --err --github-actions --ci-only-on-alert "cargo bench"
