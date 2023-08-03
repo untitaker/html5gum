@@ -22,4 +22,4 @@ jobs:
           toolchain: stable
       - uses: bencherdev/bencher@main
       - run: sudo apt-get install -y valgrind
-      - run: bencher run --if-branch "$GITHUB_REF_NAME" --else-if-branch "$GITHUB_BASE_REF" --else-if-branch main --err --github-actions --ci-only-on-alert "cargo bench"
+      - run: bencher run --if-branch "$GITHUB_REF_NAME" --else-if-branch "$GITHUB_BASE_REF" --else-if-branch main --err --github-actions ${{ secrets.GITHUB_TOKEN }} --ci-only-on-alert "cargo bench"
