@@ -160,6 +160,9 @@ pub(crate) use mutate_character_reference;
 macro_rules! emit_current_tag_and_switch_to {
     ($slf:expr, $state:ident) => {{
         let state = $slf.emitter.emit_current_tag().map(Into::into);
+        if state.is_some() {
+            crate::utils::trace_log!("emitter asked for state switch:");
+        }
         $slf.machine_helper
             .switch_to(state.unwrap_or($crate::machine_helper::state_ref!($state)));
         Ok(ControlToken::Continue)

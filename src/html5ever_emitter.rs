@@ -33,34 +33,31 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
     }
 
     fn pop_token_inner(&mut self) {
-        let token = match self.emitter_inner.pop_token() {
-            Some(x) => x,
-            None => return,
-        };
-
-        match self
-            .sink
-            .process_token(token_to_html5ever(token), BOGUS_LINENO)
-        {
-            TokenSinkResult::Continue => {}
-            TokenSinkResult::Script(_) => {
-                self.next_state = Some(State::Data);
-                // TODO: suspend tokenizer for script
-            }
-            TokenSinkResult::Plaintext => {
-                self.next_state = Some(State::PlainText);
-            }
-            TokenSinkResult::RawData(RawKind::Rcdata) => {
-                self.next_state = Some(State::RcData);
-            }
-            TokenSinkResult::RawData(RawKind::Rawtext) => {
-                self.next_state = Some(State::RawText);
-            }
-            TokenSinkResult::RawData(RawKind::ScriptData) => {
-                self.next_state = Some(State::ScriptData);
-            }
-            TokenSinkResult::RawData(RawKind::ScriptDataEscaped(_)) => {
-                todo!()
+        while let Some(token) = self.emitter_inner.pop_token() {
+            match self
+                .sink
+                .process_token(token_to_html5ever(token), BOGUS_LINENO)
+            {
+                TokenSinkResult::Continue => {}
+                TokenSinkResult::Script(_) => {
+                    self.next_state = Some(State::Data);
+                    // TODO: suspend tokenizer for script
+                }
+                TokenSinkResult::Plaintext => {
+                    self.next_state = Some(State::PlainText);
+                }
+                TokenSinkResult::RawData(RawKind::Rcdata) => {
+                    self.next_state = Some(State::RcData);
+                }
+                TokenSinkResult::RawData(RawKind::Rawtext) => {
+                    self.next_state = Some(State::RawText);
+                }
+                TokenSinkResult::RawData(RawKind::ScriptData) => {
+                    self.next_state = Some(State::ScriptData);
+                }
+                TokenSinkResult::RawData(RawKind::ScriptDataEscaped(_)) => {
+                    todo!()
+                }
             }
         }
     }
@@ -93,18 +90,22 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
 
     fn emit_string(&mut self, c: &[u8]) {
         self.emitter_inner.emit_string(c);
+        self.pop_token_inner();
     }
 
     fn init_start_tag(&mut self) {
         self.emitter_inner.init_start_tag();
+        self.pop_token_inner();
     }
 
     fn init_end_tag(&mut self) {
         self.emitter_inner.init_end_tag();
+        self.pop_token_inner();
     }
 
     fn init_comment(&mut self) {
         self.emitter_inner.init_comment();
+        self.pop_token_inner();
     }
 
     fn emit_current_tag(&mut self) -> Option<State> {
@@ -145,6 +146,7 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
 
     fn init_doctype(&mut self) {
         self.emitter_inner.init_doctype();
+        self.pop_token_inner();
     }
 
     fn init_attribute(&mut self) {
