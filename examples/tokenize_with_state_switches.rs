@@ -19,7 +19,7 @@ use html5gum::{DefaultEmitter, IoReader, Tokenizer};
 
 fn main() {
     let mut emitter = DefaultEmitter::default();
-    emitter.switch_states(true);
+    emitter.naively_switch_states(true);
 
     let reader = IoReader::new(std::io::stdin().lock());
 
