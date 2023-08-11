@@ -59,6 +59,50 @@ impl AsRef<[u8]> for HtmlString {
     }
 }
 
+impl<const N: usize> PartialEq<&[u8; N]> for HtmlString {
+    fn eq(&self, other: &&[u8; N]) -> bool {
+        self.0 == *other
+    }
+}
+
+impl<const N: usize> PartialEq<HtmlString> for &[u8; N] {
+    fn eq(&self, other: &HtmlString) -> bool {
+        other.0 == *self
+    }
+}
+
+impl PartialEq<&[u8]> for HtmlString {
+    fn eq(&self, other: &&[u8]) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<HtmlString> for &[u8] {
+    fn eq(&self, other: &HtmlString) -> bool {
+        *self == other.0
+    }
+}
+
+#[test]
+fn test_eq_html_str_and_byte_literal() {
+    assert!(HtmlString(b"hello world".to_vec()) == b"hello world");
+}
+
+#[test]
+fn test_eq_byte_literal_and_html_str() {
+    assert!(b"hello world" == HtmlString(b"hello world".to_vec()));
+}
+
+#[test]
+fn test_eq_html_str_and_byte_slice() {
+    assert!(HtmlString(b"hello world".to_vec()) == b"hello world".as_slice());
+}
+
+#[test]
+fn test_eq_byte_slice_and_html_str() {
+    assert!(b"hello world".as_slice() == HtmlString(b"hello world".to_vec()));
+}
+
 #[test]
 fn test_borrowing() {
     // demonstrate a usecase for Borrow/BorrowMut
