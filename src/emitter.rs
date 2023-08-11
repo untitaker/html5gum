@@ -53,6 +53,12 @@ impl BorrowMut<[u8]> for HtmlString {
     }
 }
 
+impl AsRef<[u8]> for HtmlString {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 #[test]
 fn test_borrowing() {
     // demonstrate a usecase for Borrow/BorrowMut
