@@ -48,7 +48,7 @@ test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer). S
 * `html5gum` doesn't implement the DOM, and unfortunately in the HTML spec,
   constructing the DOM ("tree construction") influences how tokenization is
   done. For an example of which problems this causes see [this example
-  code](./examples/tokenize_with_state_switches.rs).
+  code][examples/tokenize_with_state_switches.rs].
 * `html5gum` **does not** generally qualify as a browser-grade HTML *parser* as
   per the WHATWG spec. This can change in the future, see [issue
   21](https://github.com/untitaker/html5gum/issues/21).
@@ -69,7 +69,7 @@ This allows you to:
   you, you can implement the respective trait methods as noop and therefore
   avoid any overhead creating plaintext tokens.
 
-See [the `custom_emitter` example](./examples/custom_emitter.rs) for how this
+See [the `custom_emitter` example][examples/custom_emitter.rs] for how this
 looks like in practice.
 
 ## Other features
@@ -109,4 +109,10 @@ Why is this library called `html5gum`?
 
 ## License
 
-Licensed under the MIT license, see [`./LICENSE`](./LICENSE).
+Licensed under the MIT license, see [`./LICENSE`][LICENSE].
+
+
+<!-- These link destinations are defined like this so that src/lib.rs can override them. -->
+[LICENSE]: ./LICENSE
+[examples/tokenize_with_state_switches.rs]: ./examples/tokenize_with_state_switches.rs
+[examples/custom_emitter.rs]: ./examples/custom_emitter.rs
