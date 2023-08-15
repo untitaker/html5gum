@@ -6,6 +6,7 @@
 #![doc = concat!("[LICENSE]: ", blob_url_prefix!(), "LICENSE")]
 #![doc = concat!("[examples/tokenize_with_state_switches.rs]: ", blob_url_prefix!(), "examples/tokenize_with_state_switches.rs")]
 #![doc = concat!("[examples/custom_emitter.rs]: ", blob_url_prefix!(), "examples/custom_emitter.rs")]
+#![doc = concat!("[src/machine.rs]: ", blob_url_prefix!(), "src/machine.rs")]
 #![doc = include_str!("../README.md")]
 //
 #![warn(clippy::all)]
