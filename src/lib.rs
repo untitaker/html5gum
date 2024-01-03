@@ -37,6 +37,8 @@ mod char_validator;
 mod emitter;
 mod entities;
 mod error;
+#[cfg(feature = "html5ever")]
+mod html5ever_emitter;
 mod machine;
 mod machine_helper;
 mod read_helper;
@@ -46,6 +48,7 @@ mod tokenizer;
 mod utils;
 
 #[cfg(debug_assertions)]
+#[doc(hidden)]
 pub mod testutils;
 
 pub use emitter::{
@@ -55,3 +58,6 @@ pub use error::Error;
 pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use state::State;
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};
+
+#[cfg(feature = "html5ever")]
+pub use html5ever_emitter::Html5everEmitter;
