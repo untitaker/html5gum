@@ -103,7 +103,7 @@ looks like in practice.
 
 Why is this library called `html5gum`?
 
-* G.U.M: **G**iant **U**nreadable **M**atch-statement
+* G.U.M: [**G**iant **U**nreadable **M**achine][src/machine.rs]
 
 * \<insert "how it feels to <s>chew 5 gum</s> _parse HTML_" meme here\>
 
@@ -116,3 +116,4 @@ Licensed under the MIT license, see [`./LICENSE`][LICENSE].
 [LICENSE]: ./LICENSE
 [examples/tokenize_with_state_switches.rs]: ./examples/tokenize_with_state_switches.rs
 [examples/custom_emitter.rs]: ./examples/custom_emitter.rs
+[src/machine.rs]: ./src/machine.rs
