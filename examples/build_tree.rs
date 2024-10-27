@@ -64,9 +64,12 @@ fn main() {
 
     walk(0, &rcdom.document);
 
-    if !rcdom.errors.is_empty() {
+    let errors = rcdom.errors.borrow();
+
+    if !errors.is_empty() {
         println!("\nParse errors:");
-        for err in rcdom.errors.iter() {
+
+        for err in errors.iter() {
             println!("    {}", err);
         }
     }
