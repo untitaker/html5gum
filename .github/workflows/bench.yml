@@ -8,6 +8,7 @@ on:
 
 jobs:
   benchmark:
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     name: Benchmark
     runs-on: ubuntu-latest
     env:
@@ -20,6 +21,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - uses: bencherdev/bencher@v0.3.5
+      - uses: baptiste0928/cargo-install@v2
+        with:
+          crate: bencher_cli
+          git: https://github.com/bencherdev/bencher
+          ref: f6832c1c
       - run: sudo apt-get install -y valgrind
-      - run: bencher run --if-branch "$GITHUB_REF_NAME" --else-if-branch "$GITHUB_BASE_REF" --else-if-branch main --err "cargo bench"
+      - run: bencher run --if-branch "$GITHUB_REF_NAME" --else-if-branch "$GITHUB_BASE_REF" --else-if-branch main --err --github-actions ${{ secrets.GITHUB_TOKEN }} --ci-only-thresholds --ci-only-on-alert "cargo bench"

@@ -53,6 +53,56 @@ impl BorrowMut<[u8]> for HtmlString {
     }
 }
 
+impl AsRef<[u8]> for HtmlString {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl<const N: usize> PartialEq<&[u8; N]> for HtmlString {
+    fn eq(&self, other: &&[u8; N]) -> bool {
+        self.0 == *other
+    }
+}
+
+impl<const N: usize> PartialEq<HtmlString> for &[u8; N] {
+    fn eq(&self, other: &HtmlString) -> bool {
+        other.0 == *self
+    }
+}
+
+impl PartialEq<&[u8]> for HtmlString {
+    fn eq(&self, other: &&[u8]) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<HtmlString> for &[u8] {
+    fn eq(&self, other: &HtmlString) -> bool {
+        *self == other.0
+    }
+}
+
+#[test]
+fn test_eq_html_str_and_byte_literal() {
+    assert!(HtmlString(b"hello world".to_vec()) == b"hello world");
+}
+
+#[test]
+fn test_eq_byte_literal_and_html_str() {
+    assert!(b"hello world" == HtmlString(b"hello world".to_vec()));
+}
+
+#[test]
+fn test_eq_html_str_and_byte_slice() {
+    assert!(HtmlString(b"hello world".to_vec()) == b"hello world".as_slice());
+}
+
+#[test]
+fn test_eq_byte_slice_and_html_str() {
+    assert!(b"hello world".as_slice() == HtmlString(b"hello world".to_vec()));
+}
+
 #[test]
 fn test_borrowing() {
     // demonstrate a usecase for Borrow/BorrowMut
@@ -309,15 +359,15 @@ pub struct DefaultEmitter {
     current_attribute: Option<(HtmlString, HtmlString)>,
     seen_attributes: BTreeSet<HtmlString>,
     emitted_tokens: VecDeque<Token>,
-    switch_states: bool,
+    naively_switch_states: bool,
 }
 
 impl DefaultEmitter {
     /// Whether to use [`naive_next_state`] to switch states automatically.
     ///
     /// The default is off.
-    pub fn switch_states(&mut self, yes: bool) {
-        self.switch_states = yes;
+    pub fn naively_switch_states(&mut self, yes: bool) {
+        self.naively_switch_states = yes;
     }
 
     fn emit_token(&mut self, token: Token) {
@@ -418,7 +468,7 @@ impl Emitter for DefaultEmitter {
             _ => debug_assert!(false),
         }
         self.emit_token(token);
-        if self.switch_states {
+        if self.naively_switch_states {
             naive_next_state(&self.last_start_tag)
         } else {
             None
