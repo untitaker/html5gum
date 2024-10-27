@@ -2,7 +2,7 @@
 /// building logic and DOM implementation. The result is a technically complete HTML5 parser.
 ///
 /// The ergonomics of this aren't great. This kind of thing is only there to showcase how emitters
-/// are basically equivalent to html5ever's `TokenSink`. 
+/// are basically equivalent to html5ever's `TokenSink`.
 use std::iter::repeat;
 
 use html5ever::tree_builder::TreeBuilder;

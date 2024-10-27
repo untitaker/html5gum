@@ -1,6 +1,17 @@
+// A lot of this test harness has been copied from html5ever.
+//
+// Copyright 2014-2017 The html5ever Project Developers. See the
+// COPYRIGHT file at the top-level directory of this distribution.
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
 use std::{
     fs::File,
     io::{BufRead, BufReader},
+    iter::repeat,
     path::Path,
 };
 
@@ -8,8 +19,10 @@ use glob::glob;
 use libtest_mimic::{self, Arguments, Trial};
 
 use html5ever::tree_builder::TreeBuilder;
+use html5ever::{namespace_url, ns};
 use html5gum::{testutils::trace_log, Html5everEmitter, Tokenizer};
-use markup5ever_rcdom::RcDom;
+use markup5ever_rcdom::{Handle, NodeData, RcDom};
+use pretty_assertions::assert_eq;
 
 mod testutils;
 
@@ -117,10 +130,102 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
                     result.unwrap();
                 }
 
-                let _rcdom = tree_builder.sink;
-                // TODO: actually validate the rcdom output
+                let rcdom = tree_builder.sink;
+                let mut stringified_result = String::new();
+                for child in rcdom.document.children.borrow().iter() {
+                    serialize(&mut stringified_result, 1, child.clone());
+                }
+
+                assert_eq!(stringified_result, testcase.document.unwrap());
             })
         }));
+    }
+}
+
+fn serialize(buf: &mut String, indent: usize, handle: Handle) {
+    buf.push_str("|");
+    buf.push_str(&repeat(" ").take(indent).collect::<String>());
+
+    let node = handle;
+    match node.data {
+        NodeData::Document => panic!("should not reach Document"),
+
+        NodeData::Doctype {
+            ref name,
+            ref public_id,
+            ref system_id,
+        } => {
+            buf.push_str("<!DOCTYPE ");
+            buf.push_str(&name);
+            if !public_id.is_empty() || !system_id.is_empty() {
+                buf.push_str(&format!(" \"{}\" \"{}\"", public_id, system_id));
+            }
+            buf.push_str(">\n");
+        }
+
+        NodeData::Text { ref contents } => {
+            buf.push_str("\"");
+            buf.push_str(&contents.borrow());
+            buf.push_str("\"\n");
+        }
+
+        NodeData::Comment { ref contents } => {
+            buf.push_str("<!-- ");
+            buf.push_str(&contents);
+            buf.push_str(" -->\n");
+        }
+
+        NodeData::Element {
+            ref name,
+            ref attrs,
+            ..
+        } => {
+            buf.push_str("<");
+            match name.ns {
+                ns!(svg) => buf.push_str("svg "),
+                ns!(mathml) => buf.push_str("math "),
+                _ => (),
+            }
+            buf.push_str(&*name.local);
+            buf.push_str(">\n");
+
+            let mut attrs = attrs.borrow().clone();
+            attrs.sort_by(|x, y| x.name.local.cmp(&y.name.local));
+            // FIXME: sort by UTF-16 code unit
+
+            for attr in attrs.into_iter() {
+                buf.push_str("|");
+                buf.push_str(&repeat(" ").take(indent + 2).collect::<String>());
+                match attr.name.ns {
+                    ns!(xlink) => buf.push_str("xlink "),
+                    ns!(xml) => buf.push_str("xml "),
+                    ns!(xmlns) => buf.push_str("xmlns "),
+                    _ => (),
+                }
+                buf.push_str(&format!("{}=\"{}\"\n", attr.name.local, attr.value));
+            }
+        }
+
+        NodeData::ProcessingInstruction { .. } => unreachable!(),
+    }
+
+    for child in node.children.borrow().iter() {
+        serialize(buf, indent + 2, child.clone());
+    }
+
+    if let NodeData::Element {
+        ref template_contents,
+        ..
+    } = node.data
+    {
+        if let Some(ref content) = &*template_contents.borrow() {
+            buf.push_str("|");
+            buf.push_str(&repeat(" ").take(indent + 2).collect::<String>());
+            buf.push_str("content\n");
+            for child in content.children.borrow().iter() {
+                serialize(buf, indent + 4, child.clone());
+            }
+        }
     }
 }
 
