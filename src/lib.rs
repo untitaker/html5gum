@@ -32,6 +32,9 @@ macro_rules! blob_url_prefix {
     };
 }
 
+// miraculously makes warnings disappear as blob_url_prefix is used in #![doc]
+use blob_url_prefix;
+
 mod arrayvec;
 mod char_validator;
 mod emitter;

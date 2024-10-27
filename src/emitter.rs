@@ -165,7 +165,7 @@ pub trait Emitter {
     /// Whether this emitter cares about errors at all.
     ///
     /// If your implementation of `emit_error` is a noop, you can override this function to return
-    /// `false` and decorate it with #[inline] to aid the compiler in optimizing out more dead
+    /// `false` and decorate it with `#[inline]` to aid the compiler in optimizing out more dead
     /// code.
     ///
     /// This method should return the same value at all times. Returning different values on each
