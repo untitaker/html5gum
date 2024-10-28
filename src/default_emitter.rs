@@ -1,3 +1,4 @@
+use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 use std::mem::take;
 
@@ -22,14 +23,24 @@ impl Callback<Token> for OurCallback {
             }
             CallbackEvent::AttributeName { name } => {
                 self.attribute_name.clear();
-                self.attribute_name.extend(name);
-                self.attribute_map.insert(name.to_owned().into(), Default::default()).map(|_| Token::Error(Error::DuplicateAttribute))
+                match self.attribute_map.entry(name.to_owned().into()) {
+                    Entry::Occupied(_) => {
+                        Some(Token::Error(Error::DuplicateAttribute))
+                    }
+                    Entry::Vacant(vacant) => {
+                        self.attribute_name.extend(name);
+                        vacant.insert(Default::default());
+                        None
+                    }
+                }
             }
             CallbackEvent::AttributeValue { value } => {
-                self.attribute_map
-                    .get_mut(&self.attribute_name)
-                    .unwrap()
-                    .extend(value);
+                if !self.attribute_name.is_empty() {
+                    self.attribute_map
+                        .get_mut(&self.attribute_name)
+                        .unwrap()
+                        .extend(value);
+                }
                 None
             }
             CallbackEvent::CloseStartTag { self_closing } => Some(Token::StartTag(StartTag {
