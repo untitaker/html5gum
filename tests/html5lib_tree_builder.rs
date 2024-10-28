@@ -175,9 +175,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
                 tokenizer.set_state(state);
             }
 
-            for result in tokenizer {
-                result.unwrap();
-            }
+            tokenizer.finish().unwrap();
 
             let rcdom = tree_builder.sink;
             let mut actual = String::new();
