@@ -18,7 +18,7 @@ use std::{
 use glob::glob;
 use libtest_mimic::{self, Arguments, Trial};
 
-use html5ever::tree_builder::TreeBuilder;
+use html5ever::tree_builder::{TreeBuilder, TreeBuilderOpts};
 use html5ever::{namespace_url, ns};
 use html5gum::{testutils::trace_log, Html5everEmitter, Tokenizer};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
@@ -26,7 +26,7 @@ use pretty_assertions::assert_eq;
 
 mod testutils;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 struct Testcase {
     data: String,
     errors: Option<String>,
@@ -110,36 +110,49 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
             continue;
         }
 
-        if testcase.script_on.is_some() {
-            // TODO
-            continue;
+        // if script_on is not explicitly provided, it's ok to run this test with scripting
+        // disabled
+        if testcase.script_on.is_none() {
+            tests.push(build_test(testcase.clone(), fname, i, false));
         }
 
-        tests.push(Trial::test(format!("{}:{}", fname, i), move || {
-            testutils::catch_unwind_and_report(move || {
-                trace_log(&format!("{:#?}", testcase));
-                let rcdom = RcDom::default();
-                let mut tree_builder = TreeBuilder::new(rcdom, Default::default());
-                let token_emitter = Html5everEmitter::new(&mut tree_builder);
-
-                let input = testcase.data.trim_end_matches('\n');
-
-                let tokenizer = Tokenizer::new_with_emitter(input, token_emitter);
-
-                for result in tokenizer {
-                    result.unwrap();
-                }
-
-                let rcdom = tree_builder.sink;
-                let mut stringified_result = String::new();
-                for child in rcdom.document.children.borrow().iter() {
-                    serialize(&mut stringified_result, 1, child.clone());
-                }
-
-                assert_eq!(stringified_result, testcase.document.unwrap());
-            })
-        }));
+        // if script_off is not explicitly provided, it's ok to run this test with scripting
+        // enabled
+        if testcase.script_off.is_none() {
+            tests.push(build_test(testcase, fname, i, true));
+        }
     }
+}
+
+fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Trial {
+    let scripting_text = if scripting { "yesscript" } else { "noscript" };
+    Trial::test(format!("{}:{}:{scripting_text}", fname, i), move || {
+        testutils::catch_unwind_and_report(move || {
+            trace_log(&format!("{:#?}", testcase));
+            let rcdom = RcDom::default();
+            let mut opts = TreeBuilderOpts::default();
+            opts.scripting_enabled = scripting;
+
+            let mut tree_builder = TreeBuilder::new(rcdom, opts);
+            let token_emitter = Html5everEmitter::new(&mut tree_builder);
+
+            let input = testcase.data.trim_end_matches('\n');
+
+            let tokenizer = Tokenizer::new_with_emitter(input, token_emitter);
+
+            for result in tokenizer {
+                result.unwrap();
+            }
+
+            let rcdom = tree_builder.sink;
+            let mut stringified_result = String::new();
+            for child in rcdom.document.children.borrow().iter() {
+                serialize(&mut stringified_result, 1, child.clone());
+            }
+
+            assert_eq!(stringified_result, testcase.document.unwrap());
+        })
+    })
 }
 
 fn serialize(buf: &mut String, indent: usize, handle: Handle) {
