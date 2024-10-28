@@ -23,9 +23,7 @@ impl Callback<Token> for OurCallback {
             CallbackEvent::AttributeName { name } => {
                 self.attribute_name.clear();
                 self.attribute_name.extend(name);
-                self.attribute_map
-                    .insert(name.to_owned().into(), Default::default());
-                None
+                self.attribute_map.insert(name.to_owned().into(), Default::default()).map(|_| Token::Error(Error::DuplicateAttribute))
             }
             CallbackEvent::AttributeValue { value } => {
                 self.attribute_map
