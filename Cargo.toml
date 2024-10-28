@@ -60,6 +60,12 @@ name = "build_tree"
 required-features = ["tree-builder"]
 
 [[example]]
+name = "custom_emitter"
+
+[[example]]
+name = "callback_emitter"
+
+[[example]]
 name = "scraper"
 required-features = ["tree-builder"]
 
