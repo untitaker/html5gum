@@ -224,7 +224,7 @@ fn serialize(buf: &mut String, indent: usize, handle: Handle) {
         NodeData::Text { ref contents } => {
             buf.push('"');
             buf.push_str(&contents.borrow());
-            buf.push('\n');
+            buf.push_str("\"\n");
         }
 
         NodeData::Comment { ref contents } => {
