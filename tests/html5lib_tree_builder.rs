@@ -146,7 +146,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
     Trial::test(format!("{}:{}:{scripting_text}", fname, i), move || {
         testutils::catch_unwind_and_report(move || {
             trace_log(&format!("{:#?}", testcase));
-            let rcdom = RcDom::default();
+            let mut rcdom = RcDom::default();
             let opts = TreeBuilderOpts {
                 scripting_enabled: scripting,
                 ..Default::default()
@@ -157,7 +157,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
             if let Some(ref frag) = testcase.document_fragment {
                 let frag = frag.trim_end_matches('\n');
                 let context_name = context_name(frag);
-                let context_element = create_element(&rcdom, context_name, Vec::new());
+                let context_element = create_element(&mut rcdom, context_name, Vec::new());
                 tree_builder = TreeBuilder::new_for_fragment(rcdom, context_element, None, opts);
                 initial_state = Some(map_tokenizer_state(
                     tree_builder.tokenizer_state_for_context_elem(),

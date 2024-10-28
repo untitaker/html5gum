@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use crate::{DefaultEmitter, Emitter, Error, State, Token};
 use html5ever::tokenizer::states::RawKind;
 use html5ever::tokenizer::{
@@ -10,10 +12,7 @@ const BOGUS_LINENO: u64 = 1;
 /// A compatibility layer that allows you to plug the TreeBuilder from html5ever into the tokenizer
 /// from html5gum.
 ///
-/// This code is experimental, it's not really clear whether it will stick around for v1.0. For now
-/// it is just there for demonstration purposes and for running testsuites.
-///
-/// See [`examples/build_tree.rs`] for usage.
+/// See [`examples/scraper.rs`] for usage.
 #[derive(Debug)]
 pub struct Html5everEmitter<'a, S: TokenSink> {
     next_state: Option<State>,
@@ -36,10 +35,7 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
         while let Some(token) = self.emitter_inner.pop_token() {
             token_to_html5ever(token, |token| {
                 crate::utils::trace_log!("tree builder token: {:?}", token);
-                match self
-                    .sink
-                    .process_token(token, BOGUS_LINENO)
-                {
+                match self.sink.process_token(token, BOGUS_LINENO) {
                     TokenSinkResult::Continue => {}
                     TokenSinkResult::Script(_) => {
                         if self.next_state.is_some() {
@@ -82,7 +78,7 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
 }
 
 impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
-    type Token = ();
+    type Token = Infallible;
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
         self.emitter_inner.set_last_start_tag(last_start_tag)
@@ -102,7 +98,7 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
         self.pop_token_inner();
     }
 
-    fn pop_token(&mut self) -> Option<()> {
+    fn pop_token(&mut self) -> Option<Infallible> {
         None
     }
 
@@ -242,9 +238,9 @@ fn token_to_html5ever(token: Token, mut foreach_fn: impl FnMut(Html5everToken)) 
                 foreach_fn(Html5everToken::CharacterTokens(part.to_owned().into()));
             }
         }
-        Token::Comment(c) => {
-            foreach_fn(Html5everToken::CommentToken(String::from_utf8_lossy(&c).into_owned().into()))
-        }
+        Token::Comment(c) => foreach_fn(Html5everToken::CommentToken(
+            String::from_utf8_lossy(&c).into_owned().into(),
+        )),
         Token::Doctype(doctype) => foreach_fn(Html5everToken::DoctypeToken(Doctype {
             name: Some(&*doctype.name)
                 .filter(|x| !x.is_empty())

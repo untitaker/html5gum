@@ -3,10 +3,8 @@ use std::convert::Infallible;
 use crate::char_validator::CharValidator;
 use crate::machine_helper::{ControlToken, MachineHelper};
 use crate::read_helper::ReadHelper;
-use crate::{DefaultEmitter, Emitter, Readable, Reader};
-
-#[cfg(debug_assertions)]
 use crate::State;
+use crate::{DefaultEmitter, Emitter, Readable, Reader};
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
 #[derive(Debug)]
@@ -57,6 +55,26 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     pub fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
         self.emitter
             .set_last_start_tag(last_start_tag.map(str::as_bytes));
+    }
+}
+
+impl<R: Reader, E: Emitter<Token = Infallible>> Tokenizer<R, E> {
+    /// Some emitters don't ever produce any tokens and instead have other side effects. In those
+    /// cases, you will find yourself writing code like this to handle errors:
+    ///
+    /// ```norun
+    /// for _ in tokenizer {
+    ///     result.unwrap();
+    /// }
+    /// ```
+    ///
+    /// This is a bit silly, so instead you can use `tokenizer.finish()`.
+    pub fn finish(self) -> Result<(), R::Error> {
+        for result in self {
+            result?;
+        }
+
+        Ok(())
     }
 }
 

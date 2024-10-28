@@ -1,8 +1,7 @@
-/// Using the experimental `html5ever` feature, plug html5gum's tokenizer into html5ever's tree
+/// Using the `tree-builder` feature, plug html5gum's tokenizer into html5ever's tree
 /// building logic and DOM implementation. The result is a technically complete HTML5 parser.
 ///
-/// The ergonomics of this aren't great. This kind of thing is only there to showcase how emitters
-/// are basically equivalent to html5ever's `TokenSink`.
+/// You may want to refer to `examples/scraper.rs` for better ergonomics.
 use std::iter::repeat;
 
 use html5ever::tree_builder::TreeBuilder;
@@ -56,15 +55,13 @@ fn main() {
     let tokenizer =
         Tokenizer::new_with_emitter(IoReader::new(std::io::stdin().lock()), token_emitter);
 
-    for result in tokenizer {
-        result.unwrap();
-    }
+    tokenizer.finish().unwrap();
 
     let rcdom = tree_builder.sink;
 
     walk(0, &rcdom.document);
 
-    let errors = rcdom.errors.borrow();
+    let errors = rcdom.errors;
 
     if !errors.is_empty() {
         println!("\nParse errors:");
