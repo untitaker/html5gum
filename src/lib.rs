@@ -43,6 +43,7 @@ mod entities;
 mod error;
 #[cfg(feature = "html5ever")]
 mod html5ever_emitter;
+mod htmlstring;
 mod machine;
 mod machine_helper;
 mod read_helper;
@@ -57,9 +58,10 @@ pub mod testutils;
 
 pub use callback_emitter::{CallbackEmitter, CallbackEvent};
 pub use emitter::{
-    naive_next_state, DefaultEmitter, Doctype, Emitter, EndTag, HtmlString, StartTag, Token,
+    naive_next_state, DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token,
 };
 pub use error::Error;
+pub use htmlstring::HtmlString;
 pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use state::State;
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};
