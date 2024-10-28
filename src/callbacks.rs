@@ -292,17 +292,6 @@ where
         });
         self.emitter_state.current_characters.clear();
     }
-
-    fn flush_current_comment(&mut self) {
-        if self.emitter_state.current_comment.is_empty() {
-            return;
-        }
-
-        self.callback_state.emit_event(CallbackEvent::Comment {
-            value: &self.emitter_state.current_comment,
-        });
-        self.emitter_state.current_comment.clear();
-    }
 }
 impl<F, T> Emitter for CallbackEmitter<F, T>
 where
@@ -319,7 +308,6 @@ where
 
     fn emit_eof(&mut self) {
         self.flush_current_characters();
-        self.flush_current_comment();
     }
 
     fn emit_error(&mut self, error: Error) {
@@ -355,7 +343,6 @@ where
     fn emit_current_tag(&mut self) -> Option<State> {
         self.flush_attribute();
         self.flush_current_characters();
-        self.flush_current_comment();
         match self.emitter_state.current_tag_type {
             Some(CurrentTag::Start) => {
                 self.emitter_state.last_start_tag.clear();
@@ -436,6 +423,7 @@ where
     }
 
     fn init_doctype(&mut self) {
+        self.flush_current_characters();
         self.emitter_state.doctype_name.clear();
         self.emitter_state.doctype_has_public_identifier = false;
         self.emitter_state.doctype_has_system_identifier = false;
