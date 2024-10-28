@@ -275,7 +275,6 @@ where
             self.callback_state.emit_event(CallbackEvent::OpenStartTag {
                 name: &self.emitter_state.current_tag_name,
             });
-            self.emitter_state.current_tag_name.clear();
         }
     }
 
@@ -357,6 +356,9 @@ where
         match self.emitter_state.current_tag_type {
             Some(CurrentTag::Start) => {
                 self.emitter_state.last_start_tag.clear();
+                self.emitter_state
+                    .last_start_tag
+                    .extend(&self.emitter_state.current_tag_name);
                 self.callback_state
                     .emit_event(CallbackEvent::CloseStartTag {
                         self_closing: self.emitter_state.current_tag_self_closing,
@@ -367,9 +369,6 @@ where
                     self.emit_error(Error::EndTagWithAttributes);
                 }
                 self.emitter_state.last_start_tag.clear();
-                self.emitter_state
-                    .last_start_tag
-                    .extend(&self.emitter_state.current_tag_name);
                 self.callback_state.emit_event(CallbackEvent::EndTag {
                     name: &self.emitter_state.current_tag_name,
                 });
@@ -475,13 +474,17 @@ where
 
     fn current_is_appropriate_end_tag_token(&mut self) -> bool {
         if self.emitter_state.last_start_tag.is_empty() {
+            crate::utils::trace_log!("current_is_appropriate_end_tag_token: no, because last_start_tag is empty");
             return false;
         }
 
         if !matches!(self.emitter_state.current_tag_type, Some(CurrentTag::End)) {
+            crate::utils::trace_log!("current_is_appropriate_end_tag_token: no, because current_tag_type is not end");
             return false;
         }
 
+        crate::utils::trace_log!("last_start_tag = {:?}", self.emitter_state.last_start_tag);
+        crate::utils::trace_log!("current_tag = {:?}", self.emitter_state.current_tag_name);
         self.emitter_state.last_start_tag == self.emitter_state.current_tag_name
     }
 }
