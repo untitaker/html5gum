@@ -412,9 +412,7 @@ pub(crate) mod states {
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
-                    slf.machine_helper
-                        .temporary_buffer
-                        .push(x);
+                    slf.machine_helper.temporary_buffer.push(x);
                     cont!()
                 }
                 c => {
