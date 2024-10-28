@@ -11,7 +11,6 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader},
-    iter::repeat,
     path::Path,
 };
 
@@ -148,8 +147,10 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
         testutils::catch_unwind_and_report(move || {
             trace_log(&format!("{:#?}", testcase));
             let rcdom = RcDom::default();
-            let mut opts = TreeBuilderOpts::default();
-            opts.scripting_enabled = scripting;
+            let opts = TreeBuilderOpts {
+                scripting_enabled: scripting,
+                ..Default::default()
+            };
             let initial_state;
             let mut tree_builder;
 
@@ -181,14 +182,13 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
             let rcdom = tree_builder.sink;
             let mut actual = String::new();
             let root = rcdom.document.children.borrow();
-            let root2;
-            if testcase.document_fragment.is_some() {
+            let root2 = if testcase.document_fragment.is_some() {
                 // fragment case: serialize children of the html element
                 // rather than children of the document
-                root2 = root[0].children.borrow();
+                root[0].children.borrow()
             } else {
-                root2 = root;
-            }
+                root
+            };
 
             for child in root2.iter() {
                 serialize(&mut actual, 1, child.clone());
@@ -201,8 +201,8 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
 }
 
 fn serialize(buf: &mut String, indent: usize, handle: Handle) {
-    buf.push_str("|");
-    buf.push_str(&repeat(" ").take(indent).collect::<String>());
+    buf.push('|');
+    buf.push_str(" ".repeat(indent).as_str());
 
     let node = handle;
     match node.data {
@@ -214,7 +214,7 @@ fn serialize(buf: &mut String, indent: usize, handle: Handle) {
             ref system_id,
         } => {
             buf.push_str("<!DOCTYPE ");
-            buf.push_str(&name);
+            buf.push_str(name);
             if !public_id.is_empty() || !system_id.is_empty() {
                 buf.push_str(&format!(" \"{}\" \"{}\"", public_id, system_id));
             }
@@ -222,14 +222,14 @@ fn serialize(buf: &mut String, indent: usize, handle: Handle) {
         }
 
         NodeData::Text { ref contents } => {
-            buf.push_str("\"");
+            buf.push('"');
             buf.push_str(&contents.borrow());
-            buf.push_str("\"\n");
+            buf.push('\n');
         }
 
         NodeData::Comment { ref contents } => {
             buf.push_str("<!-- ");
-            buf.push_str(&contents);
+            buf.push_str(contents);
             buf.push_str(" -->\n");
         }
 
@@ -238,13 +238,13 @@ fn serialize(buf: &mut String, indent: usize, handle: Handle) {
             ref attrs,
             ..
         } => {
-            buf.push_str("<");
+            buf.push('<');
             match name.ns {
                 ns!(svg) => buf.push_str("svg "),
                 ns!(mathml) => buf.push_str("math "),
                 _ => (),
             }
-            buf.push_str(&*name.local);
+            buf.push_str(&name.local);
             buf.push_str(">\n");
 
             let mut attrs = attrs.borrow().clone();
@@ -252,8 +252,8 @@ fn serialize(buf: &mut String, indent: usize, handle: Handle) {
             // FIXME: sort by UTF-16 code unit
 
             for attr in attrs.into_iter() {
-                buf.push_str("|");
-                buf.push_str(&repeat(" ").take(indent + 2).collect::<String>());
+                buf.push('|');
+                buf.push_str(" ".repeat(indent + 2).as_str());
                 match attr.name.ns {
                     ns!(xlink) => buf.push_str("xlink "),
                     ns!(xml) => buf.push_str("xml "),
@@ -277,8 +277,8 @@ fn serialize(buf: &mut String, indent: usize, handle: Handle) {
     } = node.data
     {
         if let Some(ref content) = &*template_contents.borrow() {
-            buf.push_str("|");
-            buf.push_str(&repeat(" ").take(indent + 2).collect::<String>());
+            buf.push('|');
+            buf.push_str(" ".repeat(indent + 2).as_str());
             buf.push_str("content\n");
             for child in content.children.borrow().iter() {
                 serialize(buf, indent + 4, child.clone());

@@ -192,7 +192,7 @@ fn token_to_html5ever(token: Token) -> Html5everToken {
     match token {
         Token::StartTag(tag) => Html5everToken::TagToken(Tag {
             kind: TagKind::StartTag,
-            name: String::from_utf8_lossy(&*tag.name).into_owned().into(),
+            name: String::from_utf8_lossy(&tag.name).into_owned().into(),
             self_closing: tag.self_closing,
             attrs: tag
                 .attributes
@@ -201,23 +201,23 @@ fn token_to_html5ever(token: Token) -> Html5everToken {
                     name: QualName::new(
                         None,
                         Default::default(),
-                        String::from_utf8_lossy(&*key).into_owned().into(),
+                        String::from_utf8_lossy(&key).into_owned().into(),
                     ),
-                    value: String::from_utf8_lossy(&*value).into_owned().into(),
+                    value: String::from_utf8_lossy(&value).into_owned().into(),
                 })
                 .collect(),
         }),
         Token::EndTag(tag) => Html5everToken::TagToken(Tag {
             kind: TagKind::EndTag,
-            name: String::from_utf8_lossy(&*tag.name).into_owned().into(),
+            name: String::from_utf8_lossy(&tag.name).into_owned().into(),
             self_closing: false,
             attrs: Vec::new(),
         }),
         Token::String(s) => {
-            Html5everToken::CharacterTokens(String::from_utf8_lossy(&*s).into_owned().into())
+            Html5everToken::CharacterTokens(String::from_utf8_lossy(&s).into_owned().into())
         }
         Token::Comment(c) => {
-            Html5everToken::CommentToken(String::from_utf8_lossy(&*c).into_owned().into())
+            Html5everToken::CommentToken(String::from_utf8_lossy(&c).into_owned().into())
         }
         Token::Doctype(doctype) => Html5everToken::DoctypeToken(Doctype {
             name: Some(&*doctype.name)
@@ -225,10 +225,10 @@ fn token_to_html5ever(token: Token) -> Html5everToken {
                 .map(|x| String::from_utf8_lossy(x).into_owned().into()),
             public_id: doctype
                 .public_identifier
-                .map(|x| String::from_utf8_lossy(&*x).into_owned().into()),
+                .map(|x| String::from_utf8_lossy(&x).into_owned().into()),
             system_id: doctype
                 .system_identifier
-                .map(|x| String::from_utf8_lossy(&*x).into_owned().into()),
+                .map(|x| String::from_utf8_lossy(&x).into_owned().into()),
             force_quirks: doctype.force_quirks,
         }),
         Token::Error(err) => Html5everToken::ParseError(err.as_str().into()),

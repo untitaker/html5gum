@@ -107,7 +107,7 @@ fn test_eq_byte_slice_and_html_str() {
 fn test_borrowing() {
     // demonstrate a usecase for Borrow/BorrowMut
     let tag = StartTag::default();
-    assert!(tag.attributes.get(b"href".as_slice()).is_none());
+    assert!(!tag.attributes.contains_key(b"href".as_slice()));
 }
 
 impl From<Vec<u8>> for HtmlString {
