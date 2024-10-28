@@ -1,18 +1,69 @@
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
-use std::mem;
+use std::collections::BTreeMap;
+use std::mem::take;
 
-use crate::{naive_next_state, Emitter, Error, HtmlString, State};
+use crate::{Emitter, Error, HtmlString, State};
+
+use crate::callbacks::{Callback, CallbackEmitter, CallbackEvent};
+
+#[derive(Debug, Default)]
+struct OurCallback {
+    tag_name: Vec<u8>,
+    attribute_name: HtmlString,
+    attribute_map: BTreeMap<HtmlString, HtmlString>,
+}
+
+impl Callback<Token> for OurCallback {
+    fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<Token> {
+        match event {
+            CallbackEvent::OpenStartTag { name } => {
+                self.tag_name.clear();
+                self.tag_name.extend(name);
+                None
+            }
+            CallbackEvent::AttributeName { name } => {
+                self.attribute_name.clear();
+                self.attribute_name.extend(name);
+                self.attribute_map
+                    .insert(name.to_owned().into(), Default::default());
+                None
+            }
+            CallbackEvent::AttributeValue { value } => {
+                self.attribute_map
+                    .get_mut(&self.attribute_name)
+                    .unwrap()
+                    .extend(value);
+                None
+            }
+            CallbackEvent::CloseStartTag { self_closing } => Some(Token::StartTag(StartTag {
+                self_closing,
+                name: take(&mut self.tag_name).into(),
+                attributes: take(&mut self.attribute_map),
+            })),
+            CallbackEvent::EndTag { name } => Some(Token::EndTag(EndTag {
+                name: name.to_owned().into(),
+            })),
+            CallbackEvent::String { value } => Some(Token::String(value.to_owned().into())),
+            CallbackEvent::Comment { value } => Some(Token::Comment(value.to_owned().into())),
+            CallbackEvent::Doctype {
+                name,
+                public_identifier,
+                system_identifier,
+                force_quirks,
+            } => Some(Token::Doctype(Doctype {
+                force_quirks,
+                name: name.to_owned().into(),
+                public_identifier: Some(public_identifier.to_owned().into()),
+                system_identifier: Some(system_identifier.to_owned().into()),
+            })),
+            CallbackEvent::Error(error) => Some(Token::Error(error)),
+        }
+    }
+}
 
 /// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
-#[derive(Debug, Default)]
+#[derive(Default, Debug)]
 pub struct DefaultEmitter {
-    current_characters: HtmlString,
-    current_token: Option<Token>,
-    last_start_tag: HtmlString,
-    current_attribute: Option<(HtmlString, HtmlString)>,
-    seen_attributes: BTreeSet<HtmlString>,
-    emitted_tokens: VecDeque<Token>,
-    naively_switch_states: bool,
+    inner: CallbackEmitter<OurCallback, Token>,
 }
 
 impl DefaultEmitter {
@@ -20,244 +71,120 @@ impl DefaultEmitter {
     ///
     /// The default is off.
     pub fn naively_switch_states(&mut self, yes: bool) {
-        self.naively_switch_states = yes;
-    }
-
-    fn emit_token(&mut self, token: Token) {
-        self.flush_current_characters();
-        self.emitted_tokens.push_front(token);
-    }
-
-    fn flush_current_attribute(&mut self) {
-        if let Some((k, v)) = self.current_attribute.take() {
-            match self.current_token {
-                Some(Token::StartTag(ref mut tag)) => {
-                    let mut error = None;
-                    tag.attributes
-                        .entry(k)
-                        .and_modify(|_| {
-                            error = Some(Error::DuplicateAttribute);
-                        })
-                        .or_insert(v);
-
-                    if let Some(e) = error {
-                        self.emit_error(e);
-                    }
-                }
-                Some(Token::EndTag(_)) => {
-                    if !self.seen_attributes.insert(k) {
-                        self.emit_error(Error::DuplicateAttribute);
-                    }
-                }
-                _ => {
-                    debug_assert!(false);
-                }
-            }
-        }
-    }
-
-    fn flush_current_characters(&mut self) {
-        if self.current_characters.is_empty() {
-            return;
-        }
-
-        let s = mem::take(&mut self.current_characters);
-        self.emit_token(Token::String(s));
+        self.inner.naively_switch_states(yes)
     }
 }
 
+// opaque type around inner emitter
 impl Emitter for DefaultEmitter {
     type Token = Token;
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
-        self.last_start_tag.clear();
-        self.last_start_tag
-            .extend(last_start_tag.unwrap_or_default());
+        self.inner.set_last_start_tag(last_start_tag)
     }
 
     fn emit_eof(&mut self) {
-        self.flush_current_characters();
+        self.inner.emit_eof()
     }
 
     fn emit_error(&mut self, error: Error) {
-        // bypass character flushing in self.emit_token: we don't need the error location to be
-        // that exact
-        self.emitted_tokens.push_front(Token::Error(error));
+        self.inner.emit_error(error)
+    }
+
+    fn should_emit_errors(&mut self) -> bool {
+        self.inner.should_emit_errors()
     }
 
     fn pop_token(&mut self) -> Option<Self::Token> {
-        self.emitted_tokens.pop_back()
+        self.inner.pop_token()
     }
-
-    fn emit_string(&mut self, s: &[u8]) {
-        self.current_characters.extend(s);
+    fn emit_string(&mut self, c: &[u8]) {
+        self.inner.emit_string(c)
     }
 
     fn init_start_tag(&mut self) {
-        self.current_token = Some(Token::StartTag(StartTag::default()));
+        self.inner.init_start_tag()
     }
+
     fn init_end_tag(&mut self) {
-        self.current_token = Some(Token::EndTag(EndTag::default()));
-        self.seen_attributes.clear();
+        self.inner.init_end_tag()
     }
 
     fn init_comment(&mut self) {
-        self.current_token = Some(Token::Comment(HtmlString::default()));
+        self.inner.init_comment()
     }
+
     fn emit_current_tag(&mut self) -> Option<State> {
-        self.flush_current_attribute();
-        let mut token = self.current_token.take().unwrap();
-        match token {
-            Token::EndTag(_) => {
-                if !self.seen_attributes.is_empty() {
-                    self.emit_error(Error::EndTagWithAttributes);
-                }
-                self.seen_attributes.clear();
-                self.set_last_start_tag(None);
-            }
-            Token::StartTag(ref mut tag) => {
-                self.set_last_start_tag(Some(&tag.name));
-            }
-            _ => debug_assert!(false),
-        }
-        self.emit_token(token);
-        if self.naively_switch_states {
-            naive_next_state(&self.last_start_tag)
-        } else {
-            None
-        }
+        self.inner.emit_current_tag()
     }
+
     fn emit_current_comment(&mut self) {
-        let comment = self.current_token.take().unwrap();
-        debug_assert!(matches!(comment, Token::Comment(_)));
-        self.emit_token(comment);
+        self.inner.emit_current_comment()
     }
 
     fn emit_current_doctype(&mut self) {
-        let doctype = self.current_token.take().unwrap();
-        debug_assert!(matches!(doctype, Token::Doctype(_)));
-        self.emit_token(doctype);
+        self.inner.emit_current_doctype()
     }
 
     fn set_self_closing(&mut self) {
-        let tag = self.current_token.as_mut().unwrap();
-        match tag {
-            Token::StartTag(StartTag {
-                ref mut self_closing,
-                ..
-            }) => {
-                *self_closing = true;
-            }
-            Token::EndTag(_) => {
-                self.emit_error(Error::EndTagWithTrailingSolidus);
-            }
-            _ => {
-                debug_assert!(false);
-            }
-        }
+        self.inner.set_self_closing()
     }
+
     fn set_force_quirks(&mut self) {
-        match self.current_token {
-            Some(Token::Doctype(ref mut doctype)) => doctype.force_quirks = true,
-            _ => debug_assert!(false),
-        }
+        self.inner.set_force_quirks()
     }
+
     fn push_tag_name(&mut self, s: &[u8]) {
-        match self.current_token {
-            Some(
-                Token::StartTag(StartTag { ref mut name, .. })
-                | Token::EndTag(EndTag { ref mut name, .. }),
-            ) => {
-                name.extend(s);
-            }
-            _ => debug_assert!(false),
-        }
+        self.inner.push_tag_name(s)
     }
 
     fn push_comment(&mut self, s: &[u8]) {
-        match self.current_token {
-            Some(Token::Comment(ref mut data)) => data.extend(s),
-            _ => debug_assert!(false),
-        }
+        self.inner.push_comment(s)
     }
 
     fn push_doctype_name(&mut self, s: &[u8]) {
-        match self.current_token {
-            Some(Token::Doctype(ref mut doctype)) => doctype.name.extend(s),
-            _ => debug_assert!(false),
-        }
+        self.inner.push_doctype_name(s)
     }
+
     fn init_doctype(&mut self) {
-        self.current_token = Some(Token::Doctype(Doctype {
-            name: HtmlString::default(),
-            force_quirks: false,
-            public_identifier: None,
-            system_identifier: None,
-        }));
+        self.inner.init_doctype()
     }
 
     fn init_attribute(&mut self) {
-        self.flush_current_attribute();
-        self.current_attribute = Some(Default::default());
+        self.inner.init_attribute()
     }
+
     fn push_attribute_name(&mut self, s: &[u8]) {
-        self.current_attribute.as_mut().unwrap().0.extend(s);
+        self.inner.push_attribute_name(s)
     }
+
     fn push_attribute_value(&mut self, s: &[u8]) {
-        self.current_attribute.as_mut().unwrap().1.extend(s);
+        self.inner.push_attribute_value(s)
     }
+
     fn set_doctype_public_identifier(&mut self, value: &[u8]) {
-        if let Some(Token::Doctype(Doctype {
-            ref mut public_identifier,
-            ..
-        })) = self.current_token
-        {
-            *public_identifier = Some(value.to_vec().into());
-        } else {
-            debug_assert!(false);
-        }
+        self.inner.set_doctype_public_identifier(value)
     }
+
     fn set_doctype_system_identifier(&mut self, value: &[u8]) {
-        if let Some(Token::Doctype(Doctype {
-            ref mut system_identifier,
-            ..
-        })) = self.current_token
-        {
-            *system_identifier = Some(value.to_vec().into());
-        } else {
-            debug_assert!(false);
-        }
+        self.inner.set_doctype_system_identifier(value)
     }
+
     fn push_doctype_public_identifier(&mut self, s: &[u8]) {
-        if let Some(Token::Doctype(Doctype {
-            public_identifier: Some(ref mut id),
-            ..
-        })) = self.current_token
-        {
-            id.extend(s);
-        } else {
-            debug_assert!(false);
-        }
+        self.inner.push_doctype_public_identifier(s)
     }
+
     fn push_doctype_system_identifier(&mut self, s: &[u8]) {
-        if let Some(Token::Doctype(Doctype {
-            system_identifier: Some(ref mut id),
-            ..
-        })) = self.current_token
-        {
-            id.extend(s);
-        } else {
-            debug_assert!(false);
-        }
+        self.inner.push_doctype_system_identifier(s)
     }
 
     fn current_is_appropriate_end_tag_token(&mut self) -> bool {
-        match self.current_token {
-            Some(Token::EndTag(ref tag)) => {
-                !self.last_start_tag.is_empty() && self.last_start_tag == tag.name
-            }
-            _ => false,
-        }
+        self.inner.current_is_appropriate_end_tag_token()
+    }
+
+    fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
+        self.inner
+            .adjusted_current_node_present_but_not_in_html_namespace()
     }
 }
 

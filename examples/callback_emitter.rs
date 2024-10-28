@@ -10,13 +10,14 @@
 //! ```text
 //! link: foo
 //! ```
-use html5gum::{CallbackEmitter, CallbackEvent, Emitter, IoReader, Tokenizer};
+use html5gum::callbacks::{CallbackEmitter, CallbackEvent};
+use html5gum::{Emitter, IoReader, Tokenizer};
 
 fn get_emitter() -> impl Emitter<Token = String> {
     let mut is_anchor_tag = false;
     let mut is_href_attr = false;
 
-    CallbackEmitter::new(move |event| match event {
+    CallbackEmitter::new(move |event: CallbackEvent<'_>| match event {
         CallbackEvent::OpenStartTag { name } => {
             is_anchor_tag = name == b"a";
             is_href_attr = false;

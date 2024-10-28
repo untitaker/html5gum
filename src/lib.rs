@@ -36,7 +36,7 @@ macro_rules! blob_url_prefix {
 use blob_url_prefix;
 
 mod arrayvec;
-mod callback_emitter;
+pub mod callbacks;
 mod char_validator;
 mod default_emitter;
 mod emitter;
@@ -57,7 +57,6 @@ mod utils;
 #[doc(hidden)]
 pub mod testutils;
 
-pub use callback_emitter::{CallbackEmitter, CallbackEvent};
 pub use default_emitter::{DefaultEmitter, Doctype, EndTag, StartTag, Token};
 pub use emitter::{naive_next_state, Emitter};
 pub use error::Error;
