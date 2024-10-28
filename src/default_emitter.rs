@@ -62,8 +62,8 @@ impl Callback<Token> for OurCallback {
             } => Some(Token::Doctype(Doctype {
                 force_quirks,
                 name: name.to_owned().into(),
-                public_identifier: Some(HtmlString::from(public_identifier.to_owned())).filter(|x| x.len() > 0),
-                system_identifier: Some(HtmlString::from(system_identifier.to_owned())).filter(|x| x.len() > 0),
+                public_identifier: public_identifier.map(|x| x.to_owned().into()),
+                system_identifier: system_identifier.map(|x| x.to_owned().into()),
             })),
             CallbackEvent::Error(error) => Some(Token::Error(error)),
         }

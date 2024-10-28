@@ -112,9 +112,9 @@ pub enum CallbackEvent<'a> {
         /// Name of the docstring.
         name: &'a [u8],
         /// Public identifier (see spec)
-        public_identifier: &'a [u8],
+        public_identifier: Option<&'a [u8]>,
         /// System identifier (see spec)
-        system_identifier: &'a [u8],
+        system_identifier: Option<&'a [u8]>,
         /// Enable quirksmode
         force_quirks: bool,
     },
@@ -194,6 +194,8 @@ struct EmitterState {
 
     // strings related to doctype
     doctype_name: Vec<u8>,
+    doctype_has_public_identifier: bool,
+    doctype_has_system_identifier: bool,
     doctype_public_identifier: Vec<u8>,
     doctype_system_identifier: Vec<u8>,
     doctype_force_quirks: bool,
@@ -375,8 +377,16 @@ where
     fn emit_current_doctype(&mut self) {
         self.callback_state.emit_event(CallbackEvent::Doctype {
             name: &self.emitter_state.doctype_name,
-            public_identifier: &self.emitter_state.doctype_public_identifier,
-            system_identifier: &self.emitter_state.doctype_system_identifier,
+            public_identifier: if self.emitter_state.doctype_has_public_identifier {
+                Some(&self.emitter_state.doctype_public_identifier)
+            } else {
+                None
+            },
+            system_identifier: if self.emitter_state.doctype_has_system_identifier {
+                Some(&self.emitter_state.doctype_system_identifier)
+            } else {
+                None
+            },
             force_quirks: self.emitter_state.doctype_force_quirks,
         });
     }
@@ -407,6 +417,8 @@ where
 
     fn init_doctype(&mut self) {
         self.emitter_state.doctype_name.clear();
+        self.emitter_state.doctype_has_public_identifier = false;
+        self.emitter_state.doctype_has_system_identifier = false;
         self.emitter_state.doctype_public_identifier.clear();
         self.emitter_state.doctype_system_identifier.clear();
         self.emitter_state.doctype_force_quirks = false;
@@ -428,10 +440,12 @@ where
     }
 
     fn set_doctype_public_identifier(&mut self, value: &[u8]) {
+        self.emitter_state.doctype_has_public_identifier = true;
         self.emitter_state.doctype_public_identifier.clear();
         self.emitter_state.doctype_public_identifier.extend(value);
     }
     fn set_doctype_system_identifier(&mut self, value: &[u8]) {
+        self.emitter_state.doctype_has_system_identifier = true;
         self.emitter_state.doctype_system_identifier.clear();
         self.emitter_state.doctype_system_identifier.extend(value);
     }
