@@ -353,7 +353,6 @@ where
     }
 
     fn emit_current_tag(&mut self) -> Option<State> {
-        self.flush_open_start_tag();
         self.flush_attribute();
         self.flush_current_characters();
         self.flush_current_comment();
@@ -363,6 +362,7 @@ where
                 self.emitter_state
                     .last_start_tag
                     .extend(&self.emitter_state.current_tag_name);
+                self.flush_open_start_tag();
                 self.callback_state
                     .emit_event(CallbackEvent::CloseStartTag {
                         self_closing: self.emitter_state.current_tag_self_closing,
