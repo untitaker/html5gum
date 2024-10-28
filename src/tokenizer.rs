@@ -46,9 +46,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
         }
     }
 
-    /// Test-internal function to override internal state.
-    #[cfg(debug_assertions)]
-    #[doc(hidden)]
+    /// Override internal state. Necessary for parsing partial documents ("fragment parsing")
     pub fn set_state(&mut self, state: State) {
         self.machine_helper.state = state.into();
     }

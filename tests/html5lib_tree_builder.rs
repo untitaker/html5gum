@@ -136,8 +136,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
             let mut tree_builder = TreeBuilder::new(rcdom, opts);
             let token_emitter = Html5everEmitter::new(&mut tree_builder);
 
-            let input = testcase.data.trim_end_matches('\n');
-
+            let input = &testcase.data[..testcase.data.len() - 1];
             let tokenizer = Tokenizer::new_with_emitter(input, token_emitter);
 
             for result in tokenizer {
@@ -151,7 +150,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
             }
 
             let expected = testcase.document.unwrap();
-            assert_eq!(expected, actual);
+            assert_eq!(dbg!(expected), dbg!(actual));
         })
     })
 }
