@@ -145,12 +145,13 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
             }
 
             let rcdom = tree_builder.sink;
-            let mut stringified_result = String::new();
+            let mut actual = String::new();
             for child in rcdom.document.children.borrow().iter() {
-                serialize(&mut stringified_result, 1, child.clone());
+                serialize(&mut actual, 1, child.clone());
             }
 
-            assert_eq!(stringified_result, testcase.document.unwrap());
+            let expected = testcase.document.unwrap();
+            assert_eq!(expected, actual);
         })
     })
 }
