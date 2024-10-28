@@ -151,6 +151,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
             let mut tree_builder;
 
             if let Some(ref frag) = testcase.document_fragment {
+                let frag = frag.trim_end_matches('\n');
                 let context_name = context_name(frag);
                 let context_element = create_element(&rcdom, context_name, Vec::new());
                 tree_builder = TreeBuilder::new_for_fragment(rcdom, context_element, None, opts);
