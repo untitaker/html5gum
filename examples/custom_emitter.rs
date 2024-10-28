@@ -5,11 +5,9 @@
 //!
 //! The approach in this example however is a lot more performant.
 //!
-//! With the `LinkExtractor` emitter, "Hello world!" will not be allocated at all (as there is no
-//! `html5gum::Token::String` we have to construct). It may still be written to memory as part of
-//! the I/O buffer between stdin and the tokenizer, but that buffer is allocated once with a fixed
-//! size, and if a string instead of `IoReader` is passed to `Tokenizer::new/new_with_emitter`,
-//! there is no I/O buffer either.
+//! With the `LinkExtractor` emitter, "Hello world!" will not be allocated individually at all (as
+//! there is no `html5gum::Token::String` we have to construct), instead it will only be borrowed
+//! from the input data (or I/O buffer)
 //!
 //! This example can be further optimized by printing directly from within the emitter impl, and
 //! changing `pop_token` to always return None.
