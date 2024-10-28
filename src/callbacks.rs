@@ -86,6 +86,10 @@ pub enum CallbackEvent<'a> {
     },
 
     /// Visit `"</mytag>".
+    ///
+    /// Note: Because of strangeness in the HTML spec, attributes may be observed outside of start
+    /// tags, before this event. It's best to ignore them as they are not valid HTML, but can still
+    /// be observed through most HTML parsers.
     EndTag {
         /// The name of the end tag.
         name: &'a [u8],

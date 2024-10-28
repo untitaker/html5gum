@@ -47,9 +47,12 @@ impl Callback<Token> for OurCallback {
                 name: take(&mut self.tag_name).into(),
                 attributes: take(&mut self.attribute_map),
             })),
-            CallbackEvent::EndTag { name } => Some(Token::EndTag(EndTag {
-                name: name.to_owned().into(),
-            })),
+            CallbackEvent::EndTag { name } => {
+                self.attribute_map.clear();
+                Some(Token::EndTag(EndTag {
+                    name: name.to_owned().into(),
+                }))
+            },
             CallbackEvent::String { value } => Some(Token::String(value.to_owned().into())),
             CallbackEvent::Comment { value } => Some(Token::Comment(value.to_owned().into())),
             CallbackEvent::Doctype {
