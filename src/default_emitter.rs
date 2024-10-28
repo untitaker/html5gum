@@ -25,9 +25,7 @@ impl Callback<Token> for OurCallback {
             CallbackEvent::AttributeName { name } => {
                 self.attribute_name.clear();
                 match self.attribute_map.entry(name.to_owned().into()) {
-                    Entry::Occupied(_) => {
-                        Some(Token::Error(Error::DuplicateAttribute))
-                    }
+                    Entry::Occupied(_) => Some(Token::Error(Error::DuplicateAttribute)),
                     Entry::Vacant(vacant) => {
                         self.attribute_name.extend(name);
                         vacant.insert(Default::default());
