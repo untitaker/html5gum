@@ -1,6 +1,6 @@
-use std::ops::{Deref, DerefMut};
 use std::borrow::{Borrow, BorrowMut};
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 
 /// A wrapper around a bytestring.
 ///

@@ -38,6 +38,7 @@ use blob_url_prefix;
 mod arrayvec;
 mod callback_emitter;
 mod char_validator;
+mod default_emitter;
 mod emitter;
 mod entities;
 mod error;
@@ -57,9 +58,8 @@ mod utils;
 pub mod testutils;
 
 pub use callback_emitter::{CallbackEmitter, CallbackEvent};
-pub use emitter::{
-    naive_next_state, DefaultEmitter, Doctype, Emitter, EndTag, StartTag, Token,
-};
+pub use default_emitter::{DefaultEmitter, Doctype, EndTag, StartTag, Token};
+pub use emitter::{naive_next_state, Emitter};
 pub use error::Error;
 pub use htmlstring::HtmlString;
 pub use reader::{IoReader, Readable, Reader, StringReader};
