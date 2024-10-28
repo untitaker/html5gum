@@ -195,7 +195,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
             }
 
             let expected = testcase.document.unwrap();
-            assert_eq!(expected, actual);
+            assert_eq!(actual, expected);
         })
     })
 }
