@@ -185,7 +185,7 @@ struct EmitterState {
     current_characters: Vec<u8>,
 
     last_start_tag: Vec<u8>,
-    tag_had_attributes: bool,
+    current_tag_had_attributes: bool,
     current_tag_type: Option<CurrentTag>,
     current_tag_self_closing: bool,
     current_tag_name: Vec<u8>,
@@ -314,7 +314,7 @@ where
     fn init_end_tag(&mut self) {
         self.emitter_state.current_tag_name.clear();
         self.emitter_state.current_tag_type = Some(CurrentTag::End);
-        self.emitter_state.tag_had_attributes = false;
+        self.emitter_state.current_tag_had_attributes = false;
     }
 
     fn init_comment(&mut self) {
@@ -326,10 +326,6 @@ where
         self.flush_current_characters();
         match self.emitter_state.current_tag_type {
             Some(CurrentTag::Start) => {
-                if self.emitter_state.tag_had_attributes {
-                    self.emit_error(Error::EndTagWithAttributes);
-                }
-                self.emitter_state.tag_had_attributes = false;
                 self.emitter_state.last_start_tag.clear();
                 self.callback_state
                     .emit_event(CallbackEvent::CloseStartTag {
@@ -337,6 +333,9 @@ where
                     });
             }
             Some(CurrentTag::End) => {
+                if self.emitter_state.current_tag_had_attributes {
+                    self.emit_error(Error::EndTagWithAttributes);
+                }
                 self.emitter_state.last_start_tag.clear();
                 self.emitter_state
                     .last_start_tag
@@ -412,6 +411,7 @@ where
         }
 
         self.flush_attribute();
+        self.emitter_state.current_tag_had_attributes = true;
     }
 
     fn push_attribute_name(&mut self, s: &[u8]) {
