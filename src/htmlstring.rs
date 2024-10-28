@@ -77,6 +77,19 @@ impl PartialEq<HtmlString> for &[u8] {
     }
 }
 
+impl PartialEq<Vec<u8>> for HtmlString {
+    fn eq(&self, other: &Vec<u8>) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<HtmlString> for Vec<u8> {
+    fn eq(&self, other: &HtmlString) -> bool {
+        *self == other.0
+    }
+}
+
+
 #[test]
 fn test_eq_html_str_and_byte_literal() {
     assert!(HtmlString(b"hello world".to_vec()) == b"hello world");
