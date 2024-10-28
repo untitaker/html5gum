@@ -181,8 +181,8 @@ where
 struct EmitterState {
     naively_switch_states: bool,
 
-    // holds either charactertokens or comment text
     current_characters: Vec<u8>,
+    current_comment: Vec<u8>,
 
     last_start_tag: Vec<u8>,
     current_tag_had_attributes: bool,
@@ -289,6 +289,17 @@ where
         });
         self.emitter_state.current_characters.clear();
     }
+
+    fn flush_current_comment(&mut self) {
+        if self.emitter_state.current_comment.is_empty() {
+            return;
+        }
+
+        self.callback_state.emit_event(CallbackEvent::Comment {
+            value: &self.emitter_state.current_comment,
+        });
+        self.emitter_state.current_comment.clear();
+    }
 }
 impl<F, T> Emitter for CallbackEmitter<F, T>
 where
@@ -305,6 +316,7 @@ where
 
     fn emit_eof(&mut self) {
         self.flush_current_characters();
+        self.flush_current_comment();
     }
 
     fn emit_error(&mut self, error: Error) {
@@ -316,6 +328,7 @@ where
     }
 
     fn emit_string(&mut self, s: &[u8]) {
+        crate::utils::trace_log!("callbacks: emit_string, len={}", s.len());
         self.emitter_state.current_characters.extend(s);
     }
 
@@ -324,6 +337,7 @@ where
         self.emitter_state.current_tag_type = Some(CurrentTag::Start);
         self.emitter_state.current_tag_self_closing = false;
     }
+
     fn init_end_tag(&mut self) {
         self.emitter_state.current_tag_name.clear();
         self.emitter_state.current_tag_type = Some(CurrentTag::End);
@@ -331,13 +345,15 @@ where
     }
 
     fn init_comment(&mut self) {
-        self.emitter_state.current_characters.clear();
+        self.flush_current_characters();
+        self.emitter_state.current_comment.clear();
     }
 
     fn emit_current_tag(&mut self) -> Option<State> {
         self.flush_open_start_tag();
         self.flush_attribute();
         self.flush_current_characters();
+        self.flush_current_comment();
         match self.emitter_state.current_tag_type {
             Some(CurrentTag::Start) => {
                 self.emitter_state.last_start_tag.clear();
@@ -369,9 +385,9 @@ where
     }
     fn emit_current_comment(&mut self) {
         self.callback_state.emit_event(CallbackEvent::Comment {
-            value: &self.emitter_state.current_characters,
+            value: &self.emitter_state.current_comment,
         });
-        self.emitter_state.current_characters.clear();
+        self.emitter_state.current_comment.clear();
     }
 
     fn emit_current_doctype(&mut self) {
@@ -408,7 +424,7 @@ where
     }
 
     fn push_comment(&mut self, s: &[u8]) {
-        self.emitter_state.current_characters.extend(s);
+        self.emitter_state.current_comment.extend(s);
     }
 
     fn push_doctype_name(&mut self, s: &[u8]) {
