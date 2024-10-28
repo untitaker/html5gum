@@ -177,7 +177,17 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
 
             let rcdom = tree_builder.sink;
             let mut actual = String::new();
-            for child in rcdom.document.children.borrow().iter() {
+            let root = rcdom.document.children.borrow();
+            let root2;
+            if testcase.document_fragment.is_some() {
+                // fragment case: serialize children of the html element
+                // rather than children of the document
+                root2 = root[0].children.borrow();
+            } else {
+                root2 = root;
+            }
+
+            for child in root2.iter() {
                 serialize(&mut actual, 1, child.clone());
             }
 
