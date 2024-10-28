@@ -18,8 +18,11 @@ use std::{
 use glob::glob;
 use libtest_mimic::{self, Arguments, Trial};
 
+use html5ever::interface::create_element;
+use html5ever::tokenizer::states::State;
 use html5ever::tree_builder::{TreeBuilder, TreeBuilderOpts};
 use html5ever::{namespace_url, ns};
+use html5ever::{LocalName, QualName};
 use html5gum::{testutils::trace_log, Html5everEmitter, Tokenizer};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 use pretty_assertions::assert_eq;
@@ -105,11 +108,6 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
     while let Some(testcase) = Testcase::parse(path, &mut lines_iter) {
         i += 1;
 
-        if testcase.document_fragment.is_some() {
-            // TODO
-            continue;
-        }
-
         // if script_on is not explicitly provided, it's ok to run this test with scripting
         // disabled
         if testcase.script_on.is_none() {
@@ -124,6 +122,23 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
     }
 }
 
+fn context_name(context: &str) -> QualName {
+    if let Some(cx) = context.strip_prefix("svg ") {
+        QualName::new(None, ns!(svg), LocalName::from(cx))
+    } else if let Some(cx) = context.strip_prefix("math ") {
+        QualName::new(None, ns!(mathml), LocalName::from(cx))
+    } else {
+        QualName::new(None, ns!(html), LocalName::from(context))
+    }
+}
+
+fn map_tokenizer_state(input: State) -> html5gum::State {
+    match input {
+        State::Data => html5gum::State::Data,
+        x => todo!("{:?}", x),
+    }
+}
+
 fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Trial {
     let scripting_text = if scripting { "yesscript" } else { "noscript" };
     Trial::test(format!("{}:{}:{scripting_text}", fname, i), move || {
@@ -132,12 +147,28 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
             let rcdom = RcDom::default();
             let mut opts = TreeBuilderOpts::default();
             opts.scripting_enabled = scripting;
+            let initial_state;
+            let mut tree_builder;
 
-            let mut tree_builder = TreeBuilder::new(rcdom, opts);
+            if let Some(ref frag) = testcase.document_fragment {
+                let context_name = context_name(frag);
+                let context_element = create_element(&rcdom, context_name, Vec::new());
+                tree_builder = TreeBuilder::new_for_fragment(rcdom, context_element, None, opts);
+                initial_state = Some(map_tokenizer_state(
+                    tree_builder.tokenizer_state_for_context_elem(),
+                ));
+            } else {
+                tree_builder = TreeBuilder::new(rcdom, opts);
+                initial_state = None;
+            }
+
             let token_emitter = Html5everEmitter::new(&mut tree_builder);
 
             let input = &testcase.data[..testcase.data.len() - 1];
-            let tokenizer = Tokenizer::new_with_emitter(input, token_emitter);
+            let mut tokenizer = Tokenizer::new_with_emitter(input, token_emitter);
+            if let Some(state) = initial_state {
+                tokenizer.set_state(state);
+            }
 
             for result in tokenizer {
                 result.unwrap();
@@ -150,7 +181,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
             }
 
             let expected = testcase.document.unwrap();
-            assert_eq!(dbg!(expected), dbg!(actual));
+            assert_eq!(expected, actual);
         })
     })
 }
