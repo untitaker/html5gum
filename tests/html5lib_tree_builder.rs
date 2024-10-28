@@ -19,7 +19,7 @@ use glob::glob;
 use libtest_mimic::{self, Arguments, Trial};
 
 use html5ever::interface::create_element;
-use html5ever::tokenizer::states::State;
+use html5ever::tokenizer::states::{RawKind, State};
 use html5ever::tree_builder::{TreeBuilder, TreeBuilderOpts};
 use html5ever::{namespace_url, ns};
 use html5ever::{LocalName, QualName};
@@ -135,6 +135,9 @@ fn context_name(context: &str) -> QualName {
 fn map_tokenizer_state(input: State) -> html5gum::State {
     match input {
         State::Data => html5gum::State::Data,
+        State::Plaintext => html5gum::State::PlainText,
+        State::RawData(RawKind::Rcdata) => html5gum::State::RcData,
+        State::RawData(RawKind::Rawtext) => html5gum::State::RawText,
         x => todo!("{:?}", x),
     }
 }
