@@ -15,6 +15,7 @@ struct OurCallback {
 
 impl Callback<Token> for OurCallback {
     fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<Token> {
+        crate::utils::trace_log!("event: {:?}", event);
         match event {
             CallbackEvent::OpenStartTag { name } => {
                 self.tag_name.clear();

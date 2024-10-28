@@ -266,6 +266,17 @@ where
         }
     }
 
+    fn flush_open_start_tag(&mut self) {
+        if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::Start))
+            && !self.emitter_state.current_tag_name.is_empty()
+        {
+            self.callback_state.emit_event(CallbackEvent::OpenStartTag {
+                name: &self.emitter_state.current_tag_name,
+            });
+            self.emitter_state.current_tag_name.clear();
+        }
+    }
+
     fn flush_current_characters(&mut self) {
         if self.emitter_state.current_characters.is_empty() {
             return;
@@ -322,6 +333,7 @@ where
     }
 
     fn emit_current_tag(&mut self) -> Option<State> {
+        self.flush_open_start_tag();
         self.flush_attribute();
         self.flush_current_characters();
         match self.emitter_state.current_tag_type {
@@ -401,15 +413,7 @@ where
     }
 
     fn init_attribute(&mut self) {
-        if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::Start))
-            && !self.emitter_state.current_tag_name.is_empty()
-        {
-            self.callback_state.emit_event(CallbackEvent::OpenStartTag {
-                name: &self.emitter_state.current_tag_name,
-            });
-            self.emitter_state.current_tag_name.clear();
-        }
-
+        self.flush_open_start_tag();
         self.flush_attribute();
         self.emitter_state.current_tag_had_attributes = true;
     }
