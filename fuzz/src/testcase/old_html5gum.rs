@@ -43,6 +43,14 @@ pub fn run_old_html5gum(s: &str) {
                     testing_tokens.retain(isnt_error);
                 }
             }
+            x if x.starts_with("if-testing-contains:") => {
+                if testing_tokens.contains(&html5gum::Token::Error(
+                    x["if-testing-contains:".len()..].parse().unwrap(),
+                )) {
+                    reference_tokens.retain(isnt_old_error);
+                    testing_tokens.retain(isnt_error);
+                }
+            }
             x => panic!("unknown FUZZ_IGNORE_PARSE_ERRORS instruction: {}", x),
         }
     }
