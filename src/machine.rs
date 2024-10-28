@@ -414,7 +414,7 @@ pub(crate) mod states {
                     slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
                     slf.machine_helper
                         .temporary_buffer
-                        .push(x.to_ascii_lowercase());
+                        .push(x);
                     cont!()
                 }
                 c => {

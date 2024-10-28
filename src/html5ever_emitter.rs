@@ -34,6 +34,7 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
 
     fn pop_token_inner(&mut self) {
         while let Some(token) = self.emitter_inner.pop_token() {
+            crate::utils::trace_log!("tree builder token: {:?}", token);
             match self
                 .sink
                 .process_token(token_to_html5ever(token), BOGUS_LINENO)
