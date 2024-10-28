@@ -371,7 +371,11 @@ where
     }
 
     fn set_self_closing(&mut self) {
-        self.emitter_state.current_tag_self_closing = true;
+        if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::End)) {
+            self.callback_state.emit_event(CallbackEvent::Error(Error::EndTagWithTrailingSolidus));
+        } else {
+            self.emitter_state.current_tag_self_closing = true;
+        }
     }
 
     fn set_force_quirks(&mut self) {
