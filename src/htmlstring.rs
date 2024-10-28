@@ -89,7 +89,6 @@ impl PartialEq<HtmlString> for Vec<u8> {
     }
 }
 
-
 #[test]
 fn test_eq_html_str_and_byte_literal() {
     assert!(HtmlString(b"hello world".to_vec()) == b"hello world");

@@ -52,7 +52,7 @@ impl Callback<Token> for OurCallback {
                 Some(Token::EndTag(EndTag {
                     name: name.to_owned().into(),
                 }))
-            },
+            }
             CallbackEvent::String { value } => Some(Token::String(value.to_owned().into())),
             CallbackEvent::Comment { value } => Some(Token::Comment(value.to_owned().into())),
             CallbackEvent::Doctype {

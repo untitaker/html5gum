@@ -478,12 +478,16 @@ where
 
     fn current_is_appropriate_end_tag_token(&mut self) -> bool {
         if self.emitter_state.last_start_tag.is_empty() {
-            crate::utils::trace_log!("current_is_appropriate_end_tag_token: no, because last_start_tag is empty");
+            crate::utils::trace_log!(
+                "current_is_appropriate_end_tag_token: no, because last_start_tag is empty"
+            );
             return false;
         }
 
         if !matches!(self.emitter_state.current_tag_type, Some(CurrentTag::End)) {
-            crate::utils::trace_log!("current_is_appropriate_end_tag_token: no, because current_tag_type is not end");
+            crate::utils::trace_log!(
+                "current_is_appropriate_end_tag_token: no, because current_tag_type is not end"
+            );
             return false;
         }
 
