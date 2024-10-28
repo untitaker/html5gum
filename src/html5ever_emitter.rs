@@ -34,32 +34,49 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
 
     fn pop_token_inner(&mut self) {
         while let Some(token) = self.emitter_inner.pop_token() {
-            crate::utils::trace_log!("tree builder token: {:?}", token);
-            match self
-                .sink
-                .process_token(token_to_html5ever(token), BOGUS_LINENO)
-            {
-                TokenSinkResult::Continue => {}
-                TokenSinkResult::Script(_) => {
-                    self.next_state = Some(State::Data);
-                    // TODO: suspend tokenizer for script
+            token_to_html5ever(token, |token| {
+                crate::utils::trace_log!("tree builder token: {:?}", token);
+                match self
+                    .sink
+                    .process_token(token, BOGUS_LINENO)
+                {
+                    TokenSinkResult::Continue => {}
+                    TokenSinkResult::Script(_) => {
+                        if self.next_state.is_some() {
+                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
+                        }
+                        self.next_state = Some(State::Data);
+                        // TODO: suspend tokenizer for script
+                    }
+                    TokenSinkResult::Plaintext => {
+                        if self.next_state.is_some() {
+                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
+                        }
+                        self.next_state = Some(State::PlainText);
+                    }
+                    TokenSinkResult::RawData(RawKind::Rcdata) => {
+                        if self.next_state.is_some() {
+                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
+                        }
+                        self.next_state = Some(State::RcData);
+                    }
+                    TokenSinkResult::RawData(RawKind::Rawtext) => {
+                        if self.next_state.is_some() {
+                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
+                        }
+                        self.next_state = Some(State::RawText);
+                    }
+                    TokenSinkResult::RawData(RawKind::ScriptData) => {
+                        if self.next_state.is_some() {
+                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
+                        }
+                        self.next_state = Some(State::ScriptData);
+                    }
+                    TokenSinkResult::RawData(RawKind::ScriptDataEscaped(_)) => {
+                        todo!()
+                    }
                 }
-                TokenSinkResult::Plaintext => {
-                    self.next_state = Some(State::PlainText);
-                }
-                TokenSinkResult::RawData(RawKind::Rcdata) => {
-                    self.next_state = Some(State::RcData);
-                }
-                TokenSinkResult::RawData(RawKind::Rawtext) => {
-                    self.next_state = Some(State::RawText);
-                }
-                TokenSinkResult::RawData(RawKind::ScriptData) => {
-                    self.next_state = Some(State::ScriptData);
-                }
-                TokenSinkResult::RawData(RawKind::ScriptDataEscaped(_)) => {
-                    todo!()
-                }
-            }
+            });
         }
     }
 }
@@ -188,9 +205,9 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
     }
 }
 
-fn token_to_html5ever(token: Token) -> Html5everToken {
+fn token_to_html5ever(token: Token, mut foreach_fn: impl FnMut(Html5everToken)) {
     match token {
-        Token::StartTag(tag) => Html5everToken::TagToken(Tag {
+        Token::StartTag(tag) => foreach_fn(Html5everToken::TagToken(Tag {
             kind: TagKind::StartTag,
             name: String::from_utf8_lossy(&tag.name).into_owned().into(),
             self_closing: tag.self_closing,
@@ -206,20 +223,29 @@ fn token_to_html5ever(token: Token) -> Html5everToken {
                     value: String::from_utf8_lossy(&value).into_owned().into(),
                 })
                 .collect(),
-        }),
-        Token::EndTag(tag) => Html5everToken::TagToken(Tag {
+        })),
+        Token::EndTag(tag) => foreach_fn(Html5everToken::TagToken(Tag {
             kind: TagKind::EndTag,
             name: String::from_utf8_lossy(&tag.name).into_owned().into(),
             self_closing: false,
             attrs: Vec::new(),
-        }),
+        })),
         Token::String(s) => {
-            Html5everToken::CharacterTokens(String::from_utf8_lossy(&s).into_owned().into())
+            let s = String::from_utf8_lossy(&s);
+            let mut first = true;
+            for part in s.split('\0') {
+                if !first {
+                    foreach_fn(Html5everToken::NullCharacterToken);
+                }
+
+                first = false;
+                foreach_fn(Html5everToken::CharacterTokens(part.to_owned().into()));
+            }
         }
         Token::Comment(c) => {
-            Html5everToken::CommentToken(String::from_utf8_lossy(&c).into_owned().into())
+            foreach_fn(Html5everToken::CommentToken(String::from_utf8_lossy(&c).into_owned().into()))
         }
-        Token::Doctype(doctype) => Html5everToken::DoctypeToken(Doctype {
+        Token::Doctype(doctype) => foreach_fn(Html5everToken::DoctypeToken(Doctype {
             name: Some(&*doctype.name)
                 .filter(|x| !x.is_empty())
                 .map(|x| String::from_utf8_lossy(x).into_owned().into()),
@@ -230,7 +256,7 @@ fn token_to_html5ever(token: Token) -> Html5everToken {
                 .system_identifier
                 .map(|x| String::from_utf8_lossy(&x).into_owned().into()),
             force_quirks: doctype.force_quirks,
-        }),
-        Token::Error(err) => Html5everToken::ParseError(err.as_str().into()),
+        })),
+        Token::Error(err) => foreach_fn(Html5everToken::ParseError(err.as_str().into())),
     }
 }
