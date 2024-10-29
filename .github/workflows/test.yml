@@ -76,6 +76,10 @@ jobs:
       - run: cargo doc --no-deps
 
       # assert that there's no broken links (links to examples like to break)
+
+      # remove some known-bad files that we know hyperlink can't handle, to
+      # silence errors
+      - run: rm target/doc/help.html target/doc/settings.html
       - uses: untitaker/hyperlink@0.1.42
         with:
           args: target/doc/
