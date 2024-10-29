@@ -119,14 +119,14 @@ impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
                 force_quirks,
             } => {
                 self.sink_token(Html5everToken::DoctypeToken(Doctype {
-                    name: Some(&*name)
+                    name: Some(name)
                         .filter(|x| !x.is_empty())
                         .map(|x| String::from_utf8_lossy(x).into_owned().into()),
                     public_id: public_identifier
-                        .map(|x| String::from_utf8_lossy(&x).into_owned().into()),
+                        .map(|x| String::from_utf8_lossy(x).into_owned().into()),
                     system_id: system_identifier
-                        .map(|x| String::from_utf8_lossy(&x).into_owned().into()),
-                    force_quirks: force_quirks,
+                        .map(|x| String::from_utf8_lossy(x).into_owned().into()),
+                    force_quirks,
                 }));
             }
             CallbackEvent::Error(error) => {
