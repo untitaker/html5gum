@@ -1,7 +1,7 @@
 use std::backtrace::BacktraceStatus;
 use std::ops::Deref;
-use std::sync::Once;
 use std::panic::{self, UnwindSafe};
+use std::sync::Once;
 
 use libtest_mimic::Failed;
 
@@ -24,7 +24,9 @@ pub fn catch_unwind_and_report(f: impl FnOnce() + UnwindSafe) -> Result<(), Fail
         panic::set_hook(Box::new(|_info| {
             let backtrace = std::backtrace::Backtrace::capture();
             if backtrace.status() != BacktraceStatus::Captured {
-                html5gum::testutils::trace_log("PANIC BACKTRACE: did not capture, use RUST_BACKTRACE=1");
+                html5gum::testutils::trace_log(
+                    "PANIC BACKTRACE: did not capture, use RUST_BACKTRACE=1",
+                );
             } else {
                 // clean up noisy frames from backtrace
                 let mut backtrace_str = String::new();

@@ -491,8 +491,14 @@ where
             return false;
         }
 
-        crate::utils::trace_log!("current_is_appropriate_end_tag_token: last_start_tag = {:?}", self.emitter_state.last_start_tag);
-        crate::utils::trace_log!("current_is_appropriate_end_tag_token: current_tag = {:?}", self.emitter_state.current_tag_name);
+        crate::utils::trace_log!(
+            "current_is_appropriate_end_tag_token: last_start_tag = {:?}",
+            self.emitter_state.last_start_tag
+        );
+        crate::utils::trace_log!(
+            "current_is_appropriate_end_tag_token: current_tag = {:?}",
+            self.emitter_state.current_tag_name
+        );
         self.emitter_state.last_start_tag == self.emitter_state.current_tag_name
     }
 }
