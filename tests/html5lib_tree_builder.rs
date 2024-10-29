@@ -175,7 +175,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
 
             let token_emitter = Html5everEmitter::new(&mut tree_builder);
 
-            let input = &testcase.data[..testcase.data.len() - 1];
+            let input = &testcase.data[..testcase.data.len().saturating_sub(1)];
             let mut tokenizer = Tokenizer::new_with_emitter(input, token_emitter);
             if let Some(state) = initial_state {
                 tokenizer.set_state(state);
