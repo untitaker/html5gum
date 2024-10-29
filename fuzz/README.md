@@ -40,6 +40,9 @@ target.
 * `FUZZ_LOLHTML=1` to run html5gum and lol-html, and crash when the produced
   tokens are different.
 
+* `FUZZ_SWC=1` to run html5gum and swc's HTML parser, and crash when the
+  produced tokens are different.
+
 ## Basic CLI
 
 Run `FUZZ_BASIC=1 make -e cli` to run the fuzz target itself as a barebones CLI
