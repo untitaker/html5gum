@@ -3,7 +3,8 @@
 ///
 /// You may want to refer to `examples/scraper.rs` for better ergonomics.
 use html5ever::tree_builder::TreeBuilder;
-use html5gum::{Html5everEmitter, IoReader, Tokenizer};
+use html5gum::emitters::html5ever::Html5everEmitter;
+use html5gum::{IoReader, Tokenizer};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
 fn walk(indent: usize, handle: &Handle) {

@@ -22,7 +22,8 @@ use html5ever::tokenizer::states::{RawKind, State};
 use html5ever::tree_builder::{TreeBuilder, TreeBuilderOpts};
 use html5ever::{namespace_url, ns};
 use html5ever::{LocalName, QualName};
-use html5gum::{testutils::trace_log, Html5everEmitter, Tokenizer};
+use html5gum::emitters::html5ever::Html5everEmitter;
+use html5gum::{testutils::trace_log, Tokenizer};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 use pretty_assertions::assert_eq;
 

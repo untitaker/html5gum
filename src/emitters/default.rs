@@ -1,10 +1,11 @@
+//! The default emitter is what powers the simple SAX-like API that you see in the README.
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 use std::mem::take;
 
 use crate::{Emitter, Error, HtmlString, State};
 
-use crate::callbacks::{Callback, CallbackEmitter, CallbackEvent};
+use crate::emitters::callback::{Callback, CallbackEmitter, CallbackEvent};
 
 #[derive(Debug, Default)]
 struct OurCallback {
@@ -71,14 +72,15 @@ impl Callback<Token> for OurCallback {
     }
 }
 
-/// The default implementation of [`crate::Emitter`], used to produce ("emit") tokens.
+/// This is the emitter you implicitly use with [crate::Tokenizer::new]. Refer to the [crate
+/// docs](crate) for how usage looks like.
 #[derive(Default, Debug)]
 pub struct DefaultEmitter {
     inner: CallbackEmitter<OurCallback, Token>,
 }
 
 impl DefaultEmitter {
-    /// Whether to use [`naive_next_state`] to switch states automatically.
+    /// Whether to use [crate::naive_next_state] to switch states automatically.
     ///
     /// The default is off.
     pub fn naively_switch_states(&mut self, yes: bool) {
@@ -86,9 +88,10 @@ impl DefaultEmitter {
     }
 }
 
-// opaque type around inner emitter
 impl Emitter for DefaultEmitter {
     type Token = Token;
+
+    // opaque type around inner emitter
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
         self.inner.set_last_start_tag(last_start_tag)
@@ -202,7 +205,7 @@ impl Emitter for DefaultEmitter {
 /// A HTML end/close tag, such as `<p>` or `<a>`.
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct StartTag {
-    /// Whether this tag is self-closing. If it is self-closing, no following [`EndTag`] should be
+    /// Whether this tag is self-closing. If it is self-closing, no following [EndTag] should be
     /// expected.
     pub self_closing: bool,
 
@@ -212,7 +215,7 @@ pub struct StartTag {
     /// A mapping for any HTML attributes this start tag may have.
     ///
     /// Duplicate attributes are ignored after the first one as per WHATWG spec. Implement your own
-    /// [`Emitter`] to tweak this behavior.
+    /// [crate::Emitter] to tweak this behavior.
     pub attributes: BTreeMap<HtmlString, HtmlString>,
 }
 

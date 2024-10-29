@@ -10,7 +10,7 @@
 //! ```text
 //! link: foo
 //! ```
-use html5gum::callbacks::{CallbackEmitter, CallbackEvent};
+use html5gum::emitters::callback::{CallbackEmitter, CallbackEvent};
 use html5gum::{Emitter, IoReader, Tokenizer};
 
 fn get_emitter() -> impl Emitter<Token = String> {

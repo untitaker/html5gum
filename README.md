@@ -33,9 +33,9 @@ assert_eq!(new_html, "<title>hello world</title>");
 `html5gum` provides multiple kinds of APIs:
 
 * Iterating over tokens as shown above.
-* Implementing your own `Emitter` for maximum performance, see [the `custom_emitter.rs` example](examples/custom_emitter.rs).
-* A callbacks-based API for a middleground between convenience and performance, see [the `callback_emitter.rs` example](examples/callback_emitter.rs).
-* With the `tree-builder` feature, html5gum can be integrated with `html5ever` and `scraper`. See [the `scraper.rs` example](examples/scraper.rs).
+* Implementing your own `Emitter` for maximum performance, see [the `custom_emitter.rs` example][examples/custom_emitter.rs].
+* A callbacks-based API for a middleground between convenience and performance, see [the `callback_emitter.rs` example][examples/callback_emitter.rs].
+* With the `tree-builder` feature, html5gum can be integrated with `html5ever` and `scraper`. See [the `scraper.rs` example][examples/scraper.rs].
 
 ## What a tokenizer does and what it does not do
 
@@ -60,7 +60,7 @@ test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer). S
 With those caveats in mind, `html5gum` can pretty much ~parse~ _tokenize_
 anything that browsers can. However, using the experimental `tree-builder`
 feature, html5gum can be integrated with `html5ever` and `scraper`. See [the
-`scraper.rs` example](examples/scraper.rs).
+`scraper.rs` example][examples/scraper.rs].
 
 ## Other features
 
