@@ -92,7 +92,11 @@ impl Testcase {
             }
         }
 
-        None
+        if has_errors {
+            Some(rv)
+        } else {
+            None
+        }
     }
 }
 
@@ -289,6 +293,10 @@ fn serialize(buf: &mut String, indent: usize, handle: Handle) {
 fn main() {
     let args = Arguments::from_args();
     let mut tests = Vec::new();
+
+    for entry in glob("tests/custom-html5lib-tests/tree-construction/*.dat").unwrap() {
+        produce_testcases_from_file(&mut tests, &entry.unwrap());
+    }
 
     for entry in glob("tests/html5lib-tests/tree-construction/*.dat").unwrap() {
         produce_testcases_from_file(&mut tests, &entry.unwrap());
