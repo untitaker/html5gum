@@ -1,13 +1,128 @@
 use std::convert::Infallible;
 
-use crate::{DefaultEmitter, Emitter, Error, State, Token};
-use html5ever::tokenizer::states::RawKind;
+use crate::{Emitter, Error, State};
+use crate::callbacks::{Callback, CallbackEvent, CallbackEmitter};
+
 use html5ever::tokenizer::{
-    Doctype, Tag, TagKind, Token as Html5everToken, TokenSink, TokenSinkResult,
+    Doctype, Tag, TagKind, Token as Html5everToken, TokenSink, TokenSinkResult, states::RawKind,
 };
 use html5ever::{Attribute, QualName};
 
 const BOGUS_LINENO: u64 = 1;
+
+#[derive(Debug)]
+struct OurCallback<'a, S> {
+    sink: &'a mut S,
+    current_start_tag: Option<Tag>,
+    next_state: Option<State>,
+}
+
+impl<'a, S: TokenSink> OurCallback<'a, S> {
+    fn handle_sink_result<H>(&mut self, result: TokenSinkResult<H>) {
+        match result {
+            TokenSinkResult::Continue => {},
+            TokenSinkResult::Script(_) => {
+                self.next_state = Some(State::Data);
+                // TODO: suspend tokenizer for script
+            }
+            TokenSinkResult::Plaintext => {
+                self.next_state = Some(State::PlainText);
+            }
+            TokenSinkResult::RawData(RawKind::Rcdata) => {
+                self.next_state = Some(State::RcData);
+            }
+            TokenSinkResult::RawData(RawKind::Rawtext) => {
+                self.next_state = Some(State::RawText);
+            }
+            TokenSinkResult::RawData(RawKind::ScriptData) => {
+                self.next_state = Some(State::ScriptData);
+            }
+            TokenSinkResult::RawData(RawKind::ScriptDataEscaped(_)) => {
+                todo!()
+            }
+        }
+    }
+
+    fn sink_token(&mut self, token: Html5everToken) {
+        let result = self.sink.process_token(token, BOGUS_LINENO);
+        self.handle_sink_result(result);
+    }
+}
+
+impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
+    fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<Infallible> {
+        match event {
+            CallbackEvent::OpenStartTag { name } => {
+                self.current_start_tag = Some(Tag {
+                    kind: TagKind::StartTag,
+                    name: String::from_utf8_lossy(name).into_owned().into(),
+                    self_closing: false,
+                    attrs: Default::default()
+                });
+            }
+            CallbackEvent::AttributeName { name } => {
+                if let Some(ref mut tag) = self.current_start_tag {
+                    tag.attrs.push(Attribute {
+                        name: QualName::new(None, Default::default(), String::from_utf8_lossy(name).into_owned().into()),
+                        value: Default::default(),
+                    });
+                }
+            }
+            CallbackEvent::AttributeValue { value } => {
+                if let Some(ref mut tag) = self.current_start_tag {
+                    if let Some(attr) = tag.attrs.last_mut() {
+                        attr.value.push_slice(&String::from_utf8_lossy(value));
+                    }
+                }
+            }
+            CallbackEvent::CloseStartTag { .. } => {
+                if let Some(tag) = self.current_start_tag.take() {
+                    self.sink_token(Html5everToken::TagToken(tag));
+                }
+            }
+            CallbackEvent::EndTag { name } => {
+                self.sink_token(Html5everToken::TagToken(Tag {
+                    kind: TagKind::EndTag,
+                    name: String::from_utf8_lossy(name).into_owned().into(),
+                    self_closing: false,
+                    attrs: Default::default(),
+                }));
+            }
+            CallbackEvent::String { value } => {
+                let mut first = true;
+                for part in String::from_utf8_lossy(value).split('\0') {
+                    if !first {
+                        self.sink_token(Html5everToken::NullCharacterToken);
+                    }
+
+                    first = false;
+                    self.sink_token(Html5everToken::CharacterTokens(part.to_owned().into()));
+                }
+            }
+            CallbackEvent::Comment { value } => {
+                self.sink_token(Html5everToken::CommentToken(String::from_utf8_lossy(value).into_owned().into()));
+            }
+            CallbackEvent::Doctype { name, public_identifier, system_identifier, force_quirks } => {
+                self.sink_token(Html5everToken::DoctypeToken(Doctype {
+                    name: Some(&*name)
+                        .filter(|x| !x.is_empty())
+                        .map(|x| String::from_utf8_lossy(x).into_owned().into()),
+                    public_id: public_identifier
+                        .map(|x| String::from_utf8_lossy(&x).into_owned().into()),
+                    system_id: system_identifier
+                        .map(|x| String::from_utf8_lossy(&x).into_owned().into()),
+                    force_quirks: force_quirks,
+                }));
+            }
+            CallbackEvent::Error(error) => {
+                self.sink_token(Html5everToken::ParseError(error.as_str().into()));
+            }
+        }
+
+        None
+    }
+}
+
 
 /// A compatibility layer that allows you to plug the TreeBuilder from html5ever into the tokenizer
 /// from html5gum.
@@ -15,66 +130,21 @@ const BOGUS_LINENO: u64 = 1;
 /// See [`examples/scraper.rs`] for usage.
 #[derive(Debug)]
 pub struct Html5everEmitter<'a, S: TokenSink> {
-    next_state: Option<State>,
-    sink: &'a mut S,
-    // TODO: get rid of default emitter, construct html5ever tokens directly
-    emitter_inner: DefaultEmitter,
+    emitter_inner: CallbackEmitter<OurCallback<'a, S>>,
 }
 
 impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
     /// Construct the compatibility layer.
     pub fn new(sink: &'a mut S) -> Self {
         Html5everEmitter {
-            next_state: None,
-            sink,
-            emitter_inner: DefaultEmitter::default(),
+            emitter_inner: CallbackEmitter::new(OurCallback {
+                sink,
+                current_start_tag: None,
+                next_state: None
+            }),
         }
     }
 
-    fn pop_token_inner(&mut self) {
-        while let Some(token) = self.emitter_inner.pop_token() {
-            token_to_html5ever(token, |token| {
-                crate::utils::trace_log!("tree builder token: {:?}", token);
-                match self.sink.process_token(token, BOGUS_LINENO) {
-                    TokenSinkResult::Continue => {}
-                    TokenSinkResult::Script(_) => {
-                        if self.next_state.is_some() {
-                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
-                        }
-                        self.next_state = Some(State::Data);
-                        // TODO: suspend tokenizer for script
-                    }
-                    TokenSinkResult::Plaintext => {
-                        if self.next_state.is_some() {
-                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
-                        }
-                        self.next_state = Some(State::PlainText);
-                    }
-                    TokenSinkResult::RawData(RawKind::Rcdata) => {
-                        if self.next_state.is_some() {
-                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
-                        }
-                        self.next_state = Some(State::RcData);
-                    }
-                    TokenSinkResult::RawData(RawKind::Rawtext) => {
-                        if self.next_state.is_some() {
-                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
-                        }
-                        self.next_state = Some(State::RawText);
-                    }
-                    TokenSinkResult::RawData(RawKind::ScriptData) => {
-                        if self.next_state.is_some() {
-                            crate::utils::trace_log!("dropping state: {:?}", self.next_state);
-                        }
-                        self.next_state = Some(State::ScriptData);
-                    }
-                    TokenSinkResult::RawData(RawKind::ScriptDataEscaped(_)) => {
-                        todo!()
-                    }
-                }
-            });
-        }
-    }
 }
 
 impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
@@ -86,16 +156,14 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
 
     fn emit_eof(&mut self) {
         self.emitter_inner.emit_eof();
-        self.pop_token_inner();
-        let _ignored = self
-            .sink
+        let sink = &mut self.emitter_inner.callback_mut().sink;
+        let _ignored = sink
             .process_token(Html5everToken::EOFToken, BOGUS_LINENO);
-        self.sink.end();
+        sink.end();
     }
 
     fn emit_error(&mut self, error: Error) {
         self.emitter_inner.emit_error(error);
-        self.pop_token_inner();
     }
 
     fn pop_token(&mut self) -> Option<Infallible> {
@@ -104,38 +172,31 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
 
     fn emit_string(&mut self, c: &[u8]) {
         self.emitter_inner.emit_string(c);
-        self.pop_token_inner();
     }
 
     fn init_start_tag(&mut self) {
         self.emitter_inner.init_start_tag();
-        self.pop_token_inner();
     }
 
     fn init_end_tag(&mut self) {
         self.emitter_inner.init_end_tag();
-        self.pop_token_inner();
     }
 
     fn init_comment(&mut self) {
         self.emitter_inner.init_comment();
-        self.pop_token_inner();
     }
 
     fn emit_current_tag(&mut self) -> Option<State> {
         assert!(self.emitter_inner.emit_current_tag().is_none());
-        self.pop_token_inner();
-        self.next_state.take()
+        self.emitter_inner.callback_mut().next_state.take()
     }
 
     fn emit_current_comment(&mut self) {
         self.emitter_inner.emit_current_comment();
-        self.pop_token_inner();
     }
 
     fn emit_current_doctype(&mut self) {
         self.emitter_inner.emit_current_doctype();
-        self.pop_token_inner();
     }
 
     fn set_self_closing(&mut self) {
@@ -160,7 +221,6 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
 
     fn init_doctype(&mut self) {
         self.emitter_inner.init_doctype();
-        self.pop_token_inner();
     }
 
     fn init_attribute(&mut self) {
@@ -196,63 +256,7 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
     }
 
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
-        self.sink
+        self.emitter_inner.callback_mut().sink
             .adjusted_current_node_present_but_not_in_html_namespace()
-    }
-}
-
-fn token_to_html5ever(token: Token, mut foreach_fn: impl FnMut(Html5everToken)) {
-    match token {
-        Token::StartTag(tag) => foreach_fn(Html5everToken::TagToken(Tag {
-            kind: TagKind::StartTag,
-            name: String::from_utf8_lossy(&tag.name).into_owned().into(),
-            self_closing: tag.self_closing,
-            attrs: tag
-                .attributes
-                .into_iter()
-                .map(|(key, value)| Attribute {
-                    name: QualName::new(
-                        None,
-                        Default::default(),
-                        String::from_utf8_lossy(&key).into_owned().into(),
-                    ),
-                    value: String::from_utf8_lossy(&value).into_owned().into(),
-                })
-                .collect(),
-        })),
-        Token::EndTag(tag) => foreach_fn(Html5everToken::TagToken(Tag {
-            kind: TagKind::EndTag,
-            name: String::from_utf8_lossy(&tag.name).into_owned().into(),
-            self_closing: false,
-            attrs: Vec::new(),
-        })),
-        Token::String(s) => {
-            let s = String::from_utf8_lossy(&s);
-            let mut first = true;
-            for part in s.split('\0') {
-                if !first {
-                    foreach_fn(Html5everToken::NullCharacterToken);
-                }
-
-                first = false;
-                foreach_fn(Html5everToken::CharacterTokens(part.to_owned().into()));
-            }
-        }
-        Token::Comment(c) => foreach_fn(Html5everToken::CommentToken(
-            String::from_utf8_lossy(&c).into_owned().into(),
-        )),
-        Token::Doctype(doctype) => foreach_fn(Html5everToken::DoctypeToken(Doctype {
-            name: Some(&*doctype.name)
-                .filter(|x| !x.is_empty())
-                .map(|x| String::from_utf8_lossy(x).into_owned().into()),
-            public_id: doctype
-                .public_identifier
-                .map(|x| String::from_utf8_lossy(&x).into_owned().into()),
-            system_id: doctype
-                .system_identifier
-                .map(|x| String::from_utf8_lossy(&x).into_owned().into()),
-            force_quirks: doctype.force_quirks,
-        })),
-        Token::Error(err) => foreach_fn(Html5everToken::ParseError(err.as_str().into())),
     }
 }

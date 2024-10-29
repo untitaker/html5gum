@@ -243,6 +243,12 @@ where
             emitter_state: EmitterState::default(),
         }
     }
+
+    /// Get mutable access to the inner callback.
+    pub fn callback_mut(&mut self) -> &mut F {
+        &mut self.callback_state.callback
+    }
+
     /// Whether to use [`naive_next_state`] to switch states automatically.
     ///
     /// The default is off.
