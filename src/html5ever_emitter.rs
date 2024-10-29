@@ -1,5 +1,6 @@
 use std::convert::Infallible;
 
+use crate::utils::trace_log;
 use crate::{Emitter, Error, State};
 use crate::callbacks::{Callback, CallbackEvent, CallbackEmitter};
 
@@ -44,6 +45,7 @@ impl<'a, S: TokenSink> OurCallback<'a, S> {
     }
 
     fn sink_token(&mut self, token: Html5everToken) {
+        trace_log!("sink_token: {:?}", token);
         let result = self.sink.process_token(token, BOGUS_LINENO);
         self.handle_sink_result(result);
     }
@@ -51,6 +53,7 @@ impl<'a, S: TokenSink> OurCallback<'a, S> {
 
 impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
     fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<Infallible> {
+        trace_log!("Html5everEmitter::handle_event: {:?}", event);
         match event {
             CallbackEvent::OpenStartTag { name } => {
                 self.current_start_tag = Some(Tag {
@@ -75,8 +78,9 @@ impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
                     }
                 }
             }
-            CallbackEvent::CloseStartTag { .. } => {
-                if let Some(tag) = self.current_start_tag.take() {
+            CallbackEvent::CloseStartTag { self_closing } => {
+                if let Some(mut tag) = self.current_start_tag.take() {
+                    tag.self_closing = self_closing;
                     self.sink_token(Html5everToken::TagToken(tag));
                 }
             }

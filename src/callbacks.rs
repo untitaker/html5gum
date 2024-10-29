@@ -36,10 +36,12 @@
 //! assert_eq!(text_fragments, vec![b"Hello".to_vec()]);
 //! ```
 
+use std::mem::swap;
 use std::collections::VecDeque;
 use std::convert::Infallible;
 
 use crate::{naive_next_state, Emitter, Error, State};
+use crate::utils::trace_log;
 
 /// Events used by [CallbackEmitter].
 ///
@@ -285,6 +287,12 @@ where
             self.callback_state.emit_event(CallbackEvent::OpenStartTag {
                 name: &self.emitter_state.current_tag_name,
             });
+
+            self.emitter_state.last_start_tag.clear();
+            swap(
+                &mut self.emitter_state.last_start_tag,
+                &mut self.emitter_state.current_tag_name
+            );
         }
     }
 
@@ -351,10 +359,6 @@ where
         self.flush_current_characters();
         match self.emitter_state.current_tag_type {
             Some(CurrentTag::Start) => {
-                self.emitter_state.last_start_tag.clear();
-                self.emitter_state
-                    .last_start_tag
-                    .extend(&self.emitter_state.current_tag_name);
                 self.flush_open_start_tag();
                 self.callback_state
                     .emit_event(CallbackEvent::CloseStartTag {
@@ -404,6 +408,7 @@ where
     }
 
     fn set_self_closing(&mut self) {
+        trace_log!("set_self_closing");
         if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::End)) {
             self.callback_state
                 .emit_event(CallbackEvent::Error(Error::EndTagWithTrailingSolidus));
