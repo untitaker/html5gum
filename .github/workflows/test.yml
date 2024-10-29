@@ -69,8 +69,13 @@ jobs:
         with:
           toolchain: stable
 
-      # assert cargo doc succeeds
-      - run: cargo doc
-
       # assert there are no warnings
-      - run: '[ -z "$(cargo doc || grep warning)" ]'
+      - run: '[ -z "$(cargo doc --no-deps || grep warning)" ]'
+
+      # assert cargo doc succeeded
+      - run: cargo doc --no-deps
+
+      # assert that there's no broken links (links to examples like to break)
+      - uses: untitaker/hyperlink@0.1.42
+        with:
+          args: target/doc/
