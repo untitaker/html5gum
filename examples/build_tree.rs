@@ -2,8 +2,6 @@
 /// building logic and DOM implementation. The result is a technically complete HTML5 parser.
 ///
 /// You may want to refer to `examples/scraper.rs` for better ergonomics.
-use std::iter::repeat;
-
 use html5ever::tree_builder::TreeBuilder;
 use html5gum::{Html5everEmitter, IoReader, Tokenizer};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
@@ -11,7 +9,7 @@ use markup5ever_rcdom::{Handle, NodeData, RcDom};
 fn walk(indent: usize, handle: &Handle) {
     let node = handle;
     // FIXME: don't allocate
-    print!("{}", repeat(" ").take(indent).collect::<String>());
+    print!("{}", " ".repeat(indent));
     match node.data {
         NodeData::Document => println!("#Document"),
 

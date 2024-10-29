@@ -43,6 +43,14 @@ pub fn run_old_html5gum(s: &str) {
                     testing_tokens.retain(isnt_error);
                 }
             }
+            x if x.starts_with("if-testing-contains:") => {
+                if testing_tokens.contains(&html5gum::Token::Error(
+                    x["if-testing-contains:".len()..].parse().unwrap(),
+                )) {
+                    reference_tokens.retain(isnt_old_error);
+                    testing_tokens.retain(isnt_error);
+                }
+            }
             x => panic!("unknown FUZZ_IGNORE_PARSE_ERRORS instruction: {}", x),
         }
     }
@@ -50,26 +58,26 @@ pub fn run_old_html5gum(s: &str) {
     let reference_tokens: Vec<_> = reference_tokens
         .into_iter()
         .map(|x| match x {
-            html5gum_old::Token::String(x) => Token::String(x.into()),
-            html5gum_old::Token::Comment(x) => Token::Comment(x.into()),
+            html5gum_old::Token::String(x) => Token::String(Vec::from(x).into()),
+            html5gum_old::Token::Comment(x) => Token::Comment(Vec::from(x).into()),
             html5gum_old::Token::StartTag(x) => Token::StartTag(StartTag {
-                name: x.name.into(),
+                name: Vec::from(x.name).into(),
                 attributes: x
                     .attributes
                     .into_iter()
-                    .map(|(k, v)| (k.into(), v.into()))
+                    .map(|(k, v)| (Vec::from(k).into(), Vec::from(v).into()))
                     .collect(),
                 self_closing: x.self_closing,
             }),
             html5gum_old::Token::EndTag(x) => Token::EndTag(EndTag {
-                name: x.name.into(),
+                name: Vec::from(x.name).into(),
             }),
             html5gum_old::Token::Error(x) => Token::Error(x.to_string().parse().unwrap()),
             html5gum_old::Token::Doctype(x) => Token::Doctype(Doctype {
-                name: x.name.into(),
+                name: Vec::from(x.name).into(),
                 force_quirks: x.force_quirks,
-                public_identifier: x.public_identifier.map(From::from),
-                system_identifier: x.system_identifier.map(From::from),
+                public_identifier: x.public_identifier.map(|x| Vec::from(x).into()),
+                system_identifier: x.system_identifier.map(|x| Vec::from(x).into())
             }),
         })
         .collect();

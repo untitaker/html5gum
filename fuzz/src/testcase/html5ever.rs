@@ -64,22 +64,22 @@ impl<R: Reader, E: Emitter<Token = Token>> html5ever::tokenizer::TokenSink for T
         match (token, reference_token) {
             (Some(Token::StartTag(tag)), Token2::TagToken(tag2)) => {
                 assert_eq!(tag2.kind, TagKind::StartTag);
-                assert_eq!(tag.name, tag2.name.as_ref().as_bytes().to_owned().into());
+                assert_eq!(tag.name, tag2.name.as_ref().as_bytes().to_owned());
             }
             (Some(Token::EndTag(tag)), Token2::TagToken(tag2)) => {
                 assert_eq!(tag2.kind, TagKind::EndTag);
-                assert_eq!(tag.name, tag2.name.as_ref().as_bytes().to_owned().into());
+                assert_eq!(tag.name, tag2.name.as_ref().as_bytes().to_owned());
             }
             (None, Token2::EOFToken) => {}
             (Some(Token::Comment(comment)), Token2::CommentToken(comment2)) => {
-                assert_eq!(comment, comment2.as_ref().as_bytes().to_owned().into());
+                assert_eq!(comment, comment2.as_ref().as_bytes().to_owned());
             }
             (Some(Token::Doctype(doctype)), Token2::DoctypeToken(doctype2)) => {
                 assert_eq!(
                     doctype.name,
                     doctype2
                         .name
-                        .map(|x| x.as_ref().to_owned().into_bytes().into())
+                        .map(|x| x.as_ref().to_owned().into_bytes())
                         .unwrap_or_default()
                 );
                 assert_eq!(

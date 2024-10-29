@@ -36,12 +36,15 @@ macro_rules! blob_url_prefix {
 use blob_url_prefix;
 
 mod arrayvec;
+pub mod callbacks;
 mod char_validator;
+mod default_emitter;
 mod emitter;
 mod entities;
 mod error;
 #[cfg(feature = "html5ever")]
 mod html5ever_emitter;
+mod htmlstring;
 mod machine;
 mod machine_helper;
 mod read_helper;
@@ -54,10 +57,10 @@ mod utils;
 #[doc(hidden)]
 pub mod testutils;
 
-pub use emitter::{
-    naive_next_state, DefaultEmitter, Doctype, Emitter, EndTag, HtmlString, StartTag, Token,
-};
+pub use default_emitter::{DefaultEmitter, Doctype, EndTag, StartTag, Token};
+pub use emitter::{naive_next_state, Emitter};
 pub use error::Error;
+pub use htmlstring::HtmlString;
 pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use state::State;
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};

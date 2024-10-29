@@ -6,7 +6,9 @@
 /// echo '<h1><span class=hello>Hello</span></h1>' | cargo run --all-features --example scraper
 /// ```
 ///
-/// Essentially, your HTML parsing will be powered by a combination of html5gum and html5ever.
+/// Essentially, your HTML parsing will be powered by a combination of html5gum and html5ever. This
+/// has no immediate benefit over using scraper normally and is mostly done as a transitionary step
+/// until html5gum has its own implementation of tree building and the DOM.
 ///
 /// Requires the tree-builder feature.
 use std::io::{stdin, Read};

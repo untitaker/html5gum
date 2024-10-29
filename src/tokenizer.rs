@@ -62,13 +62,32 @@ impl<R: Reader, E: Emitter<Token = Infallible>> Tokenizer<R, E> {
     /// Some emitters don't ever produce any tokens and instead have other side effects. In those
     /// cases, you will find yourself writing code like this to handle errors:
     ///
-    /// ```norun
-    /// for _ in tokenizer {
-    ///     result.unwrap();
-    /// }
     /// ```
+    /// use std::convert::Infallible;
     ///
-    /// This is a bit silly, so instead you can use `tokenizer.finish()`.
+    /// use html5gum::Tokenizer;
+    /// use html5gum::callbacks::{CallbackEvent, CallbackEmitter};
+    ///
+    /// let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>| -> Option<Infallible> {
+    ///     if let CallbackEvent::String { value } = event {
+    ///         println!("{}", String::from_utf8_lossy(value));
+    ///     }
+    ///
+    ///     // We may choose to return any Option<T> (such as errors, or our own tokens), but since
+    ///     // we do all the real work in the callback itself, we choose to use Option<Infallible>.
+    ///     None
+    /// });
+    ///
+    /// let tokenizer = Tokenizer::new_with_emitter("hello <div><div><div> world!", emitter);
+    ///
+    /// // this is a bit silly
+    /// // for _ in tokenizer {
+    /// //     result.unwrap();
+    /// // }
+    ///
+    /// // much better:
+    /// tokenizer.finish();
+    /// ```
     pub fn finish(self) -> Result<(), R::Error> {
         for result in self {
             result?;
