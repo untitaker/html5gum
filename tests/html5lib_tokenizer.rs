@@ -385,7 +385,7 @@ fn main() {
         produce_testcases_from_file(&mut tests, &entry.unwrap());
     }
 
-    for entry in glob("tests/custom-html5lib-tests/*.test").unwrap() {
+    for entry in glob("tests/custom-html5lib-tests/tokenizer/*.test").unwrap() {
         produce_testcases_from_file(&mut tests, &entry.unwrap());
     }
 

@@ -92,7 +92,11 @@ impl Testcase {
             }
         }
 
-        None
+        if has_errors {
+            Some(rv)
+        } else {
+            None
+        }
     }
 }
 
@@ -138,6 +142,7 @@ fn map_tokenizer_state(input: State) -> html5gum::State {
         State::Plaintext => html5gum::State::PlainText,
         State::RawData(RawKind::Rcdata) => html5gum::State::RcData,
         State::RawData(RawKind::Rawtext) => html5gum::State::RawText,
+        State::RawData(RawKind::ScriptData) => html5gum::State::ScriptData,
         x => todo!("{:?}", x),
     }
 }
@@ -170,7 +175,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
 
             let token_emitter = Html5everEmitter::new(&mut tree_builder);
 
-            let input = &testcase.data[..testcase.data.len() - 1];
+            let input = &testcase.data[..testcase.data.len().saturating_sub(1)];
             let mut tokenizer = Tokenizer::new_with_emitter(input, token_emitter);
             if let Some(state) = initial_state {
                 tokenizer.set_state(state);
@@ -289,6 +294,10 @@ fn serialize(buf: &mut String, indent: usize, handle: Handle) {
 fn main() {
     let args = Arguments::from_args();
     let mut tests = Vec::new();
+
+    for entry in glob("tests/custom-html5lib-tests/tree-construction/*.dat").unwrap() {
+        produce_testcases_from_file(&mut tests, &entry.unwrap());
+    }
 
     for entry in glob("tests/html5lib-tests/tree-construction/*.dat").unwrap() {
         produce_testcases_from_file(&mut tests, &entry.unwrap());
