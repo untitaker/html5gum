@@ -142,6 +142,7 @@ fn map_tokenizer_state(input: State) -> html5gum::State {
         State::Plaintext => html5gum::State::PlainText,
         State::RawData(RawKind::Rcdata) => html5gum::State::RcData,
         State::RawData(RawKind::Rawtext) => html5gum::State::RawText,
+        State::RawData(RawKind::ScriptData) => html5gum::State::ScriptData,
         x => todo!("{:?}", x),
     }
 }
