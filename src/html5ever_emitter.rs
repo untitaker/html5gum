@@ -1,11 +1,11 @@
 use std::convert::Infallible;
 
+use crate::callbacks::{Callback, CallbackEmitter, CallbackEvent};
 use crate::utils::trace_log;
 use crate::{Emitter, Error, State};
-use crate::callbacks::{Callback, CallbackEvent, CallbackEmitter};
 
 use html5ever::tokenizer::{
-    Doctype, Tag, TagKind, Token as Html5everToken, TokenSink, TokenSinkResult, states::RawKind,
+    states::RawKind, Doctype, Tag, TagKind, Token as Html5everToken, TokenSink, TokenSinkResult,
 };
 use html5ever::{Attribute, QualName};
 
@@ -21,7 +21,7 @@ struct OurCallback<'a, S> {
 impl<'a, S: TokenSink> OurCallback<'a, S> {
     fn handle_sink_result<H>(&mut self, result: TokenSinkResult<H>) {
         match result {
-            TokenSinkResult::Continue => {},
+            TokenSinkResult::Continue => {}
             TokenSinkResult::Script(_) => {
                 self.next_state = Some(State::Data);
                 // TODO: suspend tokenizer for script
@@ -60,13 +60,17 @@ impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
                     kind: TagKind::StartTag,
                     name: String::from_utf8_lossy(name).into_owned().into(),
                     self_closing: false,
-                    attrs: Default::default()
+                    attrs: Default::default(),
                 });
             }
             CallbackEvent::AttributeName { name } => {
                 if let Some(ref mut tag) = self.current_start_tag {
                     tag.attrs.push(Attribute {
-                        name: QualName::new(None, Default::default(), String::from_utf8_lossy(name).into_owned().into()),
+                        name: QualName::new(
+                            None,
+                            Default::default(),
+                            String::from_utf8_lossy(name).into_owned().into(),
+                        ),
                         value: Default::default(),
                     });
                 }
@@ -104,9 +108,16 @@ impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
                 }
             }
             CallbackEvent::Comment { value } => {
-                self.sink_token(Html5everToken::CommentToken(String::from_utf8_lossy(value).into_owned().into()));
+                self.sink_token(Html5everToken::CommentToken(
+                    String::from_utf8_lossy(value).into_owned().into(),
+                ));
             }
-            CallbackEvent::Doctype { name, public_identifier, system_identifier, force_quirks } => {
+            CallbackEvent::Doctype {
+                name,
+                public_identifier,
+                system_identifier,
+                force_quirks,
+            } => {
                 self.sink_token(Html5everToken::DoctypeToken(Doctype {
                     name: Some(&*name)
                         .filter(|x| !x.is_empty())
@@ -127,7 +138,6 @@ impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
     }
 }
 
-
 /// A compatibility layer that allows you to plug the TreeBuilder from html5ever into the tokenizer
 /// from html5gum.
 ///
@@ -144,11 +154,10 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
             emitter_inner: CallbackEmitter::new(OurCallback {
                 sink,
                 current_start_tag: None,
-                next_state: None
+                next_state: None,
             }),
         }
     }
-
 }
 
 impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
@@ -161,8 +170,7 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
     fn emit_eof(&mut self) {
         self.emitter_inner.emit_eof();
         let sink = &mut self.emitter_inner.callback_mut().sink;
-        let _ignored = sink
-            .process_token(Html5everToken::EOFToken, BOGUS_LINENO);
+        let _ignored = sink.process_token(Html5everToken::EOFToken, BOGUS_LINENO);
         sink.end();
     }
 
@@ -260,7 +268,9 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
     }
 
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
-        self.emitter_inner.callback_mut().sink
+        self.emitter_inner
+            .callback_mut()
+            .sink
             .adjusted_current_node_present_but_not_in_html_namespace()
     }
 }

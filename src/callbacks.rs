@@ -36,12 +36,12 @@
 //! assert_eq!(text_fragments, vec![b"Hello".to_vec()]);
 //! ```
 
-use std::mem::swap;
 use std::collections::VecDeque;
 use std::convert::Infallible;
+use std::mem::swap;
 
-use crate::{naive_next_state, Emitter, Error, State};
 use crate::utils::trace_log;
+use crate::{naive_next_state, Emitter, Error, State};
 
 /// Events used by [CallbackEmitter].
 ///
@@ -291,7 +291,7 @@ where
             self.emitter_state.last_start_tag.clear();
             swap(
                 &mut self.emitter_state.last_start_tag,
-                &mut self.emitter_state.current_tag_name
+                &mut self.emitter_state.current_tag_name,
             );
         }
     }
