@@ -21,7 +21,7 @@ pub fn run_html5ever(s: &str) {
             ..Default::default()
         },
     );
-    let mut queue = BufferQueue::new();
+    let mut queue = BufferQueue::default();
     queue.push_back(format_tendril!("{}", s));
 
     assert!(matches!(

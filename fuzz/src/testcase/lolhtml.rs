@@ -2,7 +2,7 @@ use html5gum::{Doctype, EndTag, StartTag, Token};
 use lol_html::errors::RewritingError;
 use lol_html::html_content::DocumentEnd;
 use lol_html::{
-    AsciiCompatibleEncoding, LocalName, MemoryLimiter, Namespace, SharedEncoding,
+    AsciiCompatibleEncoding, LocalName, Namespace, SharedEncoding, SharedMemoryLimiter,
     StartTagHandlingResult, Token as Token2, TokenCaptureFlags, TransformController,
     TransformStream, TransformStreamSettings,
 };
@@ -38,7 +38,7 @@ pub fn run_lolhtml(data: &[u8]) {
             testing_tokenizer: &mut lol_tokens,
         };
 
-        let memory_limiter = MemoryLimiter::new_shared(2048);
+        let memory_limiter = SharedMemoryLimiter::new(2048);
 
         let mut transform_stream = TransformStream::new(TransformStreamSettings {
             transform_controller,

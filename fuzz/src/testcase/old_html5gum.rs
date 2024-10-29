@@ -77,7 +77,7 @@ pub fn run_old_html5gum(s: &str) {
                 name: Vec::from(x.name).into(),
                 force_quirks: x.force_quirks,
                 public_identifier: x.public_identifier.map(|x| Vec::from(x).into()),
-                system_identifier: x.system_identifier.map(|x| Vec::from(x).into())
+                system_identifier: x.system_identifier.map(|x| Vec::from(x).into()),
             }),
         })
         .collect();
