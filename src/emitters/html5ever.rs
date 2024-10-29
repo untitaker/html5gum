@@ -1,6 +1,7 @@
+//! See [`examples/scraper.rs`] for usage.
 use std::convert::Infallible;
 
-use crate::callbacks::{Callback, CallbackEmitter, CallbackEvent};
+use crate::emitters::callback::{Callback, CallbackEmitter, CallbackEvent};
 use crate::utils::trace_log;
 use crate::{Emitter, Error, State};
 
@@ -175,27 +176,30 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
     }
 
     fn emit_error(&mut self, error: Error) {
-        self.emitter_inner.emit_error(error);
+        self.emitter_inner.emit_error(error)
     }
 
-    fn pop_token(&mut self) -> Option<Infallible> {
-        None
+    fn should_emit_errors(&mut self) -> bool {
+        self.emitter_inner.should_emit_errors()
     }
 
+    fn pop_token(&mut self) -> Option<Self::Token> {
+        self.emitter_inner.pop_token()
+    }
     fn emit_string(&mut self, c: &[u8]) {
-        self.emitter_inner.emit_string(c);
+        self.emitter_inner.emit_string(c)
     }
 
     fn init_start_tag(&mut self) {
-        self.emitter_inner.init_start_tag();
+        self.emitter_inner.init_start_tag()
     }
 
     fn init_end_tag(&mut self) {
-        self.emitter_inner.init_end_tag();
+        self.emitter_inner.init_end_tag()
     }
 
     fn init_comment(&mut self) {
-        self.emitter_inner.init_comment();
+        self.emitter_inner.init_comment()
     }
 
     fn emit_current_tag(&mut self) -> Option<State> {
@@ -204,63 +208,63 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
     }
 
     fn emit_current_comment(&mut self) {
-        self.emitter_inner.emit_current_comment();
+        self.emitter_inner.emit_current_comment()
     }
 
     fn emit_current_doctype(&mut self) {
-        self.emitter_inner.emit_current_doctype();
+        self.emitter_inner.emit_current_doctype()
     }
 
     fn set_self_closing(&mut self) {
-        self.emitter_inner.set_self_closing();
+        self.emitter_inner.set_self_closing()
     }
 
     fn set_force_quirks(&mut self) {
-        self.emitter_inner.set_force_quirks();
+        self.emitter_inner.set_force_quirks()
     }
 
     fn push_tag_name(&mut self, s: &[u8]) {
-        self.emitter_inner.push_tag_name(s);
+        self.emitter_inner.push_tag_name(s)
     }
 
     fn push_comment(&mut self, s: &[u8]) {
-        self.emitter_inner.push_comment(s);
+        self.emitter_inner.push_comment(s)
     }
 
     fn push_doctype_name(&mut self, s: &[u8]) {
-        self.emitter_inner.push_doctype_name(s);
+        self.emitter_inner.push_doctype_name(s)
     }
 
     fn init_doctype(&mut self) {
-        self.emitter_inner.init_doctype();
+        self.emitter_inner.init_doctype()
     }
 
     fn init_attribute(&mut self) {
-        self.emitter_inner.init_attribute();
+        self.emitter_inner.init_attribute()
     }
 
     fn push_attribute_name(&mut self, s: &[u8]) {
-        self.emitter_inner.push_attribute_name(s);
+        self.emitter_inner.push_attribute_name(s)
     }
 
     fn push_attribute_value(&mut self, s: &[u8]) {
-        self.emitter_inner.push_attribute_value(s);
+        self.emitter_inner.push_attribute_value(s)
     }
 
     fn set_doctype_public_identifier(&mut self, value: &[u8]) {
-        self.emitter_inner.set_doctype_public_identifier(value);
+        self.emitter_inner.set_doctype_public_identifier(value)
     }
 
     fn set_doctype_system_identifier(&mut self, value: &[u8]) {
-        self.emitter_inner.set_doctype_system_identifier(value);
+        self.emitter_inner.set_doctype_system_identifier(value)
     }
 
-    fn push_doctype_public_identifier(&mut self, value: &[u8]) {
-        self.emitter_inner.push_doctype_public_identifier(value);
+    fn push_doctype_public_identifier(&mut self, s: &[u8]) {
+        self.emitter_inner.push_doctype_public_identifier(s)
     }
 
-    fn push_doctype_system_identifier(&mut self, value: &[u8]) {
-        self.emitter_inner.push_doctype_system_identifier(value);
+    fn push_doctype_system_identifier(&mut self, s: &[u8]) {
+        self.emitter_inner.push_doctype_system_identifier(s)
     }
 
     fn current_is_appropriate_end_tag_token(&mut self) -> bool {

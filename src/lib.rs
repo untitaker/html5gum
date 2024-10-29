@@ -6,6 +6,8 @@
 #![doc = concat!("[LICENSE]: ", blob_url_prefix!(), "LICENSE")]
 #![doc = concat!("[examples/tokenize_with_state_switches.rs]: ", blob_url_prefix!(), "examples/tokenize_with_state_switches.rs")]
 #![doc = concat!("[examples/custom_emitter.rs]: ", blob_url_prefix!(), "examples/custom_emitter.rs")]
+#![doc = concat!("[examples/callback_emitter.rs]: ", blob_url_prefix!(), "examples/callback_emitter.rs")]
+#![doc = concat!("[examples/scraper.rs]: ", blob_url_prefix!(), "examples/scraper.rs")]
 #![doc = include_str!("../README.md")]
 //
 #![warn(clippy::all)]
@@ -36,14 +38,10 @@ macro_rules! blob_url_prefix {
 use blob_url_prefix;
 
 mod arrayvec;
-pub mod callbacks;
 mod char_validator;
-mod default_emitter;
-mod emitter;
+pub mod emitters;
 mod entities;
 mod error;
-#[cfg(feature = "html5ever")]
-mod html5ever_emitter;
 mod htmlstring;
 mod machine;
 mod machine_helper;
@@ -57,13 +55,10 @@ mod utils;
 #[doc(hidden)]
 pub mod testutils;
 
-pub use default_emitter::{DefaultEmitter, Doctype, EndTag, StartTag, Token};
-pub use emitter::{naive_next_state, Emitter};
+pub use emitters::default::{DefaultEmitter, Doctype, EndTag, StartTag, Token};
+pub use emitters::{naive_next_state, Emitter};
 pub use error::Error;
 pub use htmlstring::HtmlString;
 pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use state::State;
 pub use tokenizer::{InfallibleTokenizer, Tokenizer};
-
-#[cfg(feature = "html5ever")]
-pub use html5ever_emitter::Html5everEmitter;

@@ -1,14 +1,14 @@
 //! Consume the parsed HTML as a series of events through a callback.
 //!
-//! While using the [DefaultEmitter] provides an easy-to-use API with low performance, and
-//! implementing your own [Emitter] brings maximal performance and maximal pain, this is a middle
+//! While using the [crate::DefaultEmitter] provides an easy-to-use API with low performance, and
+//! implementing your own [crate::Emitter] brings maximal performance and maximal pain, this is a middle
 //! ground. All strings are borrowed from some intermediate buffer instead of individually
 //! allocated.
 //!
 //! ```
 //! // Extract all text between span tags, in a naive (but fast) way. Does not handle tags inside of the span. See `examples/` as well.
 //! use html5gum::Tokenizer;
-//! use html5gum::callbacks::{CallbackEvent, CallbackEmitter};
+//! use html5gum::emitters::callback::{CallbackEvent, CallbackEmitter};
 //!
 //! let mut is_in_span = false;
 //! let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>| -> Option<Vec<u8>> {
@@ -45,7 +45,7 @@ use crate::{naive_next_state, Emitter, Error, State};
 
 /// Events used by [CallbackEmitter].
 ///
-/// This operates at a slightly lower level than [Token], as start tags are split up into multiple
+/// This operates at a slightly lower level than [crate::Token], as start tags are split up into multiple
 /// events.
 #[derive(Debug)]
 pub enum CallbackEvent<'a> {
@@ -70,8 +70,8 @@ pub enum CallbackEvent<'a> {
     ///
     /// Things like whitespace, quote handling is taken care of.
     ///
-    /// After this event, the start tag may be closed using [CloseStartTag], or another
-    /// [AttributeName] may follow.
+    /// After this event, the start tag may be closed using `CloseStartTag`, or another
+    /// `AttributeName` may follow.
     AttributeValue {
         /// The value of the attribute.
         value: &'a [u8],
@@ -87,7 +87,7 @@ pub enum CallbackEvent<'a> {
         self_closing: bool,
     },
 
-    /// Visit `"</mytag>".
+    /// Visit `"</mytag>"`.
     ///
     /// Note: Because of strangeness in the HTML spec, attributes may be observed outside of start
     /// tags, before this event. It's best to ignore them as they are not valid HTML, but can still
@@ -146,7 +146,7 @@ struct CallbackState<F, T> {
 /// type.
 pub trait Callback<T> {
     /// Perform some action on a parsing event, and, optionally, return a value that can be yielded
-    /// from the [Tokenizer] iterator.
+    /// from the [crate::Tokenizer] iterator.
     fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<T>;
 }
 
@@ -207,7 +207,8 @@ struct EmitterState {
     doctype_force_quirks: bool,
 }
 
-/// The emitter class to pass to [Tokenizer::new_with_emitter]
+/// The emitter class to pass to [crate::Tokenizer::new_with_emitter]. Please refer to the
+/// module-level documentation on [crate::emitters::callback] for usage.
 #[derive(Debug)]
 pub struct CallbackEmitter<F, T = Infallible> {
     // this struct is only split out so [CallbackState::emit_event] can borrow things concurrently
@@ -232,10 +233,10 @@ impl<F, T> CallbackEmitter<F, T>
 where
     F: Callback<T>,
 {
-    /// Create a new emitter. See type-level docs to understand basic usage.
+    /// Create a new emitter.
     ///
     /// The given callback may return optional tokens that then become available through the
-    /// [Tokenizer]'s iterator. If that's not used, return [Option<Infallible>].
+    /// [crate::Tokenizer]'s iterator. If that's not used, return `Option<Infallible>`.
     pub fn new(callback: F) -> Self {
         CallbackEmitter {
             callback_state: CallbackState {

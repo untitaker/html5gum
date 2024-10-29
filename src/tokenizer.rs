@@ -66,7 +66,7 @@ impl<R: Reader, E: Emitter<Token = Infallible>> Tokenizer<R, E> {
     /// use std::convert::Infallible;
     ///
     /// use html5gum::Tokenizer;
-    /// use html5gum::callbacks::{CallbackEvent, CallbackEmitter};
+    /// use html5gum::emitters::callback::{CallbackEvent, CallbackEmitter};
     ///
     /// let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>| -> Option<Infallible> {
     ///     if let CallbackEvent::String { value } = event {
