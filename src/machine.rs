@@ -418,7 +418,7 @@ pub(crate) mod states {
                 c => {
                     slf.emitter.emit_string(b"</");
                     slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
-                    reconsume_in!(slf, c, Data)
+                    reconsume_in!(slf, c, ScriptData)
                 }
             }
         )
