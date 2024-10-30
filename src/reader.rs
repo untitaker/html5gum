@@ -126,7 +126,7 @@ impl<'a, R: 'a + Reader> Readable<'a> for R {
 /// let html = "<title   >hello world</title>";
 /// let mut new_html = String::new();
 ///
-/// for token in Tokenizer::new(html).infallible() {
+/// for Ok(token) in Tokenizer::new(html) {
 ///     match token {
 ///         Token::StartTag(tag) => {
 ///             write!(new_html, "<{}>", String::from_utf8_lossy(&tag.name)).unwrap();

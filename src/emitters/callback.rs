@@ -29,9 +29,8 @@
 //! });
 //!
 //! let input = r#"<h1><span class=hello>Hello</span> world!</h1>"#;
-//! let text_fragments = Tokenizer::new_with_emitter(input, emitter)
-//!     .infallible()
-//!     .collect::<Vec<_>>();
+//! let Ok(text_fragments) = Tokenizer::new_with_emitter(input, emitter)
+//!     .collect::<Result<Vec<_>, _>>();
 //!
 //! assert_eq!(text_fragments, vec![b"Hello".to_vec()]);
 //! ```
