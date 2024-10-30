@@ -3,11 +3,15 @@ use std::convert::Infallible;
 
 use crate::emitters::callback::{Callback, CallbackEmitter, CallbackEvent};
 use crate::utils::trace_log;
-use crate::{Emitter, Error, State};
+use crate::{Emitter, Error, Readable, Reader, State, Tokenizer};
 
+use html5ever::interface::{create_element, TreeSink};
+use html5ever::tokenizer::states::State as Html5everState;
 use html5ever::tokenizer::{
     states::RawKind, Doctype, Tag, TagKind, Token as Html5everToken, TokenSink, TokenSinkResult,
 };
+use html5ever::tree_builder::TreeBuilder;
+use html5ever::ParseOpts;
 use html5ever::{Attribute, QualName};
 
 const BOGUS_LINENO: u64 = 1;
@@ -277,4 +281,112 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
             .sink
             .adjusted_current_node_present_but_not_in_html_namespace()
     }
+}
+
+fn map_tokenizer_state(input: Html5everState) -> State {
+    match input {
+        Html5everState::Data => State::Data,
+        Html5everState::Plaintext => State::PlainText,
+        Html5everState::RawData(RawKind::Rcdata) => State::RcData,
+        Html5everState::RawData(RawKind::Rawtext) => State::RawText,
+        Html5everState::RawData(RawKind::ScriptData) => State::ScriptData,
+        x => todo!("{:?}", x),
+    }
+}
+
+/// Parse an HTML fragment
+///
+/// This is a convenience function for using [Html5everEmitter] together with html5ever. It is
+/// equivalent to the same functions in [html5ever::driver].
+///
+/// ```
+/// use html5ever::{local_name, QualName, ns, namespace_url}; // extern crate html5ever;
+/// use scraper::Html; // extern crate scraper;
+///
+/// let input = "<h1>hello world</h1>";
+///
+/// // equivalent to `Html::parse_fragment`
+/// let dom = Html::new_fragment();
+/// let Ok(dom) = html5gum::emitters::html5ever::parse_fragment(
+///     input,
+///     dom,
+///     Default::default(),
+///     QualName::new(None, ns!(html), local_name!("body")),
+///     Vec::new()
+/// );
+/// ```
+pub fn parse_fragment<'a, R, Sink>(
+    input: R,
+    mut sink: Sink,
+    opts: ParseOpts,
+    context_name: QualName,
+    context_attrs: Vec<Attribute>,
+) -> Result<Sink, <R::Reader as Reader>::Error>
+where
+    R: Readable<'a>,
+    Sink: TreeSink,
+{
+    let context_elem = create_element(&mut sink, context_name, context_attrs);
+    parse_fragment_for_element(input, sink, opts, context_elem, None)
+}
+
+/// Like `parse_fragment`, but with an existing context element
+/// and optionally a form element.
+///
+/// This is a convenience function for using [Html5everEmitter] together with html5ever. It is
+/// equivalent to the same functions in [html5ever::driver].
+pub fn parse_fragment_for_element<'a, R, Sink>(
+    input: R,
+    sink: Sink,
+    opts: ParseOpts,
+    context_element: Sink::Handle,
+    form_element: Option<Sink::Handle>,
+) -> Result<Sink, <R::Reader as Reader>::Error>
+where
+    R: Readable<'a>,
+    Sink: TreeSink,
+{
+    let mut tree_builder =
+        TreeBuilder::new_for_fragment(sink, context_element, form_element, opts.tree_builder);
+
+    let initial_state = map_tokenizer_state(tree_builder.tokenizer_state_for_context_elem());
+    let token_emitter = Html5everEmitter::new(&mut tree_builder);
+    let mut tokenizer = Tokenizer::new_with_emitter(input, token_emitter);
+    tokenizer.set_state(initial_state);
+    tokenizer.finish()?;
+    Ok(tree_builder.sink)
+}
+
+/// Parse an HTML document.
+///
+/// This is a convenience function for using [Html5everEmitter] together with html5ever. It is
+/// equivalent to the same functions in [html5ever::driver].
+///
+/// ```rust
+/// use scraper::Html; // extern crate scraper;
+///
+/// let input = "<h1>hello world</h1>";
+///
+/// // equivalent to `Html::parse_document`
+/// let dom = Html::new_document();
+/// let Ok(dom) = html5gum::emitters::html5ever::parse_document(
+///     input,
+///     dom,
+///     Default::default()
+/// );
+/// ```
+pub fn parse_document<'a, R, Sink>(
+    input: R,
+    sink: Sink,
+    opts: ParseOpts,
+) -> Result<Sink, <R::Reader as Reader>::Error>
+where
+    R: Readable<'a>,
+    Sink: TreeSink,
+{
+    let mut tree_builder = TreeBuilder::new(sink, opts.tree_builder);
+    let token_emitter = Html5everEmitter::new(&mut tree_builder);
+    let tokenizer = Tokenizer::new_with_emitter(input, token_emitter);
+    tokenizer.finish()?;
+    Ok(tree_builder.sink)
 }
