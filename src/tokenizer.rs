@@ -123,14 +123,3 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
         }
     }
 }
-
-impl<R: Reader<Error = Infallible>, E: Emitter> Iterator for InfallibleTokenizer<R, E> {
-    type Item = E::Token;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.0.next()? {
-            Ok(token) => Some(token),
-            Err(e) => match e {},
-        }
-    }
-}
