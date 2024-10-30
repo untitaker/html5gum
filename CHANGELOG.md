@@ -1,6 +1,6 @@
 # 0.7.0
 
-- Removal of `Tokenizer.infallible()`. Use `for Ok(token) in Tokenizer::new()` instead. TODO link PR
+- Removal of `Tokenizer.infallible()`. Use `for Ok(token) in Tokenizer::new()` instead. [PR 102](https://github.com/untitaker/html5gum/pull/102)
 - Add more convenience functions to `tree-builder` feature, equivalent to `html5ever::driver`. [PR 101](https://github.com/untitaker/html5gum/pull/101)
 
 # 0.6.1
