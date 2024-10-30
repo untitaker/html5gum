@@ -61,4 +61,4 @@ pub use error::Error;
 pub use htmlstring::HtmlString;
 pub use reader::{IoReader, Readable, Reader, StringReader};
 pub use state::State;
-pub use tokenizer::{InfallibleTokenizer, Tokenizer};
+pub use tokenizer::Tokenizer;
