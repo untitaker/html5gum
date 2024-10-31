@@ -323,15 +323,15 @@ dependencies = [
 [[package]]
 name = "html5gum"
 version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d4c69595eca3d5d246be4c0be51577b0c39c5f8c75d27a06c8a69c7b594cd37"
 dependencies = [
  "jetscii",
 ]
 
 [[package]]
 name = "html5gum"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d4c69595eca3d5d246be4c0be51577b0c39c5f8c75d27a06c8a69c7b594cd37"
+version = "0.7.0"
 dependencies = [
  "jetscii",
 ]
@@ -345,7 +345,7 @@ dependencies = [
  "encoding_rs",
  "html5ever",
  "html5gum 0.6.0",
- "html5gum 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "html5gum 0.7.0",
  "libfuzzer-sys",
  "lol_html",
  "pretty_assertions",
@@ -1046,9 +1046,9 @@ dependencies = [
 
 [[package]]
 name = "swc_common"
-version = "2.0.0"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a961e918c450ca5401cb3678dd8b7d80daec0944b67699cdbd5ddb32e5f95497"
+checksum = "a9c96bb59e6721eb665764d6dc42a8537d61129ade06f8dd87894d51e018c81d"
 dependencies = [
  "ast_node",
  "better_scoped_tls",
