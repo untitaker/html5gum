@@ -23,7 +23,7 @@ libtest-mimic = "0.8.1"
 # need to have cache simulation running because of bencher.dev
 iai = { git = "https://github.com/sigaloid/iai", rev = "d56a597" }
 # required for examples/scraper.rs
-scraper = "0.20.0"
+scraper = "0.21.0"
 argh = "0.1.12"
 
 [features]
