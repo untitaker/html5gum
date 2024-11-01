@@ -91,7 +91,7 @@ pub fn run_swc(s: &str) {
     }
 
     let mut gum_tokens = vec![];
-    for token in html5gum::Tokenizer::new(s).infallible() {
+    for Ok(token) in html5gum::Tokenizer::new(s) {
         match token {
             html5gum::Token::Error(_) => {}
             token => gum_tokens.push(token),

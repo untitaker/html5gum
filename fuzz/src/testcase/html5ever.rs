@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use html5ever::buffer_queue::BufferQueue;
 use html5ever::tendril::format_tendril;
 use html5ever::tokenizer::{
@@ -8,11 +10,11 @@ use html5gum::{Emitter, Reader, Token};
 use pretty_assertions::assert_eq;
 
 pub fn run_html5ever(s: &str) {
-    let mut reference_tokenizer = html5ever::tokenizer::Tokenizer::new(
-        TokenSink {
+    let reference_tokenizer = html5ever::tokenizer::Tokenizer::new(
+        TokenSink(RefCell::new(TokenSinkInner {
             testing_tokenizer: html5gum::Tokenizer::new(s),
             carried_over_token: None,
-        },
+        })),
         TokenizerOpts {
             // the html5gum tokenizer does not handle the BOM, and also not discarding a BOM is
             // what the test suite expects, see https://github.com/html5lib/html5lib-tests/issues/2
@@ -31,19 +33,30 @@ pub fn run_html5ever(s: &str) {
     reference_tokenizer.end();
 }
 
-struct TokenSink<R: Reader, E: Emitter> {
+struct TokenSinkInner<R: Reader, E: Emitter> {
     testing_tokenizer: html5gum::Tokenizer<R, E>,
     carried_over_token: Option<Token>,
 }
+
+struct TokenSink<R: Reader, E: Emitter>(RefCell<TokenSinkInner<R, E>>);
 
 impl<R: Reader, E: Emitter<Token = Token>> html5ever::tokenizer::TokenSink for TokenSink<R, E> {
     type Handle = ();
 
     fn process_token(
-        &mut self,
+        &self,
         reference_token: html5ever::tokenizer::Token,
         _line_number: u64,
     ) -> TokenSinkResult<Self::Handle> {
+        self.0.borrow_mut().process_token(reference_token)
+    }
+}
+
+impl<R: Reader, E: Emitter<Token = Token>> TokenSinkInner<R, E> {
+    fn process_token(
+        &mut self,
+        reference_token: html5ever::tokenizer::Token,
+    ) -> TokenSinkResult<()> {
         if matches!(reference_token, Token2::ParseError(_)) {
             // TODO
             return TokenSinkResult::Continue;
