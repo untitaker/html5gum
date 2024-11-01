@@ -5,11 +5,11 @@ use html5gum::{Doctype, EndTag, StartTag, Token};
 use pretty_assertions::assert_eq;
 
 pub fn run_old_html5gum(s: &str) {
-    let reference_tokenizer = html5gum_old::Tokenizer::new(s).infallible();
-    let testing_tokenizer = html5gum::Tokenizer::new(s).infallible();
+    let reference_tokenizer = html5gum_old::Tokenizer::new(s);
+    let testing_tokenizer = html5gum::Tokenizer::new(s);
 
-    let mut testing_tokens: Vec<_> = testing_tokenizer.collect();
-    let mut reference_tokens: Vec<_> = reference_tokenizer.collect();
+    let Ok(mut testing_tokens): Result<Vec<_>, _> = testing_tokenizer.collect();
+    let Ok(mut reference_tokens): Result<Vec<_>, _> = reference_tokenizer.collect();
 
     fn isnt_error(x: &html5gum::Token) -> bool {
         !matches!(*x, html5gum::Token::Error(_))

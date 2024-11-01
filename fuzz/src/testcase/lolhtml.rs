@@ -57,7 +57,7 @@ pub fn run_lolhtml(data: &[u8]) {
     }
 
     let mut gum_tokens = Vec::new();
-    for mut token in html5gum::Tokenizer::new(data).infallible() {
+    for Ok(mut token) in html5gum::Tokenizer::new(data) {
         match token {
             Token::Error(_) => continue,
             Token::StartTag(ref mut s) => {
