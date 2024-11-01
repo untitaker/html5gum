@@ -14,7 +14,7 @@ pretty_assertions = "1.0.0"
 
 # thirdparty crates to fuzz against
 html5gum_old = { version = "=0.6.1", package = "html5gum" }
-html5ever = "0.27.0"
+html5ever = "0.29.0"
 swc_common = "3.0"
 swc_html_parser = "3.0"
 swc_html_ast = "3.0"
