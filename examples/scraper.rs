@@ -14,8 +14,9 @@
 use std::io::{stdin, Read};
 
 use argh::FromArgs;
+use html5ever::interface::tree_builder::TreeSink;
 use html5gum::emitters::html5ever::parse_document;
-use scraper::{Html, Selector};
+use scraper::{Html, HtmlTreeSink, Selector};
 
 /// Read some HTML from stdin and parse it according to the given selector.
 #[derive(FromArgs)]
@@ -41,8 +42,9 @@ fn main() {
         Html::parse_document(&input)
     } else {
         let dom = Html::new_document();
-        let Ok(dom) = parse_document(&input, dom, Default::default());
-        dom
+        let tree_sink = HtmlTreeSink::new(dom);
+        let Ok(tree_sink) = parse_document(&input, tree_sink, Default::default());
+        tree_sink.finish()
     };
 
     let selector = Selector::parse(&cli.selector).unwrap();

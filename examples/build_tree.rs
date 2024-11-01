@@ -62,10 +62,10 @@ fn main() {
 
     let errors = rcdom.errors;
 
-    if !errors.is_empty() {
+    if !errors.borrow().is_empty() {
         println!("\nParse errors:");
 
-        for err in errors.iter() {
+        for err in errors.borrow().iter() {
             println!("    {}", err);
         }
     }

@@ -300,24 +300,26 @@ fn map_tokenizer_state(input: Html5everState) -> State {
 /// equivalent to the same functions in [html5ever::driver].
 ///
 /// ```
-/// use html5ever::{local_name, QualName, ns, namespace_url}; // extern crate html5ever;
-/// use scraper::Html; // extern crate scraper;
+/// use html5ever::{local_name, interface::TreeSink, QualName, ns, namespace_url}; // extern crate html5ever;
+/// use scraper::{HtmlTreeSink, Html}; // extern crate scraper;
 ///
 /// let input = "<h1>hello world</h1>";
 ///
 /// // equivalent to `Html::parse_fragment`
 /// let dom = Html::new_fragment();
-/// let Ok(dom) = html5gum::emitters::html5ever::parse_fragment(
+/// let tree_sink = HtmlTreeSink::new(dom);
+/// let Ok(tree_sink) = html5gum::emitters::html5ever::parse_fragment(
 ///     input,
-///     dom,
+///     tree_sink,
 ///     Default::default(),
 ///     QualName::new(None, ns!(html), local_name!("body")),
 ///     Vec::new()
 /// );
+/// let dom: Html = tree_sink.finish();
 /// ```
 pub fn parse_fragment<'a, R, Sink>(
     input: R,
-    mut sink: Sink,
+    sink: Sink,
     opts: ParseOpts,
     context_name: QualName,
     context_attrs: Vec<Attribute>,
@@ -326,7 +328,7 @@ where
     R: Readable<'a>,
     Sink: TreeSink,
 {
-    let context_elem = create_element(&mut sink, context_name, context_attrs);
+    let context_elem = create_element(&sink, context_name, context_attrs);
     parse_fragment_for_element(input, sink, opts, context_elem, None)
 }
 
@@ -363,17 +365,20 @@ where
 /// equivalent to the same functions in [html5ever::driver].
 ///
 /// ```rust
-/// use scraper::Html; // extern crate scraper;
+/// use html5ever::interface::TreeSink; // extern crate html5ever;
+/// use scraper::{HtmlTreeSink, Html}; // extern crate scraper;
 ///
 /// let input = "<h1>hello world</h1>";
 ///
 /// // equivalent to `Html::parse_document`
 /// let dom = Html::new_document();
-/// let Ok(dom) = html5gum::emitters::html5ever::parse_document(
+/// let tree_sink = HtmlTreeSink::new(dom);
+/// let Ok(tree_sink) = html5gum::emitters::html5ever::parse_document(
 ///     input,
-///     dom,
+///     tree_sink,
 ///     Default::default()
 /// );
+/// let dom: Html = tree_sink.finish();
 /// ```
 pub fn parse_document<'a, R, Sink>(
     input: R,
