@@ -17,7 +17,7 @@ html5gum_old = { version = "0.6.0", package = "html5gum" }
 html5ever = "0.27.0"
 swc_common = "2.0.1"
 swc_html_parser = "2.0.0"
-swc_html_ast = "2.0.0"
+swc_html_ast = "3.0.0"
 
 # lol-html and its dependencies
 lol_html = { version = "2.0", features = ["integration_test"] }

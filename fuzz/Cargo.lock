@@ -349,8 +349,8 @@ dependencies = [
  "libfuzzer-sys",
  "lol_html",
  "pretty_assertions",
- "swc_common",
- "swc_html_ast",
+ "swc_common 2.0.1",
+ "swc_html_ast 3.0.0",
  "swc_html_parser",
 ]
 
@@ -1071,6 +1071,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "swc_common"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "992b89cdcff8e61c1308a984af5450a60a382b106f3e79fd6aabf9e2e193d076"
+dependencies = [
+ "ast_node",
+ "better_scoped_tls",
+ "cfg-if",
+ "either",
+ "from_variant",
+ "new_debug_unreachable",
+ "num-bigint",
+ "once_cell",
+ "rustc-hash",
+ "serde",
+ "siphasher",
+ "swc_allocator",
+ "swc_atoms",
+ "swc_eq_ignore_macros",
+ "swc_visit",
+ "tracing",
+ "unicode-width",
+ "url",
+]
+
+[[package]]
 name = "swc_eq_ignore_macros"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1090,7 +1116,19 @@ dependencies = [
  "is-macro",
  "string_enum",
  "swc_atoms",
- "swc_common",
+ "swc_common 2.0.1",
+]
+
+[[package]]
+name = "swc_html_ast"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a551d9898a7528b652b19fb4b1003450aee5b5f6e7182b89aadb832d9fe3ca5"
+dependencies = [
+ "is-macro",
+ "string_enum",
+ "swc_atoms",
+ "swc_common 3.0.0",
 ]
 
 [[package]]
@@ -1100,8 +1138,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "742129ab25e26dd70c9a78ea2dd520896f49373e4e781797684a5520810bcf23"
 dependencies = [
  "swc_atoms",
- "swc_common",
- "swc_html_ast",
+ "swc_common 2.0.1",
+ "swc_html_ast 2.0.0",
  "swc_html_utils",
 ]
 
@@ -1115,7 +1153,7 @@ dependencies = [
  "serde",
  "serde_json",
  "swc_atoms",
- "swc_common",
+ "swc_common 2.0.1",
 ]
 
 [[package]]
