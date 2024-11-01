@@ -319,7 +319,7 @@ fn map_tokenizer_state(input: Html5everState) -> State {
 /// ```
 pub fn parse_fragment<'a, R, Sink>(
     input: R,
-    mut sink: Sink,
+    sink: Sink,
     opts: ParseOpts,
     context_name: QualName,
     context_attrs: Vec<Attribute>,
@@ -328,7 +328,7 @@ where
     R: Readable<'a>,
     Sink: TreeSink,
 {
-    let context_elem = create_element(&mut sink, context_name, context_attrs);
+    let context_elem = create_element(&sink, context_name, context_attrs);
     parse_fragment_for_element(input, sink, opts, context_elem, None)
 }
 
