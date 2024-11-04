@@ -3,17 +3,17 @@
 use std::collections::BTreeMap;
 
 use crate::{Reader, Token, Tokenizer, HtmlString, StartTag, State};
+use crate::trees::scopes::{select_scope, table_scope, list_item_scope, button_scope, ElementScope, mathml_text_integration_point, default_scope};
 
-
-#[derive(Clone)]
-enum ElementNamespace {
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum ElementNamespace<'a>{
     HTML,
     MathML,
     SVG,
     XLink,
     XML,
     XMLNS,
-    Custom(String),
+    Custom(&'a [u8]),
 }
 
 #[derive(Clone, Copy)]
@@ -141,9 +141,15 @@ impl Node {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct ExpandedName<'a> {
+    pub namespace: Option<ElementNamespace<'a>>,
+    pub local_name: &'a [u8],
+}
+
 #[derive(Clone, Default)]
 struct Element {
-    namespace: Option<ElementNamespace>,
+    namespace: Option<ElementNamespace<'static>>,
     prefix: Option<String>,
     local_name: HtmlString,
     tag_name: HtmlString,
@@ -155,13 +161,15 @@ struct Element {
 }
 
 impl Element {
-    fn is_mathml_text_integration_point(&self) -> bool {
-        matches!(self.namespace, Some(ElementNamespace::MathML))
-            && (matches!(self.local_name.as_slice(), b"mi" | b"mo" | b"mn" | b"ms" | b"mtext"))
-    }
-
     fn is_html_integration_point(&self) -> bool {
         todo!()
+    }
+
+    fn expanded_name(&self) -> ExpandedName<'_> {
+        ExpandedName {
+            namespace: self.namespace,
+            local_name: &self.local_name
+        }
     }
 }
 
@@ -247,7 +255,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
         let adjusted_current_elem = self.adjusted_current_node().and_then(|node| node.as_element());
         if self.stack_of_open_elements.is_empty()
             || matches!(adjusted_current_elem.and_then(|elem| elem.namespace.as_ref()), Some(ElementNamespace::HTML))
-            || (adjusted_current_elem.map_or(false, |elem| elem.is_mathml_text_integration_point())
+            || (adjusted_current_elem.map_or(false, |elem| mathml_text_integration_point(elem.expanded_name()))
                 && (matches!(token, Token::StartTag(ref tag) if !matches!(&tag.name[..], b"mglyph" | b"malignmark"))
                     || matches!(token, Token::String(_))))
             || (matches!(adjusted_current_elem.and_then(|elem| elem.namespace.as_ref()), Some(ElementNamespace::MathML))
@@ -739,7 +747,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"body" | b"html") => {
-                        if !self.has_element_in_scope(b"body") {
+                        if !self.has_name_in_scope(default_scope, b"body") {
                             self.parse_error();
                         } else {
                             for node in &self.stack_of_open_elements {
@@ -915,7 +923,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         // PLAINTEXT state.'
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"button") => {
-                        if self.has_element_in_scope(b"button") {
+                        if self.has_name_in_scope(default_scope, b"button") {
                             self.parse_error();
                             self.generate_implied_end_tags(&[]);
                             while let Some(node) = self.stack_of_open_elements.pop() {
@@ -929,7 +937,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"address" | b"article" | b"blockquote" | b"button" | b"center" | b"details" | b"dir" | b"div" | b"dl" | b"fieldset" | b"figcaption" | b"figure" | b"footer" | b"header" | b"hgroup" | b"listing" | b"main" | b"menu" | b"nav" | b"ol" | b"pre" | b"section" | b"summary" | b"ul") => {
-                        if !self.has_element_in_scope(tag.name.as_slice()) {
+                        if !self.has_name_in_scope(default_scope, tag.name.as_slice()) {
                             self.parse_error();
                         } else {
                             self.generate_implied_end_tags(&[]);
@@ -947,7 +955,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         let has_template_elem = self.stack_of_open_elements.iter().any(|node| node.as_element().map_or(false, |elem| *elem.tag_name == b"template"));
                         if !has_template_elem {
                             let mut node = self.form_element_pointer.take();
-                            if node.as_ref().map_or(true, |node| !self.has_element_in_scope2(|node2| node.same_identity(node2))) {
+                            if node.as_ref().map_or(true, |node| !self.has_element_in_scope(default_scope, |node2| node.same_identity(node2))) {
                                 self.parse_error();
                                 return;
                             }
@@ -965,7 +973,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                                 });
                             }
                         } else {
-                            if !self.has_element_in_scope(b"form") {
+                            if !self.has_name_in_scope(default_scope, b"form") {
                                 self.parse_error();
                                 return;
                             }
@@ -1008,7 +1016,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         }
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"dd" | b"dt") => {
-                        if !self.has_element_in_scope(&tag.name) {
+                        if !self.has_name_in_scope(default_scope, &tag.name) {
                             self.parse_error();
                         } else {
                             self.generate_implied_end_tags(&[&tag.name]);
@@ -1028,7 +1036,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                             node.is_element(b"h1") || node.is_element(b"h2") || node.is_element(b"h3") || node.is_element(b"h4") || node.is_element(b"h5") || node.is_element(b"h6")
                         }
 
-                        if !self.has_element_in_scope2(is_heading) {
+                        if !self.has_element_in_scope(default_scope, is_heading) {
                             self.parse_error();
                         } else {
                             self.generate_implied_end_tags(&[]);
@@ -1082,7 +1090,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"nobr") => {
                         self.reconstruct_the_active_formatting_elements();
-                        if self.has_element_in_scope(b"nobr") {
+                        if self.has_name_in_scope(default_scope, b"nobr") {
                             self.parse_error();
                             self.run_adoption_agency_algorithm(token.clone().unwrap());
                             self.reconstruct_the_active_formatting_elements();
@@ -1100,7 +1108,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         self.frameset_ok = false;
                     }
                     Some(Token::EndTag(ref tag)) if matches!(tag.name.as_slice(), b"applet" | b"marquee" | b"object") => {
-                        if !self.has_element_in_scope(&tag.name) {
+                        if !self.has_name_in_scope(default_scope, &tag.name) {
                             self.parse_error();
                         } else {
                             self.generate_implied_end_tags(&[]);
@@ -1220,7 +1228,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         self.insert_an_element_for_a_token(token.unwrap());
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"rb" | b"rtc") => {
-                        if self.has_element_in_scope(b"ruby") {
+                        if self.has_name_in_scope(default_scope, b"ruby") {
                             self.generate_implied_end_tags(&[]);
                             // TODO: perhaps this needs to be run un-nested?
                             if !self.current_node().map_or(false, |node| node.is_element(b"ruby")) {
@@ -1231,7 +1239,7 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
                         self.insert_an_element_for_a_token(token.unwrap());
                     }
                     Some(Token::StartTag(ref tag)) if matches!(tag.name.as_slice(), b"rp" | b"rt") => {
-                        if self.has_element_in_scope(b"ruby") {
+                        if self.has_name_in_scope(default_scope, b"ruby") {
                             self.generate_implied_end_tags(&[b"rtc"]);
                             // TODO: perhaps this needs to be run un-nested?
                             if !self.current_node().map_or(false, |node| node.is_element(b"ruby") || node.is_element(b"rtc")) {
@@ -2115,28 +2123,41 @@ impl<R: Reader> TreeConstructionDispatcher<R> {
         }
     }
 
-    fn has_element_in_scope(&self, name: &[u8]) -> bool {
-        todo!()
+    fn has_name_in_scope(&self, scope: impl ElementScope, name: &[u8]) -> bool {
+        self.has_element_in_scope(scope, |node| node.as_element().is_some_and(|element| element.local_name == name))
     }
 
-    fn has_element_in_scope2(&self, matcher: impl Fn(&Node) -> bool) -> bool {
-        todo!()
+    fn has_element_in_scope(&self, scope: impl ElementScope, matcher: impl Fn(&Node) -> bool) -> bool {
+        for node in self.stack_of_open_elements.iter().rev() {
+            if matcher(node) {
+                return true;
+            }
+
+            if let Some(elem) = node.as_element() {
+                if scope.matches(elem.expanded_name()) {
+                    return false;
+                }
+            }
+        }
+
+        debug_assert!(false);
+        false
     }
 
     fn has_element_in_button_scope(&self, name: &[u8]) -> bool {
-        todo!()
+        self.has_name_in_scope(button_scope, name)
     }
 
     fn has_element_in_list_item_scope(&self, name: &[u8]) -> bool {
-        todo!()
+        self.has_name_in_scope(list_item_scope, name)
     }
 
     fn has_element_in_table_scope(&self, name: &[u8]) -> bool {
-        todo!()
+        self.has_name_in_scope(table_scope, name)
     }
 
     fn has_element_in_select_scope(&self, name: &[u8]) -> bool {
-        todo!()
+        self.has_name_in_scope(select_scope, name)
     }
 
     fn close_a_p_element(&mut self) {
