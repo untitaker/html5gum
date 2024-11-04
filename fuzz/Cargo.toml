@@ -8,15 +8,19 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
+afl = { version = "0.15.0", optional = true }
 html5gum = { path = "../" }
-html5gum_old = { version = "0.4.0", package = "html5gum" }
-afl = "0.11.0"
-html5ever = "0.25.1"
 pretty_assertions = "1.0.0"
 
+# thirdparty crates to fuzz against
+html5gum_old = { version = "=0.6.1", package = "html5gum" }
+html5ever = "0.29.0"
+swc_common = "3.0"
+swc_html_parser = "3.0"
+swc_html_ast = "3.0"
 
 # lol-html and its dependencies
-lol_html = { version = "*", features = ["integration_test"] }
+lol_html = { version = "2.0", features = ["integration_test"] }
 encoding_rs = "0.8"
 bytes = "1"
 
@@ -40,6 +44,7 @@ name = "main_afl"
 path = "src/main_afl.rs"
 test = false
 doc = false
+required-features = ["afl"]
 
 [[bin]]
 name = "main_cli"

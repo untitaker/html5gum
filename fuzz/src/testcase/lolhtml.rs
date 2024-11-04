@@ -2,8 +2,9 @@ use html5gum::{Doctype, EndTag, StartTag, Token};
 use lol_html::errors::RewritingError;
 use lol_html::html_content::DocumentEnd;
 use lol_html::{
-    LocalName, MemoryLimiter, Namespace, StartTagHandlingResult, Token as Token2,
-    TokenCaptureFlags, TransformController, TransformStream, TransformStreamSettings,
+    AsciiCompatibleEncoding, LocalName, Namespace, SharedEncoding, SharedMemoryLimiter,
+    StartTagHandlingResult, Token as Token2, TokenCaptureFlags, TransformController,
+    TransformStream, TransformStreamSettings,
 };
 
 use pretty_assertions::assert_eq;
@@ -37,25 +38,26 @@ pub fn run_lolhtml(data: &[u8]) {
             testing_tokenizer: &mut lol_tokens,
         };
 
-        let memory_limiter = MemoryLimiter::new_shared(2048);
+        let memory_limiter = SharedMemoryLimiter::new(2048);
 
         let mut transform_stream = TransformStream::new(TransformStreamSettings {
             transform_controller,
             output_sink: |_: &[u8]| (),
             preallocated_parsing_buffer_size: 0,
             memory_limiter,
-            encoding: encoding_rs::UTF_8,
+            encoding: SharedEncoding::new(
+                AsciiCompatibleEncoding::new(encoding_rs::UTF_8).unwrap(),
+            ),
             // we need the dumb, insecure behavior of lolhtml to match what a tokenizer does
             strict: false,
         });
 
-        let _parser = transform_stream.parser();
         transform_stream.write(data).unwrap();
         transform_stream.end().unwrap();
     }
 
     let mut gum_tokens = Vec::new();
-    for mut token in html5gum::Tokenizer::new(data).infallible() {
+    for Ok(mut token) in html5gum::Tokenizer::new(data) {
         match token {
             Token::Error(_) => continue,
             Token::StartTag(ref mut s) => {

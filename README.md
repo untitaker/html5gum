@@ -12,7 +12,7 @@ use html5gum::{Tokenizer, Token};
 let html = "<title   >hello world</title>";
 let mut new_html = String::new();
 
-for token in Tokenizer::new(html).infallible() {
+for Ok(token) in Tokenizer::new(html) {
     match token {
         Token::StartTag(tag) => {
             write!(new_html, "<{}>", String::from_utf8_lossy(&tag.name)).unwrap();
@@ -30,6 +30,13 @@ for token in Tokenizer::new(html).infallible() {
 assert_eq!(new_html, "<title>hello world</title>");
 ```
 
+`html5gum` provides multiple kinds of APIs:
+
+* Iterating over tokens as shown above.
+* Implementing your own `Emitter` for maximum performance, see [the `custom_emitter.rs` example][examples/custom_emitter.rs].
+* A callbacks-based API for a middleground between convenience and performance, see [the `callback_emitter.rs` example][examples/callback_emitter.rs].
+* With the `tree-builder` feature, html5gum can be integrated with `html5ever` and `scraper`. See [the `scraper.rs` example][examples/scraper.rs].
+
 ## What a tokenizer does and what it does not do
 
 `html5gum` fully implements [13.2.5 of the WHATWG HTML
@@ -42,32 +49,18 @@ test suite](https://github.com/html5lib/html5lib-tests/tree/master/tokenizer). S
   gracefully from invalid UTF-8.
 * `html5gum` **does not** [correct mis-nested
   tags.](https://html.spec.whatwg.org/#an-introduction-to-error-handling-and-strange-cases-in-the-parser)
-* `html5gum` **does not** recognize implicitly self-closing elements like
-  `<img>`, as a tokenizer it will simply emit a start token. It does however
-  emit a self-closing tag for `<img .. />`.
 * `html5gum` doesn't implement the DOM, and unfortunately in the HTML spec,
   constructing the DOM ("tree construction") influences how tokenization is
   done. For an example of which problems this causes see [this example
-  code](./examples/tokenize_with_state_switches.rs).
+  code][examples/tokenize_with_state_switches.rs].
 * `html5gum` **does not** generally qualify as a browser-grade HTML *parser* as
   per the WHATWG spec. This can change in the future, see [issue
   21](https://github.com/untitaker/html5gum/issues/21).
 
 With those caveats in mind, `html5gum` can pretty much ~parse~ _tokenize_
-anything that browsers can.
-
-## The `Emitter` trait
-
-A distinguishing feature of `html5gum` is that you can bring your own token
-datastructure and hook into token creation by implementing the `Emitter` trait.
-This allows you to:
-
-* Rewrite all per-HTML-tag allocations to use a custom allocator or datastructure.
-
-* Efficiently filter out uninteresting categories data without ever allocating
-  for it. For example if any plaintext between tokens is not of interest to
-  you, you can implement the respective trait methods as noop and therefore
-  avoid any overhead creating plaintext tokens.
+anything that browsers can. However, using the experimental `tree-builder`
+feature, html5gum can be integrated with `html5ever` and `scraper`. See [the
+`scraper.rs` example][examples/scraper.rs].
 
 ## Other features
 
@@ -106,4 +99,12 @@ Why is this library called `html5gum`?
 
 ## License
 
-Licensed under the MIT license, see [`./LICENSE`](./LICENSE).
+Licensed under the MIT license, see [`./LICENSE`][LICENSE].
+
+
+<!-- These link destinations are defined like this so that src/lib.rs can override them. -->
+[LICENSE]: ./LICENSE
+[examples/tokenize_with_state_switches.rs]: ./examples/tokenize_with_state_switches.rs
+[examples/custom_emitter.rs]: ./examples/custom_emitter.rs
+[examples/callback_emitter.rs]: ./examples/callback_emitter.rs
+[examples/scraper.rs]: ./examples/scraper.rs

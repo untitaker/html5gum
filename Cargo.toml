@@ -8,7 +8,7 @@ keywords = ["html", "html5", "whatwg", "parser", "tokenizer"]
 categories = [ "parser-implementations", "web-programming" ]
 license = "MIT"
 repository = "https://github.com/untitaker/html5gum"
-version = "0.5.2"
+version = "0.7.0"
 include = ["src/**/*", "LICENSE", "README.md", "benches"]
 
 [dev-dependencies]
@@ -18,8 +18,14 @@ serde_json = "1.0.71"
 test-generator = "0.3.0"
 serde_bytes = "0.11.5"
 glob = "0.3.0"
-libtest-mimic = "0.5.2"
-iai = "0.1.1"
+libtest-mimic = "0.8.1"
+# https://github.com/bheisler/iai/issues/34
+# need to have cache simulation running because of bencher.dev
+iai = { git = "https://github.com/sigaloid/iai", rev = "d56a597" }
+markup5ever_rcdom = "0.5.0-unofficial"
+# required for examples/scraper.rs
+scraper = "0.21.0"
+argh = "0.1.12"
 
 [features]
 # By default this crate depends on the jetscii library for best performance.
@@ -27,7 +33,12 @@ iai = "0.1.1"
 # This may come in handy if you encounter packaging/build problems.
 default = ["jetscii"]
 
+# The tree-builder feature contains utilities to use html5ever's DOM and tree
+# builder with html5gum's tokenizer.
+tree-builder = ["html5ever"]
+
 [dependencies]
+html5ever = { version = "0.29.0", optional = true }
 jetscii = { version = "0.5.1", optional = true }
 
 [[bench]]
@@ -38,6 +49,26 @@ harness = false
 name = "html5lib-tokenizer"
 path = "tests/html5lib_tokenizer.rs"
 harness = false
+
+[[test]]
+name = "html5lib-tree-builder"
+path = "tests/html5lib_tree_builder.rs"
+required-features = ["tree-builder"]
+harness = false
+
+[[example]]
+name = "build_tree"
+required-features = ["tree-builder"]
+
+[[example]]
+name = "custom_emitter"
+
+[[example]]
+name = "callback_emitter"
+
+[[example]]
+name = "scraper"
+required-features = ["tree-builder"]
 
 [lib]
 bench = false

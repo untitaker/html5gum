@@ -6,13 +6,16 @@
 version: 2
 updates:
 - package-ecosystem: cargo
-  directory: "/"
+  directories: ["/", "/fuzz"]
   schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  
+    interval: weekly
+  groups:
+    rust:
+      applies-to: version-updates
+      patterns: ["*"]
+
 - package-ecosystem: gitsubmodule
   directory: "/"
   schedule:
-    interval: daily
+    interval: weekly
   open-pull-requests-limit: 10

@@ -19,6 +19,7 @@ impl<R: Reader> ReadHelper<R> {
         }
     }
 
+    #[inline(always)]
     pub(crate) fn read_byte<E: Emitter>(
         &mut self,
         char_validator: &mut CharValidator,
@@ -47,6 +48,7 @@ impl<R: Reader> ReadHelper<R> {
         c
     }
 
+    #[inline(always)]
     pub(crate) fn try_read_string(
         &mut self,
         char_validator: &mut CharValidator,
@@ -84,6 +86,7 @@ impl<R: Reader> ReadHelper<R> {
         }
     }
 
+    #[inline(always)]
     pub(crate) fn read_until<'b, E>(
         &'b mut self,
         needle: &[u8],
@@ -181,7 +184,7 @@ macro_rules! fast_read_char {
         $(Some($($lit:literal)|*) => $arm:block)*
         Some($xs:ident) => $catchall:block
         None => $eof_catchall:block
-    }) => {{
+    }) => { loop {
         let mut char_buf = [0; 4];
         let $read_char = $slf.reader.read_until(
             &[ $($({
@@ -192,7 +195,7 @@ macro_rules! fast_read_char {
             &mut $slf.emitter,
             &mut char_buf,
         )?;
-        match $read_char {
+        break match $read_char {
             $(Some($($lit)|*) => $arm)*
                 Some($xs) => {
                     // Prevent catch-all arm from using the machine_helper.
@@ -209,8 +212,22 @@ macro_rules! fast_read_char {
                     $catchall
                 }
             None => $eof_catchall
-        }
-    }};
+        };
+    } };
 }
 
 pub(crate) use fast_read_char;
+
+macro_rules! slow_read_byte {
+    ($slf:expr, match c {
+        $($tt:tt)*
+    }) => {
+        loop {
+            break match $slf.reader.read_byte(&mut $slf.validator, &mut $slf.emitter)? {
+                $($tt)*
+            };
+        }
+    };
+}
+
+pub(crate) use slow_read_byte;

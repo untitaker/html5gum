@@ -22,6 +22,7 @@ target.
   * `FUZZ_IGNORE_PARSE_ERRORS=order` will sort errors from both parsers such that order can be ignored.
   * `FUZZ_IGNORE_PARSE_ERRORS=1` will delete all errors so that parsing errors are not compared at all.
   * `FUZZ_IGNORE_PARSE_ERRORS=if-reference-contains:duplicate-attribute` will delete all errors _if_ any of them _in the old version of html5gum_ contains the string `duplicate-attribute`.
+  * `FUZZ_IGNORE_PARSE_ERRORS=if-testing-contains:duplicate-attribute` will delete all errors _if_ any of them _in the new version of html5gum_ contains the string `duplicate-attribute`.
 
   This envvar is a comma-separated list of instructions. For example,
   `FUZZ_IGNORE_PARSE_ERRORS=order,if-reference-contains:foo` means "ignore
@@ -38,6 +39,9 @@ target.
 
 * `FUZZ_LOLHTML=1` to run html5gum and lol-html, and crash when the produced
   tokens are different.
+
+* `FUZZ_SWC=1` to run html5gum and swc's HTML parser, and crash when the
+  produced tokens are different.
 
 ## Basic CLI
 

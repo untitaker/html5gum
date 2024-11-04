@@ -3,14 +3,15 @@ use std::env;
 mod html5ever;
 mod lolhtml;
 mod old_html5gum;
+mod swc;
 
 pub fn run(s: &[u8]) {
     let mut did_anything = env::var("FUZZ_BASIC").unwrap() == "1";
 
     // unconditionally run tokenizer against raw bytes, it should never crash. we rely on running
     // in debug mode such that this is not just simply optimized away
-    let testing_tokenizer = html5gum::Tokenizer::new(s).infallible();
-    for _ in testing_tokenizer {}
+    let testing_tokenizer = html5gum::Tokenizer::new(s);
+    for Ok(_) in testing_tokenizer {}
 
     if env::var("FUZZ_OLD_HTML5GUM").unwrap() == "1" {
         if let Ok(data) = std::str::from_utf8(s) {
@@ -30,6 +31,13 @@ pub fn run(s: &[u8]) {
 
     if env::var("FUZZ_LOLHTML").unwrap() == "1" {
         lolhtml::run_lolhtml(s);
+        did_anything = true;
+    }
+
+    if env::var("FUZZ_SWC").unwrap() == "1" {
+        if let Ok(data) = std::str::from_utf8(s) {
+            swc::run_swc(data);
+        }
         did_anything = true;
     }
 

@@ -23,6 +23,10 @@ impl CharValidator {
 
     #[inline]
     pub(crate) fn validate_bytes<E: Emitter>(&mut self, emitter: &mut E, next_bytes: &[u8]) {
+        if !emitter.should_emit_errors() {
+            return;
+        }
+
         for &x in next_bytes {
             self.validate_byte(emitter, x);
         }
@@ -30,6 +34,10 @@ impl CharValidator {
 
     #[inline]
     pub(crate) fn validate_byte<E: Emitter>(&mut self, emitter: &mut E, next_byte: u8) {
+        if !emitter.should_emit_errors() {
+            return;
+        }
+
         if next_byte < 128 {
             // start of character (ascii)
             self.last_4_bytes = 0;
@@ -47,12 +55,20 @@ impl CharValidator {
     }
 
     pub(crate) fn flush_character_error<E: Emitter>(&mut self, emitter: &mut E) {
+        if !emitter.should_emit_errors() {
+            return;
+        }
+
         for e in self.character_error.drain() {
             emitter.emit_error(*e);
         }
     }
 
     pub(crate) fn set_character_error<E: Emitter>(&mut self, emitter: &mut E, error: Error) {
+        if !emitter.should_emit_errors() {
+            return;
+        }
+
         if self.last_4_bytes == 0 {
             emitter.emit_error(error);
         } else {

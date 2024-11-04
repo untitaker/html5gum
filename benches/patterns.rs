@@ -4,7 +4,7 @@ use html5gum::Tokenizer;
 
 fn pattern(pattern: &str, i: usize) {
     let s: String = black_box((0..i).map(|_| pattern).collect());
-    for _ in Tokenizer::new(&s).infallible() {}
+    for Ok(_) in Tokenizer::new(&s) {}
 }
 
 macro_rules! pattern_tests {

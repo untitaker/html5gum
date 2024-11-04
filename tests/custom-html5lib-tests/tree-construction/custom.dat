@@ -1,0 +1,10 @@
+#data
+<script></code><a href=foo></a></script>
+#errors
+#document
+| <html>
+|   <head>
+|     <script>
+|       "</code><a href=foo></a>"
+|   <body>
+#errors
