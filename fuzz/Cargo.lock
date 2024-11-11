@@ -423,13 +423,12 @@ checksum = "8e9489c2807c139ffd9c1794f4af0ebe86a828db53ecdc7fea2111d0fed085d1"
 
 [[package]]
 name = "libfuzzer-sys"
-version = "0.4.7"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a96cfd5557eb82f2b83fed4955246c988d331975a002961b07c81584d107e7f7"
+checksum = "9b9569d2f74e257076d8c6bfa73fb505b46b851e51ddaecc825944aa3bed17fa"
 dependencies = [
  "arbitrary",
  "cc",
- "once_cell",
 ]
 
 [[package]]
@@ -1046,9 +1045,9 @@ dependencies = [
 
 [[package]]
 name = "swc_common"
-version = "3.0.0"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "992b89cdcff8e61c1308a984af5450a60a382b106f3e79fd6aabf9e2e193d076"
+checksum = "053e784870430ba47043278626e75686e745ac16876a8f5f4d6c9f39354ee7e7"
 dependencies = [
  "ast_node",
  "better_scoped_tls",
@@ -1083,9 +1082,9 @@ dependencies = [
 
 [[package]]
 name = "swc_html_ast"
-version = "3.0.0"
+version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a551d9898a7528b652b19fb4b1003450aee5b5f6e7182b89aadb832d9fe3ca5"
+checksum = "65b872630925fef24cf712ff7be1782151371ab5ae2240b1f259611ea3a0c628"
 dependencies = [
  "is-macro",
  "string_enum",
@@ -1095,9 +1094,9 @@ dependencies = [
 
 [[package]]
 name = "swc_html_parser"
-version = "3.0.0"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb4f2850e8108394c5cdd4f3a3b4715eb99acd4fed30e6da35f090414f13af61"
+checksum = "70adabd18bc9a4d34a2b59200335edda6aff732c89103e3bfaecf0faa936744c"
 dependencies = [
  "swc_atoms",
  "swc_common",
@@ -1107,9 +1106,9 @@ dependencies = [
 
 [[package]]
 name = "swc_html_utils"
-version = "3.0.0"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c17d92636f5e4c64bb9417eb69c97ae5d45d1915f6e97d22c36e1621d53867be"
+checksum = "05e755211286e6e683c7f2c1e10ae97bf8679a68e54c9a4b24b3136dcbe4ca73"
 dependencies = [
  "once_cell",
  "serde",
