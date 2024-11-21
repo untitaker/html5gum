@@ -8,7 +8,7 @@
 #![doc = concat!("[examples/custom_emitter.rs]: ", blob_url_prefix!(), "examples/custom_emitter.rs")]
 #![doc = concat!("[examples/callback_emitter.rs]: ", blob_url_prefix!(), "examples/callback_emitter.rs")]
 #![doc = concat!("[examples/scraper.rs]: ", blob_url_prefix!(), "examples/scraper.rs")]
-#![doc = include_str!("../README.md")]
+#![cfg_attr(doc, doc = include_str!("../README.md"))]
 //
 #![warn(clippy::all)]
 #![warn(
