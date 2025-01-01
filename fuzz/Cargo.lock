@@ -10,9 +10,9 @@ checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
 
 [[package]]
 name = "afl"
-version = "0.15.11"
+version = "0.15.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80bb240a3b9ff18002142c1a736e98046461d51a694d687c3e7329b456ab0fe4"
+checksum = "b784d6332a6978dd29861676de9df37aa37ed8852341db6340bd75eb82bc7a69"
 dependencies = [
  "home",
  "libc",
@@ -46,9 +46,9 @@ checksum = "7d5a26814d8dcb93b0e5a0ff3c6d80a8843bafb21b39e8e18a6f05471870e110"
 
 [[package]]
 name = "ast_node"
-version = "2.0.0"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94741d66bdda032fcbf33e621b4e3a888d7d11bd3ac4446d82c5593a136936ff"
+checksum = "91fb5864e2f5bf9fd9797b94b2dfd1554d4c3092b535008b27d7e15c86675a2f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -100,9 +100,9 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
-version = "1.8.0"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ac0150caa2ae65ca5bd83f25c7de183dea78d4d366469f148435e2acfbad0da"
+checksum = "325918d6fe32f23b19878fe4b34794ae41fc19ddbe53b10571a4874d44ffd39b"
 
 [[package]]
 name = "cc"
@@ -204,6 +204,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "equivalent"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
+
+[[package]]
+name = "foldhash"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0d2fde1f7b3d48b8395d5f2de76c18a528bd6a9cdde438df747bfcba3e05d6f"
+
+[[package]]
 name = "form_urlencoded"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -266,21 +278,23 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.13.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
-dependencies = [
- "ahash",
-]
-
-[[package]]
-name = "hashbrown"
 version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
  "allocator-api2",
+]
+
+[[package]]
+name = "hashbrown"
+version = "0.15.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
+dependencies = [
+ "allocator-api2",
+ "equivalent",
+ "foldhash",
 ]
 
 [[package]]
@@ -449,15 +463,15 @@ checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
 
 [[package]]
 name = "lol_html"
-version = "2.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "964b47c14635e111f7efddcd8f1f8794195f66225fef19822fa942b217a859cf"
+checksum = "2872b88213f3cd4b04f719ec8f2e0b37c98882a7c4aa6fc13ba2f19f5eba1bd2"
 dependencies = [
  "bitflags 2.6.0",
  "cfg-if",
  "cssparser",
  "encoding_rs",
- "hashbrown 0.13.2",
+ "hashbrown 0.15.2",
  "lazy_static",
  "lazycell",
  "memchr",
@@ -738,22 +752,22 @@ dependencies = [
 
 [[package]]
 name = "ptr_meta"
-version = "0.1.4"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0738ccf7ea06b608c10564b31debd4f5bc5e197fc8bfe088f68ae5ce81e7a4f1"
+checksum = "fe9e76f66d3f9606f44e45598d155cb13ecf09f4a28199e48daf8c8fc937ea90"
 dependencies = [
  "ptr_meta_derive",
 ]
 
 [[package]]
 name = "ptr_meta_derive"
-version = "0.1.4"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16b845dbfca988fa33db069c0e230574d15a3088f147a87b64c7589eb662c9ac"
+checksum = "ca414edb151b4c8d125c12566ab0d74dc9cdba36fb80eb7b848c15f495fd32d1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.86",
 ]
 
 [[package]]
@@ -1020,9 +1034,9 @@ dependencies = [
 
 [[package]]
 name = "swc_allocator"
-version = "1.0.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52cacc28f0ada8e4e31a720dd849ff06864b10e6ab0a1aaa99c06456cfe046af"
+checksum = "117d5d3289663f53022ebf157df8a42b3872d7ac759e63abf96b5987b85d4af3"
 dependencies = [
  "bumpalo",
  "hashbrown 0.14.5",
@@ -1033,9 +1047,9 @@ dependencies = [
 
 [[package]]
 name = "swc_atoms"
-version = "2.0.0"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d7211e5c57ea972f32b8a104d7006c4a68d094ec30c6a73bcd20d4d6c473c7c"
+checksum = "151a6feb82b989a087433baca7f6a6eb4fcf83f828c479eecd039c9312d60e10"
 dependencies = [
  "hstr",
  "once_cell",
@@ -1045,9 +1059,9 @@ dependencies = [
 
 [[package]]
 name = "swc_common"
-version = "4.0.0"
+version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "053e784870430ba47043278626e75686e745ac16876a8f5f4d6c9f39354ee7e7"
+checksum = "a521e8120dc0401580864a643b5bffa035c29fc3fc41697c972743d4f008ed22"
 dependencies = [
  "ast_node",
  "better_scoped_tls",
@@ -1082,9 +1096,9 @@ dependencies = [
 
 [[package]]
 name = "swc_html_ast"
-version = "4.0.1"
+version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65b872630925fef24cf712ff7be1782151371ab5ae2240b1f259611ea3a0c628"
+checksum = "bd133fbca624c2184327c5e99b7c5bc16dc7db776842209bd5226a490dc801f7"
 dependencies = [
  "is-macro",
  "string_enum",
@@ -1094,9 +1108,9 @@ dependencies = [
 
 [[package]]
 name = "swc_html_parser"
-version = "4.0.0"
+version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70adabd18bc9a4d34a2b59200335edda6aff732c89103e3bfaecf0faa936744c"
+checksum = "0da85752f11745a2edfce9e871e78c42c606fb84b8876037439294b7aded9bb7"
 dependencies = [
  "swc_atoms",
  "swc_common",
@@ -1106,9 +1120,9 @@ dependencies = [
 
 [[package]]
 name = "swc_html_utils"
-version = "4.0.0"
+version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05e755211286e6e683c7f2c1e10ae97bf8679a68e54c9a4b24b3136dcbe4ca73"
+checksum = "029722991820f539d12c94b63334122e9e7c7de11fc8c238cca21085016d4c3f"
 dependencies = [
  "once_cell",
  "serde",
