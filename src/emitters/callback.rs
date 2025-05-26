@@ -7,11 +7,11 @@
 //!
 //! ```
 //! // Extract all text between span tags, in a naive (but fast) way. Does not handle tags inside of the span. See `examples/` as well.
-//! use html5gum::Tokenizer;
+//! use html5gum::{Span, Tokenizer};
 //! use html5gum::emitters::callback::{CallbackEvent, CallbackEmitter};
 //!
 //! let mut is_in_span = false;
-//! let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>| -> Option<Vec<u8>> {
+//! let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>, _span: Span<()>| -> Option<Vec<u8>> {
 //!     match event {
 //!         CallbackEvent::OpenStartTag { name } => {
 //!             is_in_span = name == b"span";
@@ -37,10 +37,11 @@
 
 use std::collections::VecDeque;
 use std::convert::Infallible;
+use std::marker::PhantomData;
 use std::mem::swap;
 
 use crate::utils::trace_log;
-use crate::{naive_next_state, Emitter, Error, State};
+use crate::{naive_next_state, Emitter, Error, Span, SpanBound, State};
 
 /// Events used by [CallbackEmitter].
 ///
@@ -135,42 +136,43 @@ enum CurrentTag {
 }
 
 #[derive(Debug)]
-struct CallbackState<F, T> {
+struct CallbackState<F, T, S> {
     callback: F,
     emitted_tokens: VecDeque<T>,
+    phantom: PhantomData<S>,
 }
 
 /// This trait is implemented for all functions that have the same signature as
 /// [Callback::handle_event]. The trait only exists in case you want to implement it on a nameable
 /// type.
-pub trait Callback<T> {
+pub trait Callback<T, S: SpanBound> {
     /// Perform some action on a parsing event, and, optionally, return a value that can be yielded
     /// from the [crate::Tokenizer] iterator.
-    fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<T>;
+    fn handle_event(&mut self, event: CallbackEvent<'_>, span: Span<S>) -> Option<T>;
 }
 
-impl<T, F> Callback<T> for F
+impl<F, T, S: SpanBound> Callback<T, S> for F
 where
-    F: FnMut(CallbackEvent<'_>) -> Option<T>,
+    F: FnMut(CallbackEvent<'_>, Span<S>) -> Option<T>,
 {
-    fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<T> {
-        self(event)
+    fn handle_event(&mut self, event: CallbackEvent<'_>, span: Span<S>) -> Option<T> {
+        self(event, span)
     }
 }
 
-impl<F, T> CallbackState<F, T>
+impl<F, T, S: SpanBound> CallbackState<F, T, S>
 where
-    F: Callback<T>,
+    F: Callback<T, S>,
 {
-    fn emit_event(&mut self, event: CallbackEvent<'_>) {
-        let res = self.callback.handle_event(event);
+    fn emit_event(&mut self, event: CallbackEvent<'_>, span: Span<S>) {
+        let res = self.callback.handle_event(event, span);
         if let Some(token) = res {
             self.emitted_tokens.push_front(token);
         }
     }
 }
 
-impl<F, T> Default for CallbackState<F, T>
+impl<F, T, S> Default for CallbackState<F, T, S>
 where
     F: Default,
 {
@@ -178,15 +180,18 @@ where
         CallbackState {
             callback: F::default(),
             emitted_tokens: VecDeque::default(),
+            phantom: PhantomData,
         }
     }
 }
 
 #[derive(Debug, Default)]
-struct EmitterState {
+struct EmitterState<S: SpanBound> {
     naively_switch_states: bool,
 
     current_characters: Vec<u8>,
+    current_characters_start: S,
+    current_characters_end: S,
     current_comment: Vec<u8>,
 
     last_start_tag: Vec<u8>,
@@ -196,6 +201,9 @@ struct EmitterState {
     current_tag_name: Vec<u8>,
     current_attribute_name: Vec<u8>,
     current_attribute_value: Vec<u8>,
+    current_attribute_name_start: S,
+    current_attribute_value_start: S,
+    current_attribute_value_end: S,
 
     // strings related to doctype
     doctype_name: Vec<u8>,
@@ -204,21 +212,28 @@ struct EmitterState {
     doctype_public_identifier: Vec<u8>,
     doctype_system_identifier: Vec<u8>,
     doctype_force_quirks: bool,
+
+    current_taglike_span: S,
+    position: S,
 }
 
 /// The emitter class to pass to [crate::Tokenizer::new_with_emitter]. Please refer to the
 /// module-level documentation on [crate::emitters::callback] for usage.
 #[derive(Debug)]
-pub struct CallbackEmitter<F, T = Infallible> {
+pub struct CallbackEmitter<F, T = Infallible, S: SpanBound = ()>
+where
+    // add this requirement, so that users get better errors, if the callback does not implement `Callback`.
+    F: Callback<T, S>,
+{
     // this struct is only split out so [CallbackState::emit_event] can borrow things concurrently
     // with other attributes.
-    callback_state: CallbackState<F, T>,
-    emitter_state: EmitterState,
+    callback_state: CallbackState<F, T, S>,
+    emitter_state: EmitterState<S>,
 }
 
-impl<F, T> Default for CallbackEmitter<F, T>
+impl<F, T, S: SpanBound> Default for CallbackEmitter<F, T, S>
 where
-    F: Default,
+    F: Default + Callback<T, S>,
 {
     fn default() -> Self {
         CallbackEmitter {
@@ -228,9 +243,9 @@ where
     }
 }
 
-impl<F, T> CallbackEmitter<F, T>
+impl<F, T, S: SpanBound> CallbackEmitter<F, T, S>
 where
-    F: Callback<T>,
+    F: Callback<T, S>,
 {
     /// Create a new emitter.
     ///
@@ -241,6 +256,7 @@ where
             callback_state: CallbackState {
                 callback,
                 emitted_tokens: VecDeque::new(),
+                phantom: PhantomData,
             },
             emitter_state: EmitterState::default(),
         }
@@ -260,10 +276,18 @@ where
 
     fn flush_attribute_name(&mut self) {
         if !self.emitter_state.current_attribute_name.is_empty() {
-            self.callback_state
-                .emit_event(CallbackEvent::AttributeName {
+            self.callback_state.emit_event(
+                CallbackEvent::AttributeName {
                     name: &self.emitter_state.current_attribute_name,
-                });
+                },
+                Span {
+                    start: self.emitter_state.current_attribute_name_start,
+                    end: self
+                        .emitter_state
+                        .current_attribute_name_start
+                        .offset(self.emitter_state.current_attribute_name.len() as isize),
+                },
+            );
             self.emitter_state.current_attribute_name.clear();
         }
     }
@@ -272,10 +296,15 @@ where
         self.flush_attribute_name();
 
         if !self.emitter_state.current_attribute_value.is_empty() {
-            self.callback_state
-                .emit_event(CallbackEvent::AttributeValue {
+            self.callback_state.emit_event(
+                CallbackEvent::AttributeValue {
                     value: &self.emitter_state.current_attribute_value,
-                });
+                },
+                Span {
+                    start: self.emitter_state.current_attribute_value_start,
+                    end: self.emitter_state.current_attribute_value_end,
+                },
+            );
             self.emitter_state.current_attribute_value.clear();
         }
     }
@@ -284,9 +313,15 @@ where
         if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::Start))
             && !self.emitter_state.current_tag_name.is_empty()
         {
-            self.callback_state.emit_event(CallbackEvent::OpenStartTag {
-                name: &self.emitter_state.current_tag_name,
-            });
+            self.callback_state.emit_event(
+                CallbackEvent::OpenStartTag {
+                    name: &self.emitter_state.current_tag_name,
+                },
+                Span {
+                    start: self.emitter_state.current_taglike_span,
+                    end: self.emitter_state.position.offset(-1),
+                },
+            );
 
             self.emitter_state.last_start_tag.clear();
             swap(
@@ -301,17 +336,29 @@ where
             return;
         }
 
-        self.callback_state.emit_event(CallbackEvent::String {
-            value: &self.emitter_state.current_characters,
-        });
+        self.callback_state.emit_event(
+            CallbackEvent::String {
+                value: &self.emitter_state.current_characters,
+            },
+            Span {
+                start: self.emitter_state.current_characters_start,
+                end: self.emitter_state.current_characters_end,
+            },
+        );
         self.emitter_state.current_characters.clear();
     }
 }
-impl<F, T> Emitter for CallbackEmitter<F, T>
+
+impl<F, T, S: SpanBound> Emitter for CallbackEmitter<F, T, S>
 where
-    F: Callback<T>,
+    F: Callback<T, S>,
 {
     type Token = T;
+
+    #[inline]
+    fn move_position(&mut self, offset: isize) {
+        self.emitter_state.position = self.emitter_state.position.offset(offset);
+    }
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
         self.emitter_state.last_start_tag.clear();
@@ -325,15 +372,26 @@ where
     }
 
     fn emit_error(&mut self, error: Error) {
-        self.callback_state.emit_event(CallbackEvent::Error(error));
+        self.callback_state.emit_event(
+            CallbackEvent::Error(error),
+            Span {
+                start: self.emitter_state.position,
+                end: self.emitter_state.position,
+            },
+        );
     }
 
     fn pop_token(&mut self) -> Option<Self::Token> {
         self.callback_state.emitted_tokens.pop_back()
     }
 
+    fn init_string(&mut self) {
+        self.emitter_state.current_characters_start = self.emitter_state.position;
+    }
+
     fn emit_string(&mut self, s: &[u8]) {
         crate::utils::trace_log!("callbacks: emit_string, len={}", s.len());
+        self.emitter_state.current_characters_end = self.emitter_state.position;
         self.emitter_state.current_characters.extend(s);
     }
 
@@ -360,19 +418,31 @@ where
         match self.emitter_state.current_tag_type {
             Some(CurrentTag::Start) => {
                 self.flush_open_start_tag();
-                self.callback_state
-                    .emit_event(CallbackEvent::CloseStartTag {
+                let s = self.emitter_state.position;
+                self.callback_state.emit_event(
+                    CallbackEvent::CloseStartTag {
                         self_closing: self.emitter_state.current_tag_self_closing,
-                    });
+                    },
+                    Span {
+                        start: s.offset(-1),
+                        end: s,
+                    },
+                );
             }
             Some(CurrentTag::End) => {
                 if self.emitter_state.current_tag_had_attributes {
                     self.emit_error(Error::EndTagWithAttributes);
                 }
                 self.emitter_state.last_start_tag.clear();
-                self.callback_state.emit_event(CallbackEvent::EndTag {
-                    name: &self.emitter_state.current_tag_name,
-                });
+                self.callback_state.emit_event(
+                    CallbackEvent::EndTag {
+                        name: &self.emitter_state.current_tag_name,
+                    },
+                    Span {
+                        start: self.emitter_state.current_taglike_span,
+                        end: self.emitter_state.position,
+                    },
+                );
             }
             _ => {}
         }
@@ -384,34 +454,51 @@ where
         }
     }
     fn emit_current_comment(&mut self) {
-        self.callback_state.emit_event(CallbackEvent::Comment {
-            value: &self.emitter_state.current_comment,
-        });
+        self.callback_state.emit_event(
+            CallbackEvent::Comment {
+                value: &self.emitter_state.current_comment,
+            },
+            Span {
+                start: self.emitter_state.current_taglike_span,
+                end: self.emitter_state.position,
+            },
+        );
         self.emitter_state.current_comment.clear();
     }
 
     fn emit_current_doctype(&mut self) {
-        self.callback_state.emit_event(CallbackEvent::Doctype {
-            name: &self.emitter_state.doctype_name,
-            public_identifier: if self.emitter_state.doctype_has_public_identifier {
-                Some(&self.emitter_state.doctype_public_identifier)
-            } else {
-                None
+        self.callback_state.emit_event(
+            CallbackEvent::Doctype {
+                name: &self.emitter_state.doctype_name,
+                public_identifier: if self.emitter_state.doctype_has_public_identifier {
+                    Some(&self.emitter_state.doctype_public_identifier)
+                } else {
+                    None
+                },
+                system_identifier: if self.emitter_state.doctype_has_system_identifier {
+                    Some(&self.emitter_state.doctype_system_identifier)
+                } else {
+                    None
+                },
+                force_quirks: self.emitter_state.doctype_force_quirks,
             },
-            system_identifier: if self.emitter_state.doctype_has_system_identifier {
-                Some(&self.emitter_state.doctype_system_identifier)
-            } else {
-                None
+            Span {
+                start: self.emitter_state.current_taglike_span,
+                end: self.emitter_state.position,
             },
-            force_quirks: self.emitter_state.doctype_force_quirks,
-        });
+        );
     }
 
     fn set_self_closing(&mut self) {
         trace_log!("set_self_closing");
         if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::End)) {
-            self.callback_state
-                .emit_event(CallbackEvent::Error(Error::EndTagWithTrailingSolidus));
+            self.callback_state.emit_event(
+                CallbackEvent::Error(Error::EndTagWithTrailingSolidus),
+                Span {
+                    start: self.emitter_state.position,
+                    end: self.emitter_state.position,
+                },
+            );
         } else {
             self.emitter_state.current_tag_self_closing = true;
         }
@@ -447,15 +534,21 @@ where
         self.flush_open_start_tag();
         self.flush_attribute();
         self.emitter_state.current_tag_had_attributes = true;
+        self.emitter_state.current_attribute_name_start = self.emitter_state.position.offset(-1);
     }
 
     fn push_attribute_name(&mut self, s: &[u8]) {
         self.emitter_state.current_attribute_name.extend(s);
     }
 
+    fn init_attribute_value(&mut self) {
+        self.emitter_state.current_attribute_value_start = self.emitter_state.position;
+    }
+
     fn push_attribute_value(&mut self, s: &[u8]) {
         self.flush_attribute_name();
         self.emitter_state.current_attribute_value.extend(s);
+        self.emitter_state.current_attribute_value_end = self.emitter_state.position;
     }
 
     fn set_doctype_public_identifier(&mut self, value: &[u8]) {
@@ -473,6 +566,10 @@ where
     }
     fn push_doctype_system_identifier(&mut self, value: &[u8]) {
         self.emitter_state.doctype_system_identifier.extend(value);
+    }
+
+    fn start_open_tag(&mut self) {
+        self.emitter_state.current_taglike_span = self.emitter_state.position.offset(-1);
     }
 
     fn current_is_appropriate_end_tag_token(&mut self) -> bool {

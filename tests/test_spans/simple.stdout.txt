@@ -1,0 +1,29 @@
+error: test output
+  |
+1 | <!DOCTYPE html>
+  | --------------- info: doctype
+2 | <h1>Hello</h1>
+  | -------------- note: end tag
+  | |   |
+  | |   info: string
+  | info: start tag
+3 | <p attr="value"></p>
+  | -------------------- note: end tag
+  | |  |
+  | |  note: attribute
+  | info: start tag
+4 | <p>content</p>
+  | -------------- note: end tag
+  | |  |
+  | |  info: string
+  | info: start tag
+5 | <!-- A comment -->
+  | ------------------ info: comment
+6 | <h2>Subtitle</h2>
+  | ----------------- note: end tag
+  | |   |
+  | |   info: string
+  | info: start tag
+7 | <br/>
+  | ----- info: start tag
+  |

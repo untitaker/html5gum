@@ -1,6 +1,84 @@
 use crate::{Error, State};
 
+macro_rules! create_emitter {
+    (
+        $(#[$trait_outer:meta])+
+        pub trait $trait_name:ident {
+            $(#[$token:meta])*
+            type Token;
+            $(
+                $(#[$outer:meta])*
+                fn $name:ident($($args:tt)*) $(-> $ret:ty)?
+                $($body:block)?
+            )+
+        }
+
+        $(#[$forward_outer:meta])*
+        pub trait $forward_name:ident {
+        }
+    ) => {
+        $(#[$trait_outer])*
+        pub trait $trait_name {
+            $(#[$token])*
+            type Token;
+
+            $(
+                create_emitter!{ @fun $(#[$outer])* fn $name($($args)*) $(-> $ret)? $($body)? }
+            )+
+        }
+
+        $(#[$forward_outer])*
+        pub trait $forward_name {
+            $(#[$token])*
+            type Token;
+            /// Get a mutable reference to the inner [Emitter].
+            fn inner(&mut self) -> &mut impl Emitter<Token = Self::Token>;
+
+            $(
+                create_emitter!{ @default_forward $(#[$outer])* fn $name($($args)*) $(-> $ret)? }
+            )+
+        }
+
+        impl<T: $forward_name> $trait_name for T {
+            type Token = <Self as $forward_name>::Token;
+
+            $(
+                create_emitter!{ @to_forward $forward_name $(#[$outer])* fn $name($($args)*) $(-> $ret)? }
+            )+
+        }
+    };
+    (@fun $(#[$outer:meta])* fn $name:ident($($args:tt)*) $(-> $ret:ty)? $body:block) => {
+        $(#[$outer])*
+        fn $name($($args)*) $(-> $ret)?
+        $body
+    };
+    (@fun $(#[$outer:meta])* fn $name:ident($($args:tt)*) $(-> $ret:ty)?) => {
+        $(#[$outer])*
+        fn $name($($args)*) $(-> $ret)?;
+    };
+    (@default_forward $(#[$outer:meta])* fn $name:ident(&mut self $(,$($arg_name:ident: $arg_ty:ty),* $(,)?)?) $(-> $ret:ty)?) => {
+        #[allow(unused_attributes)]
+        $(#[$outer])*
+        #[inline]
+        fn $name(&mut self $(, $($arg_name: $arg_ty),*)?) $(-> $ret)? {
+            self.inner().$name($($($arg_name),*)?)
+        }
+    };
+    (@to_forward $forward_name:ident $(#[$outer:meta])* fn $name:ident(&mut self $(,$($arg_name:ident: $arg_ty:ty),* $(,)?)?) $(-> $ret:tt $(<$ret2:tt $(:: $ret3:tt)?>)?)?) => {
+        #[allow(unused_attributes)]
+        $(#[$outer])*
+        #[inline]
+        fn $name(&mut self $(, $($arg_name: $arg_ty),*)?) $(-> $ret $(<$ret2 $(:: $ret3)?>)?)? {
+            <Self as $forward_name>::$name(self $(, $($arg_name),*)?)
+        }
+    };
+
+}
+
+create_emitter! {
 /// An emitter is an object providing methods to the tokenizer to produce tokens.
+///
+/// If you want to mostly wrap another embedder, consider implementing [ForwardingEmitter].
 ///
 /// Domain-specific applications of the HTML tokenizer can manually implement this trait to
 /// customize per-token allocations, or avoid them altogether.
@@ -31,14 +109,14 @@ pub trait Emitter {
     ///
     /// This is primarily for testing purposes. This is *not* supposed to override the tag name of
     /// the current tag.
-    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>);
+    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>)
 
     /// The state machine has reached the end of the file. It will soon call `pop_token` for the
     /// last time.
-    fn emit_eof(&mut self);
+    fn emit_eof(&mut self)
 
     /// A (probably recoverable) parsing error has occured.
-    fn emit_error(&mut self, error: Error);
+    fn emit_error(&mut self, error: Error)
 
     /// Whether this emitter cares about errors at all.
     ///
@@ -59,19 +137,23 @@ pub trait Emitter {
 
     /// After every state change, the tokenizer calls this method to retrieve a new token that can
     /// be returned via the tokenizer's iterator interface.
-    fn pop_token(&mut self) -> Option<Self::Token>;
+    fn pop_token(&mut self) -> Option<Self::Token>
+
+    /// Start a new string.
+    fn init_string(&mut self) {
+    }
 
     /// Emit a bunch of plain characters as character tokens.
-    fn emit_string(&mut self, c: &[u8]);
+    fn emit_string(&mut self, c: &[u8])
 
     /// Set the _current token_ to a start tag.
-    fn init_start_tag(&mut self);
+    fn init_start_tag(&mut self)
 
     /// Set the _current token_ to an end tag.
-    fn init_end_tag(&mut self);
+    fn init_end_tag(&mut self)
 
     /// Set the _current token_ to a comment.
-    fn init_comment(&mut self);
+    fn init_comment(&mut self)
 
     /// Emit the _current token_, assuming it is a tag.
     ///
@@ -98,17 +180,17 @@ pub trait Emitter {
     /// See the `tokenize_with_state_switches` cargo example for a practical example where this
     /// matters.
     #[must_use]
-    fn emit_current_tag(&mut self) -> Option<State>;
+    fn emit_current_tag(&mut self) -> Option<State>
 
     /// Emit the _current token_, assuming it is a comment.
     ///
     /// If the current token is not a comment, this method may panic.
-    fn emit_current_comment(&mut self);
+    fn emit_current_comment(&mut self)
 
     /// Emit the _current token_, assuming it is a doctype.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn emit_current_doctype(&mut self);
+    fn emit_current_doctype(&mut self)
 
     /// Assuming the _current token_ is a start tag, set the self-closing flag.
     ///
@@ -116,27 +198,27 @@ pub trait Emitter {
     ///
     /// If the current token is an end tag, the emitter should emit the
     /// [`crate::Error::EndTagWithTrailingSolidus`] error.
-    fn set_self_closing(&mut self);
+    fn set_self_closing(&mut self)
 
     /// Assuming the _current token_ is a doctype, set its "force quirks" flag to true.
     ///
     /// If the current token is not a doctype, this method pay panic.
-    fn set_force_quirks(&mut self);
+    fn set_force_quirks(&mut self)
 
     /// Assuming the _current token_ is a start/end tag, append a string to the current tag's name.
     ///
     /// If the current token is not a start or end tag, this method may panic.
-    fn push_tag_name(&mut self, s: &[u8]);
+    fn push_tag_name(&mut self, s: &[u8])
 
     /// Assuming the _current token_ is a comment, append a string to the comment's contents.
     ///
     /// If the current token is not a comment, this method may panic.
-    fn push_comment(&mut self, s: &[u8]);
+    fn push_comment(&mut self, s: &[u8])
 
     /// Assuming the _current token_ is a doctype, append a string to the doctype's name.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn push_doctype_name(&mut self, s: &[u8]);
+    fn push_doctype_name(&mut self, s: &[u8])
 
     /// Set the _current token_ to a new doctype token:
     ///
@@ -144,7 +226,7 @@ pub trait Emitter {
     /// * the "public identifier" should be null (different from empty)
     /// * the "system identifier" should be null (different from empty)
     /// * the "force quirks" flag should be `false`
-    fn init_doctype(&mut self);
+    fn init_doctype(&mut self)
 
     /// Set the _current attribute_ to a new one, starting with empty name and value strings.
     ///
@@ -156,37 +238,47 @@ pub trait Emitter {
     /// emitted.
     ///
     /// If the current token is no tag at all, this method may panic.
-    fn init_attribute(&mut self);
+    fn init_attribute(&mut self)
+
+    /// Start with the attribute value after the aatribute's name.
+    ///
+    /// If there is no current attribute, this method may panic.
+    fn init_attribute_value(&mut self) {
+    }
 
     /// Append a string to the current attribute's name.
     ///
     /// If there is no current attribute, this method may panic.
-    fn push_attribute_name(&mut self, s: &[u8]);
+    fn push_attribute_name(&mut self, s: &[u8])
 
     /// Append a string to the current attribute's value.
     ///
     /// If there is no current attribute, this method may panic.
-    fn push_attribute_value(&mut self, s: &[u8]);
+    fn push_attribute_value(&mut self, s: &[u8])
 
     /// Assuming the _current token_ is a doctype, set its "public identifier" to the given string.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn set_doctype_public_identifier(&mut self, value: &[u8]);
+    fn set_doctype_public_identifier(&mut self, value: &[u8])
 
     /// Assuming the _current token_ is a doctype, set its "system identifier" to the given string.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn set_doctype_system_identifier(&mut self, value: &[u8]);
+    fn set_doctype_system_identifier(&mut self, value: &[u8])
 
     /// Assuming the _current token_ is a doctype, append a string to its "public identifier" to the given string.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn push_doctype_public_identifier(&mut self, s: &[u8]);
+    fn push_doctype_public_identifier(&mut self, s: &[u8])
 
     /// Assuming the _current token_ is a doctype, append a string to its "system identifier" to the given string.
     ///
     /// If the current token is not a doctype, this method may panic.
-    fn push_doctype_system_identifier(&mut self, s: &[u8]);
+    fn push_doctype_system_identifier(&mut self, s: &[u8])
+
+    /// Start a new tag/comment or something starting with `<`.
+    fn start_open_tag(&mut self) {
+    }
 
     /// Return true if all of these hold. Return false otherwise.
     ///
@@ -196,7 +288,7 @@ pub trait Emitter {
     ///
     /// See also [WHATWG's definition of "appropriate end tag
     /// token"](https://html.spec.whatwg.org/#appropriate-end-tag-token).
-    fn current_is_appropriate_end_tag_token(&mut self) -> bool;
+    fn current_is_appropriate_end_tag_token(&mut self) -> bool
 
     /// By default, this always returns false and thus
     /// all CDATA sections are tokenized as bogus comments.
@@ -206,6 +298,18 @@ pub trait Emitter {
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
         false
     }
+
+    /// Move the reader position by the given amount.
+    ///
+    /// Useful for [crate::Span]s.
+    #[inline]
+    fn move_position(&mut self, _offset: isize) {}
+}
+
+/// An [Emitter] which forwards most methods to an inner emitter.
+///
+/// If you want to modify most methods, consider implementing [Emitter] directly
+pub trait ForwardingEmitter {}
 }
 
 /// Take an educated guess at the next state using the name of a just-now emitted start tag.

@@ -8,7 +8,7 @@ use crate::{DefaultEmitter, Emitter, Readable, Reader};
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
 #[derive(Debug)]
-pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
+pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter<()>> {
     eof: bool,
     pub(crate) validator: CharValidator,
     pub(crate) emitter: E,
@@ -16,7 +16,7 @@ pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
     pub(crate) machine_helper: MachineHelper<R, E>,
 }
 
-impl<R: Reader> Tokenizer<R> {
+impl<R: Reader> Tokenizer<R, DefaultEmitter<()>> {
     /// Create a new tokenizer from some input.
     ///
     /// `input` can be `&String` or `&str` at the moment, as those are the types for which
@@ -25,7 +25,10 @@ impl<R: Reader> Tokenizer<R> {
     /// Patches are welcome for providing an efficient implementation over async streams,
     /// iterators, files, etc, as long as any dependencies come behind featureflags.
     pub fn new<'a, S: Readable<'a, Reader = R>>(input: S) -> Self {
-        Tokenizer::<S::Reader>::new_with_emitter(input, DefaultEmitter::default())
+        Tokenizer::<S::Reader, DefaultEmitter<()>>::new_with_emitter(
+            input,
+            DefaultEmitter::<()>::default(),
+        )
     }
 }
 
@@ -56,6 +59,63 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
         self.emitter
             .set_last_start_tag(last_start_tag.map(str::as_bytes));
     }
+
+    #[inline(always)]
+    pub(crate) fn try_read_string(
+        &mut self,
+        s: &str,
+        case_sensitive: bool,
+    ) -> Result<bool, R::Error> {
+        match self
+            .reader
+            .try_read_string(&mut self.validator, s, case_sensitive)
+        {
+            Ok(true) => {
+                self.emitter.move_position(s.len() as isize);
+                Ok(true)
+            }
+            Ok(false) => Ok(false),
+            Err(e) => Err(e),
+        }
+    }
+
+    #[inline(always)]
+    pub(crate) fn read_byte(&mut self) -> Result<Option<u8>, R::Error> {
+        let res = self
+            .reader
+            .read_byte(&mut self.validator, &mut self.emitter)?;
+
+        if res.is_some() {
+            self.emitter.move_position(1);
+        }
+
+        Ok(res)
+    }
+
+    #[inline(always)]
+    pub(crate) fn unread_byte(&mut self, c: Option<u8>) {
+        if c.is_some() {
+            self.emitter.move_position(-1);
+        }
+        self.reader.unread_byte(c);
+    }
+
+    #[inline(always)]
+    pub(crate) fn read_until<'b>(
+        reader: &'b mut ReadHelper<R>,
+        needle: &[u8],
+        char_validator: &mut CharValidator,
+        emitter: &mut E,
+        char_buf: &'b mut [u8; 4],
+    ) -> Result<Option<&'b [u8]>, R::Error> {
+        let res = reader.read_until(needle, char_validator, emitter, char_buf)?;
+
+        if let Some(res) = &res {
+            emitter.move_position(res.len() as isize);
+        }
+
+        Ok(res)
+    }
 }
 
 impl<R: Reader, E: Emitter<Token = Infallible>> Tokenizer<R, E> {
@@ -65,10 +125,10 @@ impl<R: Reader, E: Emitter<Token = Infallible>> Tokenizer<R, E> {
     /// ```
     /// use std::convert::Infallible;
     ///
-    /// use html5gum::Tokenizer;
+    /// use html5gum::{Span, Tokenizer};
     /// use html5gum::emitters::callback::{CallbackEvent, CallbackEmitter};
     ///
-    /// let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>| -> Option<Infallible> {
+    /// let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>, span: Span<()>| -> Option<Infallible> {
     ///     if let CallbackEvent::String { value } = event {
     ///         println!("{}", String::from_utf8_lossy(value));
     ///     }

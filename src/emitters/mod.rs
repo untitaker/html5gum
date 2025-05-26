@@ -22,4 +22,4 @@ pub mod html5ever;
 
 mod emitter;
 
-pub use emitter::{naive_next_state, Emitter};
+pub use emitter::{naive_next_state, Emitter, ForwardingEmitter};

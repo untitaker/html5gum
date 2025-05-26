@@ -4,7 +4,7 @@ use crate::Reader;
 
 #[derive(Debug)]
 pub(crate) struct ReadHelper<R: Reader> {
-    reader: R,
+    pub(crate) reader: R,
     last_character_was_cr: bool,
     #[allow(clippy::option_option)]
     to_reconsume: Option<Option<u8>>,
@@ -63,9 +63,7 @@ impl<R: Reader> ReadHelper<R> {
         if let Some(c) = self.to_reconsume.take() {
             match (c, bytes.next()) {
                 (Some(x), Some(&x2))
-                    if x == x2
-                        || (!case_sensitive
-                            && x.to_ascii_lowercase() == x2.to_ascii_lowercase()) =>
+                    if x == x2 || (!case_sensitive && x.eq_ignore_ascii_case(&x2)) =>
                 {
                     s = &s[1..];
                 }
@@ -87,16 +85,13 @@ impl<R: Reader> ReadHelper<R> {
     }
 
     #[inline(always)]
-    pub(crate) fn read_until<'b, E>(
+    pub(crate) fn read_until<'b, E: Emitter>(
         &'b mut self,
         needle: &[u8],
         char_validator: &mut CharValidator,
         emitter: &mut E,
         char_buf: &'b mut [u8; 4],
-    ) -> Result<Option<&'b [u8]>, R::Error>
-    where
-        E: Emitter,
-    {
+    ) -> Result<Option<&'b [u8]>, R::Error> {
         const MAX_NEEDLE_LEN: usize = 13;
 
         match self.to_reconsume.take() {
@@ -118,7 +113,8 @@ impl<R: Reader> ReadHelper<R> {
         needle2[needle.len()] = b'\r';
         let needle2_slice = &needle2[..=needle.len()];
 
-        match self.reader.read_until(needle2_slice, char_buf)? {
+        let read = self.reader.read_until(needle2_slice, char_buf)?;
+        match read {
             Some(b"\r") => {
                 self.last_character_was_cr = true;
                 char_validator.validate_byte(emitter, b'\n');
@@ -186,7 +182,8 @@ macro_rules! fast_read_char {
         None => $eof_catchall:block
     }) => { loop {
         let mut char_buf = [0; 4];
-        let $read_char = $slf.reader.read_until(
+        let $read_char = $crate::Tokenizer::read_until(
+            &mut $slf.reader,
             &[ $($({
                 debug_assert_eq!($lit.len(), 1);
                 $lit[0]
@@ -196,7 +193,11 @@ macro_rules! fast_read_char {
             &mut char_buf,
         )?;
         break match $read_char {
-            $(Some($($lit)|*) => $arm)*
+            $(
+                Some($($lit)|*) => {
+                    $arm
+                }
+            )*
                 Some($xs) => {
                     // Prevent catch-all arm from using the machine_helper.
                     //
@@ -211,7 +212,9 @@ macro_rules! fast_read_char {
                     let _do_not_use = &mut $slf.machine_helper;
                     $catchall
                 }
-            None => $eof_catchall
+            None => {
+                $eof_catchall
+            }
         };
     } };
 }
@@ -223,7 +226,7 @@ macro_rules! slow_read_byte {
         $($tt:tt)*
     }) => {
         loop {
-            break match $slf.reader.read_byte(&mut $slf.validator, &mut $slf.emitter)? {
+            break match $slf.read_byte()? {
                 $($tt)*
             };
         }

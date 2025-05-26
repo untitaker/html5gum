@@ -113,7 +113,7 @@ fn test_eq_byte_slice_and_html_str() {
 fn test_borrowing() {
     use crate::StartTag;
     // demonstrate a usecase for Borrow/BorrowMut
-    let tag = StartTag::default();
+    let tag = StartTag::<()>::default();
     assert!(!tag.attributes.contains_key(b"href".as_slice()));
 }
 
