@@ -26,6 +26,7 @@ pub(crate) mod states {
     use super::*;
 
     define_state!(Data, slf, {
+        slf.emitter.init_string();
         fast_read_char!(
             slf,
             match xs {
@@ -33,6 +34,7 @@ pub(crate) mod states {
                     enter_state!(slf, CharacterReference, false)
                 }
                 Some(b"<") => {
+                    slf.emitter.start_open_tag();
                     switch_to!(slf, TagOpen)?.inline_next_state(slf)
                 }
                 Some(b"\0") => {
@@ -52,6 +54,7 @@ pub(crate) mod states {
     });
 
     define_state!(RcData, slf, {
+        slf.emitter.init_string();
         fast_read_char!(
             slf,
             match xs {
@@ -779,7 +782,7 @@ pub(crate) mod states {
                 Some(b'=') => {
                     error!(slf, Error::UnexpectedEqualsSignBeforeAttributeName);
                     slf.emitter.init_attribute();
-                    slf.emitter.push_attribute_name("=".as_bytes());
+                    slf.emitter.push_attribute_name(b"=");
                     switch_to!(slf, AttributeName)
                 }
                 Some(x) => {
@@ -856,9 +859,11 @@ pub(crate) mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
+                    slf.emitter.init_attribute_value();
                     switch_to!(slf, AttributeValueDoubleQuoted)?.inline_next_state(slf)
                 }
                 Some(b'\'') => {
+                    slf.emitter.init_attribute_value();
                     switch_to!(slf, AttributeValueSingleQuoted)
                 }
                 Some(b'>') => {
@@ -866,6 +871,7 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 c => {
+                    slf.emitter.init_attribute_value();
                     reconsume_in!(slf, c, AttributeValueUnquoted)
                 }
             }
@@ -1025,22 +1031,14 @@ pub(crate) mod states {
         slow_read_byte!(
             slf,
             match c {
-                Some(b'-') if slf.reader.try_read_string(&mut slf.validator, "-", true)? => {
+                Some(b'-') if slf.try_read_string("-", true)? => {
                     slf.emitter.init_comment();
                     switch_to!(slf, CommentStart)
                 }
-                Some(b'd' | b'D')
-                    if slf
-                        .reader
-                        .try_read_string(&mut slf.validator, "octype", false)? =>
-                {
+                Some(b'd' | b'D') if slf.try_read_string("octype", false)? => {
                     switch_to!(slf, Doctype)
                 }
-                Some(b'[')
-                    if slf
-                        .reader
-                        .try_read_string(&mut slf.validator, "CDATA[", true)? =>
-                {
+                Some(b'[') if slf.try_read_string("CDATA[", true)? => {
                     if slf
                         .emitter
                         .adjusted_current_node_present_but_not_in_html_namespace()
@@ -1379,18 +1377,10 @@ pub(crate) mod states {
                     slf.emitter.emit_current_doctype();
                     eof!()
                 }
-                Some(b'p' | b'P')
-                    if slf
-                        .reader
-                        .try_read_string(&mut slf.validator, "ublic", false)? =>
-                {
+                Some(b'p' | b'P') if slf.try_read_string("ublic", false)? => {
                     switch_to!(slf, AfterDoctypePublicKeyword)
                 }
-                Some(b's' | b'S')
-                    if slf
-                        .reader
-                        .try_read_string(&mut slf.validator, "ystem", false)? =>
-                {
+                Some(b's' | b'S') if slf.try_read_string("ystem", false)? => {
                     switch_to!(slf, AfterDoctypeSystemKeyword)
                 }
                 c @ Some(_) => {
@@ -1878,10 +1868,8 @@ pub(crate) mod states {
         let c = read_byte!(slf)?;
 
         let char_ref = match c {
-            Some(x) => try_read_character_reference(x as char, |x| {
-                slf.reader.try_read_string(&mut slf.validator, x, true)
-            })?
-            .map(|char_ref| (x, char_ref)),
+            Some(x) => try_read_character_reference(x as char, |x| slf.try_read_string(x, true))?
+                .map(|char_ref| (x, char_ref)),
 
             None => None,
         };

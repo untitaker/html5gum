@@ -203,7 +203,7 @@ macro_rules! reconsume_in {
     ($slf:expr, $c:expr, $state:ident) => {{
         let new_state = $crate::machine_helper::state_ref!($state);
         let c = $c;
-        $slf.reader.unread_byte(c);
+        $slf.unread_byte(c);
         Ok(ControlToken::SwitchTo(new_state))
     }};
 }
@@ -214,7 +214,7 @@ macro_rules! reconsume_in_return_state {
     ($slf:expr, $c:expr) => {{
         let new_state = $slf.machine_helper.pop_return_state();
         let c = $c;
-        $slf.reader.unread_byte(c);
+        $slf.unread_byte(c);
         Ok(ControlToken::SwitchTo(new_state))
     }};
 }
@@ -239,8 +239,7 @@ pub(crate) use eof;
 
 macro_rules! read_byte {
     ($slf:expr) => {
-        $slf.reader
-            .read_byte(&mut $slf.validator, &mut $slf.emitter)
+        $slf.read_byte()
     };
 }
 

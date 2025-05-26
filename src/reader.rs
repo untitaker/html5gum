@@ -285,7 +285,7 @@ impl<'a> Readable<'a> for &'a [u8] {
 /// assert_eq!(new_html, "<title>hello world</title>");
 /// ```
 #[derive(Debug)]
-pub struct IoReader<R: Read, Buffer: AsMut<[u8]> = Box<[u8]>> {
+pub struct IoReader<R: Read, Buffer: AsRef<[u8]> + AsMut<[u8]> = Box<[u8]>> {
     buf: Buffer,
     read_cursor: usize,
     write_cursor: usize,
@@ -315,7 +315,7 @@ impl<'a, R: Read> IoReader<R, &'a mut [u8]> {
     }
 }
 
-impl<R: Read, Buffer: AsMut<[u8]>> IoReader<R, Buffer> {
+impl<R: Read, Buffer: AsRef<[u8]> + AsMut<[u8]>> IoReader<R, Buffer> {
     // new_with_buffer_impl is not exposed because we cannot use any kind of AsMut. It has to be
     // one where we can be sure that the size of the buffer does not change with repeated calls to
     // `as_mut()`. There are complex solutions to this sort of thing, but for now it seems simpler
@@ -359,7 +359,7 @@ impl<R: Read, Buffer: AsMut<[u8]>> IoReader<R, Buffer> {
     }
 }
 
-impl<R: Read, Buffer: AsMut<[u8]>> Reader for IoReader<R, Buffer> {
+impl<R: Read, Buffer: AsRef<[u8]> + AsMut<[u8]>> Reader for IoReader<R, Buffer> {
     type Error = io::Error;
 
     #[inline(always)]
@@ -398,7 +398,7 @@ impl<R: Read, Buffer: AsMut<[u8]>> Reader for IoReader<R, Buffer> {
         _: &'b mut [u8; 4],
     ) -> Result<Option<&'b [u8]>, Self::Error> {
         self.prepare_buf(4)?;
-        let buf = &self.buf.as_mut()[self.read_cursor..self.write_cursor];
+        let buf = &self.buf.as_ref()[self.read_cursor..self.write_cursor];
         if buf.is_empty() {
             Ok(None)
         } else if let Some(needle_pos) = fast_find(needle, buf) {

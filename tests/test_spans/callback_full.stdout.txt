@@ -1,0 +1,36 @@
+error: test output
+  |
+1 | <!DOCTYPE html>
+  | --------------- info: doctype
+2 | <h1>Hello</h1>
+  | -------------- info: end tag
+  | |  ||
+  | |  |note: string
+  | |  note: close start tag
+  | open start tag
+3 | <p attr="value"></p>
+  | -------  ----- ----- info: end tag
+  | |  |     |     |
+  | |  |     |     note: close start tag
+  | |  |     note: attribute value
+  | |  attribute name
+  | open start tag
+4 | <p>content</p>
+  | -------------- info: end tag
+  | | ||
+  | | |note: string
+  | | note: close start tag
+  | open start tag
+5 | <!-- A comment -->
+  | ------------------ info: comment
+6 | <h2>Subtitle</h2>
+  | ----------------- info: end tag
+  | |  ||
+  | |  |note: string
+  | |  note: close start tag
+  | open start tag
+7 | <br/>
+  | ----- note: close start tag (self closing)
+  | |
+  | open start tag
+  |

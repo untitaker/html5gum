@@ -3,7 +3,7 @@ use std::convert::Infallible;
 
 use crate::emitters::callback::{Callback, CallbackEmitter, CallbackEvent};
 use crate::utils::trace_log;
-use crate::{Emitter, Error, Readable, Reader, State, Tokenizer};
+use crate::{Emitter, ForwardingEmitter, Readable, Reader, Span, State, Tokenizer};
 
 use html5ever::interface::{create_element, TreeSink};
 use html5ever::tokenizer::states::State as Html5everState;
@@ -56,8 +56,8 @@ impl<'a, S: TokenSink> OurCallback<'a, S> {
     }
 }
 
-impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
-    fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<Infallible> {
+impl<'a, S: TokenSink> Callback<Infallible, ()> for OurCallback<'a, S> {
+    fn handle_event(&mut self, event: CallbackEvent<'_>, _span: Span<()>) -> Option<Infallible> {
         trace_log!("Html5everEmitter::handle_event: {:?}", event);
         match event {
             CallbackEvent::OpenStartTag { name } => {
@@ -165,11 +165,11 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
     }
 }
 
-impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
+impl<'a, S: TokenSink> ForwardingEmitter for Html5everEmitter<'a, S> {
     type Token = Infallible;
 
-    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
-        self.emitter_inner.set_last_start_tag(last_start_tag)
+    fn inner(&mut self) -> &mut impl Emitter<Token = Self::Token> {
+        &mut self.emitter_inner
     }
 
     fn emit_eof(&mut self) {
@@ -179,100 +179,9 @@ impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
         sink.end();
     }
 
-    fn emit_error(&mut self, error: Error) {
-        self.emitter_inner.emit_error(error)
-    }
-
-    fn should_emit_errors(&mut self) -> bool {
-        self.emitter_inner.should_emit_errors()
-    }
-
-    fn pop_token(&mut self) -> Option<Self::Token> {
-        self.emitter_inner.pop_token()
-    }
-    fn emit_string(&mut self, c: &[u8]) {
-        self.emitter_inner.emit_string(c)
-    }
-
-    fn init_start_tag(&mut self) {
-        self.emitter_inner.init_start_tag()
-    }
-
-    fn init_end_tag(&mut self) {
-        self.emitter_inner.init_end_tag()
-    }
-
-    fn init_comment(&mut self) {
-        self.emitter_inner.init_comment()
-    }
-
     fn emit_current_tag(&mut self) -> Option<State> {
         assert!(self.emitter_inner.emit_current_tag().is_none());
         self.emitter_inner.callback_mut().next_state.take()
-    }
-
-    fn emit_current_comment(&mut self) {
-        self.emitter_inner.emit_current_comment()
-    }
-
-    fn emit_current_doctype(&mut self) {
-        self.emitter_inner.emit_current_doctype()
-    }
-
-    fn set_self_closing(&mut self) {
-        self.emitter_inner.set_self_closing()
-    }
-
-    fn set_force_quirks(&mut self) {
-        self.emitter_inner.set_force_quirks()
-    }
-
-    fn push_tag_name(&mut self, s: &[u8]) {
-        self.emitter_inner.push_tag_name(s)
-    }
-
-    fn push_comment(&mut self, s: &[u8]) {
-        self.emitter_inner.push_comment(s)
-    }
-
-    fn push_doctype_name(&mut self, s: &[u8]) {
-        self.emitter_inner.push_doctype_name(s)
-    }
-
-    fn init_doctype(&mut self) {
-        self.emitter_inner.init_doctype()
-    }
-
-    fn init_attribute(&mut self) {
-        self.emitter_inner.init_attribute()
-    }
-
-    fn push_attribute_name(&mut self, s: &[u8]) {
-        self.emitter_inner.push_attribute_name(s)
-    }
-
-    fn push_attribute_value(&mut self, s: &[u8]) {
-        self.emitter_inner.push_attribute_value(s)
-    }
-
-    fn set_doctype_public_identifier(&mut self, value: &[u8]) {
-        self.emitter_inner.set_doctype_public_identifier(value)
-    }
-
-    fn set_doctype_system_identifier(&mut self, value: &[u8]) {
-        self.emitter_inner.set_doctype_system_identifier(value)
-    }
-
-    fn push_doctype_public_identifier(&mut self, s: &[u8]) {
-        self.emitter_inner.push_doctype_public_identifier(s)
-    }
-
-    fn push_doctype_system_identifier(&mut self, s: &[u8]) {
-        self.emitter_inner.push_doctype_system_identifier(s)
-    }
-
-    fn current_is_appropriate_end_tag_token(&mut self) -> bool {
-        self.emitter_inner.current_is_appropriate_end_tag_token()
     }
 
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
