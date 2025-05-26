@@ -2,27 +2,27 @@ use crate::utils::trace_log;
 use crate::{Emitter, Reader, State, Tokenizer};
 
 #[derive(Debug)]
-pub(crate) struct MachineState<R: Reader, E: Emitter> {
+pub(crate) struct MachineState<R: Reader, E: Emitter<R>> {
     #[allow(clippy::type_complexity)]
     pub function: fn(&mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, R::Error>,
     #[cfg(debug_assertions)]
     pub debug_name: &'static str,
 }
 
-impl<R: Reader, E: Emitter> Copy for MachineState<R, E> {}
-impl<R: Reader, E: Emitter> Clone for MachineState<R, E> {
+impl<R: Reader, E: Emitter<R>> Copy for MachineState<R, E> {}
+impl<R: Reader, E: Emitter<R>> Clone for MachineState<R, E> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-pub(crate) enum ControlToken<R: Reader, E: Emitter> {
+pub(crate) enum ControlToken<R: Reader, E: Emitter<R>> {
     Eof,
     Continue,
     SwitchTo(MachineState<R, E>),
 }
 
-impl<R: Reader, E: Emitter> ControlToken<R, E> {
+impl<R: Reader, E: Emitter<R>> ControlToken<R, E> {
     #[inline(always)]
     pub(crate) fn inline_next_state(
         self,
@@ -45,7 +45,7 @@ impl<R: Reader, E: Emitter> ControlToken<R, E> {
 }
 
 #[allow(clippy::from_over_into)]
-impl<R: Reader, E: Emitter> Into<MachineState<R, E>> for State {
+impl<R: Reader, E: Emitter<R>> Into<MachineState<R, E>> for State {
     fn into(self) -> MachineState<R, E> {
         // TODO: instead of this conversion, can we rig the enums to be of same layout?
         match self {
@@ -60,7 +60,7 @@ impl<R: Reader, E: Emitter> Into<MachineState<R, E>> for State {
 }
 
 #[derive(Debug)]
-pub(crate) struct MachineHelper<R: Reader, E: Emitter> {
+pub(crate) struct MachineHelper<R: Reader, E: Emitter<R>> {
     // XXX: allocation that cannot be controlled/reused by the user
     pub(crate) temporary_buffer: Vec<u8>,
     pub(crate) character_reference_code: u32,
@@ -68,7 +68,7 @@ pub(crate) struct MachineHelper<R: Reader, E: Emitter> {
     return_state: Option<(MachineState<R, E>, bool)>,
 }
 
-impl<R: Reader, E: Emitter> Default for MachineHelper<R, E> {
+impl<R: Reader, E: Emitter<R>> Default for MachineHelper<R, E> {
     fn default() -> Self {
         MachineHelper {
             temporary_buffer: Vec::new(),
@@ -79,7 +79,7 @@ impl<R: Reader, E: Emitter> Default for MachineHelper<R, E> {
     }
 }
 
-impl<R: Reader, E: Emitter> MachineHelper<R, E> {
+impl<R: Reader, E: Emitter<R>> MachineHelper<R, E> {
     pub(crate) fn is_consumed_as_part_of_an_attribute(&self) -> bool {
         match self.return_state {
             Some((_state, is_attribute)) => is_attribute,
@@ -87,17 +87,17 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
         }
     }
 
-    pub(crate) fn flush_code_points_consumed_as_character_reference(&mut self, emitter: &mut E) {
+    pub(crate) fn flush_code_points_consumed_as_character_reference(&mut self, emitter: &mut E, reader: &R) {
         if self.is_consumed_as_part_of_an_attribute() {
-            emitter.push_attribute_value(&self.temporary_buffer);
+            emitter.push_attribute_value(&self.temporary_buffer, reader);
             self.temporary_buffer.clear();
         } else {
-            self.flush_buffer_characters(emitter);
+            self.flush_buffer_characters(emitter, reader);
         }
     }
 
-    pub(crate) fn flush_buffer_characters(&mut self, emitter: &mut E) {
-        emitter.emit_string(&self.temporary_buffer);
+    pub(crate) fn flush_buffer_characters(&mut self, emitter: &mut E, reader: &R) {
+        emitter.emit_string(&self.temporary_buffer, reader);
         self.temporary_buffer.clear();
     }
 
@@ -159,7 +159,7 @@ pub(crate) use mutate_character_reference;
 
 macro_rules! emit_current_tag_and_switch_to {
     ($slf:expr, $state:ident) => {{
-        let state = $slf.emitter.emit_current_tag().map(Into::into);
+        let state = $slf.emitter.emit_current_tag(&$slf.reader.reader).map(Into::into);
         if state.is_some() {
             crate::utils::trace_log!("emitter asked for state switch:");
         }
@@ -250,8 +250,11 @@ pub(crate) use read_byte;
 /// have been fully consumed (and after any errors originating from pre-processing the input
 /// stream bytes)
 macro_rules! error {
+    ($slf:expr, $reader:expr, $e:expr) => {
+        $slf.validator.set_character_error(&mut $slf.emitter, $e, $reader);
+    };
     ($slf:expr, $e:expr) => {
-        $slf.validator.set_character_error(&mut $slf.emitter, $e);
+        $slf.validator.set_character_error(&mut $slf.emitter, $e, &$slf.reader.reader);
     };
 }
 
@@ -259,9 +262,13 @@ pub(crate) use error;
 
 /// Produce error for a previous character, emit immediately.
 macro_rules! error_immediate {
+    ($slf:expr, $reader:expr, $e:expr) => {
+        error!($slf, $reader, $e);
+        $slf.validator.flush_character_error(&mut $slf.emitter, $reader);
+    };
     ($slf:expr, $e:expr) => {
         error!($slf, $e);
-        $slf.validator.flush_character_error(&mut $slf.emitter);
+        $slf.validator.flush_character_error(&mut $slf.emitter, &$slf.reader.reader);
     };
 }
 

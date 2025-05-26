@@ -1,7 +1,8 @@
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
 
 use html5gum::{
-    Doctype, EndTag, Error, IoReader, Readable, Reader, StartTag, State, Token, Tokenizer,
+    Doctype, EndTag, Error, IoReader, Readable, Reader, Span, Spanned, StartTag, State, Token,
+    Tokenizer,
 };
 
 use html5gum::testutils::{trace_log, SlowReader};
@@ -14,7 +15,7 @@ use serde::{de::Error as _, Deserialize};
 mod testutils;
 
 #[derive(Clone)]
-struct ExpectedOutputTokens(Vec<Token>);
+struct ExpectedOutputTokens(Vec<Token<()>>);
 
 #[derive(Deserialize, Ord, PartialOrd, PartialEq, Eq, Default, Clone)]
 struct HtmlString(#[serde(with = "serde_bytes")] Vec<u8>);
@@ -77,19 +78,31 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
                         public_identifier,
                         system_identifier,
                         correctness,
-                    ) => Token::Doctype(Doctype {
-                        name: name.unwrap_or_default().0.into(),
-                        public_identifier: public_identifier.map(|x| x.0.into()),
-                        system_identifier: system_identifier.map(|x| x.0.into()),
-                        force_quirks: !correctness,
+                    ) => Token::Doctype(Spanned {
+                        value: Doctype {
+                            name: name.unwrap_or_default().0.into(),
+                            public_identifier: public_identifier.map(|x| x.0.into()),
+                            system_identifier: system_identifier.map(|x| x.0.into()),
+                            force_quirks: !correctness,
+                        },
+                        span: Span::DUMMY,
                     }),
                     OutputToken::StartTag(_, name, attributes) => Token::StartTag(StartTag {
                         self_closing: false,
                         name: name.0.into(),
                         attributes: attributes
                             .into_iter()
-                            .map(|(k, v)| (k.0.into(), v.0.into()))
+                            .map(|(k, v)| {
+                                (
+                                    k.0.into(),
+                                    Spanned {
+                                        value: v.0.into(),
+                                        span: Span::DUMMY,
+                                    },
+                                )
+                            })
                             .collect(),
+                        span: Span::DUMMY,
                     }),
                     OutputToken::StartTag2(_, name, attributes, self_closing) => {
                         Token::StartTag(StartTag {
@@ -97,17 +110,33 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
                             name: name.0.into(),
                             attributes: attributes
                                 .into_iter()
-                                .map(|(k, v)| (k.0.into(), v.0.into()))
+                                .map(|(k, v)| {
+                                    (
+                                        k.0.into(),
+                                        Spanned {
+                                            value: v.0.into(),
+                                            span: Span::DUMMY,
+                                        },
+                                    )
+                                })
                                 .collect(),
+                            span: Span::DUMMY,
                         })
                     }
                     OutputToken::EndTag(_, name) => Token::EndTag(EndTag {
                         name: name.0.into(),
+                        span: Span::DUMMY,
                     }),
-                    OutputToken::Comment(_, data) => Token::Comment(data.0.into()),
-                    OutputToken::Character(_, data) => Token::String(data.0.into()),
+                    OutputToken::Comment(_, data) => Token::Comment(Spanned {
+                        value: data.0.into(),
+                        span: Span::DUMMY,
+                    }),
+                    OutputToken::Character(_, data) => Token::String(Spanned {
+                        value: data.0.into(),
+                        span: Span::DUMMY,
+                    }),
                 })
-                .collect::<Vec<Token>>(),
+                .collect::<Vec<Token<()>>>(),
         ))
     }
 }
@@ -238,7 +267,7 @@ impl TestCase {
 
             if let Token::Error(e) = token {
                 actual_errors.push(ParseError {
-                    code: ParseErrorInner(e),
+                    code: ParseErrorInner(*e),
                 });
             } else {
                 actual_tokens.push(token);
@@ -338,8 +367,14 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
                 .0
                 .into_iter()
                 .map(|token| match token {
-                    Token::String(x) => Token::String(unescape(x.as_slice()).into()),
-                    Token::Comment(x) => Token::Comment(unescape(x.as_slice()).into()),
+                    Token::String(x) => Token::String(Spanned {
+                        value: unescape(x.as_slice()).into(),
+                        span: Span::DUMMY,
+                    }),
+                    Token::Comment(x) => Token::Comment(Spanned {
+                        value: unescape(x.as_slice()).into(),
+                        span: Span::DUMMY,
+                    }),
                     token => token,
                 })
                 .collect();

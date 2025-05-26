@@ -15,7 +15,7 @@ macro_rules! define_state {
             use super::*;
 
             #[inline(always)]
-            pub(crate) fn run<R: Reader, E: Emitter>($slf: &mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, R::Error> {
+            pub(crate) fn run<R: Reader, E: Emitter<R>>($slf: &mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, R::Error> {
                 $($body)*
             }
         }
@@ -28,20 +28,22 @@ pub(crate) mod states {
     define_state!(Data, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"&") => {
                     enter_state!(slf, CharacterReference, false)
                 }
                 Some(b"<") => {
+                    slf.emitter.start_open_tag(&slf.reader.reader);
                     switch_to!(slf, TagOpen)?.inline_next_state(slf)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string(b"\0");
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string(b"\0", reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.emit_string(xs);
+                    slf.emitter.emit_string(xs, reader);
                     cont!()
                 }
                 None => {
@@ -54,6 +56,7 @@ pub(crate) mod states {
     define_state!(RcData, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"&") => {
                     enter_state!(slf, CharacterReference, false)
@@ -62,12 +65,12 @@ pub(crate) mod states {
                     switch_to!(slf, RcDataLessThanSign)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.emit_string(xs);
+                    slf.emitter.emit_string(xs, reader);
                     cont!()
                 }
                 None => {
@@ -80,17 +83,18 @@ pub(crate) mod states {
     define_state!(RawText, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"<") => {
                     switch_to!(slf, RawTextLessThanSign)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.emit_string(xs);
+                    slf.emitter.emit_string(xs, reader);
                     cont!()
                 }
                 None => {
@@ -103,17 +107,18 @@ pub(crate) mod states {
     define_state!(ScriptData, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"<") => {
                     switch_to!(slf, ScriptDataLessThanSign)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.emit_string(xs);
+                    slf.emitter.emit_string(xs, reader);
                     cont!()
                 }
                 None => {
@@ -126,14 +131,15 @@ pub(crate) mod states {
     define_state!(PlainText, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.emit_string(xs);
+                    slf.emitter.emit_string(xs, reader);
                     cont!()
                 }
                 None => {
@@ -154,22 +160,22 @@ pub(crate) mod states {
                     switch_to!(slf, EndTagOpen)?.inline_next_state(slf)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.init_start_tag();
+                    slf.emitter.init_start_tag(&slf.reader.reader);
                     reconsume_in!(slf, Some(x), TagName)?.inline_next_state(slf)
                 }
                 c @ Some(b'?') => {
                     error!(slf, Error::UnexpectedQuestionMarkInsteadOfTagName);
-                    slf.emitter.init_comment();
+                    slf.emitter.init_comment(&slf.reader.reader);
                     reconsume_in!(slf, c, BogusComment)
                 }
                 None => {
                     error!(slf, Error::EofBeforeTagName);
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", &slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
                     error!(slf, Error::InvalidFirstCharacterOfTagName);
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", &slf.reader.reader);
                     reconsume_in!(slf, c, Data)
                 }
             }
@@ -181,7 +187,7 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.init_end_tag();
+                    slf.emitter.init_end_tag(&slf.reader.reader);
                     reconsume_in!(slf, Some(x), TagName)
                 }
                 Some(b'>') => {
@@ -190,12 +196,12 @@ pub(crate) mod states {
                 }
                 None => {
                     error!(slf, Error::EofBeforeTagName);
-                    slf.emitter.emit_string(b"</");
+                    slf.emitter.emit_string(b"</", &slf.reader.reader);
                     eof!()
                 }
                 Some(x) => {
                     error!(slf, Error::InvalidFirstCharacterOfTagName);
-                    slf.emitter.init_comment();
+                    slf.emitter.init_comment(&slf.reader.reader);
                     reconsume_in!(slf, Some(x), BogusComment)
                 }
             }
@@ -205,6 +211,7 @@ pub(crate) mod states {
     define_state!(TagName, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
                     switch_to!(slf, BeforeAttributeName)
@@ -217,14 +224,14 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_tag_name("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.push_tag_name("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
                     let emitter = &mut slf.emitter;
                     with_lowercase_str(xs, |x| {
-                        emitter.push_tag_name(x);
+                        emitter.push_tag_name(x, reader);
                     });
 
                     cont!()
@@ -246,7 +253,7 @@ pub(crate) mod states {
                     switch_to!(slf, RcDataEndTagOpen)
                 }
                 c => {
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", &slf.reader.reader);
                     reconsume_in!(slf, c, RcData)
                 }
             }
@@ -258,11 +265,11 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.init_end_tag();
+                    slf.emitter.init_end_tag(&slf.reader.reader);
                     reconsume_in!(slf, Some(x), RcDataEndTagName)
                 }
                 c => {
-                    slf.emitter.emit_string(b"</");
+                    slf.emitter.emit_string(b"</", &slf.reader.reader);
                     reconsume_in!(slf, c, RcData)
                 }
             }
@@ -285,13 +292,13 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     slf.machine_helper.temporary_buffer.push(x);
                     cont!()
                 }
                 c => {
-                    slf.emitter.emit_string(b"</");
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    slf.emitter.emit_string(b"</", &slf.reader.reader);
+                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in!(slf, c, RcData)
                 }
             }
@@ -307,7 +314,7 @@ pub(crate) mod states {
                     switch_to!(slf, RawTextEndTagOpen)
                 }
                 c => {
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", &slf.reader.reader);
                     reconsume_in!(slf, c, RawText)
                 }
             }
@@ -319,11 +326,11 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.init_end_tag();
+                    slf.emitter.init_end_tag(&slf.reader.reader);
                     reconsume_in!(slf, Some(x), RawTextEndTagName)
                 }
                 c => {
-                    slf.emitter.emit_string(b"</");
+                    slf.emitter.emit_string(b"</", &slf.reader.reader);
                     reconsume_in!(slf, c, RawText)
                 }
             }
@@ -346,13 +353,13 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     slf.machine_helper.temporary_buffer.push(x);
                     cont!()
                 }
                 c => {
-                    slf.emitter.emit_string(b"</");
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    slf.emitter.emit_string(b"</", &slf.reader.reader);
+                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in!(slf, c, RawText)
                 }
             }
@@ -368,11 +375,11 @@ pub(crate) mod states {
                     switch_to!(slf, ScriptDataEndTagOpen)
                 }
                 Some(b'!') => {
-                    slf.emitter.emit_string(b"<!");
+                    slf.emitter.emit_string(b"<!", &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscapeStart)
                 }
                 c => {
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", &slf.reader.reader);
                     reconsume_in!(slf, c, ScriptData)
                 }
             }
@@ -384,11 +391,11 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.init_end_tag();
+                    slf.emitter.init_end_tag(&slf.reader.reader);
                     reconsume_in!(slf, Some(x), ScriptDataEndTagName)
                 }
                 c => {
-                    slf.emitter.emit_string(b"</");
+                    slf.emitter.emit_string(b"</", &slf.reader.reader);
                     reconsume_in!(slf, c, ScriptData)
                 }
             }
@@ -411,13 +418,13 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     slf.machine_helper.temporary_buffer.push(x);
                     cont!()
                 }
                 c => {
-                    slf.emitter.emit_string(b"</");
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    slf.emitter.emit_string(b"</", &slf.reader.reader);
+                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in!(slf, c, ScriptData)
                 }
             }
@@ -429,7 +436,7 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'-') => {
-                    slf.emitter.emit_string(b"-");
+                    slf.emitter.emit_string(b"-", &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscapeStartDash)
                 }
                 c => {
@@ -444,7 +451,7 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'-') => {
-                    slf.emitter.emit_string(b"-");
+                    slf.emitter.emit_string(b"-", &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscapedDashDash)
                 }
                 c => {
@@ -457,25 +464,26 @@ pub(crate) mod states {
     define_state!(ScriptDataEscaped, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"-") => {
-                    slf.emitter.emit_string(b"-");
+                    slf.emitter.emit_string(b"-", reader);
                     switch_to!(slf, ScriptDataEscapedDash)
                 }
                 Some(b"<") => {
                     switch_to!(slf, ScriptDataEscapedLessThanSign)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.emit_string(xs);
+                    slf.emitter.emit_string(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInScriptHtmlCommentLikeText);
+                    error!(slf, reader, Error::EofInScriptHtmlCommentLikeText);
                     eof!()
                 }
             }
@@ -487,7 +495,7 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'-') => {
-                    slf.emitter.emit_string(b"-");
+                    slf.emitter.emit_string(b"-", &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscapedDashDash)
                 }
                 Some(b'<') => {
@@ -495,11 +503,11 @@ pub(crate) mod states {
                 }
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscaped)
                 }
                 Some(x) => {
-                    slf.emitter.emit_string(&[x]);
+                    slf.emitter.emit_string(&[x], &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscaped)
                 }
                 None => {
@@ -515,23 +523,23 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'-') => {
-                    slf.emitter.emit_string(b"-");
+                    slf.emitter.emit_string(b"-", &slf.reader.reader);
                     cont!()
                 }
                 Some(b'<') => {
                     switch_to!(slf, ScriptDataEscapedLessThanSign)
                 }
                 Some(b'>') => {
-                    slf.emitter.emit_string(b">");
+                    slf.emitter.emit_string(b">", &slf.reader.reader);
                     switch_to!(slf, ScriptData)
                 }
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscaped)
                 }
                 Some(x) => {
-                    slf.emitter.emit_string(&[x]);
+                    slf.emitter.emit_string(&[x], &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscaped)
                 }
                 None => {
@@ -552,11 +560,11 @@ pub(crate) mod states {
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.machine_helper.temporary_buffer.clear();
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", &slf.reader.reader);
                     reconsume_in!(slf, Some(x), ScriptDataDoubleEscapeStart)
                 }
                 c => {
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", &slf.reader.reader);
                     reconsume_in!(slf, c, ScriptDataEscaped)
                 }
             }
@@ -568,11 +576,11 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.init_end_tag();
+                    slf.emitter.init_end_tag(&slf.reader.reader);
                     reconsume_in!(slf, Some(x), ScriptDataEscapedEndTagName)
                 }
                 c => {
-                    slf.emitter.emit_string(b"</");
+                    slf.emitter.emit_string(b"</", &slf.reader.reader);
                     reconsume_in!(slf, c, ScriptDataEscaped)
                 }
             }
@@ -595,13 +603,13 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()]);
+                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     slf.machine_helper.temporary_buffer.extend(&[x]);
                     cont!()
                 }
                 c => {
-                    slf.emitter.emit_string(b"</");
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    slf.emitter.emit_string(b"</", &slf.reader.reader);
+                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in!(slf, c, ScriptDataEscaped)
                 }
             }
@@ -613,7 +621,7 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
-                    slf.emitter.emit_string(&[x]);
+                    slf.emitter.emit_string(&[x], &slf.reader.reader);
                     if slf.machine_helper.temporary_buffer == b"script" {
                         switch_to!(slf, ScriptDataDoubleEscaped)
                     } else {
@@ -624,7 +632,7 @@ pub(crate) mod states {
                     slf.machine_helper
                         .temporary_buffer
                         .push(x.to_ascii_lowercase());
-                    slf.emitter.emit_string(&[x]);
+                    slf.emitter.emit_string(&[x], &slf.reader.reader);
                     cont!()
                 }
                 c => {
@@ -637,26 +645,27 @@ pub(crate) mod states {
     define_state!(ScriptDataDoubleEscaped, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"-") => {
-                    slf.emitter.emit_string(b"-");
+                    slf.emitter.emit_string(b"-", reader);
                     switch_to!(slf, ScriptDataDoubleEscapedDash)
                 }
                 Some(b"<") => {
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", reader);
                     switch_to!(slf, ScriptDataDoubleEscapedLessThanSign)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.emit_string(xs);
+                    slf.emitter.emit_string(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInScriptHtmlCommentLikeText);
+                    error!(slf, reader, Error::EofInScriptHtmlCommentLikeText);
                     eof!()
                 }
             }
@@ -668,20 +677,20 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'-') => {
-                    slf.emitter.emit_string(b"-");
+                    slf.emitter.emit_string(b"-", &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscapedDashDash)
                 }
                 Some(b'<') => {
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscapedLessThanSign)
                 }
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscaped)
                 }
                 Some(x) => {
-                    slf.emitter.emit_string(&[x]);
+                    slf.emitter.emit_string(&[x], &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscaped)
                 }
                 None => {
@@ -697,24 +706,24 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'-') => {
-                    slf.emitter.emit_string(b"-");
+                    slf.emitter.emit_string(b"-", &slf.reader.reader);
                     cont!()
                 }
                 Some(b'<') => {
-                    slf.emitter.emit_string(b"<");
+                    slf.emitter.emit_string(b"<", &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscapedLessThanSign)
                 }
                 Some(b'>') => {
-                    slf.emitter.emit_string(b">");
+                    slf.emitter.emit_string(b">", &slf.reader.reader);
                     switch_to!(slf, ScriptData)
                 }
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes());
+                    slf.emitter.emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscaped)
                 }
                 Some(x) => {
-                    slf.emitter.emit_string(&[x]);
+                    slf.emitter.emit_string(&[x], &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscaped)
                 }
                 None => {
@@ -731,7 +740,7 @@ pub(crate) mod states {
             match c {
                 Some(b'/') => {
                     slf.machine_helper.temporary_buffer.clear();
-                    slf.emitter.emit_string(b"/");
+                    slf.emitter.emit_string(b"/", &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscapeEnd)
                 }
                 c => {
@@ -746,7 +755,7 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
-                    slf.emitter.emit_string(&[x]);
+                    slf.emitter.emit_string(&[x], &slf.reader.reader);
 
                     if slf.machine_helper.temporary_buffer == b"script" {
                         switch_to!(slf, ScriptDataEscaped)
@@ -758,7 +767,7 @@ pub(crate) mod states {
                     slf.machine_helper
                         .temporary_buffer
                         .push(x.to_ascii_lowercase());
-                    slf.emitter.emit_string(&[x]);
+                    slf.emitter.emit_string(&[x], &slf.reader.reader);
                     cont!()
                 }
                 c => {
@@ -778,12 +787,12 @@ pub(crate) mod states {
                 }
                 Some(b'=') => {
                     error!(slf, Error::UnexpectedEqualsSignBeforeAttributeName);
-                    slf.emitter.init_attribute();
-                    slf.emitter.push_attribute_name("=".as_bytes());
+                    slf.emitter.init_attribute(&slf.reader.reader);
+                    slf.emitter.push_attribute_name("=".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, AttributeName)
                 }
                 Some(x) => {
-                    slf.emitter.init_attribute();
+                    slf.emitter.init_attribute(&slf.reader.reader);
                     reconsume_in!(slf, Some(x), AttributeName)?.inline_next_state(slf)
                 }
             }
@@ -793,27 +802,28 @@ pub(crate) mod states {
     define_state!(AttributeName, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" " | b"/" | b">") => {
-                    reconsume_in!(slf, Some(xs.unwrap()[0]), AfterAttributeName)
+                    reconsume_in!(slf, Some(xs.1.unwrap()[0]), AfterAttributeName)
                 }
                 Some(b"=") => {
                     switch_to!(slf, BeforeAttributeValue)?.inline_next_state(slf)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_name("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.push_attribute_name("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(b"\"" | b"'" | b"<") => {
-                    error!(slf, Error::UnexpectedCharacterInAttributeName);
-                    slf.emitter.push_attribute_name(xs.unwrap());
+                    error!(slf, reader, Error::UnexpectedCharacterInAttributeName);
+                    slf.emitter.push_attribute_name(xs.1.unwrap(), reader);
                     cont!()
                 }
                 Some(xs) => {
                     let emitter = &mut slf.emitter;
                     with_lowercase_str(xs, |xs| {
-                        emitter.push_attribute_name(xs);
+                        emitter.push_attribute_name(xs, reader);
                     });
                     cont!()
                 }
@@ -843,7 +853,7 @@ pub(crate) mod states {
                     eof!()
                 }
                 Some(x) => {
-                    slf.emitter.init_attribute();
+                    slf.emitter.init_attribute(&slf.reader.reader);
                     reconsume_in!(slf, Some(x), AttributeName)
                 }
             }
@@ -875,6 +885,7 @@ pub(crate) mod states {
     define_state!(AttributeValueDoubleQuoted, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"\"") => {
                     switch_to!(slf, AfterAttributeValueQuoted)?.inline_next_state(slf)
@@ -883,16 +894,16 @@ pub(crate) mod states {
                     enter_state!(slf, CharacterReference, true)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.push_attribute_value(xs);
+                    slf.emitter.push_attribute_value(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInTag);
+                    error!(slf, reader, Error::EofInTag);
                     eof!()
                 }
             }
@@ -902,6 +913,7 @@ pub(crate) mod states {
     define_state!(AttributeValueSingleQuoted, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"'") => {
                     switch_to!(slf, AfterAttributeValueQuoted)
@@ -910,16 +922,16 @@ pub(crate) mod states {
                     enter_state!(slf, CharacterReference, true)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.push_attribute_value(xs);
+                    slf.emitter.push_attribute_value(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInTag);
+                    error!(slf, reader, Error::EofInTag);
                     eof!()
                 }
             }
@@ -929,6 +941,7 @@ pub(crate) mod states {
     define_state!(AttributeValueUnquoted, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
                     switch_to!(slf, BeforeAttributeName)
@@ -940,17 +953,17 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(b"\"" | b"'" | b"<" | b"=" | b"\x60") => {
-                    error!(slf, Error::UnexpectedCharacterInUnquotedAttributeValue);
-                    slf.emitter.push_attribute_value(xs.unwrap());
+                    error!(slf, reader, Error::UnexpectedCharacterInUnquotedAttributeValue);
+                    slf.emitter.push_attribute_value(xs.1.unwrap(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.push_attribute_value(xs);
+                    slf.emitter.push_attribute_value(xs, reader);
                     cont!()
                 }
                 None => {
@@ -981,7 +994,7 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'>') => {
-                    slf.emitter.set_self_closing();
+                    slf.emitter.set_self_closing(&slf.reader.reader);
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 None => {
@@ -999,22 +1012,23 @@ pub(crate) mod states {
     define_state!(BogusComment, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b">") => {
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(reader);
                     switch_to!(slf, Data)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_comment("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.push_comment("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.push_comment(xs);
+                    slf.emitter.push_comment(xs, reader);
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     eof!()
                 }
             }
@@ -1026,7 +1040,7 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'-') if slf.reader.try_read_string(&mut slf.validator, "-", true)? => {
-                    slf.emitter.init_comment();
+                    slf.emitter.init_comment(&slf.reader.reader);
                     switch_to!(slf, CommentStart)
                 }
                 Some(b'd' | b'D')
@@ -1049,14 +1063,14 @@ pub(crate) mod states {
                     } else {
                         error!(slf, Error::CdataInHtmlContent);
 
-                        slf.emitter.init_comment();
-                        slf.emitter.push_comment(b"[CDATA[");
+                        slf.emitter.init_comment(&slf.reader.reader);
+                        slf.emitter.push_comment(b"[CDATA[", &slf.reader.reader);
                         switch_to!(slf, BogusComment)
                     }
                 }
                 c => {
                     error!(slf, Error::IncorrectlyOpenedComment);
-                    slf.emitter.init_comment();
+                    slf.emitter.init_comment(&slf.reader.reader);
                     reconsume_in!(slf, c, BogusComment)
                 }
             }
@@ -1072,7 +1086,7 @@ pub(crate) mod states {
                 }
                 Some(b'>') => {
                     error!(slf, Error::AbruptClosingOfEmptyComment);
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 c => {
@@ -1091,16 +1105,16 @@ pub(crate) mod states {
                 }
                 Some(b'>') => {
                     error!(slf, Error::AbruptClosingOfEmptyComment);
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 None => {
                     error!(slf, Error::EofInComment);
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
-                    slf.emitter.push_comment(b"-");
+                    slf.emitter.push_comment(b"-", &slf.reader.reader);
                     reconsume_in!(slf, c, Comment)
                 }
             }
@@ -1110,26 +1124,27 @@ pub(crate) mod states {
     define_state!(Comment, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"<") => {
-                    slf.emitter.push_comment(b"<");
+                    slf.emitter.push_comment(b"<", reader);
                     switch_to!(slf, CommentLessThanSign)
                 }
                 Some(b"-") => {
                     switch_to!(slf, CommentEndDash)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_comment("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.push_comment("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
-                    slf.emitter.push_comment(xs);
+                    slf.emitter.push_comment(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInComment);
-                    slf.emitter.emit_current_comment();
+                    error!(slf, reader, Error::EofInComment);
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     eof!()
                 }
             }
@@ -1141,11 +1156,11 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'!') => {
-                    slf.emitter.push_comment(b"!");
+                    slf.emitter.push_comment(b"!", &slf.reader.reader);
                     switch_to!(slf, CommentLessThanSignBang)
                 }
                 Some(b'<') => {
-                    slf.emitter.push_comment(b"<");
+                    slf.emitter.push_comment(b"<", &slf.reader.reader);
                     cont!()
                 }
                 c => {
@@ -1207,11 +1222,11 @@ pub(crate) mod states {
                 }
                 None => {
                     error!(slf, Error::EofInComment);
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     eof!()
                 }
                 c => {
-                    slf.emitter.push_comment(b"-");
+                    slf.emitter.push_comment(b"-", &slf.reader.reader);
                     reconsume_in!(slf, c, Comment)
                 }
             }
@@ -1223,23 +1238,23 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'>') => {
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 Some(b'!') => {
                     switch_to!(slf, CommentEndBang)
                 }
                 Some(b'-') => {
-                    slf.emitter.push_comment(b"-");
+                    slf.emitter.push_comment(b"-", &slf.reader.reader);
                     cont!()
                 }
                 None => {
                     error!(slf, Error::EofInComment);
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
-                    slf.emitter.push_comment(b"--");
+                    slf.emitter.push_comment(b"--", &slf.reader.reader);
                     reconsume_in!(slf, c, Comment)
                 }
             }
@@ -1251,21 +1266,21 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b'-') => {
-                    slf.emitter.push_comment(b"--!");
+                    slf.emitter.push_comment(b"--!", &slf.reader.reader);
                     switch_to!(slf, CommentEndDash)
                 }
                 Some(b'>') => {
                     error!(slf, Error::IncorrectlyClosedComment);
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 None => {
                     error!(slf, Error::EofInComment);
-                    slf.emitter.emit_current_comment();
+                    slf.emitter.emit_current_comment(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
-                    slf.emitter.push_comment(b"--!");
+                    slf.emitter.push_comment(b"--!", &slf.reader.reader);
                     reconsume_in!(slf, c, Comment)
                 }
             }
@@ -1284,9 +1299,9 @@ pub(crate) mod states {
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.init_doctype();
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.init_doctype(&slf.reader.reader);
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
@@ -1304,27 +1319,27 @@ pub(crate) mod states {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.init_doctype();
-                    slf.emitter.push_doctype_name("\u{fffd}".as_bytes());
+                    slf.emitter.init_doctype(&slf.reader.reader);
+                    slf.emitter.push_doctype_name("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, DoctypeName)
                 }
                 Some(b'>') => {
                     error!(slf, Error::MissingDoctypeName);
-                    slf.emitter.init_doctype();
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.init_doctype(&slf.reader.reader);
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.init_doctype();
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.init_doctype(&slf.reader.reader);
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 Some(x) => {
-                    slf.emitter.init_doctype();
-                    slf.emitter.push_doctype_name(&[x.to_ascii_lowercase()]);
+                    slf.emitter.init_doctype(&slf.reader.reader);
+                    slf.emitter.push_doctype_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     switch_to!(slf, DoctypeName)
                 }
             }
@@ -1334,30 +1349,31 @@ pub(crate) mod states {
     define_state!(DoctypeName, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
                     switch_to!(slf, AfterDoctypeName)
                 }
                 Some(b">") => {
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.emit_current_doctype(reader);
                     switch_to!(slf, Data)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_doctype_name("\u{fffd}".as_bytes());
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
+                    slf.emitter.push_doctype_name("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
                     let emitter = &mut slf.emitter;
                     with_lowercase_str(xs, |x| {
-                        emitter.push_doctype_name(x);
+                        emitter.push_doctype_name(x, reader);
                     });
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    error!(slf, reader, Error::EofInDoctype);
+                    slf.emitter.set_force_quirks(reader);
+                    slf.emitter.emit_current_doctype(reader);
                     eof!()
                 }
             }
@@ -1370,13 +1386,13 @@ pub(crate) mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'>') => {
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 Some(b'p' | b'P')
@@ -1395,7 +1411,7 @@ pub(crate) mod states {
                 }
                 c @ Some(_) => {
                     error!(slf, Error::InvalidCharacterSequenceAfterDoctypeName);
-                    slf.emitter.set_force_quirks();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
                     reconsume_in!(slf, c, BogusDoctype)
                 }
             }
@@ -1411,29 +1427,29 @@ pub(crate) mod states {
                 }
                 Some(b'"') => {
                     error!(slf, Error::MissingWhitespaceAfterDoctypePublicKeyword);
-                    slf.emitter.set_doctype_public_identifier(b"");
+                    slf.emitter.set_doctype_public_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypePublicIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
                     error!(slf, Error::MissingWhitespaceAfterDoctypePublicKeyword);
-                    slf.emitter.set_doctype_public_identifier(b"");
+                    slf.emitter.set_doctype_public_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypePublicIdentifierSingleQuoted)
                 }
                 Some(b'>') => {
                     error!(slf, Error::MissingDoctypePublicIdentifier);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
                     error!(slf, Error::MissingQuoteBeforeDoctypePublicIdentifier);
-                    slf.emitter.set_force_quirks();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
                     reconsume_in!(slf, c, BogusDoctype)
                 }
             }
@@ -1446,28 +1462,28 @@ pub(crate) mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
-                    slf.emitter.set_doctype_public_identifier(b"");
+                    slf.emitter.set_doctype_public_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypePublicIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
-                    slf.emitter.set_doctype_public_identifier(b"");
+                    slf.emitter.set_doctype_public_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypePublicIdentifierSingleQuoted)
                 }
                 Some(b'>') => {
                     error!(slf, Error::MissingDoctypePublicIdentifier);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
                     error!(slf, Error::MissingQuoteBeforeDoctypePublicIdentifier);
-                    slf.emitter.set_force_quirks();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
                     reconsume_in!(slf, c, BogusDoctype)
                 }
             }
@@ -1477,30 +1493,31 @@ pub(crate) mod states {
     define_state!(DoctypePublicIdentifierDoubleQuoted, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"\"") => {
                     switch_to!(slf, AfterDoctypePublicIdentifier)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
                     slf.emitter
-                        .push_doctype_public_identifier("\u{fffd}".as_bytes());
+                        .push_doctype_public_identifier("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(b">") => {
-                    error!(slf, Error::AbruptDoctypePublicIdentifier);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    error!(slf, reader, Error::AbruptDoctypePublicIdentifier);
+                    slf.emitter.set_force_quirks(reader);
+                    slf.emitter.emit_current_doctype(reader);
                     switch_to!(slf, Data)
                 }
                 Some(xs) => {
-                    slf.emitter.push_doctype_public_identifier(xs);
+                    slf.emitter.push_doctype_public_identifier(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    error!(slf, reader, Error::EofInDoctype);
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
             }
@@ -1510,30 +1527,31 @@ pub(crate) mod states {
     define_state!(DoctypePublicIdentifierSingleQuoted, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"'") => {
                     switch_to!(slf, AfterDoctypePublicIdentifier)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
                     slf.emitter
-                        .push_doctype_public_identifier("\u{fffd}".as_bytes());
+                        .push_doctype_public_identifier("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(b">") => {
-                    error!(slf, Error::AbruptDoctypePublicIdentifier);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    error!(slf, reader, Error::AbruptDoctypePublicIdentifier);
+                    slf.emitter.set_force_quirks(reader);
+                    slf.emitter.emit_current_doctype(reader);
                     switch_to!(slf, Data)
                 }
                 Some(xs) => {
-                    slf.emitter.push_doctype_public_identifier(xs);
+                    slf.emitter.push_doctype_public_identifier(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    error!(slf, reader, Error::EofInDoctype);
+                    slf.emitter.set_force_quirks(reader);
+                    slf.emitter.emit_current_doctype(reader);
                     eof!()
                 }
             }
@@ -1548,7 +1566,7 @@ pub(crate) mod states {
                     switch_to!(slf, BetweenDoctypePublicAndSystemIdentifiers)
                 }
                 Some(b'>') => {
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 Some(b'"') => {
@@ -1556,7 +1574,7 @@ pub(crate) mod states {
                         slf,
                         Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers
                     );
-                    slf.emitter.set_doctype_system_identifier(b"");
+                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
@@ -1564,18 +1582,18 @@ pub(crate) mod states {
                         slf,
                         Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers
                     );
-                    slf.emitter.set_doctype_system_identifier(b"");
+                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
                     error!(slf, Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
                     reconsume_in!(slf, c, BogusDoctype)
                 }
             }
@@ -1588,26 +1606,26 @@ pub(crate) mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'>') => {
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 Some(b'"') => {
-                    slf.emitter.set_doctype_system_identifier(b"");
+                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
-                    slf.emitter.set_doctype_system_identifier(b"");
+                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
                     error!(slf, Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
                     reconsume_in!(slf, c, BogusDoctype)
                 }
             }
@@ -1623,29 +1641,29 @@ pub(crate) mod states {
                 }
                 Some(b'"') => {
                     error!(slf, Error::MissingWhitespaceAfterDoctypeSystemKeyword);
-                    slf.emitter.set_doctype_system_identifier(b"");
+                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
                     error!(slf, Error::MissingWhitespaceAfterDoctypeSystemKeyword);
-                    slf.emitter.set_doctype_system_identifier(b"");
+                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
                 }
                 Some(b'>') => {
                     error!(slf, Error::MissingDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
                     error!(slf, Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
                     reconsume_in!(slf, c, BogusDoctype)
                 }
             }
@@ -1658,28 +1676,28 @@ pub(crate) mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
-                    slf.emitter.set_doctype_system_identifier(b"");
+                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
-                    slf.emitter.set_doctype_system_identifier(b"");
+                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
                 }
                 Some(b'>') => {
                     error!(slf, Error::MissingDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
                     error!(slf, Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
                     reconsume_in!(slf, c, BogusDoctype)
                 }
             }
@@ -1689,30 +1707,31 @@ pub(crate) mod states {
     define_state!(DoctypeSystemIdentifierDoubleQuoted, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"\"") => {
                     switch_to!(slf, AfterDoctypeSystemIdentifier)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
                     slf.emitter
-                        .push_doctype_system_identifier("\u{fffd}".as_bytes());
+                        .push_doctype_system_identifier("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(b">") => {
-                    error!(slf, Error::AbruptDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    error!(slf, reader, Error::AbruptDoctypeSystemIdentifier);
+                    slf.emitter.set_force_quirks(reader);
+                    slf.emitter.emit_current_doctype(reader);
                     switch_to!(slf, Data)
                 }
                 Some(xs) => {
-                    slf.emitter.push_doctype_system_identifier(xs);
+                    slf.emitter.push_doctype_system_identifier(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    error!(slf, reader, Error::EofInDoctype);
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
             }
@@ -1722,30 +1741,31 @@ pub(crate) mod states {
     define_state!(DoctypeSystemIdentifierSingleQuoted, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"\'") => {
                     switch_to!(slf, AfterDoctypeSystemIdentifier)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
                     slf.emitter
-                        .push_doctype_system_identifier("\u{fffd}".as_bytes());
+                        .push_doctype_system_identifier("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(b">") => {
-                    error!(slf, Error::AbruptDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    error!(slf, reader, Error::AbruptDoctypeSystemIdentifier);
+                    slf.emitter.set_force_quirks(reader);
+                    slf.emitter.emit_current_doctype(reader);
                     switch_to!(slf, Data)
                 }
                 Some(xs) => {
-                    slf.emitter.push_doctype_system_identifier(xs);
+                    slf.emitter.push_doctype_system_identifier(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    error!(slf, reader, Error::EofInDoctype);
+                    slf.emitter.set_force_quirks(reader);
+                    slf.emitter.emit_current_doctype(reader);
                     eof!()
                 }
             }
@@ -1758,13 +1778,13 @@ pub(crate) mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'>') => {
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     switch_to!(slf, Data)
                 }
                 None => {
                     error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.set_force_quirks(&slf.reader.reader);
+                    slf.emitter.emit_current_doctype(&slf.reader.reader);
                     eof!()
                 }
                 c @ Some(_) => {
@@ -1778,20 +1798,21 @@ pub(crate) mod states {
     define_state!(BogusDoctype, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b">") => {
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.emit_current_doctype(reader);
                     switch_to!(slf, Data)
                 }
                 Some(b"\0") => {
-                    error!(slf, Error::UnexpectedNullCharacter);
+                    error!(slf, reader, Error::UnexpectedNullCharacter);
                     cont!()
                 }
                 Some(_xs) => {
                     cont!()
                 }
                 None => {
-                    slf.emitter.emit_current_doctype();
+                    slf.emitter.emit_current_doctype(reader);
                     eof!()
                 }
             }
@@ -1801,16 +1822,17 @@ pub(crate) mod states {
     define_state!(CdataSection, slf, {
         fast_read_char!(
             slf,
+            reader,
             match xs {
                 Some(b"]") => {
                     switch_to!(slf, CdataSectionBracket)
                 }
                 Some(xs) => {
-                    slf.emitter.emit_string(xs);
+                    slf.emitter.emit_string(xs, reader);
                     cont!()
                 }
                 None => {
-                    error!(slf, Error::EofInCdata);
+                    error!(slf, reader, Error::EofInCdata);
                     eof!()
                 }
             }
@@ -1825,7 +1847,7 @@ pub(crate) mod states {
                     switch_to!(slf, CdataSectionEnd)
                 }
                 c => {
-                    slf.emitter.emit_string(b"]");
+                    slf.emitter.emit_string(b"]", &slf.reader.reader);
                     reconsume_in!(slf, c, CdataSection)
                 }
             }
@@ -1837,14 +1859,14 @@ pub(crate) mod states {
             slf,
             match c {
                 Some(b']') => {
-                    slf.emitter.emit_string(b"]");
+                    slf.emitter.emit_string(b"]", &slf.reader.reader);
                     cont!()
                 }
                 Some(b'>') => {
                     switch_to!(slf, Data)
                 }
                 c => {
-                    slf.emitter.emit_string(b"]]");
+                    slf.emitter.emit_string(b"]]", &slf.reader.reader);
                     reconsume_in!(slf, c, CdataSection)
                 }
             }
@@ -1867,7 +1889,7 @@ pub(crate) mod states {
                 }
                 c => {
                     slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in_return_state!(slf, c)
                 }
             }
@@ -1910,11 +1932,11 @@ pub(crate) mod states {
             }
 
             slf.machine_helper
-                .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
             reconsume_in_return_state!(slf, next_character)
         } else {
             slf.machine_helper
-                .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
             reconsume_in!(slf, c, AmbiguousAmpersand)
         }
     });
@@ -1925,9 +1947,9 @@ pub(crate) mod states {
             match c {
                 Some(x) if x.is_ascii_alphanumeric() => {
                     if slf.machine_helper.is_consumed_as_part_of_an_attribute() {
-                        slf.emitter.push_attribute_value(&[x]);
+                        slf.emitter.push_attribute_value(&[x], &slf.reader.reader);
                     } else {
-                        slf.emitter.emit_string(&[x]);
+                        slf.emitter.emit_string(&[x], &slf.reader.reader);
                     }
 
                     cont!()
@@ -1959,7 +1981,7 @@ pub(crate) mod states {
                 c => {
                     error!(slf, Error::AbsenceOfDigitsInNumericCharacterReference);
                     slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in_return_state!(slf, c)
                 }
             }
@@ -1976,7 +1998,7 @@ pub(crate) mod states {
                 c => {
                     error!(slf, Error::AbsenceOfDigitsInNumericCharacterReference);
                     slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in_return_state!(slf, c)
                 }
             }
@@ -2092,7 +2114,7 @@ pub(crate) mod states {
                 .as_bytes(),
         );
         slf.machine_helper
-            .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+            .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
         exit_state!(slf)
     });
 }

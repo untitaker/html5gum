@@ -11,27 +11,29 @@
 //! link: foo
 //! ```
 use html5gum::emitters::callback::{CallbackEmitter, CallbackEvent};
-use html5gum::{Emitter, IoReader, Tokenizer};
+use html5gum::{Emitter, IoReader, Reader, Span, Tokenizer};
 
-fn get_emitter() -> impl Emitter<Token = String> {
+fn get_emitter<R: Reader>() -> impl Emitter<R, Token = String> {
     let mut is_anchor_tag = false;
     let mut is_href_attr = false;
 
-    CallbackEmitter::new(move |event: CallbackEvent<'_>| match event {
-        CallbackEvent::OpenStartTag { name } => {
-            is_anchor_tag = name == b"a";
-            is_href_attr = false;
-            None
-        }
-        CallbackEvent::AttributeName { name } => {
-            is_href_attr = name == b"href";
-            None
-        }
-        CallbackEvent::AttributeValue { value } if is_anchor_tag && is_href_attr => {
-            Some(String::from_utf8_lossy(value).into_owned())
-        }
-        _ => None,
-    })
+    CallbackEmitter::new(
+        move |event: CallbackEvent<'_>, _span: Span<()>, _reader: &R| match event {
+            CallbackEvent::OpenStartTag { name } => {
+                is_anchor_tag = name == b"a";
+                is_href_attr = false;
+                None
+            }
+            CallbackEvent::AttributeName { name } => {
+                is_href_attr = name == b"href";
+                None
+            }
+            CallbackEvent::AttributeValue { value } if is_anchor_tag && is_href_attr => {
+                Some(String::from_utf8_lossy(value).into_owned())
+            }
+            _ => None,
+        },
+    )
 }
 
 fn main() {

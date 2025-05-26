@@ -60,7 +60,7 @@ pub trait Reader {
     /// let mut chunks = Vec::new();
     /// while !eof {
     ///     let mut char_buf = [0; 4];
-    ///     let xs = reader.read_until(&[b' ', b'r'], &mut char_buf).unwrap();
+    ///     let (_reader, xs) = reader.read_until(&[b' ', b'r'], &mut char_buf).unwrap();
     ///     if let Some(xs) = xs {
     ///         chunks.push(std::str::from_utf8(xs).unwrap().to_owned());
     ///     } else {
@@ -81,15 +81,15 @@ pub trait Reader {
         &'b mut self,
         needle: &[u8],
         char_buf: &'b mut [u8; 4],
-    ) -> Result<Option<&'b [u8]>, Self::Error> {
+    ) -> Result<(&'b Self, Option<&'b [u8]>), Self::Error> {
         let _ = needle;
 
         match self.read_byte()? {
             Some(x) => {
                 char_buf[0] = x;
-                Ok(Some(&char_buf[..1]))
+                Ok((self, Some(&char_buf[..1])))
             }
-            None => Ok(None),
+            None => Ok((self, None)),
         }
     }
 }
@@ -173,25 +173,25 @@ impl<'a> Reader for StringReader<'a> {
         &'b mut self,
         needle: &[u8],
         _: &'b mut [u8; 4],
-    ) -> Result<Option<&'b [u8]>, Self::Error> {
+    ) -> Result<(&'b Self, Option<&'b [u8]>), Self::Error> {
         if self.input.is_empty() {
-            return Ok(None);
+            return Ok((self, None));
         }
 
         if let Some(needle_pos) = fast_find(needle, self.input) {
             if needle_pos == 0 {
                 let (rv, new_input) = self.input.split_at(1);
                 self.input = new_input;
-                Ok(Some(rv))
+                Ok((self, Some(rv)))
             } else {
                 let (rv, new_input) = self.input.split_at(needle_pos);
                 self.input = new_input;
-                Ok(Some(rv))
+                Ok((self, Some(rv)))
             }
         } else {
             let rv = self.input;
             self.input = b"";
-            Ok(Some(rv))
+            Ok((self, Some(rv)))
         }
     }
 
@@ -285,7 +285,7 @@ impl<'a> Readable<'a> for &'a [u8] {
 /// assert_eq!(new_html, "<title>hello world</title>");
 /// ```
 #[derive(Debug)]
-pub struct IoReader<R: Read, Buffer: AsMut<[u8]> = Box<[u8]>> {
+pub struct IoReader<R: Read, Buffer: AsRef<[u8]> + AsMut<[u8]> = Box<[u8]>> {
     buf: Buffer,
     read_cursor: usize,
     write_cursor: usize,
@@ -315,7 +315,7 @@ impl<'a, R: Read> IoReader<R, &'a mut [u8]> {
     }
 }
 
-impl<R: Read, Buffer: AsMut<[u8]>> IoReader<R, Buffer> {
+impl<R: Read, Buffer: AsRef<[u8]> + AsMut<[u8]>> IoReader<R, Buffer> {
     // new_with_buffer_impl is not exposed because we cannot use any kind of AsMut. It has to be
     // one where we can be sure that the size of the buffer does not change with repeated calls to
     // `as_mut()`. There are complex solutions to this sort of thing, but for now it seems simpler
@@ -359,7 +359,7 @@ impl<R: Read, Buffer: AsMut<[u8]>> IoReader<R, Buffer> {
     }
 }
 
-impl<R: Read, Buffer: AsMut<[u8]>> Reader for IoReader<R, Buffer> {
+impl<R: Read, Buffer: AsRef<[u8]> +AsMut<[u8]>> Reader for IoReader<R, Buffer> {
     type Error = io::Error;
 
     #[inline(always)]
@@ -396,22 +396,22 @@ impl<R: Read, Buffer: AsMut<[u8]>> Reader for IoReader<R, Buffer> {
         &'b mut self,
         needle: &[u8],
         _: &'b mut [u8; 4],
-    ) -> Result<Option<&'b [u8]>, Self::Error> {
+    ) -> Result<(&'b Self, Option<&'b [u8]>), Self::Error> {
         self.prepare_buf(4)?;
-        let buf = &self.buf.as_mut()[self.read_cursor..self.write_cursor];
+        let buf = &self.buf.as_ref()[self.read_cursor..self.write_cursor];
         if buf.is_empty() {
-            Ok(None)
+            Ok((self, None))
         } else if let Some(needle_pos) = fast_find(needle, buf) {
             if needle_pos == 0 {
                 self.read_cursor += 1;
-                Ok(Some(&buf[..1]))
+                Ok((self, Some(&buf[..1])))
             } else {
                 self.read_cursor += needle_pos;
-                Ok(Some(&buf[..needle_pos]))
+                Ok((self, Some(&buf[..needle_pos])))
             }
         } else {
             self.read_cursor += buf.len();
-            Ok(Some(buf))
+            Ok((self, Some(buf)))
         }
     }
 }
@@ -437,4 +437,91 @@ fn fast_find(needle: &[u8], haystack: &[u8]) -> Option<usize> {
 
     #[cfg(not(feature = "jetscii"))]
     haystack.iter().position(|b| needle.contains(b))
+}
+
+/// A Reader to wrap other [`Reader`]s with to get spans.
+///
+/// This reader saves the current byte offset in the input stream in [`Self::position`].
+///
+/// Example:
+///
+/// ```rust
+/// use std::fmt::Write;
+/// use html5gum::{DefaultEmitter, SpanReader, Token, Tokenizer};
+///
+/// let tokenizer = Tokenizer::new_with_emitter(
+///     SpanReader::new("<title>hello world</title>"),
+///     DefaultEmitter::<_, usize>::new_with_span(),
+/// );
+///
+/// let mut spans = Vec::new();
+///
+/// for token in tokenizer {
+///     let token = token.unwrap();
+///
+///     match token {
+///         Token::StartTag(tag) => {
+///             spans.push((format!("start: {}", String::from_utf8_lossy(&tag.name)), tag.span.start));
+///         }
+///         Token::String(string) => {
+///             spans.push((format!("string: {}", String::from_utf8_lossy(&string)), string.span.start));
+///         }
+///         Token::EndTag(tag) => {
+///             spans.push((format!("end: {}", String::from_utf8_lossy(&tag.name)), tag.span.start));
+///         }
+///         _ => panic!("unexpected input"),
+///     }
+///
+/// }
+///
+/// assert_eq!(spans, vec![
+///     ("start: title".to_string(), 0),
+///     ("string: hello world".to_string(), 7),
+///     ("end: title".to_string(), 18),
+/// ]);
+/// ```
+#[derive(Debug)]
+pub struct SpanReader<R> {
+    /// The inner reader.
+    pub reader: R,
+    /// The current byte offset in the input stream.
+    pub position: usize,
+}
+
+impl<R: Reader> SpanReader<R> {
+    /// Construct a new [`SpanReader`] from any type that implements [`Readable`] (including other
+    /// [`Reader`]s!).
+    ///
+    /// `input` can be [`&String`][String], [`&str`][str], [`Vec<u8>`], [`&[u8]`][slice] or any 
+    /// other [`Reader`] at the moment, as those are the types for which [`crate::Readable`] is
+    /// implemented, but you can implement that trait on your own types.
+    pub fn new<'a, S: Readable<'a, Reader = R>>(input: S) -> Self {
+        Self {
+            reader: input.to_reader(),
+            position: 0,
+        }
+    }
+}
+
+impl<R: Reader> Reader for SpanReader<R> {
+    type Error = R::Error;
+
+    fn read_byte(&mut self) -> Result<Option<u8>, Self::Error> {
+        match self.reader.read_byte()? {
+            Some(v) => {
+                self.position += 1;
+                Ok(Some(v))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn try_read_string(&mut self, s: &[u8], case_sensitive: bool) -> Result<bool, Self::Error> {
+        if self.reader.try_read_string(s, case_sensitive)? {
+            self.position += s.len();
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
 }

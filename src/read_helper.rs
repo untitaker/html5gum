@@ -4,7 +4,7 @@ use crate::Reader;
 
 #[derive(Debug)]
 pub(crate) struct ReadHelper<R: Reader> {
-    reader: R,
+    pub(crate) reader: R,
     last_character_was_cr: bool,
     #[allow(clippy::option_option)]
     to_reconsume: Option<Option<u8>>,
@@ -20,7 +20,7 @@ impl<R: Reader> ReadHelper<R> {
     }
 
     #[inline(always)]
-    pub(crate) fn read_byte<E: Emitter>(
+    pub(crate) fn read_byte<E: Emitter<R>>(
         &mut self,
         char_validator: &mut CharValidator,
         emitter: &mut E,
@@ -42,7 +42,7 @@ impl<R: Reader> ReadHelper<R> {
         }
 
         if let Ok(Some(x)) = c {
-            char_validator.validate_byte(emitter, x);
+            char_validator.validate_byte(emitter, x, &self.reader);
         }
 
         c
@@ -93,20 +93,23 @@ impl<R: Reader> ReadHelper<R> {
         char_validator: &mut CharValidator,
         emitter: &mut E,
         char_buf: &'b mut [u8; 4],
-    ) -> Result<Option<&'b [u8]>, R::Error>
+    ) -> Result<(&'b R, Option<&'b [u8]>), R::Error>
     where
-        E: Emitter,
+        E: Emitter<R>,
     {
         const MAX_NEEDLE_LEN: usize = 13;
 
         match self.to_reconsume.take() {
             Some(Some(x)) => {
-                return Ok(Some({
-                    char_buf[0] = x;
-                    &char_buf[..1]
-                }))
+                return Ok((
+                    &self.reader,
+                    Some({
+                        char_buf[0] = x;
+                        &char_buf[..1]
+                    }),
+                ))
             }
-            Some(None) => return Ok(None),
+            Some(None) => return Ok((&self.reader, None)),
             None => (),
         }
 
@@ -118,25 +121,26 @@ impl<R: Reader> ReadHelper<R> {
         needle2[needle.len()] = b'\r';
         let needle2_slice = &needle2[..=needle.len()];
 
-        match self.reader.read_until(needle2_slice, char_buf)? {
+        let (reader, read) = self.reader.read_until(needle2_slice, char_buf)?;
+        match read {
             Some(b"\r") => {
                 self.last_character_was_cr = true;
-                char_validator.validate_byte(emitter, b'\n');
-                Ok(Some(b"\n"))
+                char_validator.validate_byte(emitter, b'\n', &reader);
+                Ok((reader, Some(b"\n")))
             }
             Some(mut xs) => {
-                char_validator.validate_bytes(emitter, xs);
+                char_validator.validate_bytes(emitter, xs, &reader);
 
                 if self.last_character_was_cr && xs.starts_with(b"\n") {
                     xs = &xs[1..];
                 }
 
                 self.last_character_was_cr = false;
-                Ok(Some(xs))
+                Ok((reader, Some(xs)))
             }
             None => {
                 self.last_character_was_cr = false;
-                Ok(None)
+                Ok((reader, None))
             }
         }
     }
@@ -180,7 +184,7 @@ impl<R: Reader> ReadHelper<R> {
 /// }
 /// ```
 macro_rules! fast_read_char {
-    ($slf:expr, match $read_char:ident {
+    ($slf:expr, $reader:ident, match $read_char:ident {
         $(Some($($lit:literal)|*) => $arm:block)*
         Some($xs:ident) => $catchall:block
         None => $eof_catchall:block
@@ -196,8 +200,14 @@ macro_rules! fast_read_char {
             &mut char_buf,
         )?;
         break match $read_char {
-            $(Some($($lit)|*) => $arm)*
-                Some($xs) => {
+            $(
+                (__reader, Some($($lit)|*)) => {
+                    #[allow(unused_variables)]
+                    let $reader = __reader;
+                    $arm
+                }
+            )*
+                (__reader, Some($xs)) => {
                     // Prevent catch-all arm from using the machine_helper.
                     //
                     // State changes in catch-all arms are usually sign of a coding mistake. $xs
@@ -209,9 +219,15 @@ macro_rules! fast_read_char {
                     // hard to do by accident.
                     #[allow(unused_variables)]
                     let _do_not_use = &mut $slf.machine_helper;
+                    #[allow(unused_variables)]
+                    let $reader = __reader;
                     $catchall
                 }
-            None => $eof_catchall
+            (__reader, None) => {
+                #[allow(unused_variables)]
+                let $reader = __reader;
+                $eof_catchall
+            }
         };
     } };
 }

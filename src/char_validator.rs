@@ -22,18 +22,18 @@ impl CharValidator {
     }
 
     #[inline]
-    pub(crate) fn validate_bytes<E: Emitter>(&mut self, emitter: &mut E, next_bytes: &[u8]) {
+    pub(crate) fn validate_bytes<E: Emitter<R>, R>(&mut self, emitter: &mut E, next_bytes: &[u8], reader: &R) {
         if !emitter.should_emit_errors() {
             return;
         }
 
         for &x in next_bytes {
-            self.validate_byte(emitter, x);
+            self.validate_byte(emitter, x, reader);
         }
     }
 
     #[inline]
-    pub(crate) fn validate_byte<E: Emitter>(&mut self, emitter: &mut E, next_byte: u8) {
+    pub(crate) fn validate_byte<E: Emitter<R>, R>(&mut self, emitter: &mut E, next_byte: u8, reader: &R) {
         if !emitter.should_emit_errors() {
             return;
         }
@@ -41,43 +41,43 @@ impl CharValidator {
         if next_byte < 128 {
             // start of character (ascii)
             self.last_4_bytes = 0;
-            self.flush_character_error(emitter);
-            self.validate_last_4_bytes(emitter, u32::from(next_byte));
+            self.flush_character_error(emitter, reader);
+            self.validate_last_4_bytes(emitter, u32::from(next_byte), reader);
         } else if next_byte >= 192 {
             // start of character (non-ascii)
             self.last_4_bytes = u32::from(next_byte);
-            self.flush_character_error(emitter);
+            self.flush_character_error(emitter, reader);
         } else {
             self.last_4_bytes <<= 8;
             self.last_4_bytes |= u32::from(next_byte);
-            self.validate_last_4_bytes(emitter, self.last_4_bytes);
+            self.validate_last_4_bytes(emitter, self.last_4_bytes, reader);
         }
     }
 
-    pub(crate) fn flush_character_error<E: Emitter>(&mut self, emitter: &mut E) {
+    pub(crate) fn flush_character_error<E: Emitter<R>, R>(&mut self, emitter: &mut E, reader: &R) {
         if !emitter.should_emit_errors() {
             return;
         }
 
         for e in self.character_error.drain() {
-            emitter.emit_error(*e);
+            emitter.emit_error(*e, reader);
         }
     }
 
-    pub(crate) fn set_character_error<E: Emitter>(&mut self, emitter: &mut E, error: Error) {
+    pub(crate) fn set_character_error<E: Emitter<R>, R>(&mut self, emitter: &mut E, error: Error, reader: &R) {
         if !emitter.should_emit_errors() {
             return;
         }
 
         if self.last_4_bytes == 0 {
-            emitter.emit_error(error);
+            emitter.emit_error(error, reader);
         } else {
             self.character_error.push(error);
         }
     }
 
     #[inline]
-    fn validate_last_4_bytes<E: Emitter>(&mut self, emitter: &mut E, last_4_bytes: u32) {
+    fn validate_last_4_bytes<E: Emitter<R>, R>(&mut self, emitter: &mut E, last_4_bytes: u32, reader: &R) {
         // generated with Python 3:
         // ' | '.join(map(hex, sorted([int.from_bytes(chr(x).encode("utf8"), 'big') for x in nonchars])))
         match last_4_bytes {
@@ -92,8 +92,8 @@ impl CharValidator {
             | 0xf28f_bfbe | 0xf28f_bfbf | 0xf29f_bfbe | 0xf29f_bfbf | 0xf2af_bfbe | 0xf2af_bfbf
             | 0xf2bf_bfbe | 0xf2bf_bfbf | 0xf38f_bfbe | 0xf38f_bfbf | 0xf39f_bfbe | 0xf39f_bfbf
             | 0xf3af_bfbe | 0xf3af_bfbf | 0xf3bf_bfbe | 0xf3bf_bfbf | 0xf48f_bfbe | 0xf48f_bfbf => {
-                emitter.emit_error(Error::NoncharacterInInputStream);
-                self.flush_character_error(emitter);
+                emitter.emit_error(Error::NoncharacterInInputStream, reader);
+                self.flush_character_error(emitter, reader);
             }
             0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0xb | 0xd | 0xe | 0xf | 0x10 | 0x11
             | 0x12 | 0x13 | 0x14 | 0x15 | 0x16 | 0x17 | 0x18 | 0x19 | 0x1a | 0x1b | 0x1c | 0x1d
@@ -101,8 +101,8 @@ impl CharValidator {
             | 0xc287 | 0xc288 | 0xc289 | 0xc28a | 0xc28b | 0xc28c | 0xc28d | 0xc28e | 0xc28f
             | 0xc290 | 0xc291 | 0xc292 | 0xc293 | 0xc294 | 0xc295 | 0xc296 | 0xc297 | 0xc298
             | 0xc299 | 0xc29a | 0xc29b | 0xc29c | 0xc29d | 0xc29e | 0xc29f => {
-                emitter.emit_error(Error::ControlCharacterInInputStream);
-                self.flush_character_error(emitter);
+                emitter.emit_error(Error::ControlCharacterInInputStream, reader);
+                self.flush_character_error(emitter, reader);
             }
 
             _ => (),

@@ -21,7 +21,7 @@
 //! ```text
 //! link: foo
 //! ```
-use html5gum::{Emitter, Error, IoReader, State, Tokenizer};
+use html5gum::{Emitter, Error, IoReader, Reader, State, Tokenizer};
 
 #[derive(Default)]
 struct LinkExtractor {
@@ -49,32 +49,32 @@ impl LinkExtractor {
     }
 }
 
-impl Emitter for LinkExtractor {
+impl<R: Reader> Emitter<R> for LinkExtractor {
     type Token = String;
 
-    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
+    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>, _reader: &R) {
         self.last_start_tag.clear();
         self.last_start_tag
             .extend(last_start_tag.unwrap_or_default());
     }
 
-    fn pop_token(&mut self) -> Option<String> {
+    fn pop_token(&mut self, _reader: &R) -> Option<String> {
         self.queued_token.take()
     }
 
-    fn emit_string(&mut self, _: &[u8]) {}
+    fn emit_string(&mut self, _: &[u8], _reader: &R) {}
 
-    fn init_start_tag(&mut self) {
+    fn init_start_tag(&mut self, _reader: &R) {
         self.current_tag_name.clear();
         self.current_tag_is_closing = false;
     }
 
-    fn init_end_tag(&mut self) {
+    fn init_end_tag(&mut self, _reader: &R) {
         self.current_tag_name.clear();
         self.current_tag_is_closing = true;
     }
 
-    fn emit_current_tag(&mut self) -> Option<State> {
+    fn emit_current_tag(&mut self, _reader: &R) -> Option<State> {
         self.flush_old_attribute();
         self.last_start_tag.clear();
         if !self.current_tag_is_closing {
@@ -84,20 +84,20 @@ impl Emitter for LinkExtractor {
         html5gum::naive_next_state(&self.last_start_tag)
     }
 
-    fn set_self_closing(&mut self) {}
-    fn push_tag_name(&mut self, s: &[u8]) {
+    fn set_self_closing(&mut self, _reader: &R) {}
+    fn push_tag_name(&mut self, s: &[u8], _reader: &R) {
         self.current_tag_name.extend(s);
     }
 
-    fn init_attribute(&mut self) {
+    fn init_attribute(&mut self, _reader: &R) {
         self.flush_old_attribute();
     }
 
-    fn push_attribute_name(&mut self, s: &[u8]) {
+    fn push_attribute_name(&mut self, s: &[u8], _reader: &R) {
         self.current_attribute_name.extend(s);
     }
 
-    fn push_attribute_value(&mut self, s: &[u8]) {
+    fn push_attribute_value(&mut self, s: &[u8], _reader: &R) {
         self.current_attribute_value.extend(s);
     }
 
@@ -107,19 +107,20 @@ impl Emitter for LinkExtractor {
             && self.current_tag_name == self.last_start_tag
     }
 
-    fn emit_current_comment(&mut self) {}
-    fn emit_current_doctype(&mut self) {}
-    fn emit_eof(&mut self) {}
-    fn emit_error(&mut self, _: Error) {}
-    fn init_comment(&mut self) {}
-    fn init_doctype(&mut self) {}
-    fn push_comment(&mut self, _: &[u8]) {}
-    fn push_doctype_name(&mut self, _: &[u8]) {}
-    fn push_doctype_public_identifier(&mut self, _: &[u8]) {}
-    fn push_doctype_system_identifier(&mut self, _: &[u8]) {}
-    fn set_doctype_public_identifier(&mut self, _: &[u8]) {}
-    fn set_doctype_system_identifier(&mut self, _: &[u8]) {}
-    fn set_force_quirks(&mut self) {}
+    fn emit_current_comment(&mut self, _reader: &R) {}
+    fn emit_current_doctype(&mut self, _reader: &R) {}
+    fn emit_eof(&mut self, _reader: &R) {}
+    fn emit_error(&mut self, _: Error, _reader: &R) {}
+    fn init_comment(&mut self, _reader: &R) {}
+    fn init_doctype(&mut self, _reader: &R) {}
+    fn push_comment(&mut self, _: &[u8], _reader: &R) {}
+    fn push_doctype_name(&mut self, _: &[u8], _reader: &R) {}
+    fn push_doctype_public_identifier(&mut self, _: &[u8], _reader: &R) {}
+    fn push_doctype_system_identifier(&mut self, _: &[u8], _reader: &R) {}
+    fn set_doctype_public_identifier(&mut self, _: &[u8], _reader: &R) {}
+    fn set_doctype_system_identifier(&mut self, _: &[u8], _reader: &R) {}
+    fn start_open_tag(&mut self, _reader: &R) {}
+    fn set_force_quirks(&mut self, _reader: &R) {}
 }
 
 fn main() {

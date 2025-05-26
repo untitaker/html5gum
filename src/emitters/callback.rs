@@ -7,11 +7,11 @@
 //!
 //! ```
 //! // Extract all text between span tags, in a naive (but fast) way. Does not handle tags inside of the span. See `examples/` as well.
-//! use html5gum::Tokenizer;
+//! use html5gum::{Span, Tokenizer};
 //! use html5gum::emitters::callback::{CallbackEvent, CallbackEmitter};
 //!
 //! let mut is_in_span = false;
-//! let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>| -> Option<Vec<u8>> {
+//! let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>, _span: Span<()>, _reader: &'_ _| -> Option<Vec<u8>> {
 //!     match event {
 //!         CallbackEvent::OpenStartTag { name } => {
 //!             is_in_span = name == b"span";
@@ -37,10 +37,12 @@
 
 use std::collections::VecDeque;
 use std::convert::Infallible;
+use std::marker::PhantomData;
 use std::mem::swap;
 
+use crate::span::SpanBoundFromReader;
 use crate::utils::trace_log;
-use crate::{naive_next_state, Emitter, Error, State};
+use crate::{naive_next_state, Emitter, Error, Reader, Span, SpanBound, State};
 
 /// Events used by [CallbackEmitter].
 ///
@@ -135,42 +137,44 @@ enum CurrentTag {
 }
 
 #[derive(Debug)]
-struct CallbackState<F, T> {
+struct CallbackState<F, T, S, R> {
     callback: F,
     emitted_tokens: VecDeque<T>,
+    phantom: PhantomData<(S, R)>,
 }
 
 /// This trait is implemented for all functions that have the same signature as
 /// [Callback::handle_event]. The trait only exists in case you want to implement it on a nameable
 /// type.
-pub trait Callback<T> {
+pub trait Callback<T, S: SpanBound, R: Reader> {
     /// Perform some action on a parsing event, and, optionally, return a value that can be yielded
     /// from the [crate::Tokenizer] iterator.
-    fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<T>;
+    fn handle_event(&mut self, event: CallbackEvent<'_>, span: Span<S>, reader: &'_ R)
+        -> Option<T>;
 }
 
-impl<T, F> Callback<T> for F
+impl<F, T, S: SpanBound, R: Reader> Callback<T, S, R> for F
 where
-    F: FnMut(CallbackEvent<'_>) -> Option<T>,
+    F: FnMut(CallbackEvent<'_>, Span<S>, &R) -> Option<T>,
 {
-    fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<T> {
-        self(event)
+    fn handle_event(&mut self, event: CallbackEvent<'_>, span: Span<S>, reader: &R) -> Option<T> {
+        self(event, span, reader)
     }
 }
 
-impl<F, T> CallbackState<F, T>
+impl<F, T, S: SpanBound, R: Reader> CallbackState<F, T, S, R>
 where
-    F: Callback<T>,
+    F: Callback<T, S, R>,
 {
-    fn emit_event(&mut self, event: CallbackEvent<'_>) {
-        let res = self.callback.handle_event(event);
+    fn emit_event(&mut self, event: CallbackEvent<'_>, span: Span<S>, reader: &R) {
+        let res = self.callback.handle_event(event, span, reader);
         if let Some(token) = res {
             self.emitted_tokens.push_front(token);
         }
     }
 }
 
-impl<F, T> Default for CallbackState<F, T>
+impl<F, T, S, R> Default for CallbackState<F, T, S, R>
 where
     F: Default,
 {
@@ -178,15 +182,17 @@ where
         CallbackState {
             callback: F::default(),
             emitted_tokens: VecDeque::default(),
+            phantom: PhantomData,
         }
     }
 }
 
 #[derive(Debug, Default)]
-struct EmitterState {
+struct EmitterState<S: SpanBound> {
     naively_switch_states: bool,
 
     current_characters: Vec<u8>,
+    current_characters_start: S,
     current_comment: Vec<u8>,
 
     last_start_tag: Vec<u8>,
@@ -196,6 +202,8 @@ struct EmitterState {
     current_tag_name: Vec<u8>,
     current_attribute_name: Vec<u8>,
     current_attribute_value: Vec<u8>,
+    current_attribute_name_start: S,
+    current_attribute_value_start: S,
 
     // strings related to doctype
     doctype_name: Vec<u8>,
@@ -204,21 +212,27 @@ struct EmitterState {
     doctype_public_identifier: Vec<u8>,
     doctype_system_identifier: Vec<u8>,
     doctype_force_quirks: bool,
+
+    current_taglike_span: S,
 }
 
 /// The emitter class to pass to [crate::Tokenizer::new_with_emitter]. Please refer to the
 /// module-level documentation on [crate::emitters::callback] for usage.
 #[derive(Debug)]
-pub struct CallbackEmitter<F, T = Infallible> {
+pub struct CallbackEmitter<F, R: Reader, T = Infallible, S: SpanBoundFromReader<R> = ()>
+where
+    // add this requirement, so that users get better errors, if the callback does not implement `Callback`.
+    F: Callback<T, S, R>,
+{
     // this struct is only split out so [CallbackState::emit_event] can borrow things concurrently
     // with other attributes.
-    callback_state: CallbackState<F, T>,
-    emitter_state: EmitterState,
+    callback_state: CallbackState<F, T, S, R>,
+    emitter_state: EmitterState<S>,
 }
 
-impl<F, T> Default for CallbackEmitter<F, T>
+impl<F, R: Reader, T, S: SpanBoundFromReader<R>> Default for CallbackEmitter<F, R, T, S>
 where
-    F: Default,
+    F: Default + Callback<T, S, R>,
 {
     fn default() -> Self {
         CallbackEmitter {
@@ -228,9 +242,9 @@ where
     }
 }
 
-impl<F, T> CallbackEmitter<F, T>
+impl<F, T, S: SpanBoundFromReader<R>, R: Reader> CallbackEmitter<F, R, T, S>
 where
-    F: Callback<T>,
+    F: Callback<T, S, R>,
 {
     /// Create a new emitter.
     ///
@@ -241,6 +255,7 @@ where
             callback_state: CallbackState {
                 callback,
                 emitted_tokens: VecDeque::new(),
+                phantom: PhantomData,
             },
             emitter_state: EmitterState::default(),
         }
@@ -258,35 +273,60 @@ where
         self.emitter_state.naively_switch_states = yes;
     }
 
-    fn flush_attribute_name(&mut self) {
+    fn flush_attribute_name(&mut self, reader: &R) {
         if !self.emitter_state.current_attribute_name.is_empty() {
-            self.callback_state
-                .emit_event(CallbackEvent::AttributeName {
+            self.callback_state.emit_event(
+                CallbackEvent::AttributeName {
                     name: &self.emitter_state.current_attribute_name,
-                });
+                },
+                Span {
+                    start: self.emitter_state.current_attribute_name_start,
+                    end: self
+                        .emitter_state
+                        .current_attribute_name_start
+                        .offset(self.emitter_state.current_attribute_name.len() as isize),
+                },
+                reader,
+            );
             self.emitter_state.current_attribute_name.clear();
         }
     }
 
-    fn flush_attribute(&mut self) {
-        self.flush_attribute_name();
+    fn flush_attribute(&mut self, reader: &R) {
+        self.flush_attribute_name(reader);
 
         if !self.emitter_state.current_attribute_value.is_empty() {
-            self.callback_state
-                .emit_event(CallbackEvent::AttributeValue {
+            self.callback_state.emit_event(
+                CallbackEvent::AttributeValue {
                     value: &self.emitter_state.current_attribute_value,
-                });
+                },
+                Span {
+                    start: self.emitter_state.current_attribute_value_start,
+                    end: self
+                        .emitter_state
+                        .current_attribute_value_start
+                        .offset(self.emitter_state.current_attribute_value.len() as isize),
+                },
+                reader,
+            );
             self.emitter_state.current_attribute_value.clear();
         }
     }
 
-    fn flush_open_start_tag(&mut self) {
+    fn flush_open_start_tag(&mut self, reader: &R) {
         if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::Start))
             && !self.emitter_state.current_tag_name.is_empty()
         {
-            self.callback_state.emit_event(CallbackEvent::OpenStartTag {
-                name: &self.emitter_state.current_tag_name,
-            });
+            self.callback_state.emit_event(
+                CallbackEvent::OpenStartTag {
+                    name: &self.emitter_state.current_tag_name,
+                },
+                Span {
+                    start: self.emitter_state.current_taglike_span,
+                    end: S::from_reader_previous(reader),
+                },
+                reader,
+            );
 
             self.emitter_state.last_start_tag.clear();
             swap(
@@ -296,83 +336,112 @@ where
         }
     }
 
-    fn flush_current_characters(&mut self) {
+    fn flush_current_characters(&mut self, reader: &R) {
         if self.emitter_state.current_characters.is_empty() {
             return;
         }
 
-        self.callback_state.emit_event(CallbackEvent::String {
-            value: &self.emitter_state.current_characters,
-        });
+        self.callback_state.emit_event(
+            CallbackEvent::String {
+                value: &self.emitter_state.current_characters,
+            },
+            Span {
+                start: self.emitter_state.current_characters_start,
+                end: self
+                    .emitter_state
+                    .current_characters_start
+                    .offset(self.emitter_state.current_characters.len() as isize),
+            },
+            reader,
+        );
         self.emitter_state.current_characters.clear();
     }
 }
-impl<F, T> Emitter for CallbackEmitter<F, T>
+
+impl<F, T, S: SpanBoundFromReader<R>, R: Reader> Emitter<R> for CallbackEmitter<F, R, T, S>
 where
-    F: Callback<T>,
+    F: Callback<T, S, R>,
 {
     type Token = T;
 
-    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
+    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>, _reader: &R) {
         self.emitter_state.last_start_tag.clear();
         self.emitter_state
             .last_start_tag
             .extend(last_start_tag.unwrap_or_default());
     }
 
-    fn emit_eof(&mut self) {
-        self.flush_current_characters();
+    fn emit_eof(&mut self, reader: &R) {
+        self.flush_current_characters(reader);
     }
 
-    fn emit_error(&mut self, error: Error) {
-        self.callback_state.emit_event(CallbackEvent::Error(error));
+    fn emit_error(&mut self, error: Error, reader: &R) {
+        self.callback_state
+            .emit_event(CallbackEvent::Error(error), Span::empty_at(reader), reader);
     }
 
-    fn pop_token(&mut self) -> Option<Self::Token> {
+    fn pop_token(&mut self, _reader: &R) -> Option<Self::Token> {
         self.callback_state.emitted_tokens.pop_back()
     }
 
-    fn emit_string(&mut self, s: &[u8]) {
+    fn emit_string(&mut self, s: &[u8], reader: &R) {
         crate::utils::trace_log!("callbacks: emit_string, len={}", s.len());
+        if self.emitter_state.current_characters.is_empty() {
+            self.emitter_state.current_characters_start = S::from_reader_previous(reader);
+        }
         self.emitter_state.current_characters.extend(s);
     }
 
-    fn init_start_tag(&mut self) {
+    fn init_start_tag(&mut self, _reader: &R) {
         self.emitter_state.current_tag_name.clear();
         self.emitter_state.current_tag_type = Some(CurrentTag::Start);
         self.emitter_state.current_tag_self_closing = false;
     }
 
-    fn init_end_tag(&mut self) {
+    fn init_end_tag(&mut self, _reader: &R) {
         self.emitter_state.current_tag_name.clear();
         self.emitter_state.current_tag_type = Some(CurrentTag::End);
         self.emitter_state.current_tag_had_attributes = false;
     }
 
-    fn init_comment(&mut self) {
-        self.flush_current_characters();
+    fn init_comment(&mut self, reader: &R) {
+        self.flush_current_characters(reader);
         self.emitter_state.current_comment.clear();
     }
 
-    fn emit_current_tag(&mut self) -> Option<State> {
-        self.flush_attribute();
-        self.flush_current_characters();
+    fn emit_current_tag(&mut self, reader: &R) -> Option<State> {
+        self.flush_attribute(reader);
+        self.flush_current_characters(reader);
         match self.emitter_state.current_tag_type {
             Some(CurrentTag::Start) => {
-                self.flush_open_start_tag();
-                self.callback_state
-                    .emit_event(CallbackEvent::CloseStartTag {
+                self.flush_open_start_tag(reader);
+                let s = S::from_reader(reader);
+                self.callback_state.emit_event(
+                    CallbackEvent::CloseStartTag {
                         self_closing: self.emitter_state.current_tag_self_closing,
-                    });
+                    },
+                    Span {
+                        start: s.offset(-1),
+                        end: s,
+                    },
+                    reader,
+                );
             }
             Some(CurrentTag::End) => {
                 if self.emitter_state.current_tag_had_attributes {
-                    self.emit_error(Error::EndTagWithAttributes);
+                    self.emit_error(Error::EndTagWithAttributes, reader);
                 }
                 self.emitter_state.last_start_tag.clear();
-                self.callback_state.emit_event(CallbackEvent::EndTag {
-                    name: &self.emitter_state.current_tag_name,
-                });
+                self.callback_state.emit_event(
+                    CallbackEvent::EndTag {
+                        name: &self.emitter_state.current_tag_name,
+                    },
+                    Span {
+                        start: self.emitter_state.current_taglike_span,
+                        end: S::from_reader(reader),
+                    },
+                    reader,
+                );
             }
             _ => {}
         }
@@ -383,58 +452,75 @@ where
             None
         }
     }
-    fn emit_current_comment(&mut self) {
-        self.callback_state.emit_event(CallbackEvent::Comment {
-            value: &self.emitter_state.current_comment,
-        });
+    fn emit_current_comment(&mut self, reader: &R) {
+        self.callback_state.emit_event(
+            CallbackEvent::Comment {
+                value: &self.emitter_state.current_comment,
+            },
+            Span {
+                start: self.emitter_state.current_taglike_span,
+                end: S::from_reader(reader),
+            },
+            reader,
+        );
         self.emitter_state.current_comment.clear();
     }
 
-    fn emit_current_doctype(&mut self) {
-        self.callback_state.emit_event(CallbackEvent::Doctype {
-            name: &self.emitter_state.doctype_name,
-            public_identifier: if self.emitter_state.doctype_has_public_identifier {
-                Some(&self.emitter_state.doctype_public_identifier)
-            } else {
-                None
+    fn emit_current_doctype(&mut self, reader: &R) {
+        self.callback_state.emit_event(
+            CallbackEvent::Doctype {
+                name: &self.emitter_state.doctype_name,
+                public_identifier: if self.emitter_state.doctype_has_public_identifier {
+                    Some(&self.emitter_state.doctype_public_identifier)
+                } else {
+                    None
+                },
+                system_identifier: if self.emitter_state.doctype_has_system_identifier {
+                    Some(&self.emitter_state.doctype_system_identifier)
+                } else {
+                    None
+                },
+                force_quirks: self.emitter_state.doctype_force_quirks,
             },
-            system_identifier: if self.emitter_state.doctype_has_system_identifier {
-                Some(&self.emitter_state.doctype_system_identifier)
-            } else {
-                None
+            Span {
+                start: self.emitter_state.current_taglike_span,
+                end: S::from_reader(reader),
             },
-            force_quirks: self.emitter_state.doctype_force_quirks,
-        });
+            reader,
+        );
     }
 
-    fn set_self_closing(&mut self) {
+    fn set_self_closing(&mut self, reader: &R) {
         trace_log!("set_self_closing");
         if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::End)) {
-            self.callback_state
-                .emit_event(CallbackEvent::Error(Error::EndTagWithTrailingSolidus));
+            self.callback_state.emit_event(
+                CallbackEvent::Error(Error::EndTagWithTrailingSolidus),
+                Span::empty_at(reader),
+                reader,
+            );
         } else {
             self.emitter_state.current_tag_self_closing = true;
         }
     }
 
-    fn set_force_quirks(&mut self) {
+    fn set_force_quirks(&mut self, _reader: &R) {
         self.emitter_state.doctype_force_quirks = true;
     }
 
-    fn push_tag_name(&mut self, s: &[u8]) {
+    fn push_tag_name(&mut self, s: &[u8], _reader: &R) {
         self.emitter_state.current_tag_name.extend(s);
     }
 
-    fn push_comment(&mut self, s: &[u8]) {
+    fn push_comment(&mut self, s: &[u8], _reader: &R) {
         self.emitter_state.current_comment.extend(s);
     }
 
-    fn push_doctype_name(&mut self, s: &[u8]) {
+    fn push_doctype_name(&mut self, s: &[u8], _reader: &R) {
         self.emitter_state.doctype_name.extend(s);
     }
 
-    fn init_doctype(&mut self) {
-        self.flush_current_characters();
+    fn init_doctype(&mut self, reader: &R) {
+        self.flush_current_characters(reader);
         self.emitter_state.doctype_name.clear();
         self.emitter_state.doctype_has_public_identifier = false;
         self.emitter_state.doctype_has_system_identifier = false;
@@ -443,36 +529,44 @@ where
         self.emitter_state.doctype_force_quirks = false;
     }
 
-    fn init_attribute(&mut self) {
-        self.flush_open_start_tag();
-        self.flush_attribute();
+    fn init_attribute(&mut self, reader: &R) {
+        self.flush_open_start_tag(reader);
+        self.flush_attribute(reader);
         self.emitter_state.current_tag_had_attributes = true;
+        self.emitter_state.current_attribute_name_start = S::from_reader_previous(reader);
     }
 
-    fn push_attribute_name(&mut self, s: &[u8]) {
+    fn push_attribute_name(&mut self, s: &[u8], _reader: &R) {
         self.emitter_state.current_attribute_name.extend(s);
     }
 
-    fn push_attribute_value(&mut self, s: &[u8]) {
-        self.flush_attribute_name();
+    fn push_attribute_value(&mut self, s: &[u8], reader: &R) {
+        self.flush_attribute_name(reader);
+        if self.emitter_state.current_attribute_value.is_empty() {
+            self.emitter_state.current_attribute_value_start = S::from_reader_previous(reader);
+        }
         self.emitter_state.current_attribute_value.extend(s);
     }
 
-    fn set_doctype_public_identifier(&mut self, value: &[u8]) {
+    fn set_doctype_public_identifier(&mut self, value: &[u8], _reader: &R) {
         self.emitter_state.doctype_has_public_identifier = true;
         self.emitter_state.doctype_public_identifier.clear();
         self.emitter_state.doctype_public_identifier.extend(value);
     }
-    fn set_doctype_system_identifier(&mut self, value: &[u8]) {
+    fn set_doctype_system_identifier(&mut self, value: &[u8], _reader: &R) {
         self.emitter_state.doctype_has_system_identifier = true;
         self.emitter_state.doctype_system_identifier.clear();
         self.emitter_state.doctype_system_identifier.extend(value);
     }
-    fn push_doctype_public_identifier(&mut self, value: &[u8]) {
+    fn push_doctype_public_identifier(&mut self, value: &[u8], _reader: &R) {
         self.emitter_state.doctype_public_identifier.extend(value);
     }
-    fn push_doctype_system_identifier(&mut self, value: &[u8]) {
+    fn push_doctype_system_identifier(&mut self, value: &[u8], _reader: &R) {
         self.emitter_state.doctype_system_identifier.extend(value);
+    }
+
+    fn start_open_tag(&mut self, reader: &R) {
+        self.emitter_state.current_taglike_span = S::from_reader_previous(reader);
     }
 
     fn current_is_appropriate_end_tag_token(&mut self) -> bool {

@@ -8,7 +8,7 @@ use crate::{DefaultEmitter, Emitter, Readable, Reader};
 
 /// A HTML tokenizer. See crate-level docs for basic usage.
 #[derive(Debug)]
-pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
+pub struct Tokenizer<R: Reader, E: Emitter<R> = DefaultEmitter<R, ()>> {
     eof: bool,
     pub(crate) validator: CharValidator,
     pub(crate) emitter: E,
@@ -16,7 +16,7 @@ pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter> {
     pub(crate) machine_helper: MachineHelper<R, E>,
 }
 
-impl<R: Reader> Tokenizer<R> {
+impl<R: Reader> Tokenizer<R, DefaultEmitter<R, ()>> {
     /// Create a new tokenizer from some input.
     ///
     /// `input` can be `&String` or `&str` at the moment, as those are the types for which
@@ -25,11 +25,14 @@ impl<R: Reader> Tokenizer<R> {
     /// Patches are welcome for providing an efficient implementation over async streams,
     /// iterators, files, etc, as long as any dependencies come behind featureflags.
     pub fn new<'a, S: Readable<'a, Reader = R>>(input: S) -> Self {
-        Tokenizer::<S::Reader>::new_with_emitter(input, DefaultEmitter::default())
+        Tokenizer::<S::Reader, DefaultEmitter<R, ()>>::new_with_emitter(
+            input,
+            DefaultEmitter::<R, ()>::default(),
+        )
     }
 }
 
-impl<R: Reader, E: Emitter> Tokenizer<R, E> {
+impl<R: Reader, E: Emitter<R>> Tokenizer<R, E> {
     /// Construct a new tokenizer from some input and a custom emitter.
     ///
     /// Use this method over [`Tokenizer::new`] when you want to have more control over string allocation for
@@ -54,21 +57,21 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     #[doc(hidden)]
     pub fn set_last_start_tag(&mut self, last_start_tag: Option<&str>) {
         self.emitter
-            .set_last_start_tag(last_start_tag.map(str::as_bytes));
+            .set_last_start_tag(last_start_tag.map(str::as_bytes), &self.reader.reader);
     }
 }
 
-impl<R: Reader, E: Emitter<Token = Infallible>> Tokenizer<R, E> {
+impl<R: Reader, E: Emitter<R, Token = Infallible>> Tokenizer<R, E> {
     /// Some emitters don't ever produce any tokens and instead have other side effects. In those
     /// cases, you will find yourself writing code like this to handle errors:
     ///
     /// ```
     /// use std::convert::Infallible;
     ///
-    /// use html5gum::Tokenizer;
+    /// use html5gum::{Span, Tokenizer};
     /// use html5gum::emitters::callback::{CallbackEvent, CallbackEmitter};
     ///
-    /// let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>| -> Option<Infallible> {
+    /// let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>, span: Span<()>, reader: &'_ _| -> Option<Infallible> {
     ///     if let CallbackEvent::String { value } = event {
     ///         println!("{}", String::from_utf8_lossy(value));
     ///     }
@@ -97,12 +100,12 @@ impl<R: Reader, E: Emitter<Token = Infallible>> Tokenizer<R, E> {
     }
 }
 
-impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
+impl<R: Reader, E: Emitter<R>> Iterator for Tokenizer<R, E> {
     type Item = Result<E::Token, R::Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(token) = self.emitter.pop_token() {
+            if let Some(token) = self.emitter.pop_token(&self.reader.reader) {
                 break Some(Ok(token));
             } else if !self.eof {
                 match (self.machine_helper.state.function)(self) {
@@ -111,9 +114,10 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
                         self.machine_helper.switch_to(next_state);
                     }
                     Ok(ControlToken::Eof) => {
-                        self.validator.flush_character_error(&mut self.emitter);
+                        self.validator
+                            .flush_character_error(&mut self.emitter, &self.reader.reader);
                         self.eof = true;
-                        self.emitter.emit_eof();
+                        self.emitter.emit_eof(&self.reader.reader);
                     }
                     Err(e) => break Some(Err(e)),
                 }
