@@ -788,7 +788,7 @@ pub(crate) mod states {
                 Some(b'=') => {
                     error!(slf, Error::UnexpectedEqualsSignBeforeAttributeName);
                     slf.emitter.init_attribute(&slf.reader.reader);
-                    slf.emitter.push_attribute_name("=".as_bytes(), &slf.reader.reader);
+                    slf.emitter.push_attribute_name(b"=", &slf.reader.reader);
                     switch_to!(slf, AttributeName)
                 }
                 Some(x) => {

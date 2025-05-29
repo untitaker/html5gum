@@ -63,9 +63,7 @@ impl<R: Reader> ReadHelper<R> {
         if let Some(c) = self.to_reconsume.take() {
             match (c, bytes.next()) {
                 (Some(x), Some(&x2))
-                    if x == x2
-                        || (!case_sensitive
-                            && x.to_ascii_lowercase() == x2.to_ascii_lowercase()) =>
+                    if x == x2 || (!case_sensitive && x.eq_ignore_ascii_case(&x2)) =>
                 {
                     s = &s[1..];
                 }
@@ -125,11 +123,11 @@ impl<R: Reader> ReadHelper<R> {
         match read {
             Some(b"\r") => {
                 self.last_character_was_cr = true;
-                char_validator.validate_byte(emitter, b'\n', &reader);
+                char_validator.validate_byte(emitter, b'\n', reader);
                 Ok((reader, Some(b"\n")))
             }
             Some(mut xs) => {
-                char_validator.validate_bytes(emitter, xs, &reader);
+                char_validator.validate_bytes(emitter, xs, reader);
 
                 if self.last_character_was_cr && xs.starts_with(b"\n") {
                     xs = &xs[1..];
