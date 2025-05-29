@@ -45,6 +45,10 @@ jetscii = { version = "0.5.1", optional = true }
 name = "patterns"
 harness = false
 
+[[bench]]
+name = "files"
+harness = false
+
 [[test]]
 name = "html5lib-tokenizer"
 path = "tests/html5lib_tokenizer.rs"
