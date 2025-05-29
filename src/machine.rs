@@ -292,13 +292,15 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
+                    slf.emitter
+                        .push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     slf.machine_helper.temporary_buffer.push(x);
                     cont!()
                 }
                 c => {
                     slf.emitter.emit_string(b"</", &slf.reader.reader);
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
+                    slf.machine_helper
+                        .flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in!(slf, c, RcData)
                 }
             }
@@ -353,13 +355,15 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
+                    slf.emitter
+                        .push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     slf.machine_helper.temporary_buffer.push(x);
                     cont!()
                 }
                 c => {
                     slf.emitter.emit_string(b"</", &slf.reader.reader);
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
+                    slf.machine_helper
+                        .flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in!(slf, c, RawText)
                 }
             }
@@ -418,13 +422,15 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
+                    slf.emitter
+                        .push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     slf.machine_helper.temporary_buffer.push(x);
                     cont!()
                 }
                 c => {
                     slf.emitter.emit_string(b"</", &slf.reader.reader);
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
+                    slf.machine_helper
+                        .flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in!(slf, c, ScriptData)
                 }
             }
@@ -503,7 +509,8 @@ pub(crate) mod states {
                 }
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
+                    slf.emitter
+                        .emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscaped)
                 }
                 Some(x) => {
@@ -535,7 +542,8 @@ pub(crate) mod states {
                 }
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
+                    slf.emitter
+                        .emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, ScriptDataEscaped)
                 }
                 Some(x) => {
@@ -603,13 +611,15 @@ pub(crate) mod states {
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
-                    slf.emitter.push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
+                    slf.emitter
+                        .push_tag_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     slf.machine_helper.temporary_buffer.extend(&[x]);
                     cont!()
                 }
                 c => {
                     slf.emitter.emit_string(b"</", &slf.reader.reader);
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
+                    slf.machine_helper
+                        .flush_buffer_characters(&mut slf.emitter, &slf.reader.reader);
                     reconsume_in!(slf, c, ScriptDataEscaped)
                 }
             }
@@ -686,7 +696,8 @@ pub(crate) mod states {
                 }
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
+                    slf.emitter
+                        .emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscaped)
                 }
                 Some(x) => {
@@ -719,7 +730,8 @@ pub(crate) mod states {
                 }
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
-                    slf.emitter.emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
+                    slf.emitter
+                        .emit_string("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, ScriptDataDoubleEscaped)
                 }
                 Some(x) => {
@@ -812,7 +824,8 @@ pub(crate) mod states {
                 }
                 Some(b"\0") => {
                     error!(slf, reader, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_name("\u{fffd}".as_bytes(), reader);
+                    slf.emitter
+                        .push_attribute_name("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(b"\"" | b"'" | b"<") => {
@@ -895,7 +908,8 @@ pub(crate) mod states {
                 }
                 Some(b"\0") => {
                     error!(slf, reader, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes(), reader);
+                    slf.emitter
+                        .push_attribute_value("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
@@ -923,7 +937,8 @@ pub(crate) mod states {
                 }
                 Some(b"\0") => {
                     error!(slf, reader, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes(), reader);
+                    slf.emitter
+                        .push_attribute_value("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(xs) => {
@@ -954,11 +969,16 @@ pub(crate) mod states {
                 }
                 Some(b"\0") => {
                     error!(slf, reader, Error::UnexpectedNullCharacter);
-                    slf.emitter.push_attribute_value("\u{fffd}".as_bytes(), reader);
+                    slf.emitter
+                        .push_attribute_value("\u{fffd}".as_bytes(), reader);
                     cont!()
                 }
                 Some(b"\"" | b"'" | b"<" | b"=" | b"\x60") => {
-                    error!(slf, reader, Error::UnexpectedCharacterInUnquotedAttributeValue);
+                    error!(
+                        slf,
+                        reader,
+                        Error::UnexpectedCharacterInUnquotedAttributeValue
+                    );
                     slf.emitter.push_attribute_value(xs.1.unwrap(), reader);
                     cont!()
                 }
@@ -1320,7 +1340,8 @@ pub(crate) mod states {
                 Some(b'\0') => {
                     error!(slf, Error::UnexpectedNullCharacter);
                     slf.emitter.init_doctype(&slf.reader.reader);
-                    slf.emitter.push_doctype_name("\u{fffd}".as_bytes(), &slf.reader.reader);
+                    slf.emitter
+                        .push_doctype_name("\u{fffd}".as_bytes(), &slf.reader.reader);
                     switch_to!(slf, DoctypeName)
                 }
                 Some(b'>') => {
@@ -1339,7 +1360,8 @@ pub(crate) mod states {
                 }
                 Some(x) => {
                     slf.emitter.init_doctype(&slf.reader.reader);
-                    slf.emitter.push_doctype_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
+                    slf.emitter
+                        .push_doctype_name(&[x.to_ascii_lowercase()], &slf.reader.reader);
                     switch_to!(slf, DoctypeName)
                 }
             }
@@ -1427,12 +1449,14 @@ pub(crate) mod states {
                 }
                 Some(b'"') => {
                     error!(slf, Error::MissingWhitespaceAfterDoctypePublicKeyword);
-                    slf.emitter.set_doctype_public_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_public_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypePublicIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
                     error!(slf, Error::MissingWhitespaceAfterDoctypePublicKeyword);
-                    slf.emitter.set_doctype_public_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_public_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypePublicIdentifierSingleQuoted)
                 }
                 Some(b'>') => {
@@ -1462,11 +1486,13 @@ pub(crate) mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
-                    slf.emitter.set_doctype_public_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_public_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypePublicIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
-                    slf.emitter.set_doctype_public_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_public_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypePublicIdentifierSingleQuoted)
                 }
                 Some(b'>') => {
@@ -1574,7 +1600,8 @@ pub(crate) mod states {
                         slf,
                         Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers
                     );
-                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
@@ -1582,7 +1609,8 @@ pub(crate) mod states {
                         slf,
                         Error::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers
                     );
-                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
                 }
                 None => {
@@ -1610,11 +1638,13 @@ pub(crate) mod states {
                     switch_to!(slf, Data)
                 }
                 Some(b'"') => {
-                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
-                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
                 }
                 None => {
@@ -1641,12 +1671,14 @@ pub(crate) mod states {
                 }
                 Some(b'"') => {
                     error!(slf, Error::MissingWhitespaceAfterDoctypeSystemKeyword);
-                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
                     error!(slf, Error::MissingWhitespaceAfterDoctypeSystemKeyword);
-                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
                 }
                 Some(b'>') => {
@@ -1676,11 +1708,13 @@ pub(crate) mod states {
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
-                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
                 }
                 Some(b'\'') => {
-                    slf.emitter.set_doctype_system_identifier(b"", &slf.reader.reader);
+                    slf.emitter
+                        .set_doctype_system_identifier(b"", &slf.reader.reader);
                     switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
                 }
                 Some(b'>') => {
@@ -1889,7 +1923,10 @@ pub(crate) mod states {
                 }
                 c => {
                     slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
+                        .flush_code_points_consumed_as_character_reference(
+                            &mut slf.emitter,
+                            &slf.reader.reader,
+                        );
                     reconsume_in_return_state!(slf, c)
                 }
             }
@@ -1932,11 +1969,17 @@ pub(crate) mod states {
             }
 
             slf.machine_helper
-                .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
+                .flush_code_points_consumed_as_character_reference(
+                    &mut slf.emitter,
+                    &slf.reader.reader,
+                );
             reconsume_in_return_state!(slf, next_character)
         } else {
             slf.machine_helper
-                .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
+                .flush_code_points_consumed_as_character_reference(
+                    &mut slf.emitter,
+                    &slf.reader.reader,
+                );
             reconsume_in!(slf, c, AmbiguousAmpersand)
         }
     });
@@ -1981,7 +2024,10 @@ pub(crate) mod states {
                 c => {
                     error!(slf, Error::AbsenceOfDigitsInNumericCharacterReference);
                     slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
+                        .flush_code_points_consumed_as_character_reference(
+                            &mut slf.emitter,
+                            &slf.reader.reader,
+                        );
                     reconsume_in_return_state!(slf, c)
                 }
             }
@@ -1998,7 +2044,10 @@ pub(crate) mod states {
                 c => {
                     error!(slf, Error::AbsenceOfDigitsInNumericCharacterReference);
                     slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
+                        .flush_code_points_consumed_as_character_reference(
+                            &mut slf.emitter,
+                            &slf.reader.reader,
+                        );
                     reconsume_in_return_state!(slf, c)
                 }
             }
@@ -2114,7 +2163,10 @@ pub(crate) mod states {
                 .as_bytes(),
         );
         slf.machine_helper
-            .flush_code_points_consumed_as_character_reference(&mut slf.emitter, &slf.reader.reader);
+            .flush_code_points_consumed_as_character_reference(
+                &mut slf.emitter,
+                &slf.reader.reader,
+            );
         exit_state!(slf)
     });
 }

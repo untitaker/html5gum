@@ -87,7 +87,11 @@ impl<R: Reader, E: Emitter<R>> MachineHelper<R, E> {
         }
     }
 
-    pub(crate) fn flush_code_points_consumed_as_character_reference(&mut self, emitter: &mut E, reader: &R) {
+    pub(crate) fn flush_code_points_consumed_as_character_reference(
+        &mut self,
+        emitter: &mut E,
+        reader: &R,
+    ) {
         if self.is_consumed_as_part_of_an_attribute() {
             emitter.push_attribute_value(&self.temporary_buffer, reader);
             self.temporary_buffer.clear();
@@ -159,7 +163,10 @@ pub(crate) use mutate_character_reference;
 
 macro_rules! emit_current_tag_and_switch_to {
     ($slf:expr, $state:ident) => {{
-        let state = $slf.emitter.emit_current_tag(&$slf.reader.reader).map(Into::into);
+        let state = $slf
+            .emitter
+            .emit_current_tag(&$slf.reader.reader)
+            .map(Into::into);
         if state.is_some() {
             crate::utils::trace_log!("emitter asked for state switch:");
         }
@@ -251,10 +258,12 @@ pub(crate) use read_byte;
 /// stream bytes)
 macro_rules! error {
     ($slf:expr, $reader:expr, $e:expr) => {
-        $slf.validator.set_character_error(&mut $slf.emitter, $e, $reader);
+        $slf.validator
+            .set_character_error(&mut $slf.emitter, $e, $reader);
     };
     ($slf:expr, $e:expr) => {
-        $slf.validator.set_character_error(&mut $slf.emitter, $e, &$slf.reader.reader);
+        $slf.validator
+            .set_character_error(&mut $slf.emitter, $e, &$slf.reader.reader);
     };
 }
 
@@ -264,11 +273,13 @@ pub(crate) use error;
 macro_rules! error_immediate {
     ($slf:expr, $reader:expr, $e:expr) => {
         error!($slf, $reader, $e);
-        $slf.validator.flush_character_error(&mut $slf.emitter, $reader);
+        $slf.validator
+            .flush_character_error(&mut $slf.emitter, $reader);
     };
     ($slf:expr, $e:expr) => {
         error!($slf, $e);
-        $slf.validator.flush_character_error(&mut $slf.emitter, &$slf.reader.reader);
+        $slf.validator
+            .flush_character_error(&mut $slf.emitter, &$slf.reader.reader);
     };
 }
 

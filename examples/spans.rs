@@ -33,7 +33,10 @@ where
                 None
             }
             CallbackEvent::AttributeValue { value } if is_anchor_tag && is_href_attr => Some((
-                format!("found link with content `{}` here", String::from_utf8_lossy(value)),
+                format!(
+                    "found link with content `{}` here",
+                    String::from_utf8_lossy(value)
+                ),
                 span,
             )),
             _ => None,
@@ -76,4 +79,3 @@ fn main() {
     let renderer = Renderer::styled();
     println!("{}", renderer.render(message));
 }
-

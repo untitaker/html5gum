@@ -3,7 +3,7 @@ use std::convert::Infallible;
 
 use crate::emitters::callback::{Callback, CallbackEmitter, CallbackEvent};
 use crate::utils::trace_log;
-use crate::{Emitter, Error, Readable, Reader, State, Tokenizer};
+use crate::{Emitter, Error, Readable, Reader, Span, State, Tokenizer};
 
 use html5ever::interface::{create_element, TreeSink};
 use html5ever::tokenizer::states::State as Html5everState;
@@ -56,8 +56,13 @@ impl<'a, S: TokenSink> OurCallback<'a, S> {
     }
 }
 
-impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
-    fn handle_event(&mut self, event: CallbackEvent<'_>) -> Option<Infallible> {
+impl<'a, S: TokenSink, R: Reader> Callback<Infallible, (), R> for OurCallback<'a, S> {
+    fn handle_event(
+        &mut self,
+        event: CallbackEvent<'_>,
+        _span: Span<()>,
+        _reader: &R,
+    ) -> Option<Infallible> {
         trace_log!("Html5everEmitter::handle_event: {:?}", event);
         match event {
             CallbackEvent::OpenStartTag { name } => {
@@ -148,11 +153,11 @@ impl<'a, S: TokenSink> Callback<Infallible> for OurCallback<'a, S> {
 ///
 /// See [`examples/scraper.rs`] for usage.
 #[derive(Debug)]
-pub struct Html5everEmitter<'a, S: TokenSink> {
-    emitter_inner: CallbackEmitter<OurCallback<'a, S>>,
+pub struct Html5everEmitter<'a, S: TokenSink, R: Reader> {
+    emitter_inner: CallbackEmitter<OurCallback<'a, S>, R>,
 }
 
-impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
+impl<'a, S: TokenSink, R: Reader> Html5everEmitter<'a, S, R> {
     /// Construct the compatibility layer.
     pub fn new(sink: &'a mut S) -> Self {
         Html5everEmitter {
@@ -165,110 +170,117 @@ impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
     }
 }
 
-impl<'a, S: TokenSink> Emitter for Html5everEmitter<'a, S> {
+impl<'a, R: Reader, S: TokenSink> Emitter<R> for Html5everEmitter<'a, S, R> {
     type Token = Infallible;
 
-    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
-        self.emitter_inner.set_last_start_tag(last_start_tag)
+    fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>, reader: &R) {
+        self.emitter_inner
+            .set_last_start_tag(last_start_tag, reader)
     }
 
-    fn emit_eof(&mut self) {
-        self.emitter_inner.emit_eof();
+    fn emit_eof(&mut self, reader: &R) {
+        self.emitter_inner.emit_eof(reader);
         let sink = &mut self.emitter_inner.callback_mut().sink;
         let _ignored = sink.process_token(Html5everToken::EOFToken, BOGUS_LINENO);
         sink.end();
     }
 
-    fn emit_error(&mut self, error: Error) {
-        self.emitter_inner.emit_error(error)
+    fn emit_error(&mut self, error: Error, reader: &R) {
+        self.emitter_inner.emit_error(error, reader)
     }
 
     fn should_emit_errors(&mut self) -> bool {
         self.emitter_inner.should_emit_errors()
     }
 
-    fn pop_token(&mut self) -> Option<Self::Token> {
-        self.emitter_inner.pop_token()
+    fn pop_token(&mut self, reader: &R) -> Option<Self::Token> {
+        self.emitter_inner.pop_token(reader)
     }
-    fn emit_string(&mut self, c: &[u8]) {
-        self.emitter_inner.emit_string(c)
-    }
-
-    fn init_start_tag(&mut self) {
-        self.emitter_inner.init_start_tag()
+    fn emit_string(&mut self, c: &[u8], reader: &R) {
+        self.emitter_inner.emit_string(c, reader)
     }
 
-    fn init_end_tag(&mut self) {
-        self.emitter_inner.init_end_tag()
+    fn start_open_tag(&mut self, reader: &R) {
+        self.emitter_inner.start_open_tag(reader)
     }
 
-    fn init_comment(&mut self) {
-        self.emitter_inner.init_comment()
+    fn init_start_tag(&mut self, reader: &R) {
+        self.emitter_inner.init_start_tag(reader)
     }
 
-    fn emit_current_tag(&mut self) -> Option<State> {
-        assert!(self.emitter_inner.emit_current_tag().is_none());
+    fn init_end_tag(&mut self, reader: &R) {
+        self.emitter_inner.init_end_tag(reader)
+    }
+
+    fn init_comment(&mut self, reader: &R) {
+        self.emitter_inner.init_comment(reader)
+    }
+
+    fn emit_current_tag(&mut self, reader: &R) -> Option<State> {
+        assert!(self.emitter_inner.emit_current_tag(reader).is_none());
         self.emitter_inner.callback_mut().next_state.take()
     }
 
-    fn emit_current_comment(&mut self) {
-        self.emitter_inner.emit_current_comment()
+    fn emit_current_comment(&mut self, reader: &R) {
+        self.emitter_inner.emit_current_comment(reader)
     }
 
-    fn emit_current_doctype(&mut self) {
-        self.emitter_inner.emit_current_doctype()
+    fn emit_current_doctype(&mut self, reader: &R) {
+        self.emitter_inner.emit_current_doctype(reader)
     }
 
-    fn set_self_closing(&mut self) {
-        self.emitter_inner.set_self_closing()
+    fn set_self_closing(&mut self, reader: &R) {
+        self.emitter_inner.set_self_closing(reader)
     }
 
-    fn set_force_quirks(&mut self) {
-        self.emitter_inner.set_force_quirks()
+    fn set_force_quirks(&mut self, reader: &R) {
+        self.emitter_inner.set_force_quirks(reader)
     }
 
-    fn push_tag_name(&mut self, s: &[u8]) {
-        self.emitter_inner.push_tag_name(s)
+    fn push_tag_name(&mut self, s: &[u8], reader: &R) {
+        self.emitter_inner.push_tag_name(s, reader)
     }
 
-    fn push_comment(&mut self, s: &[u8]) {
-        self.emitter_inner.push_comment(s)
+    fn push_comment(&mut self, s: &[u8], reader: &R) {
+        self.emitter_inner.push_comment(s, reader)
     }
 
-    fn push_doctype_name(&mut self, s: &[u8]) {
-        self.emitter_inner.push_doctype_name(s)
+    fn push_doctype_name(&mut self, s: &[u8], reader: &R) {
+        self.emitter_inner.push_doctype_name(s, reader)
     }
 
-    fn init_doctype(&mut self) {
-        self.emitter_inner.init_doctype()
+    fn init_doctype(&mut self, reader: &R) {
+        self.emitter_inner.init_doctype(reader)
     }
 
-    fn init_attribute(&mut self) {
-        self.emitter_inner.init_attribute()
+    fn init_attribute(&mut self, reader: &R) {
+        self.emitter_inner.init_attribute(reader)
     }
 
-    fn push_attribute_name(&mut self, s: &[u8]) {
-        self.emitter_inner.push_attribute_name(s)
+    fn push_attribute_name(&mut self, s: &[u8], reader: &R) {
+        self.emitter_inner.push_attribute_name(s, reader)
     }
 
-    fn push_attribute_value(&mut self, s: &[u8]) {
-        self.emitter_inner.push_attribute_value(s)
+    fn push_attribute_value(&mut self, s: &[u8], reader: &R) {
+        self.emitter_inner.push_attribute_value(s, reader)
     }
 
-    fn set_doctype_public_identifier(&mut self, value: &[u8]) {
-        self.emitter_inner.set_doctype_public_identifier(value)
+    fn set_doctype_public_identifier(&mut self, value: &[u8], reader: &R) {
+        self.emitter_inner
+            .set_doctype_public_identifier(value, reader)
     }
 
-    fn set_doctype_system_identifier(&mut self, value: &[u8]) {
-        self.emitter_inner.set_doctype_system_identifier(value)
+    fn set_doctype_system_identifier(&mut self, value: &[u8], reader: &R) {
+        self.emitter_inner
+            .set_doctype_system_identifier(value, reader)
     }
 
-    fn push_doctype_public_identifier(&mut self, s: &[u8]) {
-        self.emitter_inner.push_doctype_public_identifier(s)
+    fn push_doctype_public_identifier(&mut self, s: &[u8], reader: &R) {
+        self.emitter_inner.push_doctype_public_identifier(s, reader)
     }
 
-    fn push_doctype_system_identifier(&mut self, s: &[u8]) {
-        self.emitter_inner.push_doctype_system_identifier(s)
+    fn push_doctype_system_identifier(&mut self, s: &[u8], reader: &R) {
+        self.emitter_inner.push_doctype_system_identifier(s, reader)
     }
 
     fn current_is_appropriate_end_tag_token(&mut self) -> bool {

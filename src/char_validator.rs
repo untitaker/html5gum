@@ -22,7 +22,12 @@ impl CharValidator {
     }
 
     #[inline]
-    pub(crate) fn validate_bytes<E: Emitter<R>, R>(&mut self, emitter: &mut E, next_bytes: &[u8], reader: &R) {
+    pub(crate) fn validate_bytes<E: Emitter<R>, R>(
+        &mut self,
+        emitter: &mut E,
+        next_bytes: &[u8],
+        reader: &R,
+    ) {
         if !emitter.should_emit_errors() {
             return;
         }
@@ -33,7 +38,12 @@ impl CharValidator {
     }
 
     #[inline]
-    pub(crate) fn validate_byte<E: Emitter<R>, R>(&mut self, emitter: &mut E, next_byte: u8, reader: &R) {
+    pub(crate) fn validate_byte<E: Emitter<R>, R>(
+        &mut self,
+        emitter: &mut E,
+        next_byte: u8,
+        reader: &R,
+    ) {
         if !emitter.should_emit_errors() {
             return;
         }
@@ -64,7 +74,12 @@ impl CharValidator {
         }
     }
 
-    pub(crate) fn set_character_error<E: Emitter<R>, R>(&mut self, emitter: &mut E, error: Error, reader: &R) {
+    pub(crate) fn set_character_error<E: Emitter<R>, R>(
+        &mut self,
+        emitter: &mut E,
+        error: Error,
+        reader: &R,
+    ) {
         if !emitter.should_emit_errors() {
             return;
         }
@@ -77,7 +92,12 @@ impl CharValidator {
     }
 
     #[inline]
-    fn validate_last_4_bytes<E: Emitter<R>, R>(&mut self, emitter: &mut E, last_4_bytes: u32, reader: &R) {
+    fn validate_last_4_bytes<E: Emitter<R>, R>(
+        &mut self,
+        emitter: &mut E,
+        last_4_bytes: u32,
+        reader: &R,
+    ) {
         // generated with Python 3:
         // ' | '.join(map(hex, sorted([int.from_bytes(chr(x).encode("utf8"), 'big') for x in nonchars])))
         match last_4_bytes {

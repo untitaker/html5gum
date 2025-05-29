@@ -152,7 +152,7 @@ fn build_test(testcase: Testcase, fname: &str, i: usize, scripting: bool) -> Tri
     Trial::test(format!("{}:{}:{scripting_text}", fname, i), move || {
         testutils::catch_unwind_and_report(move || {
             trace_log(&format!("{:#?}", testcase));
-            let mut rcdom = RcDom::default();
+            let rcdom = RcDom::default();
             let opts = TreeBuilderOpts {
                 scripting_enabled: scripting,
                 ..Default::default()

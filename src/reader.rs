@@ -359,7 +359,7 @@ impl<R: Read, Buffer: AsRef<[u8]> + AsMut<[u8]>> IoReader<R, Buffer> {
     }
 }
 
-impl<R: Read, Buffer: AsRef<[u8]> +AsMut<[u8]>> Reader for IoReader<R, Buffer> {
+impl<R: Read, Buffer: AsRef<[u8]> + AsMut<[u8]>> Reader for IoReader<R, Buffer> {
     type Error = io::Error;
 
     #[inline(always)]
@@ -492,7 +492,7 @@ impl<R: Reader> SpanReader<R> {
     /// Construct a new [`SpanReader`] from any type that implements [`Readable`] (including other
     /// [`Reader`]s!).
     ///
-    /// `input` can be [`&String`][String], [`&str`][str], [`Vec<u8>`], [`&[u8]`][slice] or any 
+    /// `input` can be [`&String`][String], [`&str`][str], [`Vec<u8>`], [`&[u8]`][slice] or any
     /// other [`Reader`] at the moment, as those are the types for which [`crate::Readable`] is
     /// implemented, but you can implement that trait on your own types.
     pub fn new<'a, S: Readable<'a, Reader = R>>(input: S) -> Self {
