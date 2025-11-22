@@ -447,11 +447,18 @@ where
             _ => {}
         }
 
-        if self.emitter_state.naively_switch_states {
+        let next_state = if self.emitter_state.naively_switch_states {
             naive_next_state(&self.emitter_state.last_start_tag)
         } else {
             None
+        };
+
+        // After flushing characters, initialize a new string span for text-accumulating states
+        if next_state.is_some() {
+            self.init_string();
         }
+
+        next_state
     }
     fn emit_current_comment(&mut self) {
         self.callback_state.emit_event(
