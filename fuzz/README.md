@@ -11,6 +11,8 @@ target.
 
 * `FUZZ_BASIC=1` to run html5gum on the input, exhaust the token iterator but
   discard the output. This can only find crashes and hangs.
+* `FUZZ_SPAN_INVARIANTS=1` to validate span correctness and find bugs in span
+  attribution.
 * `FUZZ_OLD_HTML5GUM=1` to run html5gum against an older version of itself, and
   crash when html5gum produces different output than the old "reference
   version". This can be used to find bugs in patches to html5gum.
