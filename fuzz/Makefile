@@ -25,8 +25,9 @@ clean: reset
 	rm -rf target target-afl
 
 in: Makefile
+	cd ../ && git submodule update --init
 	mkdir -p in
-	set -e && cat ../tests/custom-html5lib-tests/tokenizer/*.test \
+	set -e -o pipefail && cat ../tests/custom-html5lib-tests/tokenizer/*.test \
 		../tests/html5lib-tests/tokenizer/*.test | \
 		jq -r '(if .tests == null then [] else .tests end) | .[].input | (. + "\nAFL_END\n")' | \
 		csplit --quiet --suppress-matched --elide-empty-files --prefix in/html5lib-tokenizer-tests- \
