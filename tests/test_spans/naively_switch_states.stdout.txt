@@ -33,10 +33,7 @@ error: test output
    | info: start tag
  9 | <script>nested('<div></div>')</script>
    | -------------------------------------- note: end tag
-   | |       |       |    |     |
-   | |       |       |    |     info: string
-   | |       |       |    note: end tag
-   | |       |       info: start tag
+   | |       |
    | |       info: string
    | info: start tag
 10 | <style>.class { color: red; }</style>

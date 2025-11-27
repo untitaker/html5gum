@@ -210,3 +210,45 @@ fn simple() {
         },
     );
 }
+
+#[test]
+fn simple_with_naively_switch_states() {
+    let msg: Rc<RefCell<Option<_>>> = Default::default();
+    run(
+        include_str!("test_spans/input.html"),
+        include_str!("test_spans/naively_switch_states.stdout.txt").trim(),
+        |m| {
+            *msg.borrow_mut() = Some(m);
+            let mut emitter = DefaultEmitter::new_with_span();
+            emitter.naively_switch_states(true);
+            emitter
+        },
+        |token| {
+            let mut msg = msg.borrow_mut();
+            let msg = msg.as_mut().unwrap();
+            match token {
+                Token::StartTag(start_tag) => {
+                    msg.add(Level::Info, start_tag.span, "start tag");
+                    for (_name, value) in start_tag.attributes {
+                        msg.add(Level::Note, value.span, "attribute");
+                    }
+                }
+                Token::EndTag(end_tag) => {
+                    msg.add(Level::Note, end_tag.span, "end tag");
+                }
+                Token::String(v) => {
+                    if **v != b"\n" {
+                        msg.add(Level::Info, v.span, "string");
+                    }
+                }
+                Token::Comment(v) => {
+                    msg.add(Level::Info, v.span, "comment");
+                }
+                Token::Doctype(v) => {
+                    msg.add(Level::Info, v.span, "doctype");
+                }
+                Token::Error(error) => panic!("error: {}", *error),
+            }
+        },
+    );
+}

@@ -62,6 +62,7 @@ pub(crate) mod states {
                     enter_state!(slf, CharacterReference, false)
                 }
                 Some(b"<") => {
+                    slf.emitter.start_open_tag();
                     switch_to!(slf, RcDataLessThanSign)
                 }
                 Some(b"\0") => {
@@ -85,6 +86,7 @@ pub(crate) mod states {
             slf,
             match xs {
                 Some(b"<") => {
+                    slf.emitter.start_open_tag();
                     switch_to!(slf, RawTextLessThanSign)
                 }
                 Some(b"\0") => {
@@ -108,6 +110,7 @@ pub(crate) mod states {
             slf,
             match xs {
                 Some(b"<") => {
+                    slf.emitter.start_open_tag();
                     switch_to!(slf, ScriptDataLessThanSign)
                 }
                 Some(b"\0") => {
