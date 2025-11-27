@@ -23,3 +23,10 @@ jobs:
       - name: Build AFL target
         working-directory: ./fuzz
         run: make setup-afl
+
+      - name: Build libfuzzer target
+        working-directory: ./fuzz
+        run: |
+          rustup toolchain install nightly
+          cargo install cargo-fuzz
+          cargo +nightly fuzz build main_libfuzzer

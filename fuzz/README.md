@@ -60,6 +60,7 @@ stdout.
 * Run `FUZZ_BASIC=1 make -e afl-next` after fuzzing to get the next crash and
   run afl-tmin on it. It will print the testcase as JSON string to check back
   into e.g. a file in `tests/custom-html5lib-tests/`.
+* Run `FUZZ_BASIC=1 make -e afl-skip` to skip over one fuzzing result.
 
 ## cargo fuzz
 
