@@ -1,3 +1,17 @@
+# Unreleased
+
+- Make upgrading to 0.8.0 smoother by adding more `From`-impls. [PR 126](https://github.com/untitaker/html5gum/pull/126)
+
+# 0.8.1
+
+- Fix a bug in spans position tracking. [PR 124](https://github.com/untitaker/html5gum/pull/124)
+
+# 0.8.0
+
+- Experimental support for spans, i.e. reporting the locations of errors and tokens in the original source. [PR 120](https://github.com/untitaker/html5gum/pull/120)
+- There are many breaking changes coming from this, but we did our best to make
+  most of them less painful.
+
 # 0.7.0
 
 - Removal of `Tokenizer.infallible()`. Use `for Ok(token) in Tokenizer::new()` instead. [PR 102](https://github.com/untitaker/html5gum/pull/102)
