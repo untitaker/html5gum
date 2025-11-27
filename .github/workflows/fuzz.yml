@@ -19,3 +19,7 @@ jobs:
       - name: Check fuzz code compiles
         working-directory: ./fuzz
         run: cargo check
+
+      - name: Build AFL target
+        working-directory: ./fuzz
+        run: make setup-afl
