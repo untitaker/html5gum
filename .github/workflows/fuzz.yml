@@ -10,6 +10,9 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./fuzz
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -17,14 +20,11 @@ jobs:
           toolchain: stable
 
       - run: cargo fmt --all -- --check
-        working-directory: ./fuzz
 
       - name: Check fuzz code compiles
-        working-directory: ./fuzz
         run: cargo check
 
       - name: Build AFL target
-        working-directory: ./fuzz
         run: make setup-afl
 
       - name: Build libfuzzer target
