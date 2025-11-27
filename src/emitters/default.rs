@@ -188,7 +188,7 @@ pub struct Doctype {
 /// The token type used by default. You can define your own token type by implementing the
 /// [`crate::Emitter`] trait and using [`crate::Tokenizer::new_with_emitter`].
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Token<S: SpanBound> {
+pub enum Token<S: SpanBound = ()> {
     /// A HTML start tag.
     StartTag(StartTag<S>),
     /// A HTML end tag.

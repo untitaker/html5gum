@@ -42,7 +42,7 @@ afl-requeue:
 .PHONY: requeue
 
 setup-afl:
-	which cargo-afl || cargo install afl
+	which cargo-afl || cargo install cargo-afl
 	CARGO_TARGET_DIR=./target-afl/ cargo afl build --release --bin main_afl --features afl
 
 afl: in setup-afl

@@ -48,11 +48,39 @@ impl SpanBound for usize {
 }
 
 /// A value together with its [`Span`].
+///
+/// This type implements [`Deref`](std::ops::Deref) and [`DerefMut`](std::ops::DerefMut),
+/// allowing you to access the inner value directly without using `.value`:
+///
+/// ```
+/// # use html5gum::Spanned;
+/// let spanned: Spanned<String, ()> = "hello".to_string().into();
+/// assert_eq!(spanned.len(), 5);  // calls String::len() via Deref
+/// assert_eq!(&*spanned, "hello"); // dereference to get &String
+/// ```
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Spanned<T, B: SpanBound = usize> {
     pub value: T,
     pub span: Span<B>,
+}
+
+impl<T, B: SpanBound> From<T> for Spanned<T, B> {
+    fn from(value: T) -> Self {
+        Self {
+            value,
+            span: Span::default(),
+        }
+    }
+}
+
+impl<B: SpanBound> From<Vec<u8>> for Spanned<crate::HtmlString, B> {
+    fn from(value: Vec<u8>) -> Self {
+        Self {
+            value: value.into(),
+            span: Span::default(),
+        }
+    }
 }
 
 impl<T, B: SpanBound> std::ops::Deref for Spanned<T, B> {

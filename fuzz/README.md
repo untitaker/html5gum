@@ -11,6 +11,8 @@ target.
 
 * `FUZZ_BASIC=1` to run html5gum on the input, exhaust the token iterator but
   discard the output. This can only find crashes and hangs.
+* `FUZZ_SPAN_INVARIANTS=1` to validate span correctness and find bugs in span
+  attribution.
 * `FUZZ_OLD_HTML5GUM=1` to run html5gum against an older version of itself, and
   crash when html5gum produces different output than the old "reference
   version". This can be used to find bugs in patches to html5gum.
@@ -58,6 +60,7 @@ stdout.
 * Run `FUZZ_BASIC=1 make -e afl-next` after fuzzing to get the next crash and
   run afl-tmin on it. It will print the testcase as JSON string to check back
   into e.g. a file in `tests/custom-html5lib-tests/`.
+* Run `FUZZ_BASIC=1 make -e afl-skip` to skip over one fuzzing result.
 
 ## cargo fuzz
 

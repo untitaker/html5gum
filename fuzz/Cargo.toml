@@ -14,10 +14,10 @@ pretty_assertions = "1.0.0"
 
 # thirdparty crates to fuzz against
 html5gum_old = { version = "=0.6.1", package = "html5gum" }
-html5ever = "0.29.1"
-swc_common = "5.0"
-swc_html_parser = "8.0"
-swc_html_ast = "8.0"
+html5ever = "0.36.1"
+swc_common = "18.0"
+swc_html_parser = "18.0"
+swc_html_ast = "18.0"
 
 # lol-html and its dependencies
 lol_html = { version = "2.2", features = ["integration_test"] }

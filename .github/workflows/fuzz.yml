@@ -10,10 +10,25 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./fuzz
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - run: cd fuzz
-      - run: cargo check
+
+      - run: cargo fmt --all -- --check
+
+      - name: Check fuzz code compiles
+        run: cargo check
+
+      - name: Build AFL target
+        run: make setup-afl
+
+      - name: Build libfuzzer target
+        run: |
+          rustup toolchain install nightly
+          cargo install cargo-fuzz
+          cargo +nightly fuzz build main_libfuzzer
