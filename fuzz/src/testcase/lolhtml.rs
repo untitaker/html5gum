@@ -124,12 +124,15 @@ impl<'a> TransformController for TestTransformController<'a> {
                 }));
             }
             Token2::Doctype(d) => {
-                self.testing_tokenizer.push(Token::Doctype(Doctype {
-                    force_quirks: d.force_quirks(),
-                    name: d.name().unwrap_or_default().into_bytes().into(),
-                    public_identifier: d.public_id().map(|x| x.into_bytes().into()),
-                    system_identifier: d.system_id().map(|x| x.into_bytes().into()),
-                }.into()));
+                self.testing_tokenizer.push(Token::Doctype(
+                    Doctype {
+                        force_quirks: d.force_quirks(),
+                        name: d.name().unwrap_or_default().into_bytes().into(),
+                        public_identifier: d.public_id().map(|x| x.into_bytes().into()),
+                        system_identifier: d.system_id().map(|x| x.into_bytes().into()),
+                    }
+                    .into(),
+                ));
             }
         }
 

@@ -39,7 +39,8 @@ pub fn run_swc(s: &str) {
                         public_identifier: public_id.map(|x| x.to_string().into_bytes().into()),
                         system_identifier: system_id.map(|x| x.to_string().into_bytes().into()),
                         force_quirks,
-                    }.into(),
+                    }
+                    .into(),
                 ));
             }
             Token::StartTag {
@@ -78,7 +79,9 @@ pub fn run_swc(s: &str) {
                 }));
             }
             Token::Comment { data, .. } => {
-                transformed_swc_tokens.push(html5gum::Token::Comment(data.to_string().into_bytes().into()));
+                transformed_swc_tokens.push(html5gum::Token::Comment(
+                    data.to_string().into_bytes().into(),
+                ));
             }
             Token::Character { value, .. } => {
                 let value_bytes = value.to_string().into_bytes();

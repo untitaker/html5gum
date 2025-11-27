@@ -3,9 +3,7 @@ use std::cell::RefCell;
 use html5ever::buffer_queue::BufferQueue;
 use html5ever::interface::TokenizerResult;
 use html5ever::tendril::format_tendril;
-use html5ever::tokenizer::{
-    TagKind, Token as Token2, TokenSinkResult, TokenizerOpts,
-};
+use html5ever::tokenizer::{TagKind, Token as Token2, TokenSinkResult, TokenizerOpts};
 use html5gum::{Emitter, Reader, Token};
 
 use pretty_assertions::assert_eq;

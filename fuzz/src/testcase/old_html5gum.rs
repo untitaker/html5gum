@@ -80,12 +80,15 @@ pub fn run_old_html5gum(s: &str) {
             html5gum_old::Token::Error(x) => {
                 Token::Error(x.to_string().parse::<html5gum::Error>().unwrap().into())
             }
-            html5gum_old::Token::Doctype(x) => Token::Doctype(Doctype {
-                name: Vec::from(x.name).into(),
-                force_quirks: x.force_quirks,
-                public_identifier: x.public_identifier.map(|x| Vec::from(x).into()),
-                system_identifier: x.system_identifier.map(|x| Vec::from(x).into()),
-            }.into()),
+            html5gum_old::Token::Doctype(x) => Token::Doctype(
+                Doctype {
+                    name: Vec::from(x.name).into(),
+                    force_quirks: x.force_quirks,
+                    public_identifier: x.public_identifier.map(|x| Vec::from(x).into()),
+                    system_identifier: x.system_identifier.map(|x| Vec::from(x).into()),
+                }
+                .into(),
+            ),
         })
         .collect();
 
