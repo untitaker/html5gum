@@ -16,6 +16,9 @@ jobs:
         with:
           toolchain: stable
 
+      - run: cargo fmt --all -- --check
+        working-directory: ./fuzz
+
       - name: Check fuzz code compiles
         working-directory: ./fuzz
         run: cargo check
@@ -25,7 +28,6 @@ jobs:
         run: make setup-afl
 
       - name: Build libfuzzer target
-        working-directory: ./fuzz
         run: |
           rustup toolchain install nightly
           cargo install cargo-fuzz
