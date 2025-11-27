@@ -114,11 +114,13 @@ impl<'a> TransformController for TestTransformController<'a> {
                     self_closing: t.self_closing(),
                     // TODO
                     attributes: Default::default(),
+                    ..Default::default()
                 }));
             }
             Token2::EndTag(t) => {
                 self.testing_tokenizer.push(Token::EndTag(EndTag {
                     name: t.name().into_bytes().into(),
+                    ..Default::default()
                 }));
             }
             Token2::Doctype(d) => {
@@ -127,7 +129,7 @@ impl<'a> TransformController for TestTransformController<'a> {
                     name: d.name().unwrap_or_default().into_bytes().into(),
                     public_identifier: d.public_id().map(|x| x.into_bytes().into()),
                     system_identifier: d.system_id().map(|x| x.into_bytes().into()),
-                }));
+                }.into()));
             }
         }
 

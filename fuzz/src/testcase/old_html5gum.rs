@@ -45,7 +45,10 @@ pub fn run_old_html5gum(s: &str) {
             }
             x if x.starts_with("if-testing-contains:") => {
                 if testing_tokens.contains(&html5gum::Token::Error(
-                    x["if-testing-contains:".len()..].parse().unwrap(),
+                    x["if-testing-contains:".len()..]
+                        .parse::<html5gum::Error>()
+                        .unwrap()
+                        .into(),
                 )) {
                     reference_tokens.retain(isnt_old_error);
                     testing_tokens.retain(isnt_error);
@@ -68,17 +71,21 @@ pub fn run_old_html5gum(s: &str) {
                     .map(|(k, v)| (Vec::from(k).into(), Vec::from(v).into()))
                     .collect(),
                 self_closing: x.self_closing,
+                ..Default::default()
             }),
             html5gum_old::Token::EndTag(x) => Token::EndTag(EndTag {
                 name: Vec::from(x.name).into(),
+                ..Default::default()
             }),
-            html5gum_old::Token::Error(x) => Token::Error(x.to_string().parse().unwrap()),
+            html5gum_old::Token::Error(x) => {
+                Token::Error(x.to_string().parse::<html5gum::Error>().unwrap().into())
+            }
             html5gum_old::Token::Doctype(x) => Token::Doctype(Doctype {
                 name: Vec::from(x.name).into(),
                 force_quirks: x.force_quirks,
                 public_identifier: x.public_identifier.map(|x| Vec::from(x).into()),
                 system_identifier: x.system_identifier.map(|x| Vec::from(x).into()),
-            }),
+            }.into()),
         })
         .collect();
 

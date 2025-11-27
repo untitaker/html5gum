@@ -33,12 +33,14 @@ pub fn run_swc(s: &str) {
                 system_id,
                 ..
             } => {
-                transformed_swc_tokens.push(html5gum::Token::Doctype(html5gum::Doctype {
-                    name: name.unwrap_or_default().to_string().into_bytes().into(),
-                    public_identifier: public_id.map(|x| x.to_string().into_bytes().into()),
-                    system_identifier: system_id.map(|x| x.to_string().into_bytes().into()),
-                    force_quirks,
-                }));
+                transformed_swc_tokens.push(html5gum::Token::Doctype(
+                    html5gum::Doctype {
+                        name: name.unwrap_or_default().to_string().into_bytes().into(),
+                        public_identifier: public_id.map(|x| x.to_string().into_bytes().into()),
+                        system_identifier: system_id.map(|x| x.to_string().into_bytes().into()),
+                        force_quirks,
+                    }.into(),
+                ));
             }
             Token::StartTag {
                 tag_name,
@@ -66,17 +68,17 @@ pub fn run_swc(s: &str) {
 
                         gum_attributes
                     },
+                    ..Default::default()
                 }));
             }
             Token::EndTag { tag_name, .. } => {
                 transformed_swc_tokens.push(html5gum::Token::EndTag(html5gum::EndTag {
                     name: tag_name.to_string().into_bytes().into(),
+                    ..Default::default()
                 }));
             }
             Token::Comment { data, .. } => {
-                transformed_swc_tokens.push(html5gum::Token::Comment(
-                    data.to_string().into_bytes().into(),
-                ));
+                transformed_swc_tokens.push(html5gum::Token::Comment(data.to_string().into_bytes().into()));
             }
             Token::Character { value, .. } => {
                 let value_bytes = value.to_string().into_bytes();

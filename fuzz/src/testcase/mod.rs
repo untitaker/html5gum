@@ -3,6 +3,7 @@ use std::env;
 mod html5ever;
 mod lolhtml;
 mod old_html5gum;
+mod span_invariants;
 mod swc;
 
 pub fn run(s: &[u8]) {
@@ -38,6 +39,11 @@ pub fn run(s: &[u8]) {
         if let Ok(data) = std::str::from_utf8(s) {
             swc::run_swc(data);
         }
+        did_anything = true;
+    }
+
+    if env::var("FUZZ_SPAN_INVARIANTS").unwrap() == "1" {
+        span_invariants::validate_span_invariants(s);
         did_anything = true;
     }
 

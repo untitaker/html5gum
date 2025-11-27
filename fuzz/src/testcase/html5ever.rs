@@ -1,9 +1,10 @@
 use std::cell::RefCell;
 
 use html5ever::buffer_queue::BufferQueue;
+use html5ever::interface::TokenizerResult;
 use html5ever::tendril::format_tendril;
 use html5ever::tokenizer::{
-    TagKind, Token as Token2, TokenSinkResult, TokenizerOpts, TokenizerResult,
+    TagKind, Token as Token2, TokenSinkResult, TokenizerOpts,
 };
 use html5gum::{Emitter, Reader, Token};
 
@@ -85,7 +86,7 @@ impl<R: Reader, E: Emitter<Token = Token>> TokenSinkInner<R, E> {
             }
             (None, Token2::EOFToken) => {}
             (Some(Token::Comment(comment)), Token2::CommentToken(comment2)) => {
-                assert_eq!(comment, comment2.as_ref().as_bytes().to_owned());
+                assert_eq!(*comment, comment2.as_ref().as_bytes().to_owned());
             }
             (Some(Token::Doctype(doctype)), Token2::DoctypeToken(doctype2)) => {
                 assert_eq!(
