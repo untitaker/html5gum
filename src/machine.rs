@@ -2021,6 +2021,9 @@ pub(crate) mod states {
     });
 
     define_state!(NumericCharacterReferenceEnd, slf, {
+        // html5lib-tests expect that errors are reported one position after ";" has been read.
+        // temporarily move forward, report the error, then move back.
+        slf.emitter.move_position(1);
         match slf.machine_helper.character_reference_code {
             0x00 => {
                 error!(slf, Error::NullCharacterReference);
@@ -2076,6 +2079,8 @@ pub(crate) mod states {
             }
             _ => (),
         }
+
+        slf.emitter.move_position(-1);
 
         slf.machine_helper.temporary_buffer.clear();
         slf.machine_helper.temporary_buffer.extend(
