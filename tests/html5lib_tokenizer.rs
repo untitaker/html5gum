@@ -14,18 +14,22 @@ use serde::{de::Error as _, Deserialize};
 
 mod testutils;
 
-/// Convert a byte position to line and column numbers (1-indexed)
+/// Convert a byte position to *character-based* line and column numbers (1-indexed)
 fn position_to_line_col(input: &[u8], position: usize) -> Option<(usize, usize)> {
     let mut line = 1;
     let mut col = 0;
 
-    for i in 0..=input.len() {
+    let char_indices_with_eof =
+        std::str::from_utf8(input).unwrap()
+        .char_indices().map(|(i, c)| (i, Some(c)))
+        .chain(Some((input.len(), None)));
+
+    for (i, character) in char_indices_with_eof{
         if i >= position {
             break
         }
 
-        let byte = input.get(i); // None = EOF
-        if byte == Some(&b'\n') {
+        if character == Some('\n') {
             line += 1;
             col = 0;
         } else {

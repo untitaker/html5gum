@@ -174,7 +174,7 @@ pub(crate) mod states {
                     eof!()
                 }
                 c @ Some(_) => {
-                    error!(slf, Error::InvalidFirstCharacterOfTagName);
+                    error_immediate!(slf, Error::InvalidFirstCharacterOfTagName);
                     slf.emitter.emit_string(b"<");
                     reconsume_in!(slf, c, Data)
                 }
@@ -200,7 +200,7 @@ pub(crate) mod states {
                     eof!()
                 }
                 Some(x) => {
-                    error!(slf, Error::InvalidFirstCharacterOfTagName);
+                    error_immediate!(slf, Error::InvalidFirstCharacterOfTagName);
                     slf.emitter.init_comment();
                     reconsume_in!(slf, Some(x), BogusComment)
                 }
