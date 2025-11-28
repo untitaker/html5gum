@@ -318,7 +318,7 @@ impl TestCase {
             let token = token.unwrap();
 
             if let Token::Error(e) = &token {
-                let (line, col) = if let Some((line, col)) = position_to_line_col(input, e.span.start)
+                let (line, col) = if let Some((line, col)) = position_to_line_col(input, e.span.end)
                 {
                     (Some(line), Some(col))
                 } else {

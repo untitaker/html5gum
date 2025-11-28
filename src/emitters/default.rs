@@ -30,9 +30,9 @@ impl<S: SpanBound> Callback<Token<S>, S> for OurCallback<S> {
             CallbackEvent::AttributeName { name } => {
                 self.attribute_name.clear();
                 match self.attribute_map.entry(name.to_owned().into()) {
-                    Entry::Occupied(old) => Some(Token::Error(Spanned {
+                    Entry::Occupied(_) => Some(Token::Error(Spanned {
                         value: Error::DuplicateAttribute,
-                        span: old.get().span,
+                        span,
                     })),
                     Entry::Vacant(vacant) => {
                         self.attribute_name.extend(name);
