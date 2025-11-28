@@ -357,6 +357,7 @@ where
 
     #[inline]
     fn move_position(&mut self, offset: isize) {
+        crate::utils::trace_log!("callbacks: move_position, current={:?}, offset={}", self.emitter_state.position, offset);
         self.emitter_state.position = self.emitter_state.position.offset(offset);
     }
 
@@ -372,6 +373,7 @@ where
     }
 
     fn emit_error(&mut self, error: Error) {
+        crate::utils::trace_log!("callbacks: error, position={:?}", self.emitter_state.position);
         self.callback_state.emit_event(
             CallbackEvent::Error(error),
             Span {

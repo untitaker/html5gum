@@ -1,8 +1,8 @@
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
 
 use html5gum::{
-    Doctype, EndTag, Error, IoReader, Readable, Reader, Span, Spanned, StartTag, State, Token,
-    Tokenizer,
+    DefaultEmitter, Doctype, EndTag, Error, IoReader, Readable, Reader, Span, Spanned, StartTag,
+    State, Token, Tokenizer,
 };
 
 use html5gum::testutils::{trace_log, SlowReader};
@@ -13,6 +13,28 @@ use pretty_assertions::assert_eq;
 use serde::{de::Error as _, Deserialize};
 
 mod testutils;
+
+/// Convert a byte position to line and column numbers (1-indexed)
+fn position_to_line_col(input: &[u8], position: usize) -> Option<(usize, usize)> {
+    let mut line = 1;
+    let mut col = 0;
+
+    for i in 0..=input.len() {
+        if i >= position {
+            break
+        }
+
+        let byte = input.get(i); // None = EOF
+        if byte == Some(&b'\n') {
+            line += 1;
+            col = 0;
+        } else {
+            col += 1;
+        }
+    }
+
+    Some((line, col))
+}
 
 #[derive(Clone)]
 struct ExpectedOutputTokens(Vec<Token<()>>);
@@ -216,6 +238,10 @@ impl<'de> Deserialize<'de> for ParseErrorInner {
 #[serde(rename_all = "camelCase")]
 struct ParseError {
     code: ParseErrorInner,
+    #[serde(default)]
+    line: Option<usize>,
+    #[serde(default)]
+    col: Option<usize>,
 }
 
 #[derive(Deserialize)]
@@ -243,19 +269,45 @@ impl TestCase {
             let string = self.declaration.input.0.as_slice();
 
             match self.reader_type {
-                ReaderType::String => self.run_inner(Tokenizer::new(string.to_reader())),
+                ReaderType::String => self.run_inner(
+                    Tokenizer::new_with_emitter(
+                        string.to_reader(),
+                        DefaultEmitter::<usize>::new_with_span(),
+                    ),
+                    string,
+                ),
                 ReaderType::SlowString => {
-                    self.run_inner(Tokenizer::new(SlowReader(string.to_reader())));
+                    self.run_inner(
+                        Tokenizer::new_with_emitter(
+                            SlowReader(string.to_reader()),
+                            DefaultEmitter::<usize>::new_with_span(),
+                        ),
+                        string,
+                    );
                 }
-                ReaderType::BufRead => self.run_inner(Tokenizer::new(IoReader::new(string))),
-                ReaderType::SlowBufRead => self.run_inner(Tokenizer::new(SlowReader(
-                    IoReader::new(string).to_reader(),
-                ))),
+                ReaderType::BufRead => self.run_inner(
+                    Tokenizer::new_with_emitter(
+                        IoReader::new(string),
+                        DefaultEmitter::<usize>::new_with_span(),
+                    ),
+                    string,
+                ),
+                ReaderType::SlowBufRead => self.run_inner(
+                    Tokenizer::new_with_emitter(
+                        SlowReader(IoReader::new(string).to_reader()),
+                        DefaultEmitter::<usize>::new_with_span(),
+                    ),
+                    string,
+                ),
             }
         })
     }
 
-    fn run_inner<R: Reader>(&self, mut tokenizer: Tokenizer<R>) {
+    fn run_inner<R: Reader>(
+        &self,
+        mut tokenizer: Tokenizer<R, DefaultEmitter<usize>>,
+        input: &[u8],
+    ) {
         tokenizer.set_state(self.state);
         tokenizer.set_last_start_tag(self.declaration.last_start_tag.as_deref());
 
@@ -265,17 +317,40 @@ impl TestCase {
         for token in tokenizer {
             let token = token.unwrap();
 
-            if let Token::Error(e) = token {
+            if let Token::Error(e) = &token {
+                let (line, col) = if let Some((line, col)) = position_to_line_col(input, e.span.start)
+                {
+                    (Some(line), Some(col))
+                } else {
+                    (None, None)
+                };
                 actual_errors.push(ParseError {
-                    code: ParseErrorInner(*e),
+                    code: ParseErrorInner(**e),
+                    line,
+                    col,
                 });
             } else {
-                actual_tokens.push(token);
+                actual_tokens.push(token.map_span(|_| Span::DUMMY));
             }
         }
 
         assert_eq!(actual_tokens, self.declaration.output.0);
-        assert_eq!(actual_errors, self.declaration.errors);
+
+        let actual_errors_for_comparison: Vec<ParseError> = actual_errors
+            .iter()
+            .cloned()
+            .zip(self.declaration.errors.iter())
+            .map(|(actual, expected)| ParseError {
+                code: actual.code,
+                // Only include line/col if expected has them (otherwise set to None for
+                // comparison)
+                line: expected.line.and(actual.line),
+                col: expected.col.and(actual.col),
+            })
+            .collect();
+
+        assert_eq!(actual_errors_for_comparison, self.declaration.errors);
+        assert_eq!(actual_errors.len(), self.declaration.errors.len());
     }
 }
 

@@ -19,7 +19,7 @@ struct OurCallback<S: SpanBound> {
 
 impl<S: SpanBound> Callback<Token<S>, S> for OurCallback<S> {
     fn handle_event(&mut self, event: CallbackEvent<'_>, span: Span<S>) -> Option<Token<S>> {
-        crate::utils::trace_log!("event: {:?}", event);
+        crate::utils::trace_log!("event: {:?}, span={:?}", event, span);
         match event {
             CallbackEvent::OpenStartTag { name } => {
                 self.tag_name.clear();
@@ -204,4 +204,50 @@ pub enum Token<S: SpanBound = ()> {
     /// Can be skipped over, the tokenizer is supposed to recover from the error and continues with
     /// more tokens afterward.
     Error(Spanned<Error, S>),
+}
+
+impl<S: SpanBound> Token<S> {
+    /// Map the span type to another span type using the provided function.
+    pub fn map_span<T: SpanBound>(self, mut f: impl FnMut(Span<S>) -> Span<T>) -> Token<T> {
+        match self {
+            Token::StartTag(tag) => Token::StartTag(StartTag {
+                self_closing: tag.self_closing,
+                name: tag.name,
+                attributes: tag
+                    .attributes
+                    .into_iter()
+                    .map(|(k, v)| {
+                        (
+                            k,
+                            Spanned {
+                                value: v.value,
+                                span: f(v.span),
+                            },
+                        )
+                    })
+                    .collect(),
+                span: f(tag.span),
+            }),
+            Token::EndTag(tag) => Token::EndTag(EndTag {
+                name: tag.name,
+                span: f(tag.span),
+            }),
+            Token::String(s) => Token::String(Spanned {
+                value: s.value,
+                span: f(s.span),
+            }),
+            Token::Comment(c) => Token::Comment(Spanned {
+                value: c.value,
+                span: f(c.span),
+            }),
+            Token::Doctype(d) => Token::Doctype(Spanned {
+                value: d.value,
+                span: f(d.span),
+            }),
+            Token::Error(e) => Token::Error(Spanned {
+                value: e.value,
+                span: f(e.span),
+            }),
+        }
+    }
 }
