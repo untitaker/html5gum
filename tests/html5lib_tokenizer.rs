@@ -14,11 +14,6 @@ use serde::{de::Error as _, Deserialize};
 
 mod testutils;
 
-// https://github.com/html5lib/html5lib-tests/issues/125
-const TESTCASES_WITH_BAD_ERROR_POS: &[&str] = &[
-    "test2.test:Numeric entity representing the NUL character",
-];
-
 /// Convert a byte position to line and column numbers (1-indexed)
 fn position_to_line_col(input: &[u8], position: usize) -> Option<(usize, usize)> {
     let mut line = 1;
@@ -341,10 +336,7 @@ impl TestCase {
 
         assert_eq!(actual_tokens, self.declaration.output.0);
 
-        let mut expected_errors = self.declaration.errors.clone();
-        assert_eq!(actual_errors.len(), expected_errors.len());
-
-        let mut actual_errors_for_comparison: Vec<ParseError> = actual_errors
+        let actual_errors_for_comparison: Vec<ParseError> = actual_errors
             .iter()
             .cloned()
             .zip(self.declaration.errors.iter())
@@ -357,18 +349,8 @@ impl TestCase {
             })
             .collect();
 
-        if TESTCASES_WITH_BAD_ERROR_POS.contains(&format!("{}:{}", self.filename, self.declaration.description).as_str()) {
-            assert!(actual_errors_for_comparison != expected_errors);
-
-            for (actual, expected) in actual_errors_for_comparison.iter_mut().zip(expected_errors.iter_mut()) {
-                actual.line = None;
-                actual.col = None;
-                expected.line = None;
-                expected.col = None;
-            }
-        }
-
-        assert_eq!(actual_errors_for_comparison, expected_errors);
+        assert_eq!(actual_errors_for_comparison, self.declaration.errors);
+        assert_eq!(actual_errors.len(), self.declaration.errors.len());
     }
 }
 
