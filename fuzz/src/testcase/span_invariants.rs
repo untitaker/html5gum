@@ -26,7 +26,11 @@ pub fn validate_span_invariants(input: &[u8]) {
 }
 
 /// Validates the span of a single token against the input.
-fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option<(usize, &'static str)>) {
+fn validate_token_span(
+    token: &Token<usize>,
+    input: &[u8],
+    last_end: &mut Option<(usize, &'static str)>,
+) {
     match token {
         Token::StartTag(tag) => {
             validate_span(&tag.span, input, "StartTag", last_end);
@@ -52,7 +56,9 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
                 );
                 // The tag name should appear in the content (case-insensitive comparison)
                 let tag_name_clean = String::from_utf8_lossy(&tag.name).to_lowercase();
-                let content_clean = String::from_utf8_lossy(&content).to_lowercase().replace('\0', "\u{fffd}");
+                let content_clean = String::from_utf8_lossy(&content)
+                    .to_lowercase()
+                    .replace('\0', "\u{fffd}");
                 assert!(
                     content_clean.contains(&tag_name_clean),
                     "StartTag span does not contain tag name {:?}: {:?} at {}..{}",
@@ -98,7 +104,9 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
                 );
 
                 let tag_name_clean = String::from_utf8_lossy(&tag.name).to_lowercase();
-                let content_clean = String::from_utf8_lossy(&content).to_lowercase().replace('\0', "\u{fffd}");
+                let content_clean = String::from_utf8_lossy(&content)
+                    .to_lowercase()
+                    .replace('\0', "\u{fffd}");
                 // The tag name should appear in the content (case-insensitive comparison)
                 assert!(
                     content_clean.contains(&tag_name_clean),
@@ -137,7 +145,9 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
                 // <!--
                 // <?
                 assert!(
-                    content.starts_with(b"<!") || content.starts_with(b"<?") || content.starts_with(b"</"),
+                    content.starts_with(b"<!")
+                        || content.starts_with(b"<?")
+                        || content.starts_with(b"</"),
                     "Comment span does not start with '<!' or '<?' or '</': {:?} at {}..{}",
                     String::from_utf8_lossy(content),
                     c.span.start,
