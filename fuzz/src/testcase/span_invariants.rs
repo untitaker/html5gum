@@ -56,7 +56,7 @@ fn validate_token_span(
                 );
                 // The tag name should appear in the content (case-insensitive comparison)
                 let tag_name_clean = String::from_utf8_lossy(&tag.name).to_lowercase();
-                let content_clean = String::from_utf8_lossy(&content)
+                let content_clean = String::from_utf8_lossy(content)
                     .to_lowercase()
                     .replace('\0', "\u{fffd}");
                 assert!(
@@ -70,7 +70,7 @@ fn validate_token_span(
             }
 
             // Validate attribute value spans
-            for (_attr_name, attr_value) in &tag.attributes {
+            for attr_value in tag.attributes.values() {
                 validate_span(&attr_value.span, input, "Attribute value", &mut None);
 
                 // Note: Attribute value spans may include the entire attribute declaration
@@ -104,7 +104,7 @@ fn validate_token_span(
                 );
 
                 let tag_name_clean = String::from_utf8_lossy(&tag.name).to_lowercase();
-                let content_clean = String::from_utf8_lossy(&content)
+                let content_clean = String::from_utf8_lossy(content)
                     .to_lowercase()
                     .replace('\0', "\u{fffd}");
                 // The tag name should appear in the content (case-insensitive comparison)
