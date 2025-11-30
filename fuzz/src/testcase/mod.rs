@@ -19,12 +19,14 @@ static FUZZ_SPAN_INVARIANTS: LazyLock<bool> =
     LazyLock::new(|| env::var("FUZZ_SPAN_INVARIANTS").unwrap() == "1");
 
 pub fn run(s: &[u8]) {
-    let mut did_anything = *FUZZ_BASIC;
+    let mut did_anything = false;
 
-    // unconditionally run tokenizer against raw bytes, it should never crash. we rely on running
-    // in debug mode such that this is not just simply optimized away
-    let testing_tokenizer = html5gum::Tokenizer::new(s);
-    for Ok(_) in testing_tokenizer {}
+    if *FUZZ_BASIC {
+        // we rely on running in debug mode such that this is not just simply optimized away
+        let testing_tokenizer = html5gum::Tokenizer::new(s);
+        for Ok(_) in testing_tokenizer {}
+        did_anything = true;
+    }
 
     if *FUZZ_OLD_HTML5GUM {
         if let Ok(data) = std::str::from_utf8(s) {
