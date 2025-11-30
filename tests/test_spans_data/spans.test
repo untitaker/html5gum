@@ -120,6 +120,13 @@
         ["Error","DuplicateAttribute",6,7],
         ["Error","EofInTag",9,9]
       ]
+    },
+    {
+      "description": "fuzz: <<z>",
+      "input": "<<z>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+      ]
     }
   ]
 }

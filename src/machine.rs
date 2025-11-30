@@ -175,7 +175,9 @@ pub(crate) mod states {
                 }
                 c @ Some(_) => {
                     error!(slf, Error::InvalidFirstCharacterOfTagName);
+                    slf.emitter.move_position(-1);
                     slf.emitter.emit_string(b"<");
+                    slf.emitter.move_position(1);
                     reconsume_in!(slf, c, Data)
                 }
             }
