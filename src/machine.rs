@@ -1984,8 +1984,10 @@ pub(crate) mod states {
                 }
                 c => {
                     error!(slf, Error::AbsenceOfDigitsInNumericCharacterReference);
+                    slf.emitter.move_position(-1);
                     slf.machine_helper
                         .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                    slf.emitter.move_position(1);
                     reconsume_in_return_state!(slf, c)
                 }
             }

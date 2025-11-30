@@ -170,6 +170,17 @@
         ["Character","&#",0,2],
         ["Comment","?",2,4]
       ]
+    },
+    {
+      "description": "fuzz: span overlap from hex character refs",
+      "input": "&#x<?",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","AbsenceOfDigitsInNumericCharacterReference",4,4],
+        ["Error","UnexpectedQuestionMarkInsteadOfTagName",5,5],
+        ["Character","&#",0,3],
+        ["Comment","?",3,5]
+      ]
     }
   ]
 }
