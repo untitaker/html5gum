@@ -90,6 +90,36 @@
         ["EndTag","textarea",245,256],
         ["Character","\n",256,257]
       ]
+    },
+    {
+      "description": "bug 127: character reference span",
+      "input": "&<!",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","IncorrectlyOpenedComment",2,2],
+        ["Character","&",0,1],
+        ["Comment","",0,2]
+      ]
+    },
+    {
+      "description": "bug 127: character reference span, version 2",
+      "input": "asdasd&<!",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","IncorrectlyOpenedComment",9,9],
+        ["Character","asdasd&",0,7],
+        ["Comment","",7,9]
+      ]
+    },
+    {
+      "description": "bug 127: token order",
+      "input": "0<h 0 0 0",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","0",0,1],
+        ["Error","DuplicateAttribute",4,5],
+        ["Error","EofInTag",9,9]
+      ]
     }
   ]
 }

@@ -85,6 +85,8 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
             .reader
             .read_byte(&mut self.validator, &mut self.emitter)?;
 
+        crate::utils::trace_log!("read_byte = {:?}", res.map(|x| x as char));
+
         if res.is_some() {
             self.emitter.move_position(1);
         }
@@ -109,6 +111,8 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
         char_buf: &'b mut [u8; 4],
     ) -> Result<Option<&'b [u8]>, R::Error> {
         let res = reader.read_until(needle, char_validator, emitter, char_buf)?;
+
+        crate::utils::trace_log!("read_until = {:?}", res.map(String::from_utf8_lossy));
 
         if let Some(res) = &res {
             emitter.move_position(res.len() as isize);

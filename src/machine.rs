@@ -1859,8 +1859,18 @@ pub(crate) mod states {
                     switch_to!(slf, NumericCharacterReference)
                 }
                 c => {
+                    // since c is not part of the flushed characters, we temporarily undo the
+                    // move_position done by slow_read_byte, then redo it, then let reconsume
+                    // re-undo the redo.
+                    //
+                    // 1. move_position(-1) // revert slow_read_byte
+                    // 2. flush code points
+                    // 3. move_position(1)
+                    // 4. reconsume: move_position(-1)
+                    slf.emitter.move_position(-1);
                     slf.machine_helper
                         .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+                    slf.emitter.move_position(1);
                     reconsume_in_return_state!(slf, c)
                 }
             }

@@ -55,11 +55,11 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
                     tag.span.start,
                     tag.span.end
                 );
-                // The tag name should appear in the content
+                // The tag name should appear in the content (case-insensitive comparison)
                 assert!(
                     content
                         .windows(tag.name.len())
-                        .any(|window| window == &tag.name[..]),
+                        .any(|window| window.eq_ignore_ascii_case(&tag.name)),
                     "StartTag span does not contain tag name '{}': {:?} at {}..{}",
                     String::from_utf8_lossy(&tag.name),
                     String::from_utf8_lossy(content),
@@ -101,11 +101,11 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
                     tag.span.end,
                     String::from_utf8_lossy(&tag.name)
                 );
-                // The tag name should appear in the content
+                // The tag name should appear in the content (case-insensitive comparison)
                 assert!(
                     content
                         .windows(tag.name.len())
-                        .any(|window| window == &tag.name[..]),
+                        .any(|window| window.eq_ignore_ascii_case(&tag.name)),
                     "EndTag span does not contain tag name '{}': {:?} at {}..{}",
                     String::from_utf8_lossy(&tag.name),
                     String::from_utf8_lossy(content),
@@ -136,10 +136,13 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
             // Verify comment span contains the comment markers and content
             if c.span.end <= input.len() {
                 let content = &input[c.span.start..c.span.end];
-                // Comments should start with '<!' (covers both '<!--' and bogus comments)
+                // valid comment starts are:
+                // <!
+                // <!--
+                // <?
                 assert!(
-                    content.starts_with(b"<!"),
-                    "Comment span does not start with '<!': {:?} at {}..{}",
+                    content.starts_with(b"<!") || content.starts_with(b"<?"),
+                    "Comment span does not start with '<!' or '<?': {:?} at {}..{}",
                     String::from_utf8_lossy(content),
                     c.span.start,
                     c.span.end

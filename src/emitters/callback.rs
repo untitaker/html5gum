@@ -357,6 +357,7 @@ where
 
     #[inline]
     fn move_position(&mut self, offset: isize) {
+        trace_log!("callbacks: move_position, offset={}", offset);
         self.emitter_state.position = self.emitter_state.position.offset(offset);
     }
 
@@ -386,12 +387,17 @@ where
     }
 
     fn init_string(&mut self) {
-        self.emitter_state.current_characters_start = self.emitter_state.position;
+        // Only reset the start position if we're not already accumulating characters
+        // This prevents overwriting the start position when returning from character
+        // reference states that have already emitted buffered content
+        if self.emitter_state.current_characters.is_empty() {
+            self.emitter_state.current_characters_start = self.emitter_state.position;
+        }
     }
 
     fn emit_string(&mut self, s: &[u8]) {
-        crate::utils::trace_log!("callbacks: emit_string, len={}", s.len());
         self.emitter_state.current_characters_end = self.emitter_state.position;
+        crate::utils::trace_log!("callbacks: emit_string, len={}, start={:?}, end={:?}", s.len(), self.emitter_state.current_characters_start, self.emitter_state.current_characters_end);
         self.emitter_state.current_characters.extend(s);
     }
 
