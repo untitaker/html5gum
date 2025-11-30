@@ -34,7 +34,7 @@ impl<R: Reader> ReadHelper<R> {
             // TODO: we are scattering move_position in the read
             // path across many places: read helper, tokenizer.rs,
             // ... consolidate!
-            emitter.move_position(1); 
+            emitter.move_position(1);
             c = self.reader.read_byte();
         }
 
@@ -131,7 +131,7 @@ impl<R: Reader> ReadHelper<R> {
                     // TODO: we are scattering move_position in the read
                     // path across many places: read helper, tokenizer.rs,
                     // ... consolidate!
-                    emitter.move_position(1); 
+                    emitter.move_position(1);
                     xs = &xs[1..];
                 }
 

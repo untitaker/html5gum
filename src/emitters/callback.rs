@@ -285,7 +285,7 @@ where
                 },
                 Span {
                     start: self.emitter_state.current_attribute_name_start,
-                    end: self .emitter_state .current_attribute_name_end,
+                    end: self.emitter_state.current_attribute_name_end,
                 },
             );
             self.emitter_state.current_attribute_name.clear();
@@ -358,7 +358,11 @@ where
     #[inline]
     fn move_position(&mut self, offset: isize) {
         self.emitter_state.position = self.emitter_state.position.offset(offset);
-        trace_log!("callbacks: move_position, offset={}, now={:?}", offset, self.emitter_state.position);
+        trace_log!(
+            "callbacks: move_position, offset={}, now={:?}",
+            offset,
+            self.emitter_state.position
+        );
     }
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
@@ -397,7 +401,12 @@ where
 
     fn emit_string(&mut self, s: &[u8]) {
         self.emitter_state.current_characters_end = self.emitter_state.position;
-        crate::utils::trace_log!("callbacks: emit_string, len={}, start={:?}, end={:?}", s.len(), self.emitter_state.current_characters_start, self.emitter_state.current_characters_end);
+        crate::utils::trace_log!(
+            "callbacks: emit_string, len={}, start={:?}, end={:?}",
+            s.len(),
+            self.emitter_state.current_characters_start,
+            self.emitter_state.current_characters_end
+        );
         self.emitter_state.current_characters.extend(s);
     }
 

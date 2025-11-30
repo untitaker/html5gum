@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::BufReader;
 
 use glob::glob;
-use html5gum::{DefaultEmitter, Token, Tokenizer};
 use html5gum::testutils::trace_log;
+use html5gum::{DefaultEmitter, Token, Tokenizer};
 use libtest_mimic::{Arguments, Failed, Trial};
 use pretty_assertions::assert_eq;
 use serde::Deserialize;
@@ -82,12 +82,9 @@ fn token_to_json(token: &Token<usize>) -> serde_json::Value {
             c.span.start,
             c.span.end
         ]),
-        Token::Error(e) => serde_json::json!([
-            "Error",
-            format!("{:?}", e.value),
-            e.span.start,
-            e.span.end
-        ]),
+        Token::Error(e) => {
+            serde_json::json!(["Error", format!("{:?}", e.value), e.span.start, e.span.end])
+        }
     }
 }
 
@@ -95,7 +92,10 @@ fn run_test(test: &SpanTestCase) -> Result<(), Failed> {
     testutils::catch_unwind_and_report(move || {
         trace_log(&format!("==== SPAN TEST: {} ====", test.description));
         trace_log(&format!("input: {:?}", test.input));
-        trace_log(&format!("naively_switch_states: {}", test.naively_switch_states));
+        trace_log(&format!(
+            "naively_switch_states: {}",
+            test.naively_switch_states
+        ));
 
         let mut emitter = DefaultEmitter::new_with_span();
         emitter.naively_switch_states(test.naively_switch_states);
