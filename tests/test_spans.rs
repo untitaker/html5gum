@@ -1,254 +1,145 @@
-use std::cell::RefCell;
-use std::convert::Infallible;
-use std::rc::Rc;
+use std::fs::File;
+use std::io::BufReader;
 
-use annotate_snippets::{Level, Message, Renderer, Snippet};
-use html5gum::emitters::callback::{CallbackEmitter, CallbackEvent};
-use html5gum::{DefaultEmitter, Emitter, Span, Token, Tokenizer};
+use glob::glob;
+use html5gum::{DefaultEmitter, Token, Tokenizer};
+use libtest_mimic::{Arguments, Failed, Trial};
+use pretty_assertions::assert_eq;
+use serde::Deserialize;
 
-#[allow(clippy::type_complexity)]
-#[derive(Clone)]
-struct MessageCollector<'a> {
-    annotations: Rc<RefCell<Vec<(Level, Span<usize>, &'static str)>>>,
-    input: &'a str,
+#[derive(Deserialize, Clone, Debug)]
+struct SpanTestCase {
+    description: String,
+    input: String,
+    naively_switch_states: bool,
+    expected_tokens: serde_json::Value,
 }
 
-impl<'a> MessageCollector<'a> {
-    fn add(&mut self, level: Level, span: Span<usize>, label: &'static str) {
-        self.annotations.borrow_mut().push((level, span, label))
-    }
-
-    fn build(&self) -> Message<'a> {
-        Level::Error.title("test output").snippet(
-            Snippet::source(self.input).annotations(
-                self.annotations
-                    .borrow()
-                    .iter()
-                    .map(|(level, span, label)| level.span(span.start..span.end).label(label)),
-            ),
-        )
-    }
+#[derive(Deserialize, Clone)]
+struct TestFile {
+    tests: Vec<SpanTestCase>,
 }
 
-fn get_simple_callback_emitter<'a>(
-    mut message: MessageCollector<'a>,
-) -> impl Emitter<Token = Infallible> + use<'a> {
-    let mut in_h1 = false;
-    CallbackEmitter::new(move |event: CallbackEvent<'_>, span: Span<usize>| {
-        match event {
-            CallbackEvent::OpenStartTag { name } => {
-                if name == b"h1" {
-                    in_h1 = true;
-                    message.add(Level::Warning, span, "h1 start");
-                } else {
-                    in_h1 = false;
-                }
-            }
-            CallbackEvent::AttributeName { name } => {
-                if name == b"attr" {
-                    message.add(Level::Warning, span, "attribute name");
-                }
-            }
-            CallbackEvent::AttributeValue { value } => {
-                if value == b"value" {
-                    message.add(Level::Warning, span, "attribute value");
-                }
-            }
-            CallbackEvent::CloseStartTag { self_closing } => {
-                if in_h1 || self_closing {
-                    message.add(Level::Note, span, "close start tag");
-                }
-            }
-            CallbackEvent::EndTag { name } => {
-                if name == b"h2" {
-                    message.add(Level::Info, span, "end tag");
-                }
-            }
-            CallbackEvent::String { value } => {
-                if value == b"content" {
-                    message.add(Level::Note, span, "content");
-                }
-            }
-            CallbackEvent::Comment { value: _ } => {
-                message.add(Level::Info, span, "comment");
-            }
-            CallbackEvent::Doctype { .. } => {
-                message.add(Level::Info, span, "doctype");
-            }
-            CallbackEvent::Error(error) => unreachable!("error: {}", error),
+fn token_to_json(token: &Token<usize>) -> serde_json::Value {
+    match token {
+        Token::Doctype(d) => serde_json::json!([
+            "DOCTYPE",
+            String::from_utf8_lossy(&d.value.name),
+            d.value
+                .public_identifier
+                .as_ref()
+                .map(|x| String::from_utf8_lossy(x).into_owned()),
+            d.value
+                .system_identifier
+                .as_ref()
+                .map(|x| String::from_utf8_lossy(x).into_owned()),
+            !d.value.force_quirks,
+            d.span.start,
+            d.span.end
+        ]),
+        Token::StartTag(st) => {
+            let attrs: serde_json::Map<String, serde_json::Value> = st
+                .attributes
+                .iter()
+                .map(|(k, v)| {
+                    (
+                        String::from_utf8_lossy(k).into_owned(),
+                        serde_json::json!([
+                            String::from_utf8_lossy(&v.value),
+                            v.span.start,
+                            v.span.end
+                        ]),
+                    )
+                })
+                .collect();
+            serde_json::json!([
+                "StartTag",
+                String::from_utf8_lossy(&st.name),
+                attrs,
+                st.self_closing,
+                st.span.start,
+                st.span.end
+            ])
         }
-        None
-    })
+        Token::EndTag(et) => serde_json::json!([
+            "EndTag",
+            String::from_utf8_lossy(&et.name),
+            et.span.start,
+            et.span.end
+        ]),
+        Token::String(s) => serde_json::json!([
+            "Character",
+            String::from_utf8_lossy(&s.value),
+            s.span.start,
+            s.span.end
+        ]),
+        Token::Comment(c) => serde_json::json!([
+            "Comment",
+            String::from_utf8_lossy(&c.value),
+            c.span.start,
+            c.span.end
+        ]),
+        Token::Error(e) => panic!("Unexpected error token: {:?}", e),
+    }
 }
 
-fn get_full_callback_emitter<'a>(
-    mut message: MessageCollector<'a>,
-) -> impl Emitter<Token = Infallible> + use<'a> {
-    CallbackEmitter::new(move |event: CallbackEvent<'_>, span: Span<usize>| {
-        match event {
-            CallbackEvent::OpenStartTag { name: _ } => {
-                message.add(Level::Warning, span, "open start tag");
-            }
-            CallbackEvent::AttributeName { name: _ } => {
-                message.add(Level::Warning, span, "attribute name");
-            }
-            CallbackEvent::AttributeValue { value: _ } => {
-                message.add(Level::Note, span, "attribute value");
-            }
-            CallbackEvent::CloseStartTag { self_closing } => {
-                if self_closing {
-                    message.add(Level::Note, span, "close start tag (self closing)");
-                } else {
-                    message.add(Level::Note, span, "close start tag");
-                }
-            }
-            CallbackEvent::EndTag { name: _ } => {
-                message.add(Level::Info, span, "end tag");
-            }
-            CallbackEvent::String { value } => {
-                if value != b"\n" {
-                    message.add(Level::Note, span, "string");
-                }
-            }
-            CallbackEvent::Comment { value: _ } => {
-                message.add(Level::Info, span, "comment");
-            }
-            CallbackEvent::Doctype { .. } => {
-                message.add(Level::Info, span, "doctype");
-            }
-            CallbackEvent::Error(error) => panic!("error: {}", error),
-        }
-        None
-    })
-}
+fn run_test(test: &SpanTestCase) -> Result<(), Failed> {
+    let mut emitter = DefaultEmitter::new_with_span();
+    emitter.naively_switch_states(test.naively_switch_states);
 
-fn run<E: Emitter<Token = T>, T>(
-    input: &'static str,
-    expected: &'static str,
-    emitter: impl FnOnce(MessageCollector<'static>) -> E,
-    mut on_token: impl FnMut(T),
-) {
-    let message = MessageCollector {
-        annotations: Default::default(),
-        input,
+    let actual_tokens: Vec<Token<usize>> = Tokenizer::new_with_emitter(&test.input, emitter)
+        .filter_map(|t| t.ok())
+        .collect();
+
+    let actual_json: Vec<serde_json::Value> = actual_tokens.iter().map(token_to_json).collect();
+
+    let expected_str = if let serde_json::Value::Array(ref arr) = test.expected_tokens {
+        arr.iter()
+            .map(|v| serde_json::to_string(v).unwrap())
+            .collect::<Vec<_>>()
+            .join("\n")
+    } else {
+        serde_json::to_string(&test.expected_tokens).unwrap()
     };
 
-    let emitter = emitter(message.clone());
-    for token in Tokenizer::new_with_emitter(input, emitter) {
-        on_token(token.unwrap());
+    let actual_str = actual_json
+        .iter()
+        .map(|v| serde_json::to_string(v).unwrap())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    assert_eq!(expected_str, actual_str);
+
+    Ok(())
+}
+
+fn produce_tests_from_file(path: &str) -> Vec<Trial> {
+    let file = File::open(path).expect("failed to open test file");
+    let reader = BufReader::new(file);
+    let test_file: TestFile = serde_json::from_reader(reader).expect("failed to parse test file");
+
+    test_file
+        .tests
+        .into_iter()
+        .map(|test| {
+            let description = test.description.clone();
+            Trial::test(description, move || run_test(&test))
+        })
+        .collect()
+}
+
+fn main() {
+    let args = Arguments::from_args();
+    let mut tests = Vec::new();
+
+    for entry in glob("tests/test_spans_data/*.test").expect("failed to read glob pattern") {
+        match entry {
+            Ok(path) => {
+                tests.extend(produce_tests_from_file(path.to_str().unwrap()));
+            }
+            Err(e) => eprintln!("Error reading path: {:?}", e),
+        }
     }
 
-    let got = Renderer::plain().render(message.build()).to_string();
-    let got = got.trim();
-    let pretty = Renderer::styled().render(message.build()).to_string();
-    let pretty = pretty.trim();
-
-    if got != expected {
-        println!(
-            "expected ({} chars):\n{expected}\n\ngot ({} chars):\n{got}",
-            expected.len(),
-            got.len()
-        );
-        println!("pretty:\n{pretty}");
-        panic!();
-    }
-}
-
-#[test]
-fn callback() {
-    run(
-        include_str!("test_spans/input.html"),
-        include_str!("test_spans/callback.stdout.txt").trim(),
-        get_simple_callback_emitter,
-        |_| (),
-    );
-
-    run(
-        include_str!("test_spans/input.html"),
-        include_str!("test_spans/callback_full.stdout.txt").trim(),
-        get_full_callback_emitter,
-        |_| (),
-    );
-}
-
-#[test]
-fn simple() {
-    let msg: Rc<RefCell<Option<_>>> = Default::default();
-    run(
-        include_str!("test_spans/input.html"),
-        include_str!("test_spans/simple.stdout.txt").trim(),
-        |m| {
-            *msg.borrow_mut() = Some(m);
-            DefaultEmitter::new_with_span()
-        },
-        |token| {
-            let mut msg = msg.borrow_mut();
-            let msg = msg.as_mut().unwrap();
-            match token {
-                Token::StartTag(start_tag) => {
-                    msg.add(Level::Info, start_tag.span, "start tag");
-                    for (_name, value) in start_tag.attributes {
-                        msg.add(Level::Note, value.span, "attribute");
-                    }
-                }
-                Token::EndTag(end_tag) => {
-                    msg.add(Level::Note, end_tag.span, "end tag");
-                }
-                Token::String(v) => {
-                    if **v != b"\n" {
-                        msg.add(Level::Info, v.span, "string");
-                    }
-                }
-                Token::Comment(v) => {
-                    msg.add(Level::Info, v.span, "comment");
-                }
-                Token::Doctype(v) => {
-                    msg.add(Level::Info, v.span, "doctype");
-                }
-                Token::Error(error) => panic!("error: {}", *error),
-            }
-        },
-    );
-}
-
-#[test]
-fn simple_with_naively_switch_states() {
-    let msg: Rc<RefCell<Option<_>>> = Default::default();
-    run(
-        include_str!("test_spans/input.html"),
-        include_str!("test_spans/naively_switch_states.stdout.txt").trim(),
-        |m| {
-            *msg.borrow_mut() = Some(m);
-            let mut emitter = DefaultEmitter::new_with_span();
-            emitter.naively_switch_states(true);
-            emitter
-        },
-        |token| {
-            let mut msg = msg.borrow_mut();
-            let msg = msg.as_mut().unwrap();
-            match token {
-                Token::StartTag(start_tag) => {
-                    msg.add(Level::Info, start_tag.span, "start tag");
-                    for (_name, value) in start_tag.attributes {
-                        msg.add(Level::Note, value.span, "attribute");
-                    }
-                }
-                Token::EndTag(end_tag) => {
-                    msg.add(Level::Note, end_tag.span, "end tag");
-                }
-                Token::String(v) => {
-                    if **v != b"\n" {
-                        msg.add(Level::Info, v.span, "string");
-                    }
-                }
-                Token::Comment(v) => {
-                    msg.add(Level::Info, v.span, "comment");
-                }
-                Token::Doctype(v) => {
-                    msg.add(Level::Info, v.span, "doctype");
-                }
-                Token::Error(error) => panic!("error: {}", *error),
-            }
-        },
-    );
+    libtest_mimic::run(&args, tests).exit();
 }

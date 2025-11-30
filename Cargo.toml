@@ -26,7 +26,6 @@ markup5ever_rcdom = "0.5.0-unofficial"
 # required for examples/scraper.rs
 scraper = "0.21.0"
 argh = "0.1.12"
-annotate-snippets = "0.11.5"
 
 [features]
 # By default this crate depends on the jetscii library for best performance.
@@ -59,6 +58,11 @@ harness = false
 name = "html5lib-tree-builder"
 path = "tests/html5lib_tree_builder.rs"
 required-features = ["tree-builder"]
+harness = false
+
+[[test]]
+name = "test_spans"
+path = "tests/test_spans.rs"
 harness = false
 
 [[example]]
