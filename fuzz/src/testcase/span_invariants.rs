@@ -18,20 +18,15 @@ pub fn validate_span_invariants(input: &[u8]) {
 
     let tokenizer = Tokenizer::new_with_emitter(input, emitter);
 
-    let mut last_end: Option<usize> = None;
+    let mut last_end: Option<(usize, &'static str)> = None;
 
-    for result in tokenizer {
-        let token = match result {
-            Ok(token) => token,
-            Err(_) => continue, // Errors are expected, we're fuzzing
-        };
-
+    for Ok(token) in tokenizer {
         validate_token_span(&token, input, &mut last_end);
     }
 }
 
 /// Validates the span of a single token against the input.
-fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option<usize>) {
+fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option<(usize, &'static str)>) {
     match token {
         Token::StartTag(tag) => {
             validate_span(&tag.span, input, "StartTag", last_end);
@@ -185,8 +180,8 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
 fn validate_span(
     span: &html5gum::Span<usize>,
     input: &[u8],
-    token_type: &str,
-    last_end: &mut Option<usize>,
+    token_type: &'static str,
+    last_end: &mut Option<(usize, &'static str)>,
 ) {
     // Invariant 1: start <= end
     assert!(
@@ -208,21 +203,19 @@ fn validate_span(
     );
 
     // Invariant 3: Spans should be ordered (non-decreasing start positions)
-    // However, error tokens can be interleaved and may have empty spans pointing to
-    // positions within other tokens, so we only enforce ordering for non-empty spans
     if span.start < span.end {
-        // Only check ordering for non-empty spans
         if let Some(prev_end) = last_end {
             assert!(
-                span.start >= *prev_end,
-                "{} span starts before previous span ended: current {}..{}, previous ended at {}",
+                span.start >= prev_end.0,
+                "{} span starts before previous span ended: current {}..{}, previous ended at {} (was: {})",
                 token_type,
                 span.start,
                 span.end,
-                prev_end
+                prev_end.0,
+                prev_end.1,
             );
         }
 
-        *last_end = Some(span.end);
+        *last_end = Some((span.end, token_type));
     }
 }

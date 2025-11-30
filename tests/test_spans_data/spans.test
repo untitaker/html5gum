@@ -191,6 +191,13 @@
         ["Error","IncorrectlyOpenedComment",7,7],
         ["Comment","",5,7]
       ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag",
+      "input": "<script><</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+      ]
     }
   ]
 }
