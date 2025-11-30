@@ -117,6 +117,10 @@ impl<R: Reader> ReadHelper<R> {
         match read {
             Some(b"\r") => {
                 self.last_character_was_cr = true;
+                // TODO: we are scattering move_position in the read
+                // path across many places: read helper, tokenizer.rs,
+                // ... consolidate!
+                emitter.move_position(1); 
                 char_validator.validate_byte(emitter, b'\n');
                 Ok(Some(b"\n"))
             }

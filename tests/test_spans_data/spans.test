@@ -126,6 +126,19 @@
       "input": "<<z>",
       "naively_switch_states": false,
       "expected_tokens": [
+        ["Error","InvalidFirstCharacterOfTagName",2,2],
+        ["Character","<",0,1],
+        ["StartTag","z",{},false,1,4]
+      ]
+    },
+    {
+      "description": "fuzz: CRLF BOGUS COMMENT",
+      "input": "\r\n<!",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","IncorrectlyOpenedComment",4,4],
+        ["Character","\n",0,2],
+        ["Comment","",2,4]
       ]
     }
   ]
