@@ -201,6 +201,26 @@
         ["Character","<",8,9],
         ["EndTag","script",9,18]
       ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 2",
+      "input": "<script></</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","</",8,10],
+        ["EndTag","script",10,19]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 3",
+      "input": "<script></i</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","</i",8,11],
+        ["EndTag","script",11,20]
+      ]
     }
   ]
 }
