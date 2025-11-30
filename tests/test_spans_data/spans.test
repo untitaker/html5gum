@@ -231,6 +231,16 @@
         ["Character","<!--",8,12],
         ["EndTag","script",12,21]
       ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 5",
+      "input": "<script><!--0</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<!--0",8,13],
+        ["EndTag","script",13,22]
+      ]
     }
   ]
 }
