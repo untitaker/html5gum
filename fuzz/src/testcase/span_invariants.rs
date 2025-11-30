@@ -202,7 +202,7 @@ fn validate_span(
         token_type,
         span.start,
         span.end,
-        input.len()
+        input.len(),
     );
 
     // Invariant 3: Spans should be ordered (non-decreasing start positions)
