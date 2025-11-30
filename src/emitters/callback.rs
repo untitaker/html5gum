@@ -357,8 +357,8 @@ where
 
     #[inline]
     fn move_position(&mut self, offset: isize) {
-        trace_log!("callbacks: move_position, offset={}", offset);
         self.emitter_state.position = self.emitter_state.position.offset(offset);
+        trace_log!("callbacks: move_position, offset={}, now={:?}", offset, self.emitter_state.position);
     }
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {

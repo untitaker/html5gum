@@ -197,6 +197,9 @@
       "input": "<script><</script>",
       "naively_switch_states": true,
       "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<",8,9],
+        ["EndTag","script",9,18]
       ]
     }
   ]
