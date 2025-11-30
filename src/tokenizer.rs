@@ -85,18 +85,13 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
             .reader
             .read_byte(&mut self.validator, &mut self.emitter)?;
 
-        if res.is_some() {
-            self.emitter.move_position(1);
-        }
-
+        self.emitter.move_position(1);
         Ok(res)
     }
 
     #[inline(always)]
     pub(crate) fn unread_byte(&mut self, c: Option<u8>) {
-        if c.is_some() {
-            self.emitter.move_position(-1);
-        }
+        self.emitter.move_position(-1);
         self.reader.unread_byte(c);
     }
 
@@ -112,6 +107,8 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
 
         if let Some(res) = &res {
             emitter.move_position(res.len() as isize);
+        } else {
+            emitter.move_position(1);
         }
 
         Ok(res)
