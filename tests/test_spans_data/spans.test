@@ -142,12 +142,12 @@
       ]
     },
     {
-      "description": "fuzz: bad attribue name",
+      "description": "fuzz: bad attribute name",
       "input": "<a\f\u0000>",
       "naively_switch_states": false,
       "expected_tokens": [
         ["Error","UnexpectedNullCharacter",4,4],
-        ["StartTag","a",{"\ufffd":["",2,3]},false,0,5]
+        ["StartTag","a",{"\ufffd":["",3,4]},false,0,5]
       ]
     }
   ]

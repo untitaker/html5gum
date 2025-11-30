@@ -202,6 +202,7 @@ struct EmitterState<S: SpanBound> {
     current_attribute_name: Vec<u8>,
     current_attribute_value: Vec<u8>,
     current_attribute_name_start: S,
+    current_attribute_name_end: S,
     current_attribute_value_start: S,
     current_attribute_value_end: S,
 
@@ -284,10 +285,7 @@ where
                 },
                 Span {
                     start: self.emitter_state.current_attribute_name_start,
-                    end: self
-                        .emitter_state
-                        .current_attribute_name_start
-                        .offset(self.emitter_state.current_attribute_name.len() as isize),
+                    end: self .emitter_state .current_attribute_name_end,
                 },
             );
             self.emitter_state.current_attribute_name.clear();
@@ -553,6 +551,7 @@ where
 
     fn push_attribute_name(&mut self, s: &[u8]) {
         self.emitter_state.current_attribute_name.extend(s);
+        self.emitter_state.current_attribute_name_end = self.emitter_state.position;
     }
 
     fn init_attribute_value(&mut self) {
