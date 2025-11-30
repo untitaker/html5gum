@@ -315,7 +315,9 @@ pub(crate) mod states {
                     switch_to!(slf, RawTextEndTagOpen)
                 }
                 c => {
+                    slf.emitter.move_position(-1);
                     slf.emitter.emit_string(b"<");
+                    slf.emitter.move_position(1);
                     reconsume_in!(slf, c, RawText)
                 }
             }
