@@ -333,7 +333,9 @@ pub(crate) mod states {
                     reconsume_in!(slf, Some(x), RawTextEndTagName)
                 }
                 c => {
+                    slf.emitter.move_position(-1);
                     slf.emitter.emit_string(b"</");
+                    slf.emitter.move_position(1);
                     reconsume_in!(slf, c, RawText)
                 }
             }

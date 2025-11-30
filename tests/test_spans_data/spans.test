@@ -261,6 +261,16 @@
         ["Character","<",5,6],
         ["EndTag","xmp",6,12]
       ]
+    },
+    {
+      "description": "fuzz: span overlap in xmp tag, part 2",
+      "input": "<xmp></</xmp>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","xmp",{},false,0,5],
+        ["Character","</",5,7],
+        ["EndTag","xmp",7,13]
+      ]
     }
   ]
 }
