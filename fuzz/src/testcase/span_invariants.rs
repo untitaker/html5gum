@@ -173,8 +173,9 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
             }
         }
         Token::Error(e) => {
-            validate_span(&e.span, input, "Error", last_end);
-            // Errors can have empty spans (they may point to a position rather than a range)
+            // do not pass last_end to Error. Errors can overlap with any other span, including
+            // other errors
+            validate_span(&e.span, input, "Error", &mut None);
         }
     }
 }
@@ -220,7 +221,7 @@ fn validate_span(
                 prev_end
             );
         }
-        // Update last_end only for non-empty spans
+
         *last_end = Some(span.end);
     }
 }
