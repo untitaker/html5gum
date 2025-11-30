@@ -31,6 +31,10 @@ impl<R: Reader> ReadHelper<R> {
 
         let mut c = self.reader.read_byte();
         if self.last_character_was_cr && matches!(c, Ok(Some(b'\n'))) {
+            // TODO: we are scattering move_position in the read
+            // path across many places: read helper, tokenizer.rs,
+            // ... consolidate!
+            emitter.move_position(1); 
             c = self.reader.read_byte();
         }
 
