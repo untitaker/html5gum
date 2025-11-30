@@ -96,9 +96,9 @@
       "input": "&<!",
       "naively_switch_states": false,
       "expected_tokens": [
-        ["Error","IncorrectlyOpenedComment",2,2],
+        ["Error","IncorrectlyOpenedComment",3,3],
         ["Character","&",0,1],
-        ["Comment","",0,2]
+        ["Comment","",1,3]
       ]
     },
     {
@@ -117,7 +117,7 @@
       "naively_switch_states": false,
       "expected_tokens": [
         ["Character","0",0,1],
-        ["Error","DuplicateAttribute",4,5],
+        ["Error","DuplicateAttribute",6,7],
         ["Error","EofInTag",9,9]
       ]
     }

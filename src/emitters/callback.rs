@@ -275,6 +275,8 @@ where
     }
 
     fn flush_attribute_name(&mut self) {
+        self.flush_current_characters();
+
         if !self.emitter_state.current_attribute_name.is_empty() {
             self.callback_state.emit_event(
                 CallbackEvent::AttributeName {
@@ -420,7 +422,6 @@ where
 
     fn emit_current_tag(&mut self) -> Option<State> {
         self.flush_attribute();
-        self.flush_current_characters();
         match self.emitter_state.current_tag_type {
             Some(CurrentTag::Start) => {
                 self.flush_open_start_tag();
