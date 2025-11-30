@@ -140,6 +140,15 @@
         ["Character","\n",0,2],
         ["Comment","",2,4]
       ]
+    },
+    {
+      "description": "fuzz: bad attribue name",
+      "input": "<a\f\u0000>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","UnexpectedNullCharacter",4,4],
+        ["StartTag","a",{"\ufffd":["",2,3]},false,0,5]
+      ]
     }
   ]
 }
