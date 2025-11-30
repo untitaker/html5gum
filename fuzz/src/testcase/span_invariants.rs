@@ -101,11 +101,12 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
                     tag.span.end,
                     String::from_utf8_lossy(&tag.name)
                 );
+
+                let tag_name_clean = String::from_utf8_lossy(&tag.name).to_lowercase();
+                let content_clean = String::from_utf8_lossy(&content).to_lowercase().replace('\0', "\u{fffd}");
                 // The tag name should appear in the content (case-insensitive comparison)
                 assert!(
-                    content
-                        .windows(tag.name.len())
-                        .any(|window| window.eq_ignore_ascii_case(&tag.name)),
+                    content_clean.contains(&tag_name_clean),
                     "EndTag span does not contain tag name '{}': {:?} at {}..{}",
                     String::from_utf8_lossy(&tag.name),
                     String::from_utf8_lossy(content),
