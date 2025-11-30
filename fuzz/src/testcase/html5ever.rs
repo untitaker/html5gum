@@ -22,11 +22,11 @@ pub fn run_html5ever(s: &str) {
             ..Default::default()
         },
     );
-    let mut queue = BufferQueue::default();
+    let queue = BufferQueue::default();
     queue.push_back(format_tendril!("{}", s));
 
     assert!(matches!(
-        reference_tokenizer.feed(&mut queue),
+        reference_tokenizer.feed(&queue),
         TokenizerResult::Done
     ));
     reference_tokenizer.end();

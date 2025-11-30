@@ -18,20 +18,19 @@ pub fn validate_span_invariants(input: &[u8]) {
 
     let tokenizer = Tokenizer::new_with_emitter(input, emitter);
 
-    let mut last_end: Option<usize> = None;
+    let mut last_end: Option<(usize, &'static str)> = None;
 
-    for result in tokenizer {
-        let token = match result {
-            Ok(token) => token,
-            Err(_) => continue, // Errors are expected, we're fuzzing
-        };
-
+    for Ok(token) in tokenizer {
         validate_token_span(&token, input, &mut last_end);
     }
 }
 
 /// Validates the span of a single token against the input.
-fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option<usize>) {
+fn validate_token_span(
+    token: &Token<usize>,
+    input: &[u8],
+    last_end: &mut Option<(usize, &'static str)>,
+) {
     match token {
         Token::StartTag(tag) => {
             validate_span(&tag.span, input, "StartTag", last_end);
@@ -55,21 +54,23 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
                     tag.span.start,
                     tag.span.end
                 );
-                // The tag name should appear in the content
+                // The tag name should appear in the content (case-insensitive comparison)
+                let tag_name_clean = String::from_utf8_lossy(&tag.name).to_lowercase();
+                let content_clean = String::from_utf8_lossy(content)
+                    .to_lowercase()
+                    .replace('\0', "\u{fffd}");
                 assert!(
-                    content
-                        .windows(tag.name.len())
-                        .any(|window| window == &tag.name[..]),
-                    "StartTag span does not contain tag name '{}': {:?} at {}..{}",
-                    String::from_utf8_lossy(&tag.name),
-                    String::from_utf8_lossy(content),
+                    content_clean.contains(&tag_name_clean),
+                    "StartTag span does not contain tag name {:?}: {:?} at {}..{}",
+                    tag_name_clean,
+                    content_clean,
                     tag.span.start,
                     tag.span.end
                 );
             }
 
             // Validate attribute value spans
-            for (_attr_name, attr_value) in &tag.attributes {
+            for attr_value in tag.attributes.values() {
                 validate_span(&attr_value.span, input, "Attribute value", &mut None);
 
                 // Note: Attribute value spans may include the entire attribute declaration
@@ -101,11 +102,14 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
                     tag.span.end,
                     String::from_utf8_lossy(&tag.name)
                 );
-                // The tag name should appear in the content
+
+                let tag_name_clean = String::from_utf8_lossy(&tag.name).to_lowercase();
+                let content_clean = String::from_utf8_lossy(content)
+                    .to_lowercase()
+                    .replace('\0', "\u{fffd}");
+                // The tag name should appear in the content (case-insensitive comparison)
                 assert!(
-                    content
-                        .windows(tag.name.len())
-                        .any(|window| window == &tag.name[..]),
+                    content_clean.contains(&tag_name_clean),
                     "EndTag span does not contain tag name '{}': {:?} at {}..{}",
                     String::from_utf8_lossy(&tag.name),
                     String::from_utf8_lossy(content),
@@ -136,10 +140,15 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
             // Verify comment span contains the comment markers and content
             if c.span.end <= input.len() {
                 let content = &input[c.span.start..c.span.end];
-                // Comments should start with '<!' (covers both '<!--' and bogus comments)
+                // valid comment starts are:
+                // <!
+                // <!--
+                // <?
                 assert!(
-                    content.starts_with(b"<!"),
-                    "Comment span does not start with '<!': {:?} at {}..{}",
+                    content.starts_with(b"<!")
+                        || content.starts_with(b"<?")
+                        || content.starts_with(b"</"),
+                    "Comment span does not start with '<!' or '<?' or '</': {:?} at {}..{}",
                     String::from_utf8_lossy(content),
                     c.span.start,
                     c.span.end
@@ -170,8 +179,9 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
             }
         }
         Token::Error(e) => {
-            validate_span(&e.span, input, "Error", last_end);
-            // Errors can have empty spans (they may point to a position rather than a range)
+            // do not pass last_end to Error. Errors can overlap with any other span, including
+            // other errors
+            validate_span(&e.span, input, "Error", &mut None);
         }
     }
 }
@@ -180,8 +190,8 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
 fn validate_span(
     span: &html5gum::Span<usize>,
     input: &[u8],
-    token_type: &str,
-    last_end: &mut Option<usize>,
+    token_type: &'static str,
+    last_end: &mut Option<(usize, &'static str)>,
 ) {
     // Invariant 1: start <= end
     assert!(
@@ -199,25 +209,23 @@ fn validate_span(
         token_type,
         span.start,
         span.end,
-        input.len()
+        input.len(),
     );
 
     // Invariant 3: Spans should be ordered (non-decreasing start positions)
-    // However, error tokens can be interleaved and may have empty spans pointing to
-    // positions within other tokens, so we only enforce ordering for non-empty spans
     if span.start < span.end {
-        // Only check ordering for non-empty spans
         if let Some(prev_end) = last_end {
             assert!(
-                span.start >= *prev_end,
-                "{} span starts before previous span ended: current {}..{}, previous ended at {}",
+                span.start >= prev_end.0,
+                "{} span starts before previous span ended: current {}..{}, previous ended at {} (was: {})",
                 token_type,
                 span.start,
                 span.end,
-                prev_end
+                prev_end.0,
+                prev_end.1,
             );
         }
-        // Update last_end only for non-empty spans
-        *last_end = Some(span.end);
+
+        *last_end = Some((span.end, token_type));
     }
 }

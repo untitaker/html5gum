@@ -2,10 +2,13 @@ use std::fs::File;
 use std::io::BufReader;
 
 use glob::glob;
+use html5gum::testutils::trace_log;
 use html5gum::{DefaultEmitter, Token, Tokenizer};
 use libtest_mimic::{Arguments, Failed, Trial};
 use pretty_assertions::assert_eq;
 use serde::Deserialize;
+
+mod testutils;
 
 #[derive(Deserialize, Clone, Debug)]
 struct SpanTestCase {
@@ -79,38 +82,47 @@ fn token_to_json(token: &Token<usize>) -> serde_json::Value {
             c.span.start,
             c.span.end
         ]),
-        Token::Error(e) => panic!("Unexpected error token: {:?}", e),
+        Token::Error(e) => {
+            serde_json::json!(["Error", format!("{:?}", e.value), e.span.start, e.span.end])
+        }
     }
 }
 
 fn run_test(test: &SpanTestCase) -> Result<(), Failed> {
-    let mut emitter = DefaultEmitter::new_with_span();
-    emitter.naively_switch_states(test.naively_switch_states);
+    testutils::catch_unwind_and_report(move || {
+        trace_log(&format!("==== SPAN TEST: {} ====", test.description));
+        trace_log(&format!("input: {:?}", test.input));
+        trace_log(&format!(
+            "naively_switch_states: {}",
+            test.naively_switch_states
+        ));
 
-    let actual_tokens: Vec<Token<usize>> = Tokenizer::new_with_emitter(&test.input, emitter)
-        .filter_map(|t| t.ok())
-        .collect();
+        let mut emitter = DefaultEmitter::new_with_span();
+        emitter.naively_switch_states(test.naively_switch_states);
 
-    let actual_json: Vec<serde_json::Value> = actual_tokens.iter().map(token_to_json).collect();
+        let actual_tokens: Vec<Token<usize>> = Tokenizer::new_with_emitter(&test.input, emitter)
+            .filter_map(|t| t.ok())
+            .collect();
 
-    let expected_str = if let serde_json::Value::Array(ref arr) = test.expected_tokens {
-        arr.iter()
+        let actual_json: Vec<serde_json::Value> = actual_tokens.iter().map(token_to_json).collect();
+
+        let expected_str = if let serde_json::Value::Array(ref arr) = test.expected_tokens {
+            arr.iter()
+                .map(|v| serde_json::to_string(v).unwrap())
+                .collect::<Vec<_>>()
+                .join("\n")
+        } else {
+            serde_json::to_string(&test.expected_tokens).unwrap()
+        };
+
+        let actual_str = actual_json
+            .iter()
             .map(|v| serde_json::to_string(v).unwrap())
             .collect::<Vec<_>>()
-            .join("\n")
-    } else {
-        serde_json::to_string(&test.expected_tokens).unwrap()
-    };
+            .join("\n");
 
-    let actual_str = actual_json
-        .iter()
-        .map(|v| serde_json::to_string(v).unwrap())
-        .collect::<Vec<_>>()
-        .join("\n");
-
-    assert_eq!(expected_str, actual_str);
-
-    Ok(())
+        assert_eq!(actual_str, expected_str);
+    })
 }
 
 fn produce_tests_from_file(path: &str) -> Vec<Trial> {

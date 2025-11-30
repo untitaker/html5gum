@@ -202,6 +202,7 @@ struct EmitterState<S: SpanBound> {
     current_attribute_name: Vec<u8>,
     current_attribute_value: Vec<u8>,
     current_attribute_name_start: S,
+    current_attribute_name_end: S,
     current_attribute_value_start: S,
     current_attribute_value_end: S,
 
@@ -275,6 +276,8 @@ where
     }
 
     fn flush_attribute_name(&mut self) {
+        self.flush_current_characters();
+
         if !self.emitter_state.current_attribute_name.is_empty() {
             self.callback_state.emit_event(
                 CallbackEvent::AttributeName {
@@ -282,10 +285,7 @@ where
                 },
                 Span {
                     start: self.emitter_state.current_attribute_name_start,
-                    end: self
-                        .emitter_state
-                        .current_attribute_name_start
-                        .offset(self.emitter_state.current_attribute_name.len() as isize),
+                    end: self.emitter_state.current_attribute_name_end,
                 },
             );
             self.emitter_state.current_attribute_name.clear();
@@ -358,6 +358,11 @@ where
     #[inline]
     fn move_position(&mut self, offset: isize) {
         self.emitter_state.position = self.emitter_state.position.offset(offset);
+        trace_log!(
+            "callbacks: move_position, offset={}, now={:?}",
+            offset,
+            self.emitter_state.position
+        );
     }
 
     fn set_last_start_tag(&mut self, last_start_tag: Option<&[u8]>) {
@@ -386,12 +391,22 @@ where
     }
 
     fn init_string(&mut self) {
-        self.emitter_state.current_characters_start = self.emitter_state.position;
+        // Only reset the start position if we're not already accumulating characters
+        // This prevents overwriting the start position when returning from character
+        // reference states that have already emitted buffered content
+        if self.emitter_state.current_characters.is_empty() {
+            self.emitter_state.current_characters_start = self.emitter_state.position;
+        }
     }
 
     fn emit_string(&mut self, s: &[u8]) {
-        crate::utils::trace_log!("callbacks: emit_string, len={}", s.len());
         self.emitter_state.current_characters_end = self.emitter_state.position;
+        crate::utils::trace_log!(
+            "callbacks: emit_string, len={}, start={:?}, end={:?}",
+            s.len(),
+            self.emitter_state.current_characters_start,
+            self.emitter_state.current_characters_end
+        );
         self.emitter_state.current_characters.extend(s);
     }
 
@@ -414,7 +429,6 @@ where
 
     fn emit_current_tag(&mut self) -> Option<State> {
         self.flush_attribute();
-        self.flush_current_characters();
         match self.emitter_state.current_tag_type {
             Some(CurrentTag::Start) => {
                 self.flush_open_start_tag();
@@ -546,6 +560,7 @@ where
 
     fn push_attribute_name(&mut self, s: &[u8]) {
         self.emitter_state.current_attribute_name.extend(s);
+        self.emitter_state.current_attribute_name_end = self.emitter_state.position;
     }
 
     fn init_attribute_value(&mut self) {

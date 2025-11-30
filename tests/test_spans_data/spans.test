@@ -90,6 +90,227 @@
         ["EndTag","textarea",245,256],
         ["Character","\n",256,257]
       ]
+    },
+    {
+      "description": "bug 127: character reference span",
+      "input": "&<!",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","IncorrectlyOpenedComment",3,3],
+        ["Character","&",0,1],
+        ["Comment","",1,3]
+      ]
+    },
+    {
+      "description": "bug 127: character reference span, version 2",
+      "input": "asdasd&<!",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","IncorrectlyOpenedComment",9,9],
+        ["Character","asdasd&",0,7],
+        ["Comment","",7,9]
+      ]
+    },
+    {
+      "description": "bug 127: token order",
+      "input": "0<h 0 0 0",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","0",0,1],
+        ["Error","DuplicateAttribute",6,7],
+        ["Error","EofInTag",9,9]
+      ]
+    },
+    {
+      "description": "fuzz: <<z>",
+      "input": "<<z>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","InvalidFirstCharacterOfTagName",2,2],
+        ["Character","<",0,1],
+        ["StartTag","z",{},false,1,4]
+      ]
+    },
+    {
+      "description": "fuzz: CRLF BOGUS COMMENT",
+      "input": "\r\n<!",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","IncorrectlyOpenedComment",4,4],
+        ["Character","\n",0,2],
+        ["Comment","",2,4]
+      ]
+    },
+    {
+      "description": "fuzz: bad attribute name",
+      "input": "<a\f\u0000>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","UnexpectedNullCharacter",4,4],
+        ["StartTag","a",{"\ufffd":["",3,4]},false,0,5]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap from named characters",
+      "input": "&xi;</0",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","InvalidFirstCharacterOfTagName",7,7],
+        ["Character","ξ",0,4],
+        ["Comment","0",4,7]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap from numeric character refs",
+      "input": "&#<?",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","AbsenceOfDigitsInNumericCharacterReference",3,3],
+        ["Error","UnexpectedQuestionMarkInsteadOfTagName",4,4],
+        ["Character","&#",0,2],
+        ["Comment","?",2,4]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap from hex character refs",
+      "input": "&#x<?",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","AbsenceOfDigitsInNumericCharacterReference",4,4],
+        ["Error","UnexpectedQuestionMarkInsteadOfTagName",5,5],
+        ["Character","&#x",0,3],
+        ["Comment","?",3,5]
+      ]
+    },
+    {
+      "description": "fuzz: CRLF, then bogus comment",
+      "input": "<i\r\n><!",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["StartTag","i",{},false,0,5],
+        ["Error","IncorrectlyOpenedComment",7,7],
+        ["Comment","",5,7]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag",
+      "input": "<script><</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<",8,9],
+        ["EndTag","script",9,18]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 2",
+      "input": "<script></</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","</",8,10],
+        ["EndTag","script",10,19]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 3",
+      "input": "<script></i</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","</i",8,11],
+        ["EndTag","script",11,20]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 4",
+      "input": "<script><!--</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<!--",8,12],
+        ["EndTag","script",12,21]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 5",
+      "input": "<script><!--0</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<!--0",8,13],
+        ["EndTag","script",13,22]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 6",
+      "input": "<script><!--0-</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<!--0-",8,14],
+        ["EndTag","script",14,23]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 7",
+      "input": "<script><!--<</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<!--<",8,13],
+        ["EndTag","script",13,22]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 8",
+      "input": "<script><!--</</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<!--</",8,14],
+        ["EndTag","script",14,23]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in script tag, part 9",
+      "input": "<script><!--</i</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<!--</i",8,15],
+        ["EndTag","script",15,24]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in xmp tag",
+      "input": "<xmp><</xmp>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","xmp",{},false,0,5],
+        ["Character","<",5,6],
+        ["EndTag","xmp",6,12]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in xmp tag, part 2",
+      "input": "<xmp></</xmp>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","xmp",{},false,0,5],
+        ["Character","</",5,7],
+        ["EndTag","xmp",7,13]
+      ]
+    },
+    {
+      "description": "fuzz: span overlap in xmp tag, part 3",
+      "input": "<xmp></x</xmp>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","xmp",{},false,0,5],
+        ["Character","</x",5,8],
+        ["EndTag","xmp",8,14]
+      ]
     }
   ]
 }
