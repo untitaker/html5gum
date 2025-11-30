@@ -27,8 +27,17 @@ jobs:
       - name: Build AFL target
         run: make setup-afl
 
+  check-libfuzzer:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./fuzz
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
       - name: Build libfuzzer target
         run: |
-          rustup toolchain install nightly
           cargo install cargo-fuzz
           cargo +nightly fuzz build main_libfuzzer
