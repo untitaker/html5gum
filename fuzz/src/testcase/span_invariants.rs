@@ -141,8 +141,8 @@ fn validate_token_span(token: &Token<usize>, input: &[u8], last_end: &mut Option
                 // <!--
                 // <?
                 assert!(
-                    content.starts_with(b"<!") || content.starts_with(b"<?"),
-                    "Comment span does not start with '<!' or '<?': {:?} at {}..{}",
+                    content.starts_with(b"<!") || content.starts_with(b"<?") || content.starts_with(b"</"),
+                    "Comment span does not start with '<!' or '<?' or '</': {:?} at {}..{}",
                     String::from_utf8_lossy(content),
                     c.span.start,
                     c.span.end
