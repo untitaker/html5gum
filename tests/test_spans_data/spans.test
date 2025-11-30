@@ -273,6 +273,16 @@
       ]
     },
     {
+      "description": "fuzz: span overlap in script tag, part 9",
+      "input": "<script><!--</i</script>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","<!--</i",8,15],
+        ["EndTag","script",15,24]
+      ]
+    },
+    {
       "description": "fuzz: span overlap in xmp tag",
       "input": "<xmp><</xmp>",
       "naively_switch_states": true,
