@@ -178,8 +178,15 @@
       "expected_tokens": [
         ["Error","AbsenceOfDigitsInNumericCharacterReference",4,4],
         ["Error","UnexpectedQuestionMarkInsteadOfTagName",5,5],
-        ["Character","&#",0,3],
+        ["Character","&#x",0,3],
         ["Comment","?",3,5]
+      ]
+    },
+    {
+      "description": "fuzz: CRLF, then bogus comment",
+      "input": "<i\r\n><!",
+      "naively_switch_states": false,
+      "expected_tokens": [
       ]
     }
   ]
