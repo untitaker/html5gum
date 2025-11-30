@@ -61,6 +61,11 @@ path = "tests/html5lib_tree_builder.rs"
 required-features = ["tree-builder"]
 harness = false
 
+[[test]]
+name = "test_spans"
+path = "tests/test_spans.rs"
+harness = false
+
 [[example]]
 name = "build_tree"
 required-features = ["tree-builder"]
