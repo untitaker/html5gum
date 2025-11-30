@@ -1912,12 +1912,16 @@ pub(crate) mod states {
                     .extend(char_ref.name.as_bytes());
             }
 
+            slf.emitter.move_position(-1);
             slf.machine_helper
                 .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+            slf.emitter.move_position(1);
             reconsume_in_return_state!(slf, next_character)
         } else {
+            slf.emitter.move_position(-1);
             slf.machine_helper
                 .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
+            slf.emitter.move_position(1);
             reconsume_in!(slf, c, AmbiguousAmpersand)
         }
     });

@@ -149,6 +149,16 @@
         ["Error","UnexpectedNullCharacter",4,4],
         ["StartTag","a",{"\ufffd":["",3,4]},false,0,5]
       ]
+    },
+    {
+      "description": "fuzz: span overlap from named characters",
+      "input": "&xi;</0",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","InvalidFirstCharacterOfTagName",7,7],
+        ["Character","ξ",0,4],
+        ["Comment","0",4,7]
+      ]
     }
   ]
 }
