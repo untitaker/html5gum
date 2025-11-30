@@ -506,6 +506,7 @@ pub(crate) mod states {
                     switch_to!(slf, ScriptDataEscapedDashDash)
                 }
                 Some(b'<') => {
+                    slf.emitter.start_open_tag();
                     switch_to!(slf, ScriptDataEscapedLessThanSign)
                 }
                 Some(b'\0') => {
