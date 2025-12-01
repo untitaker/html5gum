@@ -254,7 +254,9 @@ pub(crate) mod states {
                     switch_to!(slf, RcDataEndTagOpen)
                 }
                 c => {
+                    slf.emitter.move_position(-1);
                     slf.emitter.emit_string(b"<");
+                    slf.emitter.move_position(1);
                     reconsume_in!(slf, c, RcData)
                 }
             }
@@ -270,7 +272,9 @@ pub(crate) mod states {
                     reconsume_in!(slf, Some(x), RcDataEndTagName)
                 }
                 c => {
+                    slf.emitter.move_position(-1);
                     slf.emitter.emit_string(b"</");
+                    slf.emitter.move_position(1);
                     reconsume_in!(slf, c, RcData)
                 }
             }
@@ -298,8 +302,10 @@ pub(crate) mod states {
                     cont!()
                 }
                 c => {
+                    slf.emitter.move_position(-1);
                     slf.emitter.emit_string(b"</");
                     slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    slf.emitter.move_position(1);
                     reconsume_in!(slf, c, RcData)
                 }
             }
