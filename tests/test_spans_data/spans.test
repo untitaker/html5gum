@@ -331,6 +331,16 @@
         ["Character","</",7,9],
         ["EndTag","title",9,17]
       ]
+    },
+    {
+      "description": "fuzz: span overlap in title tag, part 3",
+      "input": "<title></t</title>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","title",{},false,0,7],
+        ["Character","</t",7,10],
+        ["EndTag","title",10,18]
+      ]
     }
   ]
 }
