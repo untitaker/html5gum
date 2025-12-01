@@ -1,3 +1,7 @@
+# Unreleased
+
+- Fix more bugs in span position tracking. [PR 131](https://github.com/untitaker/html5gum/pull/131)
+
 # 0.8.2
 
 - Make upgrading to 0.8.0 smoother by adding more `From`-impls. [PR 126](https://github.com/untitaker/html5gum/pull/126)
