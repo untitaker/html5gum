@@ -25,7 +25,7 @@ encoding_rs = "0.8"
 bytes = "1"
 
 [features]
-afl = ["html5gum/afl-ijon"]
+afl = ["html5gum/afl-ijon", "dep:afl"]
 
 # Prevent this from interfering with workspaces
 [workspace]
