@@ -8,8 +8,8 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-afl = { version = "0.15.15", optional = true }
-html5gum = { path = "../" }
+afl = { version = "0.17.0", optional = true }
+html5gum = { path = "../", features = ["afl-ijon"] }
 pretty_assertions = "1.0.0"
 
 # thirdparty crates to fuzz against

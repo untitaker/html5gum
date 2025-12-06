@@ -1,6 +1,9 @@
 use crate::utils::trace_log;
 use crate::{Emitter, Reader, State, Tokenizer};
 
+#[cfg(feature = "afl-ijon")]
+use afl::{ijon_hashint, ijon_state};
+
 #[derive(Debug)]
 pub(crate) struct MachineState<R: Reader, E: Emitter> {
     #[allow(clippy::type_complexity)]
@@ -103,8 +106,14 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
 
     pub(crate) fn enter_state(&mut self, state: MachineState<R, E>, is_attribute: bool) {
         debug_assert!(self.return_state.is_none());
-        self.return_state = Some((self.state, is_attribute));
+        let return_state = (self.state, is_attribute);
+        self.return_state = Some(return_state);
         self.switch_to(state);
+        #[cfg(feature = "afl-ijon")]
+        ijon_state!(ijon_hashint(
+                ijon_hashint(state.function as u32, return_state.0.function as u32),
+                is_attribute as u32
+        ));
     }
 
     pub(crate) fn pop_return_state(&mut self) -> MachineState<R, E> {
@@ -123,6 +132,8 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
             state.debug_name
         );
         self.state = state;
+        #[cfg(feature = "afl-ijon")]
+        ijon_state!(state.function as u32);
     }
 }
 
