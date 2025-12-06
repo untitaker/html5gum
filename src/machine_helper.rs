@@ -111,8 +111,8 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
         self.switch_to(state);
         #[cfg(feature = "afl-ijon")]
         ijon_state!(ijon_hashint(
-                ijon_hashint(state.function as u32, return_state.0.function as u32),
-                is_attribute as u32
+            ijon_hashint(state.function as u32, return_state.0.function as u32),
+            is_attribute as u32
         ));
     }
 
