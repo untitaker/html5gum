@@ -8,6 +8,9 @@ export FUZZ_SWC := 0
 
 # CLI arguments to pass to AFL. useful for multiprocessing
 export _AFL_OPTS := -M fuzzer01
+export AFL_LLVM_IJON := 1
+export AFL_IJON_HISTORY_LIMIT := 1000
+
 # CLI arguments to cargo fuzz
 export _LIBFUZZER_OPTS := -s none
 
