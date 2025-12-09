@@ -89,3 +89,9 @@ other's testcases to some degree, as `cargo-fuzz` is wired to read from both
 `in/` and `out/`, and AFL is wired to read from `in/` and manage its queue in
 `out/`. See [AFL compatibility in libfuzzer
 docs](https://llvm.org/docs/LibFuzzer.html#afl-compatibility).
+
+## Stability
+
+The `jetscii` crate is causing instability in AFL coverage instrumentation and
+has therefore been disabled in html5gum. The `memchr` crate probably has
+stability issues too, if third-party parsers use it.

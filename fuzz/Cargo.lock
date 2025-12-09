@@ -346,16 +346,12 @@ name = "html5gum"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91b361633dcc40096d01de35ed535b6089be91880be47b6fd8f560497af7f716"
-dependencies = [
- "jetscii",
-]
 
 [[package]]
 name = "html5gum"
 version = "0.8.3"
 dependencies = [
  "afl",
- "jetscii",
 ]
 
 [[package]]
@@ -370,6 +366,7 @@ dependencies = [
  "html5gum 0.8.3",
  "libfuzzer-sys",
  "lol_html",
+ "memchr",
  "pretty_assertions",
  "swc_common",
  "swc_html_ast",
@@ -532,12 +529,6 @@ name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
-
-[[package]]
-name = "jetscii"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47f142fe24a9c9944451e8349de0a56af5f3e7226dc46f3ed4d4ecc0b85af75e"
 
 [[package]]
 name = "jobserver"

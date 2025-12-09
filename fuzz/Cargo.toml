@@ -9,11 +9,11 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 afl = { version = "0.17.0", optional = true }
-html5gum = { path = "../" }
+html5gum = { path = "../", default-features = false }
 pretty_assertions = "1.0.0"
 
 # thirdparty crates to fuzz against
-html5gum_old = { version = "=0.6.1", package = "html5gum" }
+html5gum_old = { version = "=0.6.1", package = "html5gum", default-features = false }
 html5ever = "0.36.1"
 swc_common = "18.0"
 swc_html_parser = "18.0"
