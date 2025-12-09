@@ -4,10 +4,28 @@
 //! this module.
 use crate::Reader;
 use std::cell::Cell;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// Global flag to enable trace logging. When false, trace_log is a no-op.
+///
+/// During fuzzing, we want to run with cfg(debug_assertions) yet at the same time not run
+/// trace_log to keep target stability (in AFL terms). Adding more cargo featureflags is unwieldy.
+static TRACE_LOG_ENABLED: AtomicBool = AtomicBool::new(false);
 
 thread_local! {
     /// Buffer of all debugging output logged internally by html5gum.
     pub static OUTPUT: Cell<String> = Cell::default();
+}
+
+/// Enable trace logging for the current process.
+/// This should be called at the start of any test that needs to capture trace logs.
+pub fn enable_trace_log() {
+    TRACE_LOG_ENABLED.store(true, Ordering::Relaxed);
+}
+
+/// Disable trace logging for the current process.
+pub fn disable_trace_log() {
+    TRACE_LOG_ENABLED.store(false, Ordering::Relaxed);
 }
 
 /// Simple debug logger for tests.
@@ -18,6 +36,10 @@ thread_local! {
 ///
 /// A noop version for non-test builds is implemented in src/lib.rs
 pub fn trace_log(msg: &str) {
+    if !TRACE_LOG_ENABLED.load(Ordering::Relaxed) {
+        return;
+    }
+
     OUTPUT.with(|cell| {
         let mut buf = cell.take();
         buf.push_str(msg);

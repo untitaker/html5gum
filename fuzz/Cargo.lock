@@ -352,7 +352,7 @@ dependencies = [
 
 [[package]]
 name = "html5gum"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "jetscii",
 ]
@@ -366,7 +366,7 @@ dependencies = [
  "encoding_rs",
  "html5ever",
  "html5gum 0.6.1",
- "html5gum 0.8.2",
+ "html5gum 0.8.3",
  "libfuzzer-sys",
  "lol_html",
  "pretty_assertions",

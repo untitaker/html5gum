@@ -19,6 +19,8 @@ use html5gum::testutils::OUTPUT;
 /// log buffer -- it is bound in size and compiled out in release mode. Code can use the
 /// `crate::trace_log` macro to write lines to it.
 pub fn catch_unwind_and_report(f: impl FnOnce() + UnwindSafe) -> Result<(), Failed> {
+    html5gum::testutils::enable_trace_log();
+
     static PANIC_HOOK: Once = Once::new();
     PANIC_HOOK.call_once(|| {
         panic::set_hook(Box::new(|_info| {
