@@ -1,3 +1,7 @@
+# 0.8.4
+
+- Fix an ordering bug when using `CallbackEmitter`. [PR 135](https://github.com/untitaker/html5gum/pull/135)
+
 # 0.8.3
 
 - Fix more bugs in span position tracking. [PR 131](https://github.com/untitaker/html5gum/pull/131)
