@@ -53,3 +53,53 @@ fn basic() {
 
     assert_eq!(tokens, vec!["foo".to_owned()]);
 }
+
+#[test]
+fn round_trip() {
+    let mut rt = Vec::new();
+    let emitter = CallbackEmitter::new(|event: CallbackEvent<'_>, _: html5gum::Span<()>| {
+        match event {
+            CallbackEvent::OpenStartTag { name } => {
+                rt.push(b'<');
+                rt.extend(name);
+            }
+            CallbackEvent::AttributeName { name } => {
+                rt.push(b' ');
+                rt.extend(name);
+            }
+            CallbackEvent::AttributeValue { value } => {
+                rt.push(b'=');
+                rt.push(b'"');
+                rt.extend(value);
+                rt.push(b'"');
+            }
+            CallbackEvent::String { value } => {
+                rt.extend(value);
+            }
+            CallbackEvent::CloseStartTag { self_closing } => {
+                if self_closing {
+                    rt.push(b'/');
+                }
+                rt.push(b'>');
+            }
+            CallbackEvent::EndTag { name } => {
+                rt.extend(b"</");
+                rt.extend(name);
+                rt.push(b'>');
+            }
+            CallbackEvent::Comment { value } => {
+                rt.extend(b"<!--");
+                rt.extend(value);
+                rt.extend(b"-->");
+            }
+            CallbackEvent::Doctype { .. } => {}
+            CallbackEvent::Error(_) => {}
+        }
+
+        None::<core::convert::Infallible>
+    });
+
+    let source = " <!-- a --> <h1>Hello</h1> world <a href=\"foo\" title=\"baz\">bar</a>";
+    Tokenizer::new_with_emitter(source, emitter).finish();
+    assert_eq!(source.as_bytes(), rt, "{} != {}", source, rt.escape_ascii());
+}

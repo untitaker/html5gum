@@ -276,7 +276,7 @@ where
     }
 
     fn flush_attribute_name(&mut self) {
-        self.flush_current_characters();
+        self.flush_open_start_tag();
 
         if !self.emitter_state.current_attribute_name.is_empty() {
             self.callback_state.emit_event(
@@ -310,6 +310,8 @@ where
     }
 
     fn flush_open_start_tag(&mut self) {
+        self.flush_current_characters();
+
         if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::Start))
             && !self.emitter_state.current_tag_name.is_empty()
         {
