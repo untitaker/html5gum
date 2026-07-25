@@ -11,34 +11,32 @@
 //! link: foo
 //! ```
 use annotate_snippets::{Level, Renderer, Snippet};
-use html5gum::emitters::callback::{CallbackEmitter, CallbackEvent};
+use html5gum::emitters::builder::spanned_sink;
 use html5gum::{Emitter, IoReader, Span, Tokenizer};
 
-fn get_emitter() -> impl Emitter<Token = (String, Span<usize>)> {
-    let mut is_anchor_tag = false;
-    let mut is_href_attr = false;
+#[derive(Default)]
+struct State {
+    is_anchor_tag: bool,
+    link: Option<(String, Span<usize>)>,
+}
 
-    CallbackEmitter::new(
-        move |event: CallbackEvent<'_>, span: Span<usize>| match event {
-            CallbackEvent::OpenStartTag { name } => {
-                is_anchor_tag = name == b"a";
-                is_href_attr = false;
-                None
+fn get_emitter() -> impl Emitter<Token = (String, Span<usize>)> {
+    spanned_sink::<usize, _>(State::default())
+        .on_tag_open(|st, name, _span| {
+            st.is_anchor_tag = name == b"a";
+        })
+        .on_attribute(|st, _tag_name, name, value, spans| {
+            if st.is_anchor_tag && name == b"href" {
+                st.link = Some((
+                    format!(
+                        "found link with content `{}` here",
+                        String::from_utf8_lossy(value)
+                    ),
+                    spans.value,
+                ));
             }
-            CallbackEvent::AttributeName { name } => {
-                is_href_attr = name == b"href";
-                None
-            }
-            CallbackEvent::AttributeValue { value } if is_anchor_tag && is_href_attr => Some((
-                format!(
-                    "found link with content `{}` here",
-                    String::from_utf8_lossy(value)
-                ),
-                span,
-            )),
-            _ => None,
-        },
-    )
+        })
+        .on_pop_token(|st| st.link.take())
 }
 
 struct CollectingReader<R> {

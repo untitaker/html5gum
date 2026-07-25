@@ -127,19 +127,14 @@ impl<R: Reader, E: Emitter<Token = Infallible>> Tokenizer<R, E> {
     /// cases, you will find yourself writing code like this to handle errors:
     ///
     /// ```
-    /// use std::convert::Infallible;
+    /// use html5gum::Tokenizer;
+    /// use html5gum::emitters::builder::sink;
     ///
-    /// use html5gum::{Span, Tokenizer};
-    /// use html5gum::emitters::callback::{CallbackEvent, CallbackEmitter};
-    ///
-    /// let emitter = CallbackEmitter::new(move |event: CallbackEvent<'_>, span: Span<()>| -> Option<Infallible> {
-    ///     if let CallbackEvent::String { value } = event {
-    ///         println!("{}", String::from_utf8_lossy(value));
-    ///     }
-    ///
-    ///     // We may choose to return any Option<T> (such as errors, or our own tokens), but since
-    ///     // we do all the real work in the callback itself, we choose to use Option<Infallible>.
-    ///     None
+    /// // We may register `on_pop_token` to produce our own tokens (or errors), but since we do
+    /// // all the real work in the handler itself, we can just leave it unregistered: `Token`
+    /// // then defaults to `Infallible`.
+    /// let emitter = sink(()).on_text(|_st, text, _span| {
+    ///     println!("{}", String::from_utf8_lossy(text));
     /// });
     ///
     /// let tokenizer = Tokenizer::new_with_emitter("hello <div><div><div> world!", emitter);

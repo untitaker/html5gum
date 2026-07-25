@@ -1,9 +1,11 @@
 //! See [`examples/scraper.rs`] for usage.
 use std::convert::Infallible;
 
-use crate::emitters::callback::{Callback, CallbackEmitter, CallbackEvent};
+use crate::emitters::builder::{
+    sink as builder_sink, AttrSpans, Doctype as BuilderDoctype, EmitterBuilder, Handler,
+};
 use crate::utils::trace_log;
-use crate::{Emitter, ForwardingEmitter, Readable, Reader, Span, State, Tokenizer};
+use crate::{Emitter, Error, ForwardingEmitter, Readable, Reader, Span, State, Tokenizer};
 
 use html5ever::interface::{create_element, TreeSink};
 use html5ever::tokenizer::states::State as Html5everState;
@@ -56,91 +58,123 @@ impl<'a, S: TokenSink> OurCallback<'a, S> {
     }
 }
 
-impl<'a, S: TokenSink> Callback<Infallible, ()> for OurCallback<'a, S> {
-    fn handle_event(&mut self, event: CallbackEvent<'_>, _span: Span<()>) -> Option<Infallible> {
-        trace_log!("Html5everEmitter::handle_event: {:?}", event);
-        match event {
-            CallbackEvent::OpenStartTag { name } => {
-                self.current_start_tag = Some(Tag {
-                    kind: TagKind::StartTag,
-                    name: String::from_utf8_lossy(name).into_owned().into(),
-                    self_closing: false,
-                    attrs: Default::default(),
-                });
-            }
-            CallbackEvent::AttributeName { name } => {
-                if let Some(ref mut tag) = self.current_start_tag {
-                    tag.attrs.push(Attribute {
-                        name: QualName::new(
-                            None,
-                            Default::default(),
-                            String::from_utf8_lossy(name).into_owned().into(),
-                        ),
-                        value: Default::default(),
-                    });
-                }
-            }
-            CallbackEvent::AttributeValue { value } => {
-                if let Some(ref mut tag) = self.current_start_tag {
-                    if let Some(attr) = tag.attrs.last_mut() {
-                        attr.value.push_slice(&String::from_utf8_lossy(value));
-                    }
-                }
-            }
-            CallbackEvent::CloseStartTag { self_closing } => {
-                if let Some(mut tag) = self.current_start_tag.take() {
-                    tag.self_closing = self_closing;
-                    self.sink_token(Html5everToken::TagToken(tag));
-                }
-            }
-            CallbackEvent::EndTag { name } => {
-                self.sink_token(Html5everToken::TagToken(Tag {
-                    kind: TagKind::EndTag,
-                    name: String::from_utf8_lossy(name).into_owned().into(),
-                    self_closing: false,
-                    attrs: Default::default(),
-                }));
-            }
-            CallbackEvent::String { value } => {
-                let mut first = true;
-                for part in String::from_utf8_lossy(value).split('\0') {
-                    if !first {
-                        self.sink_token(Html5everToken::NullCharacterToken);
-                    }
+fn on_tag_open<S: TokenSink>(state: &mut OurCallback<'_, S>, name: &[u8], _span: Span<()>) {
+    state.current_start_tag = Some(Tag {
+        kind: TagKind::StartTag,
+        name: String::from_utf8_lossy(name).into_owned().into(),
+        self_closing: false,
+        attrs: Default::default(),
+    });
+}
 
-                    first = false;
-                    self.sink_token(Html5everToken::CharacterTokens(part.to_owned().into()));
-                }
-            }
-            CallbackEvent::Comment { value } => {
-                self.sink_token(Html5everToken::CommentToken(
-                    String::from_utf8_lossy(value).into_owned().into(),
-                ));
-            }
-            CallbackEvent::Doctype {
-                name,
-                public_identifier,
-                system_identifier,
-                force_quirks,
-            } => {
-                self.sink_token(Html5everToken::DoctypeToken(Doctype {
-                    name: Some(name)
-                        .filter(|x| !x.is_empty())
-                        .map(|x| String::from_utf8_lossy(x).into_owned().into()),
-                    public_id: public_identifier
-                        .map(|x| String::from_utf8_lossy(x).into_owned().into()),
-                    system_id: system_identifier
-                        .map(|x| String::from_utf8_lossy(x).into_owned().into()),
-                    force_quirks,
-                }));
-            }
-            CallbackEvent::Error(error) => {
-                self.sink_token(Html5everToken::ParseError(error.as_str().into()));
-            }
+fn on_attribute<S: TokenSink>(
+    state: &mut OurCallback<'_, S>,
+    _tag_name: &[u8],
+    name: &[u8],
+    value: &[u8],
+    _spans: AttrSpans<()>,
+) {
+    if let Some(ref mut tag) = state.current_start_tag {
+        tag.attrs.push(Attribute {
+            name: QualName::new(
+                None,
+                Default::default(),
+                String::from_utf8_lossy(name).into_owned().into(),
+            ),
+            value: String::from_utf8_lossy(value).into_owned().into(),
+        });
+    }
+}
+
+fn on_tag_close<S: TokenSink>(
+    state: &mut OurCallback<'_, S>,
+    _tag_name: &[u8],
+    self_closing: bool,
+    _span: Span<()>,
+) {
+    if let Some(mut tag) = state.current_start_tag.take() {
+        tag.self_closing = self_closing;
+        state.sink_token(Html5everToken::TagToken(tag));
+    }
+}
+
+fn on_end_tag<S: TokenSink>(state: &mut OurCallback<'_, S>, name: &[u8], _span: Span<()>) {
+    state.sink_token(Html5everToken::TagToken(Tag {
+        kind: TagKind::EndTag,
+        name: String::from_utf8_lossy(name).into_owned().into(),
+        self_closing: false,
+        attrs: Default::default(),
+    }));
+}
+
+fn on_text<S: TokenSink>(state: &mut OurCallback<'_, S>, value: &[u8], _span: Span<()>) {
+    let mut first = true;
+    for part in String::from_utf8_lossy(value).split('\0') {
+        if !first {
+            state.sink_token(Html5everToken::NullCharacterToken);
         }
 
-        None
+        first = false;
+        state.sink_token(Html5everToken::CharacterTokens(part.to_owned().into()));
     }
+}
+
+fn on_comment<S: TokenSink>(state: &mut OurCallback<'_, S>, value: &[u8], _span: Span<()>) {
+    state.sink_token(Html5everToken::CommentToken(
+        String::from_utf8_lossy(value).into_owned().into(),
+    ));
+}
+
+fn on_doctype<S: TokenSink>(
+    state: &mut OurCallback<'_, S>,
+    doctype: BuilderDoctype<'_>,
+    _span: Span<()>,
+) {
+    state.sink_token(Html5everToken::DoctypeToken(Doctype {
+        name: Some(doctype.name)
+            .filter(|x| !x.is_empty())
+            .map(|x| String::from_utf8_lossy(x).into_owned().into()),
+        public_id: doctype
+            .public_identifier
+            .map(|x| String::from_utf8_lossy(x).into_owned().into()),
+        system_id: doctype
+            .system_identifier
+            .map(|x| String::from_utf8_lossy(x).into_owned().into()),
+        force_quirks: doctype.force_quirks,
+    }));
+}
+
+fn on_error<S: TokenSink>(state: &mut OurCallback<'_, S>, error: Error, _span: Span<()>) {
+    state.sink_token(Html5everToken::ParseError(error.as_str().into()));
+}
+
+// None of the handlers above capture any environment (all state lives in `OurCallback`), so they
+// coerce to plain function pointers, keeping this type alias nameable.
+type Inner<'a, S> = EmitterBuilder<
+    OurCallback<'a, S>,
+    (),
+    Handler<fn(&mut OurCallback<'a, S>, &[u8], Span<()>)>,
+    Handler<fn(&mut OurCallback<'a, S>, &[u8], &[u8], &[u8], AttrSpans<()>)>,
+    Handler<fn(&mut OurCallback<'a, S>, &[u8], bool, Span<()>)>,
+    Handler<fn(&mut OurCallback<'a, S>, &[u8], Span<()>)>,
+    Handler<fn(&mut OurCallback<'a, S>, &[u8], Span<()>)>,
+    Handler<fn(&mut OurCallback<'a, S>, &[u8], Span<()>)>,
+    Handler<fn(&mut OurCallback<'a, S>, BuilderDoctype<'_>, Span<()>)>,
+    Handler<fn(&mut OurCallback<'a, S>, Error, Span<()>)>,
+>;
+
+fn build_inner<S: TokenSink>(state: OurCallback<'_, S>) -> Inner<'_, S> {
+    builder_sink(state)
+        .on_tag_open(on_tag_open::<S> as fn(&mut OurCallback<'_, S>, &[u8], Span<()>))
+        .on_attribute(
+            on_attribute::<S> as fn(&mut OurCallback<'_, S>, &[u8], &[u8], &[u8], AttrSpans<()>),
+        )
+        .on_tag_close(on_tag_close::<S> as fn(&mut OurCallback<'_, S>, &[u8], bool, Span<()>))
+        .on_end_tag(on_end_tag::<S> as fn(&mut OurCallback<'_, S>, &[u8], Span<()>))
+        .on_text(on_text::<S> as fn(&mut OurCallback<'_, S>, &[u8], Span<()>))
+        .on_comment(on_comment::<S> as fn(&mut OurCallback<'_, S>, &[u8], Span<()>))
+        .on_doctype(on_doctype::<S> as fn(&mut OurCallback<'_, S>, BuilderDoctype<'_>, Span<()>))
+        .on_error(on_error::<S> as fn(&mut OurCallback<'_, S>, Error, Span<()>))
 }
 
 /// A compatibility layer that allows you to plug the TreeBuilder from html5ever into the tokenizer
@@ -149,14 +183,14 @@ impl<'a, S: TokenSink> Callback<Infallible, ()> for OurCallback<'a, S> {
 /// See [`examples/scraper.rs`] for usage.
 #[derive(Debug)]
 pub struct Html5everEmitter<'a, S: TokenSink> {
-    emitter_inner: CallbackEmitter<OurCallback<'a, S>>,
+    emitter_inner: Inner<'a, S>,
 }
 
 impl<'a, S: TokenSink> Html5everEmitter<'a, S> {
     /// Construct the compatibility layer.
     pub fn new(sink: &'a mut S) -> Self {
         Html5everEmitter {
-            emitter_inner: CallbackEmitter::new(OurCallback {
+            emitter_inner: build_inner(OurCallback {
                 sink,
                 current_start_tag: None,
                 next_state: None,
@@ -174,19 +208,19 @@ impl<'a, S: TokenSink> ForwardingEmitter for Html5everEmitter<'a, S> {
 
     fn emit_eof(&mut self) {
         self.emitter_inner.emit_eof();
-        let sink = &mut self.emitter_inner.callback_mut().sink;
+        let sink = &mut self.emitter_inner.state_mut().sink;
         let _ignored = sink.process_token(Html5everToken::EOFToken, BOGUS_LINENO);
         sink.end();
     }
 
     fn emit_current_tag(&mut self) -> Option<State> {
         assert!(self.emitter_inner.emit_current_tag().is_none());
-        self.emitter_inner.callback_mut().next_state.take()
+        self.emitter_inner.state_mut().next_state.take()
     }
 
     fn adjusted_current_node_present_but_not_in_html_namespace(&mut self) -> bool {
         self.emitter_inner
-            .callback_mut()
+            .state_mut()
             .sink
             .adjusted_current_node_present_but_not_in_html_namespace()
     }

@@ -1,111 +1,171 @@
 //! The default emitter is what powers the simple SAX-like API that you see in the README.
 use std::collections::btree_map::Entry;
-use std::collections::BTreeMap;
-use std::mem::take;
+use std::collections::{BTreeMap, VecDeque};
 
+use crate::emitters::builder::{
+    spanned_sink, AttrSpans, Doctype as BuilderDoctype, EmitterBuilder, Handler,
+};
 use crate::{Error, HtmlString, Span, SpanBound, Spanned};
-
-use crate::emitters::callback::{Callback, CallbackEmitter, CallbackEvent};
 
 use super::{Emitter, ForwardingEmitter};
 
-#[derive(Debug, Default)]
-struct OurCallback<S: SpanBound> {
-    tag_name: Vec<u8>,
+#[derive(Debug)]
+struct State<S: SpanBound> {
     tag_start_span: S,
-    attribute_name: Spanned<HtmlString, S>,
     attribute_map: BTreeMap<HtmlString, Spanned<HtmlString, S>>,
+    tokens: VecDeque<Token<S>>,
 }
 
-impl<S: SpanBound> Callback<Token<S>, S> for OurCallback<S> {
-    fn handle_event(&mut self, event: CallbackEvent<'_>, span: Span<S>) -> Option<Token<S>> {
-        crate::utils::trace_log!("event: {:?}", event);
-        match event {
-            CallbackEvent::OpenStartTag { name } => {
-                self.tag_name.clear();
-                self.tag_name.extend(name);
-                self.tag_start_span = span.start;
-                None
-            }
-            CallbackEvent::AttributeName { name } => {
-                self.attribute_name.clear();
-                match self.attribute_map.entry(name.to_owned().into()) {
-                    Entry::Occupied(_) => Some(Token::Error(Spanned {
-                        value: Error::DuplicateAttribute,
-                        span,
-                    })),
-                    Entry::Vacant(vacant) => {
-                        self.attribute_name.extend(name);
-                        vacant.insert(Spanned {
-                            value: Default::default(),
-                            span,
-                        });
-                        None
-                    }
-                }
-            }
-            CallbackEvent::AttributeValue { value } => {
-                if !self.attribute_name.is_empty() {
-                    let attr = self.attribute_map.get_mut(&*self.attribute_name).unwrap();
-                    attr.extend(value);
-                    attr.span.end = span.end.offset(1);
-                }
-                None
-            }
-            CallbackEvent::CloseStartTag { self_closing } => Some(Token::StartTag(StartTag {
-                self_closing,
-                name: take(&mut self.tag_name).into(),
-                span: Span {
-                    start: self.tag_start_span,
-                    end: span.end,
-                },
-                attributes: take(&mut self.attribute_map),
-            })),
-            CallbackEvent::EndTag { name } => {
-                self.attribute_map.clear();
-                Some(Token::EndTag(EndTag {
-                    name: name.to_owned().into(),
-                    span,
-                }))
-            }
-            CallbackEvent::String { value } => Some(Token::String(Spanned {
-                value: value.to_owned().into(),
-                span,
-            })),
-            CallbackEvent::Comment { value } => Some(Token::Comment(Spanned {
-                value: value.to_owned().into(),
-                span,
-            })),
-            CallbackEvent::Doctype {
-                name,
-                public_identifier,
-                system_identifier,
-                force_quirks,
-            } => Some(Token::Doctype(Spanned {
-                value: Doctype {
-                    force_quirks,
-                    name: name.to_owned().into(),
-                    public_identifier: public_identifier.map(|x| x.to_owned().into()),
-                    system_identifier: system_identifier.map(|x| x.to_owned().into()),
-                },
-                span,
-            })),
-            CallbackEvent::Error(error) => Some(Token::Error(Spanned { value: error, span })),
+impl<S: SpanBound> Default for State<S> {
+    fn default() -> Self {
+        State {
+            tag_start_span: S::default(),
+            attribute_map: BTreeMap::new(),
+            tokens: VecDeque::new(),
         }
     }
+}
+
+fn on_tag_open<S: SpanBound>(state: &mut State<S>, _name: &[u8], span: Span<S>) {
+    state.tag_start_span = span.start;
+}
+
+fn on_attribute<S: SpanBound>(
+    state: &mut State<S>,
+    _tag_name: &[u8],
+    name: &[u8],
+    value: &[u8],
+    spans: AttrSpans<S>,
+) {
+    match state.attribute_map.entry(name.to_owned().into()) {
+        Entry::Occupied(_) => {
+            state.tokens.push_back(Token::Error(Spanned {
+                value: Error::DuplicateAttribute,
+                span: spans.name,
+            }));
+        }
+        Entry::Vacant(vacant) => {
+            // If no value was ever read (boolean attribute, e.g. `<input disabled>`), the
+            // reported span never advances past the attribute name. Otherwise it extends one
+            // past the value's own end, to account for the closing quote.
+            let end = if value.is_empty() {
+                spans.name.end
+            } else {
+                spans.value.end.offset(1)
+            };
+            vacant.insert(Spanned {
+                value: value.to_owned().into(),
+                span: Span {
+                    start: spans.name.start,
+                    end,
+                },
+            });
+        }
+    }
+}
+
+fn on_tag_close<S: SpanBound>(
+    state: &mut State<S>,
+    tag_name: &[u8],
+    self_closing: bool,
+    span: Span<S>,
+) {
+    state.tokens.push_back(Token::StartTag(StartTag {
+        self_closing,
+        name: tag_name.to_owned().into(),
+        span: Span {
+            start: state.tag_start_span,
+            end: span.end,
+        },
+        attributes: std::mem::take(&mut state.attribute_map),
+    }));
+}
+
+fn on_end_tag<S: SpanBound>(state: &mut State<S>, name: &[u8], span: Span<S>) {
+    state.attribute_map.clear();
+    state.tokens.push_back(Token::EndTag(EndTag {
+        name: name.to_owned().into(),
+        span,
+    }));
+}
+
+fn on_text<S: SpanBound>(state: &mut State<S>, text: &[u8], span: Span<S>) {
+    state.tokens.push_back(Token::String(Spanned {
+        value: text.to_owned().into(),
+        span,
+    }));
+}
+
+fn on_comment<S: SpanBound>(state: &mut State<S>, value: &[u8], span: Span<S>) {
+    state.tokens.push_back(Token::Comment(Spanned {
+        value: value.to_owned().into(),
+        span,
+    }));
+}
+
+fn on_doctype<S: SpanBound>(state: &mut State<S>, doctype: BuilderDoctype<'_>, span: Span<S>) {
+    state.tokens.push_back(Token::Doctype(Spanned {
+        value: Doctype {
+            force_quirks: doctype.force_quirks,
+            name: doctype.name.to_owned().into(),
+            public_identifier: doctype.public_identifier.map(|x| x.to_owned().into()),
+            system_identifier: doctype.system_identifier.map(|x| x.to_owned().into()),
+        },
+        span,
+    }));
+}
+
+fn on_error<S: SpanBound>(state: &mut State<S>, error: Error, span: Span<S>) {
+    state
+        .tokens
+        .push_back(Token::Error(Spanned { value: error, span }));
+}
+
+fn on_pop_token<S: SpanBound>(state: &mut State<S>) -> Option<Token<S>> {
+    state.tokens.pop_front()
+}
+
+// None of the handlers above capture any environment (all state lives in `State<S>`), so they
+// coerce to plain function pointers. That keeps this type alias nameable, unlike the closures a
+// direct `EmitterBuilder` user would normally register.
+type Inner<S> = EmitterBuilder<
+    State<S>,
+    S,
+    Handler<fn(&mut State<S>, &[u8], Span<S>)>,
+    Handler<fn(&mut State<S>, &[u8], &[u8], &[u8], AttrSpans<S>)>,
+    Handler<fn(&mut State<S>, &[u8], bool, Span<S>)>,
+    Handler<fn(&mut State<S>, &[u8], Span<S>)>,
+    Handler<fn(&mut State<S>, &[u8], Span<S>)>,
+    Handler<fn(&mut State<S>, &[u8], Span<S>)>,
+    Handler<fn(&mut State<S>, BuilderDoctype<'_>, Span<S>)>,
+    Handler<fn(&mut State<S>, Error, Span<S>)>,
+    Handler<fn(&mut State<S>) -> Option<Token<S>>>,
+>;
+
+fn build_inner<S: SpanBound>() -> Inner<S> {
+    spanned_sink(State::default())
+        .on_tag_open(on_tag_open::<S> as fn(&mut State<S>, &[u8], Span<S>))
+        .on_attribute(on_attribute::<S> as fn(&mut State<S>, &[u8], &[u8], &[u8], AttrSpans<S>))
+        .on_tag_close(on_tag_close::<S> as fn(&mut State<S>, &[u8], bool, Span<S>))
+        .on_end_tag(on_end_tag::<S> as fn(&mut State<S>, &[u8], Span<S>))
+        .on_text(on_text::<S> as fn(&mut State<S>, &[u8], Span<S>))
+        .on_comment(on_comment::<S> as fn(&mut State<S>, &[u8], Span<S>))
+        .on_doctype(on_doctype::<S> as fn(&mut State<S>, BuilderDoctype<'_>, Span<S>))
+        .on_error(on_error::<S> as fn(&mut State<S>, Error, Span<S>))
+        .on_pop_token(on_pop_token::<S> as fn(&mut State<S>) -> Option<Token<S>>)
 }
 
 /// This is the emitter you implicitly use with [crate::Tokenizer::new]. Refer to the [crate
 /// docs](crate) for how usage looks like.
 #[derive(Debug)]
 pub struct DefaultEmitter<S: SpanBound = ()> {
-    inner: CallbackEmitter<OurCallback<S>, Token<S>, S>,
+    inner: Inner<S>,
 }
 
 impl Default for DefaultEmitter<()> {
     fn default() -> Self {
         Self {
-            inner: Default::default(),
+            inner: build_inner(),
         }
     }
 }
@@ -116,7 +176,7 @@ impl<S: SpanBound> DefaultEmitter<S> {
     #[must_use]
     pub fn new_with_span() -> Self {
         Self {
-            inner: Default::default(),
+            inner: build_inner(),
         }
     }
 

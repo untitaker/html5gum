@@ -13,9 +13,10 @@
 //! Emitters are "a way to consume parsing results." The following ways are available:
 //!
 //! * [default::DefaultEmitter], if you don't care about speed and only want convenience.
-//! * [callback::CallbackEmitter], if you can deal with some lifetime problems in exchange for way fewer allocations.
+//! * [builder::EmitterBuilder], if you can deal with some lifetime problems in exchange for way
+//!   fewer allocations.
 //! * Implementing your own [Emitter] for maximum performance and maximum pain.
-pub mod callback;
+pub mod builder;
 pub mod default;
 #[cfg(feature = "html5ever")]
 pub mod html5ever;

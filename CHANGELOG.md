@@ -1,3 +1,34 @@
+# 0.9.0
+
+- Replaced `CallbackEmitter` with `EmitterBuilder` (`html5gum::emitters::builder`). Instead of
+  routing every event through one closure matching on a `CallbackEvent` enum, each kind of event
+  gets its own optional handler slot (`on_tag_open`, `on_attribute`, ...), registered via builder
+  methods. Only the buffers a registered handler actually needs are maintained; unregistered
+  handlers cost nothing at runtime.
+- **Breaking:** parsing errors are no longer computed or delivered by default. `CallbackEmitter`
+  always ran error detection; with `EmitterBuilder`, errors are off unless you register
+  `on_error`.
+- **Breaking:** attribute name and value are now delivered together in one `on_attribute` call
+  (with the tag name included) instead of as two separate `AttributeName`/`AttributeValue`
+  events. This also means user closures can no longer capture shared mutable state from their
+  environment (since each event kind is a separate closure); shared state must now be passed
+  through the emitter's `St` type parameter and threaded via `&mut St`, the handler's first
+  argument.
+- `EmitterBuilder` also offers `on_text_chunk` as a streaming alternative to `on_text`: chunks
+  are delivered as the tokenizer produces them, with no coalescing buffer (and no copy of text
+  content), at the cost of arbitrary chunk boundaries. The two fill the same handler slot, so
+  only one of them can be registered.
+- Migration table, `CallbackEvent` variant -> `EmitterBuilder` method:
+  - `OpenStartTag` -> `on_tag_open`
+  - `AttributeName` + `AttributeValue` -> `on_attribute` (now paired, with tag name)
+  - `CloseStartTag` -> `on_tag_close` (now also receives the tag name)
+  - `EndTag` -> `on_end_tag`
+  - `String` -> `on_text`
+  - `Comment` -> `on_comment`
+  - `Doctype` -> `on_doctype`
+  - `Error(e)` -> `on_error`
+  - returning `Some(token)` from the callback -> `on_pop_token`, with the token queued in `St`
+
 # 0.8.4
 
 - Fix an ordering bug when using `CallbackEmitter`. [PR 135](https://github.com/untitaker/html5gum/pull/135)
