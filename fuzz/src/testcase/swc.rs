@@ -33,15 +33,13 @@ pub fn run_swc(s: &str) {
                 system_id,
                 ..
             } => {
-                transformed_swc_tokens.push(html5gum::Token::Doctype(
-                    html5gum::Doctype {
-                        name: name.unwrap_or_default().to_string().into_bytes().into(),
-                        public_identifier: public_id.map(|x| x.to_string().into_bytes().into()),
-                        system_identifier: system_id.map(|x| x.to_string().into_bytes().into()),
-                        force_quirks,
-                    }
-                    .into(),
-                ));
+                transformed_swc_tokens.push(html5gum::Token::Doctype(html5gum::Doctype {
+                    name: name.unwrap_or_default().to_string().into_bytes().into(),
+                    public_identifier: public_id.map(|x| x.to_string().into_bytes().into()),
+                    system_identifier: system_id.map(|x| x.to_string().into_bytes().into()),
+                    force_quirks,
+                    ..Default::default()
+                }));
             }
             Token::StartTag {
                 tag_name,

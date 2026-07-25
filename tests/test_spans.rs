@@ -27,16 +27,14 @@ fn token_to_json(token: &Token<usize>) -> serde_json::Value {
     match token {
         Token::Doctype(d) => serde_json::json!([
             "DOCTYPE",
-            String::from_utf8_lossy(&d.value.name),
-            d.value
-                .public_identifier
+            String::from_utf8_lossy(&d.name),
+            d.public_identifier
                 .as_ref()
                 .map(|x| String::from_utf8_lossy(x).into_owned()),
-            d.value
-                .system_identifier
+            d.system_identifier
                 .as_ref()
                 .map(|x| String::from_utf8_lossy(x).into_owned()),
-            !d.value.force_quirks,
+            !d.force_quirks,
             d.span.start,
             d.span.end
         ]),

@@ -349,7 +349,7 @@ checksum = "91b361633dcc40096d01de35ed535b6089be91880be47b6fd8f560497af7f716"
 
 [[package]]
 name = "html5gum"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "afl",
 ]
@@ -363,10 +363,9 @@ dependencies = [
  "encoding_rs",
  "html5ever",
  "html5gum 0.6.1",
- "html5gum 0.8.3",
+ "html5gum 0.8.4",
  "libfuzzer-sys",
  "lol_html",
- "memchr",
  "pretty_assertions",
  "swc_common",
  "swc_html_ast",
