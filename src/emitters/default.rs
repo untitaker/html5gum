@@ -81,13 +81,11 @@ impl<S: SpanBound> Callback<Token<S>, S> for OurCallback<S> {
                 public_identifier,
                 system_identifier,
                 force_quirks,
-            } => Some(Token::Doctype(Spanned {
-                value: Doctype {
-                    force_quirks,
-                    name: name.to_owned().into(),
-                    public_identifier: public_identifier.map(|x| x.to_owned().into()),
-                    system_identifier: system_identifier.map(|x| x.to_owned().into()),
-                },
+            } => Some(Token::Doctype(Doctype {
+                force_quirks,
+                name: name.to_owned().into(),
+                public_identifier: public_identifier.map(|x| x.to_owned().into()),
+                system_identifier: system_identifier.map(|x| x.to_owned().into()),
                 span,
             })),
             CallbackEvent::Error(error) => Some(Token::Error(Spanned { value: error, span })),
@@ -170,8 +168,8 @@ pub struct EndTag<S: SpanBound> {
 /// * `<!DOCTYPE {name} PUBLIC '{public_identifier}'>`
 /// * `<!DOCTYPE {name} SYSTEM '{system_identifier}'>`
 /// * `<!DOCTYPE {name} PUBLIC '{public_identifier}' '{system_identifier}'>`
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Doctype {
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Doctype<S: SpanBound> {
     /// The ["force quirks"](https://html.spec.whatwg.org/#force-quirks-flag) flag.
     pub force_quirks: bool,
 
@@ -183,6 +181,9 @@ pub struct Doctype {
 
     /// The doctype's system identifier.
     pub system_identifier: Option<HtmlString>,
+
+    /// The span of the doctype. Includes exactly `<!DOCTYPE ...>`.
+    pub span: Span<S>,
 }
 
 /// The token type used by default. You can define your own token type by implementing the
@@ -198,7 +199,7 @@ pub enum Token<S: SpanBound = ()> {
     /// A HTML comment.
     Comment(Spanned<HtmlString, S>),
     /// A HTML doctype declaration.
-    Doctype(Spanned<Doctype, S>),
+    Doctype(Doctype<S>),
     /// A HTML parsing error.
     ///
     /// Can be skipped over, the tokenizer is supposed to recover from the error and continues with

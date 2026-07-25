@@ -78,13 +78,11 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
                         public_identifier,
                         system_identifier,
                         correctness,
-                    ) => Token::Doctype(Spanned {
-                        value: Doctype {
-                            name: name.unwrap_or_default().0.into(),
-                            public_identifier: public_identifier.map(|x| x.0.into()),
-                            system_identifier: system_identifier.map(|x| x.0.into()),
-                            force_quirks: !correctness,
-                        },
+                    ) => Token::Doctype(Doctype {
+                        name: name.unwrap_or_default().0.into(),
+                        public_identifier: public_identifier.map(|x| x.0.into()),
+                        system_identifier: system_identifier.map(|x| x.0.into()),
+                        force_quirks: !correctness,
                         span: Span::DUMMY,
                     }),
                     OutputToken::StartTag(_, name, attributes) => Token::StartTag(StartTag {
