@@ -25,6 +25,6 @@ jobs:
         with:
           crate: bencher_cli
           git: https://github.com/bencherdev/bencher
-          ref: f6832c1c
-      - run: sudo apt-get install -y valgrind
-      - run: bencher run --if-branch "$GITHUB_REF_NAME" --else-if-branch "$GITHUB_BASE_REF" --else-if-branch main --err --github-actions ${{ secrets.GITHUB_TOKEN }} --ci-only-thresholds --ci-only-on-alert "cargo bench"
+          rev: 4c83b25441d145ee273adaf74be30f2382e6ba85
+      - run: sudo apt-get update && sudo apt-get install -y valgrind
+      - run: bencher run --branch "${{ github.head_ref || github.ref_name }}" --start-point "${{ github.base_ref || 'main' }}" --start-point-clone-thresholds --err --github-actions ${{ secrets.GITHUB_TOKEN }} --ci-only-thresholds --ci-only-on-alert "cargo bench"
