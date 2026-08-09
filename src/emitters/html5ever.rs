@@ -6,6 +6,8 @@ use crate::utils::trace_log;
 use crate::{Emitter, ForwardingEmitter, Readable, Reader, Span, State, Tokenizer};
 
 use html5ever::interface::{create_element, TreeSink};
+use html5ever::tendril::StrTendril;
+use html5ever::LocalName;
 use html5ever::tokenizer::states::State as Html5everState;
 use html5ever::tokenizer::{
     states::RawKind, Doctype, Tag, TagKind, Token as Html5everToken, TokenSink, TokenSinkResult,
@@ -15,6 +17,14 @@ use html5ever::ParseOpts;
 use html5ever::{Attribute, QualName};
 
 const BOGUS_LINENO: u64 = 1;
+
+fn to_tendril(bytes: &[u8]) -> StrTendril {
+    StrTendril::from_slice(&String::from_utf8_lossy(bytes))
+}
+
+fn to_local_name(bytes: &[u8]) -> LocalName {
+    LocalName::from(&*String::from_utf8_lossy(bytes))
+}
 
 #[derive(Debug)]
 struct OurCallback<'a, S> {
@@ -63,7 +73,7 @@ impl<'a, S: TokenSink> Callback<Infallible, ()> for OurCallback<'a, S> {
             CallbackEvent::OpenStartTag { name } => {
                 self.current_start_tag = Some(Tag {
                     kind: TagKind::StartTag,
-                    name: String::from_utf8_lossy(name).into_owned().into(),
+                    name: to_local_name(name),
                     self_closing: false,
                     attrs: Default::default(),
                 });
@@ -71,11 +81,7 @@ impl<'a, S: TokenSink> Callback<Infallible, ()> for OurCallback<'a, S> {
             CallbackEvent::AttributeName { name } => {
                 if let Some(ref mut tag) = self.current_start_tag {
                     tag.attrs.push(Attribute {
-                        name: QualName::new(
-                            None,
-                            Default::default(),
-                            String::from_utf8_lossy(name).into_owned().into(),
-                        ),
+                        name: QualName::new(None, Default::default(), to_local_name(name)),
                         value: Default::default(),
                     });
                 }
@@ -96,26 +102,24 @@ impl<'a, S: TokenSink> Callback<Infallible, ()> for OurCallback<'a, S> {
             CallbackEvent::EndTag { name } => {
                 self.sink_token(Html5everToken::TagToken(Tag {
                     kind: TagKind::EndTag,
-                    name: String::from_utf8_lossy(name).into_owned().into(),
+                    name: to_local_name(name),
                     self_closing: false,
                     attrs: Default::default(),
                 }));
             }
             CallbackEvent::String { value } => {
                 let mut first = true;
-                for part in String::from_utf8_lossy(value).split('\0') {
+                for part in value.split(|&b| b == 0) {
                     if !first {
                         self.sink_token(Html5everToken::NullCharacterToken);
                     }
 
                     first = false;
-                    self.sink_token(Html5everToken::CharacterTokens(part.to_owned().into()));
+                    self.sink_token(Html5everToken::CharacterTokens(to_tendril(part)));
                 }
             }
             CallbackEvent::Comment { value } => {
-                self.sink_token(Html5everToken::CommentToken(
-                    String::from_utf8_lossy(value).into_owned().into(),
-                ));
+                self.sink_token(Html5everToken::CommentToken(to_tendril(value)));
             }
             CallbackEvent::Doctype {
                 name,
@@ -124,13 +128,9 @@ impl<'a, S: TokenSink> Callback<Infallible, ()> for OurCallback<'a, S> {
                 force_quirks,
             } => {
                 self.sink_token(Html5everToken::DoctypeToken(Doctype {
-                    name: Some(name)
-                        .filter(|x| !x.is_empty())
-                        .map(|x| String::from_utf8_lossy(x).into_owned().into()),
-                    public_id: public_identifier
-                        .map(|x| String::from_utf8_lossy(x).into_owned().into()),
-                    system_id: system_identifier
-                        .map(|x| String::from_utf8_lossy(x).into_owned().into()),
+                    name: Some(name).filter(|x| !x.is_empty()).map(to_tendril),
+                    public_id: public_identifier.map(to_tendril),
+                    system_id: system_identifier.map(to_tendril),
                     force_quirks,
                 }));
             }
