@@ -7,12 +7,12 @@ use crate::{Emitter, ForwardingEmitter, Readable, Reader, Span, State, Tokenizer
 
 use html5ever::interface::{create_element, TreeSink};
 use html5ever::tendril::StrTendril;
-use html5ever::LocalName;
 use html5ever::tokenizer::states::State as Html5everState;
 use html5ever::tokenizer::{
     states::RawKind, Doctype, Tag, TagKind, Token as Html5everToken, TokenSink, TokenSinkResult,
 };
 use html5ever::tree_builder::TreeBuilder;
+use html5ever::LocalName;
 use html5ever::ParseOpts;
 use html5ever::{Attribute, QualName};
 
