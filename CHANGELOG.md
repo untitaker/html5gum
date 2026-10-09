@@ -1,6 +1,7 @@
 # Unreleased
 
 - Change types around `Token::Doctype` so that `.value` is no longer necessary. [PR 139](https://github.com/untitaker/html5gum/pull/139)
+- Stop formatting internal trace messages while trace logging is off. This made builds with debug assertions, such as the dev profile of downstream crates, slow and allocate in proportion to the input. [PR 147](https://github.com/untitaker/html5gum/pull/147)
 
 # 0.8.4
 

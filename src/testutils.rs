@@ -6,7 +6,8 @@ use crate::Reader;
 use std::cell::Cell;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-/// Global flag to enable trace logging. When false, trace_log is a no-op.
+/// Global flag to enable trace logging. When false, trace_log is a no-op and the `trace_log!`
+/// macro does not format its message at all.
 ///
 /// During fuzzing, we want to run with cfg(debug_assertions) yet at the same time not run
 /// trace_log to keep target stability (in AFL terms). Adding more cargo featureflags is unwieldy.
@@ -28,15 +29,22 @@ pub fn disable_trace_log() {
     TRACE_LOG_ENABLED.store(false, Ordering::Relaxed);
 }
 
+/// Whether trace logging is enabled. Checked by the `trace_log!` macro before formatting.
+#[inline]
+pub(crate) fn trace_log_enabled() -> bool {
+    TRACE_LOG_ENABLED.load(Ordering::Relaxed)
+}
+
 /// Simple debug logger for tests.
 ///
 /// The test harness used by `tests/html5lib_tokenizer.rs` cannot capture stdout, see [libtest-mimic
 /// issue #9](https://github.com/LukasKalbertodt/libtest-mimic/issues/9) -- this is much more performant
 /// than println anyway though.
 ///
-/// A noop version for non-test builds is implemented in src/lib.rs
+/// Crate code logs through the `trace_log!` macro in src/utils.rs instead, which compiles to
+/// nothing without debug_assertions and only formats its message if trace logging is enabled.
 pub fn trace_log(msg: &str) {
-    if !TRACE_LOG_ENABLED.load(Ordering::Relaxed) {
+    if !trace_log_enabled() {
         return;
     }
 
