@@ -1,9 +1,11 @@
+use std::convert::Infallible;
 use std::fs::File;
 use std::io::BufReader;
 
 use glob::glob;
+use html5gum::emitters::callback::{CallbackEmitter, CallbackEvent};
 use html5gum::testutils::trace_log;
-use html5gum::{DefaultEmitter, Token, Tokenizer};
+use html5gum::{DefaultEmitter, Span, Token, Tokenizer};
 use libtest_mimic::{Arguments, Failed, Trial};
 use pretty_assertions::assert_eq;
 use serde::Deserialize;
@@ -123,6 +125,33 @@ fn run_test(test: &SpanTestCase) -> Result<(), Failed> {
     })
 }
 
+/// The data-driven tests go through `DefaultEmitter`, whose attribute spans start at the attribute
+/// name. Where the attribute *value* starts is only observable through `CallbackEmitter`.
+fn test_callback_attribute_value_spans() -> Result<(), Failed> {
+    testutils::catch_unwind_and_report(|| {
+        let input = r#"<a b=xyz c="q" d='r' e>"#;
+        let mut values = Vec::new();
+        let emitter = CallbackEmitter::new(|event: CallbackEvent<'_>, span: Span<usize>| {
+            if let CallbackEvent::AttributeValue { value } = event {
+                values.push((String::from_utf8_lossy(value).into_owned(), span));
+            }
+            None::<Infallible>
+        });
+        Tokenizer::new_with_emitter(input, emitter)
+            .finish()
+            .unwrap();
+
+        assert_eq!(
+            values,
+            [
+                ("xyz".to_owned(), Span { start: 5, end: 8 }),
+                ("q".to_owned(), Span { start: 12, end: 13 }),
+                ("r".to_owned(), Span { start: 18, end: 19 }),
+            ]
+        );
+    })
+}
+
 fn produce_tests_from_file(path: &str) -> Vec<Trial> {
     let file = File::open(path).expect("failed to open test file");
     let reader = BufReader::new(file);
@@ -150,6 +179,11 @@ fn main() {
             Err(e) => eprintln!("Error reading path: {:?}", e),
         }
     }
+
+    tests.push(Trial::test(
+        "callback emitter: attribute value spans",
+        test_callback_attribute_value_spans,
+    ));
 
     libtest_mimic::run(&args, tests).exit();
 }
