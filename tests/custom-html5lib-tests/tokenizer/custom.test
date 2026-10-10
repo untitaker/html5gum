@@ -20,6 +20,18 @@
 "output":[["Comment", "<!-\n"]],
 "errors": [
     {"code": "eof-in-comment", "line": 1, "col": 5}
-]}
+]},
+
+{"description":"Mixed-case tag, attribute and DOCTYPE names are lowercased",
+"input":"<!DOCTYPE HtMl><linearGradient viewBox=x></linearGradient>",
+"output":[["DOCTYPE", "html", null, null, true], ["StartTag", "lineargradient", {"viewbox": "x"}], ["EndTag", "lineargradient"]]},
+
+{"description":"Only ASCII characters in mixed-case names are lowercased",
+"input":"<!DOCTYPE ÄbC><aÄbC ÖbC=x></aÄbC>",
+"output":[["DOCTYPE", "Äbc", null, null, true], ["StartTag", "aÄbc", {"Öbc": "x"}], ["EndTag", "aÄbc"]]},
+
+{"description":"Long mixed-case names with non-ASCII characters are lowercased",
+"input":"<!DOCTYPE aBÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€><aBÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€ aBÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€=x></aBÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€BÄ€>",
+"output":[["DOCTYPE", "abÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€", null, null, true], ["StartTag", "abÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€", {"abÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€": "x"}], ["EndTag", "abÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€bÄ€"]]}
 
 ]}
