@@ -902,8 +902,16 @@ pub(crate) mod states {
                     error!(slf, Error::MissingAttributeValue);
                     emit_current_tag_and_switch_to!(slf, Data)
                 }
-                c => {
+                None => {
                     slf.emitter.init_attribute_value();
+                    reconsume_in!(slf, None, AttributeValueUnquoted)
+                }
+                c @ Some(_) => {
+                    // c has already been consumed (unlike at EOF), but it is the first byte of
+                    // the value. Step back over it so that the value's span starts at c.
+                    slf.emitter.move_position(-1);
+                    slf.emitter.init_attribute_value();
+                    slf.emitter.move_position(1);
                     reconsume_in!(slf, c, AttributeValueUnquoted)
                 }
             }
