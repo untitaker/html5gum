@@ -674,3 +674,31 @@ fn round_trip() {
     Tokenizer::new_with_emitter(source, emitter).finish();
     assert_eq!(source.as_bytes(), rt, "{} != {}", source, rt.escape_ascii());
 }
+
+/// The data-driven span tests go through `DefaultEmitter`, whose attribute spans start at the
+/// attribute name. Where the attribute *value* starts is only observable through `CallbackEmitter`.
+#[test]
+fn attribute_value_spans() {
+    use crate::{Span, Tokenizer};
+
+    let input = r#"<a b=xyz c="q" d='r' e>"#;
+    let mut values = Vec::new();
+    let emitter = CallbackEmitter::new(|event: CallbackEvent<'_>, span: Span<usize>| {
+        if let CallbackEvent::AttributeValue { value } = event {
+            values.push((String::from_utf8_lossy(value).into_owned(), span));
+        }
+        None::<core::convert::Infallible>
+    });
+    Tokenizer::new_with_emitter(input, emitter)
+        .finish()
+        .unwrap();
+
+    assert_eq!(
+        values,
+        [
+            ("xyz".to_owned(), Span { start: 5, end: 8 }),
+            ("q".to_owned(), Span { start: 12, end: 13 }),
+            ("r".to_owned(), Span { start: 18, end: 19 }),
+        ]
+    );
+}
