@@ -6,8 +6,8 @@ use crate::Reader;
 use std::cell::Cell;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-/// Global flag to enable trace logging. When false, trace_log is a no-op and the `trace_log!`
-/// macro does not format its message at all.
+/// Global flag to enable trace logging. When false, the `trace_log!` macro neither formats nor
+/// logs its message.
 ///
 /// During fuzzing, we want to run with cfg(debug_assertions) yet at the same time not run
 /// trace_log to keep target stability (in AFL terms). Adding more cargo featureflags is unwieldy.
@@ -31,7 +31,7 @@ pub fn disable_trace_log() {
 
 /// Whether trace logging is enabled. Checked by the `trace_log!` macro before formatting.
 #[inline]
-pub(crate) fn trace_log_enabled() -> bool {
+pub fn trace_log_enabled() -> bool {
     TRACE_LOG_ENABLED.load(Ordering::Relaxed)
 }
 
@@ -42,12 +42,9 @@ pub(crate) fn trace_log_enabled() -> bool {
 /// than println anyway though.
 ///
 /// Crate code logs through the `trace_log!` macro in src/utils.rs instead, which compiles to
-/// nothing without debug_assertions and only formats its message if trace logging is enabled.
+/// nothing without debug_assertions and only formats its message if trace logging is enabled. This
+/// function itself logs unconditionally.
 pub fn trace_log(msg: &str) {
-    if !trace_log_enabled() {
-        return;
-    }
-
     OUTPUT.with(|cell| {
         let mut buf = cell.take();
         buf.push_str(msg);
