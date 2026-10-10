@@ -1,4 +1,7 @@
-use html5gum::{DefaultEmitter, Token, Tokenizer};
+use std::convert::Infallible;
+
+use html5gum::emitters::callback::{CallbackEmitter, CallbackEvent};
+use html5gum::{DefaultEmitter, Span, Token, Tokenizer};
 
 /// Validates span invariants for all tokens produced from the input.
 ///
@@ -7,6 +10,7 @@ use html5gum::{DefaultEmitter, Token, Tokenizer};
 /// 2. Spans point to correct content in the input
 /// 3. Spans are non-overlapping and ordered
 /// 4. Spans are non-empty for structural tokens (tags, comments, doctypes)
+/// 5. Attribute value spans (as reported by `CallbackEmitter`) cover exactly the value
 ///
 /// This would have caught the bug fixed in commit 505de5b where end tag positions
 /// were incorrectly tracked in naive state switching mode.
@@ -23,6 +27,36 @@ pub fn validate_span_invariants(input: &[u8]) {
     for Ok(token) in tokenizer {
         validate_token_span(&token, input, &mut last_end);
     }
+
+    validate_attribute_value_spans(input);
+}
+
+/// `DefaultEmitter`'s attribute spans start at the attribute name, so they cannot tell where the
+/// value starts. Check the spans of `CallbackEmitter`'s `AttributeValue` events instead.
+fn validate_attribute_value_spans(input: &[u8]) {
+    let mut emitter = CallbackEmitter::new(|event: CallbackEvent<'_>, span: Span<usize>| {
+        if let CallbackEvent::AttributeValue { value } = event {
+            validate_span(&span, input, "AttributeValue", &mut None);
+
+            let content = &input[span.start..span.end];
+            // Character references, NUL replacement and newline normalization make the value
+            // differ from its source text, so only compare the two if none of them can apply.
+            if !content.iter().any(|b| matches!(b, b'&' | b'\0' | b'\r')) {
+                assert!(
+                    value == content,
+                    "AttributeValue span does not match value {:?}: {:?} at {}..{}",
+                    String::from_utf8_lossy(value),
+                    String::from_utf8_lossy(content),
+                    span.start,
+                    span.end
+                );
+            }
+        }
+        None::<Infallible>
+    });
+    emitter.naively_switch_states(true);
+
+    for Ok(_) in Tokenizer::new_with_emitter(input, emitter) {}
 }
 
 /// Validates the span of a single token against the input.
