@@ -39,8 +39,7 @@ impl<R: Reader> ReadHelper<R> {
     /// once it is consumed. Unlike with `read_byte` followed by `unread_byte`, peeking at a byte
     /// therefore does not change the order in which errors are emitted.
     ///
-    /// The byte has to be consumed by `try_read_string` or `read_peeked_byte` before reading
-    /// anything else.
+    /// The byte has to be consumed with `read_peeked_byte` before reading anything else.
     #[inline(always)]
     pub(crate) fn peek_byte(&mut self) -> Result<Option<u8>, R::Error> {
         debug_assert!(self.to_reconsume.is_none());

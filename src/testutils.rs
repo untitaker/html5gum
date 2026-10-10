@@ -62,13 +62,37 @@ pub fn trace_log(msg: &str) {
 /// All named character references in the generated table, as pairs of the name (without the
 /// leading `&`) and the characters it stands for.
 pub fn named_character_references() -> Vec<(String, &'static str)> {
+    use crate::entities::try_read_character_reference;
+    use std::convert::Infallible;
+
     let mut rv = Vec::new();
 
-    for first_char in 0..=u8::MAX {
-        for second_char in 0..=u8::MAX {
-            for &(name, characters) in crate::entities::candidates(first_char, second_char) {
-                assert_eq!(name.as_bytes()[0], second_char);
-                rv.push((format!("{}{}", char::from(first_char), name), characters));
+    for first_char in (0..=u8::MAX).map(char::from) {
+        for second_char in (0..=u8::MAX).map(char::from) {
+            // The lookup tries every candidate until one matches. Only a name that ends with
+            // these two characters matches without being tried, and it comes last.
+            let mut rests = Vec::new();
+            let unconditional = try_read_character_reference(first_char, second_char, |rest| {
+                rests.push(rest.to_owned());
+                Ok::<_, Infallible>(false)
+            });
+
+            for rest in rests {
+                let Ok(Some(char_ref)) =
+                    try_read_character_reference(first_char, second_char, |candidate| {
+                        Ok::<_, Infallible>(candidate == rest)
+                    })
+                else {
+                    unreachable!("{}{}{} was a candidate", first_char, second_char, rest);
+                };
+                rv.push((
+                    format!("{first_char}{second_char}{}", char_ref.name),
+                    char_ref.characters,
+                ));
+            }
+
+            if let Ok(Some(char_ref)) = unconditional {
+                rv.push((format!("{first_char}{second_char}"), char_ref.characters));
             }
         }
     }
