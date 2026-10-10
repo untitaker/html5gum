@@ -3,3340 +3,2539 @@
 // curl https://html.spec.whatwg.org/entities.json | python generate_entities.py
 
 pub(crate) struct CharRef {
-    /// Name as it appears escaped in HTML
+    /// Name as it appears escaped in HTML, without the leading `&` and the first character
     pub(crate) name: &'static str,
     /// Unescaped character codepoints
     pub(crate) characters: &'static str,
 }
 
+/// Read the rest of a named character reference whose first character `first_char` has already
+/// been consumed.
+///
+/// `next_char` is the next character of the input, which has not been consumed yet. Only the names
+/// that continue with it are passed to `try_read`, which should consume the given string if the
+/// input continues with it. Returns the longest name that matches.
 pub(crate) fn try_read_character_reference<E>(
-    first_char: char,
-    try_read: impl FnMut(&str) -> Result<bool, E>,
+    first_char: u8,
+    next_char: Option<u8>,
+    mut try_read: impl FnMut(&str) -> Result<bool, E>,
 ) -> Result<Option<CharRef>, E> {
-    match first_char {
-        'A' => {
-            #[allow(non_snake_case)]
-            fn branch_A<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("pplyFunction;", "\u{2061}"),
-                    ("acute;", "\u{c1}"),
-                    ("breve;", "\u{102}"),
-                    ("grave;", "\u{c0}"),
-                    ("ssign;", "\u{2254}"),
-                    ("tilde;", "\u{c3}"),
-                    ("Elig;", "\u{c6}"),
-                    ("acute", "\u{c1}"),
-                    ("circ;", "\u{c2}"),
-                    ("grave", "\u{c0}"),
-                    ("lpha;", "\u{391}"),
-                    ("macr;", "\u{100}"),
-                    ("ogon;", "\u{104}"),
-                    ("ring;", "\u{c5}"),
-                    ("tilde", "\u{c3}"),
-                    ("Elig", "\u{c6}"),
-                    ("circ", "\u{c2}"),
-                    ("opf;", "\u{1d538}"),
-                    ("ring", "\u{c5}"),
-                    ("scr;", "\u{1d49c}"),
-                    ("uml;", "\u{c4}"),
-                    ("MP;", "\u{26}"),
-                    ("cy;", "\u{410}"),
-                    ("fr;", "\u{1d504}"),
-                    ("nd;", "\u{2a53}"),
-                    ("uml", "\u{c4}"),
-                    ("MP", "\u{26}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
+    let Some(next_char) = next_char else {
+        return Ok(None);
+    };
 
-                Ok(None)
-            }
-
-            branch_A(try_read)
+    for &(name, characters) in candidates(first_char, next_char) {
+        if try_read(name)? {
+            return Ok(Some(CharRef { name, characters }));
         }
-
-        'B' => {
-            #[allow(non_snake_case)]
-            fn branch_B<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("ernoullis;", "\u{212c}"),
-                    ("ackslash;", "\u{2216}"),
-                    ("ecause;", "\u{2235}"),
-                    ("arwed;", "\u{2306}"),
-                    ("umpeq;", "\u{224e}"),
-                    ("reve;", "\u{2d8}"),
-                    ("arv;", "\u{2ae7}"),
-                    ("eta;", "\u{392}"),
-                    ("opf;", "\u{1d539}"),
-                    ("scr;", "\u{212c}"),
-                    ("cy;", "\u{411}"),
-                    ("fr;", "\u{1d505}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_B(try_read)
-        }
-
-        'C' => {
-            #[allow(non_snake_case)]
-            fn branch_C<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("ounterClockwiseContourIntegral;", "\u{2233}"),
-                    ("lockwiseContourIntegral;", "\u{2232}"),
-                    ("loseCurlyDoubleQuote;", "\u{201d}"),
-                    ("apitalDifferentialD;", "\u{2145}"),
-                    ("loseCurlyQuote;", "\u{2019}"),
-                    ("ontourIntegral;", "\u{222e}"),
-                    ("ircleMinus;", "\u{2296}"),
-                    ("ircleTimes;", "\u{2297}"),
-                    ("irclePlus;", "\u{2295}"),
-                    ("enterDot;", "\u{b7}"),
-                    ("ircleDot;", "\u{2299}"),
-                    ("ongruent;", "\u{2261}"),
-                    ("oproduct;", "\u{2210}"),
-                    ("ayleys;", "\u{212d}"),
-                    ("conint;", "\u{2230}"),
-                    ("edilla;", "\u{b8}"),
-                    ("acute;", "\u{106}"),
-                    ("caron;", "\u{10c}"),
-                    ("cedil;", "\u{c7}"),
-                    ("olone;", "\u{2a74}"),
-                    ("onint;", "\u{222f}"),
-                    ("upCap;", "\u{224d}"),
-                    ("cedil", "\u{c7}"),
-                    ("circ;", "\u{108}"),
-                    ("olon;", "\u{2237}"),
-                    ("ross;", "\u{2a2f}"),
-                    ("Hcy;", "\u{427}"),
-                    ("OPY;", "\u{a9}"),
-                    ("dot;", "\u{10a}"),
-                    ("opf;", "\u{2102}"),
-                    ("scr;", "\u{1d49e}"),
-                    ("OPY", "\u{a9}"),
-                    ("ap;", "\u{22d2}"),
-                    ("fr;", "\u{212d}"),
-                    ("hi;", "\u{3a7}"),
-                    ("up;", "\u{22d3}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_C(try_read)
-        }
-
-        'D' => {
-            #[allow(non_snake_case)]
-            fn branch_D<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("oubleLongLeftRightArrow;", "\u{27fa}"),
-                    ("iacriticalDoubleAcute;", "\u{2dd}"),
-                    ("oubleContourIntegral;", "\u{222f}"),
-                    ("oubleLeftRightArrow;", "\u{21d4}"),
-                    ("oubleLongRightArrow;", "\u{27f9}"),
-                    ("oubleLongLeftArrow;", "\u{27f8}"),
-                    ("ownLeftRightVector;", "\u{2950}"),
-                    ("ownRightTeeVector;", "\u{295f}"),
-                    ("ownRightVectorBar;", "\u{2957}"),
-                    ("oubleUpDownArrow;", "\u{21d5}"),
-                    ("oubleVerticalBar;", "\u{2225}"),
-                    ("ownLeftTeeVector;", "\u{295e}"),
-                    ("ownLeftVectorBar;", "\u{2956}"),
-                    ("iacriticalAcute;", "\u{b4}"),
-                    ("iacriticalGrave;", "\u{60}"),
-                    ("iacriticalTilde;", "\u{2dc}"),
-                    ("oubleRightArrow;", "\u{21d2}"),
-                    ("ownArrowUpArrow;", "\u{21f5}"),
-                    ("oubleDownArrow;", "\u{21d3}"),
-                    ("oubleLeftArrow;", "\u{21d0}"),
-                    ("ownRightVector;", "\u{21c1}"),
-                    ("iacriticalDot;", "\u{2d9}"),
-                    ("oubleRightTee;", "\u{22a8}"),
-                    ("ownLeftVector;", "\u{21bd}"),
-                    ("ifferentialD;", "\u{2146}"),
-                    ("oubleLeftTee;", "\u{2ae4}"),
-                    ("oubleUpArrow;", "\u{21d1}"),
-                    ("ownArrowBar;", "\u{2913}"),
-                    ("ownTeeArrow;", "\u{21a7}"),
-                    ("oubleDot;", "\u{a8}"),
-                    ("ownArrow;", "\u{2193}"),
-                    ("ownBreve;", "\u{311}"),
-                    ("ownarrow;", "\u{21d3}"),
-                    ("Dotrahd;", "\u{2911}"),
-                    ("otEqual;", "\u{2250}"),
-                    ("iamond;", "\u{22c4}"),
-                    ("ownTee;", "\u{22a4}"),
-                    ("agger;", "\u{2021}"),
-                    ("caron;", "\u{10e}"),
-                    ("otDot;", "\u{20dc}"),
-                    ("strok;", "\u{110}"),
-                    ("ashv;", "\u{2ae4}"),
-                    ("elta;", "\u{394}"),
-                    ("Jcy;", "\u{402}"),
-                    ("Scy;", "\u{405}"),
-                    ("Zcy;", "\u{40f}"),
-                    ("arr;", "\u{21a1}"),
-                    ("opf;", "\u{1d53b}"),
-                    ("scr;", "\u{1d49f}"),
-                    ("cy;", "\u{414}"),
-                    ("el;", "\u{2207}"),
-                    ("fr;", "\u{1d507}"),
-                    ("ot;", "\u{a8}"),
-                    ("D;", "\u{2145}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_D(try_read)
-        }
-
-        'E' => {
-            #[allow(non_snake_case)]
-            fn branch_E<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("mptyVerySmallSquare;", "\u{25ab}"),
-                    ("mptySmallSquare;", "\u{25fb}"),
-                    ("xponentialE;", "\u{2147}"),
-                    ("quilibrium;", "\u{21cc}"),
-                    ("qualTilde;", "\u{2242}"),
-                    ("lement;", "\u{2208}"),
-                    ("psilon;", "\u{395}"),
-                    ("acute;", "\u{c9}"),
-                    ("caron;", "\u{11a}"),
-                    ("grave;", "\u{c8}"),
-                    ("xists;", "\u{2203}"),
-                    ("acute", "\u{c9}"),
-                    ("circ;", "\u{ca}"),
-                    ("grave", "\u{c8}"),
-                    ("macr;", "\u{112}"),
-                    ("ogon;", "\u{118}"),
-                    ("qual;", "\u{2a75}"),
-                    ("circ", "\u{ca}"),
-                    ("dot;", "\u{116}"),
-                    ("opf;", "\u{1d53c}"),
-                    ("scr;", "\u{2130}"),
-                    ("sim;", "\u{2a73}"),
-                    ("uml;", "\u{cb}"),
-                    ("NG;", "\u{14a}"),
-                    ("TH;", "\u{d0}"),
-                    ("cy;", "\u{42d}"),
-                    ("fr;", "\u{1d508}"),
-                    ("ta;", "\u{397}"),
-                    ("uml", "\u{cb}"),
-                    ("TH", "\u{d0}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_E(try_read)
-        }
-
-        'F' => {
-            #[allow(non_snake_case)]
-            fn branch_F<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("illedVerySmallSquare;", "\u{25aa}"),
-                    ("illedSmallSquare;", "\u{25fc}"),
-                    ("ouriertrf;", "\u{2131}"),
-                    ("orAll;", "\u{2200}"),
-                    ("opf;", "\u{1d53d}"),
-                    ("scr;", "\u{2131}"),
-                    ("cy;", "\u{424}"),
-                    ("fr;", "\u{1d509}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_F(try_read)
-        }
-
-        'G' => {
-            #[allow(non_snake_case)]
-            fn branch_G<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("reaterSlantEqual;", "\u{2a7e}"),
-                    ("reaterEqualLess;", "\u{22db}"),
-                    ("reaterFullEqual;", "\u{2267}"),
-                    ("reaterGreater;", "\u{2aa2}"),
-                    ("reaterEqual;", "\u{2265}"),
-                    ("reaterTilde;", "\u{2273}"),
-                    ("reaterLess;", "\u{2277}"),
-                    ("ammad;", "\u{3dc}"),
-                    ("breve;", "\u{11e}"),
-                    ("cedil;", "\u{122}"),
-                    ("amma;", "\u{393}"),
-                    ("circ;", "\u{11c}"),
-                    ("Jcy;", "\u{403}"),
-                    ("dot;", "\u{120}"),
-                    ("opf;", "\u{1d53e}"),
-                    ("scr;", "\u{1d4a2}"),
-                    ("cy;", "\u{413}"),
-                    ("fr;", "\u{1d50a}"),
-                    ("T;", "\u{3e}"),
-                    ("g;", "\u{22d9}"),
-                    ("t;", "\u{226b}"),
-                    ("T", "\u{3e}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_G(try_read)
-        }
-
-        'H' => {
-            #[allow(non_snake_case)]
-            fn branch_H<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("orizontalLine;", "\u{2500}"),
-                    ("ilbertSpace;", "\u{210b}"),
-                    ("umpDownHump;", "\u{224e}"),
-                    ("umpEqual;", "\u{224f}"),
-                    ("ARDcy;", "\u{42a}"),
-                    ("strok;", "\u{126}"),
-                    ("acek;", "\u{2c7}"),
-                    ("circ;", "\u{124}"),
-                    ("opf;", "\u{210d}"),
-                    ("scr;", "\u{210b}"),
-                    ("at;", "\u{5e}"),
-                    ("fr;", "\u{210c}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_H(try_read)
-        }
-
-        'I' => {
-            #[allow(non_snake_case)]
-            fn branch_I<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("nvisibleComma;", "\u{2063}"),
-                    ("nvisibleTimes;", "\u{2062}"),
-                    ("ntersection;", "\u{22c2}"),
-                    ("maginaryI;", "\u{2148}"),
-                    ("ntegral;", "\u{222b}"),
-                    ("mplies;", "\u{21d2}"),
-                    ("acute;", "\u{cd}"),
-                    ("grave;", "\u{cc}"),
-                    ("tilde;", "\u{128}"),
-                    ("Jlig;", "\u{132}"),
-                    ("acute", "\u{cd}"),
-                    ("circ;", "\u{ce}"),
-                    ("grave", "\u{cc}"),
-                    ("macr;", "\u{12a}"),
-                    ("ogon;", "\u{12e}"),
-                    ("ukcy;", "\u{406}"),
-                    ("Ecy;", "\u{415}"),
-                    ("Ocy;", "\u{401}"),
-                    ("circ", "\u{ce}"),
-                    ("dot;", "\u{130}"),
-                    ("opf;", "\u{1d540}"),
-                    ("ota;", "\u{399}"),
-                    ("scr;", "\u{2110}"),
-                    ("uml;", "\u{cf}"),
-                    ("cy;", "\u{418}"),
-                    ("fr;", "\u{2111}"),
-                    ("nt;", "\u{222c}"),
-                    ("uml", "\u{cf}"),
-                    ("m;", "\u{2111}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_I(try_read)
-        }
-
-        'J' => {
-            #[allow(non_snake_case)]
-            fn branch_J<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("sercy;", "\u{408}"),
-                    ("circ;", "\u{134}"),
-                    ("ukcy;", "\u{404}"),
-                    ("opf;", "\u{1d541}"),
-                    ("scr;", "\u{1d4a5}"),
-                    ("cy;", "\u{419}"),
-                    ("fr;", "\u{1d50d}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_J(try_read)
-        }
-
-        'K' => {
-            #[allow(non_snake_case)]
-            fn branch_K<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("cedil;", "\u{136}"),
-                    ("appa;", "\u{39a}"),
-                    ("Hcy;", "\u{425}"),
-                    ("Jcy;", "\u{40c}"),
-                    ("opf;", "\u{1d542}"),
-                    ("scr;", "\u{1d4a6}"),
-                    ("cy;", "\u{41a}"),
-                    ("fr;", "\u{1d50e}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_K(try_read)
-        }
-
-        'L' => {
-            #[allow(non_snake_case)]
-            fn branch_L<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("eftArrowRightArrow;", "\u{21c6}"),
-                    ("ongLeftRightArrow;", "\u{27f7}"),
-                    ("ongleftrightarrow;", "\u{27fa}"),
-                    ("eftDoubleBracket;", "\u{27e6}"),
-                    ("eftDownTeeVector;", "\u{2961}"),
-                    ("eftDownVectorBar;", "\u{2959}"),
-                    ("eftTriangleEqual;", "\u{22b4}"),
-                    ("eftAngleBracket;", "\u{27e8}"),
-                    ("eftUpDownVector;", "\u{2951}"),
-                    ("essEqualGreater;", "\u{22da}"),
-                    ("eftRightVector;", "\u{294e}"),
-                    ("eftTriangleBar;", "\u{29cf}"),
-                    ("eftUpTeeVector;", "\u{2960}"),
-                    ("eftUpVectorBar;", "\u{2958}"),
-                    ("owerRightArrow;", "\u{2198}"),
-                    ("eftDownVector;", "\u{21c3}"),
-                    ("eftRightArrow;", "\u{2194}"),
-                    ("eftrightarrow;", "\u{21d4}"),
-                    ("essSlantEqual;", "\u{2a7d}"),
-                    ("ongRightArrow;", "\u{27f6}"),
-                    ("ongrightarrow;", "\u{27f9}"),
-                    ("owerLeftArrow;", "\u{2199}"),
-                    ("eftTeeVector;", "\u{295a}"),
-                    ("eftVectorBar;", "\u{2952}"),
-                    ("essFullEqual;", "\u{2266}"),
-                    ("ongLeftArrow;", "\u{27f5}"),
-                    ("ongleftarrow;", "\u{27f8}"),
-                    ("eftArrowBar;", "\u{21e4}"),
-                    ("eftTeeArrow;", "\u{21a4}"),
-                    ("eftTriangle;", "\u{22b2}"),
-                    ("eftUpVector;", "\u{21bf}"),
-                    ("eftCeiling;", "\u{2308}"),
-                    ("essGreater;", "\u{2276}"),
-                    ("aplacetrf;", "\u{2112}"),
-                    ("eftVector;", "\u{21bc}"),
-                    ("leftarrow;", "\u{21da}"),
-                    ("eftArrow;", "\u{2190}"),
-                    ("eftFloor;", "\u{230a}"),
-                    ("eftarrow;", "\u{21d0}"),
-                    ("essTilde;", "\u{2272}"),
-                    ("essLess;", "\u{2aa1}"),
-                    ("eftTee;", "\u{22a3}"),
-                    ("acute;", "\u{139}"),
-                    ("ambda;", "\u{39b}"),
-                    ("caron;", "\u{13d}"),
-                    ("cedil;", "\u{13b}"),
-                    ("midot;", "\u{13f}"),
-                    ("strok;", "\u{141}"),
-                    ("Jcy;", "\u{409}"),
-                    ("ang;", "\u{27ea}"),
-                    ("arr;", "\u{219e}"),
-                    ("opf;", "\u{1d543}"),
-                    ("scr;", "\u{2112}"),
-                    ("cy;", "\u{41b}"),
-                    ("fr;", "\u{1d50f}"),
-                    ("sh;", "\u{21b0}"),
-                    ("T;", "\u{3c}"),
-                    ("l;", "\u{22d8}"),
-                    ("t;", "\u{226a}"),
-                    ("T", "\u{3c}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_L(try_read)
-        }
-
-        'M' => {
-            #[allow(non_snake_case)]
-            fn branch_M<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("ediumSpace;", "\u{205f}"),
-                    ("ellintrf;", "\u{2133}"),
-                    ("inusPlus;", "\u{2213}"),
-                    ("opf;", "\u{1d544}"),
-                    ("scr;", "\u{2133}"),
-                    ("ap;", "\u{2905}"),
-                    ("cy;", "\u{41c}"),
-                    ("fr;", "\u{1d510}"),
-                    ("u;", "\u{39c}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_M(try_read)
-        }
-
-        'N' => {
-            #[allow(non_snake_case)]
-            fn branch_N<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("otNestedGreaterGreater;", "\u{2aa2}\u{338}"),
-                    ("otSquareSupersetEqual;", "\u{22e3}"),
-                    ("egativeVeryThinSpace;", "\u{200b}"),
-                    ("otPrecedesSlantEqual;", "\u{22e0}"),
-                    ("otRightTriangleEqual;", "\u{22ed}"),
-                    ("otSucceedsSlantEqual;", "\u{22e1}"),
-                    ("estedGreaterGreater;", "\u{226b}"),
-                    ("otDoubleVerticalBar;", "\u{2226}"),
-                    ("otGreaterSlantEqual;", "\u{2a7e}\u{338}"),
-                    ("otLeftTriangleEqual;", "\u{22ec}"),
-                    ("otSquareSubsetEqual;", "\u{22e2}"),
-                    ("egativeMediumSpace;", "\u{200b}"),
-                    ("otGreaterFullEqual;", "\u{2267}\u{338}"),
-                    ("otRightTriangleBar;", "\u{29d0}\u{338}"),
-                    ("egativeThickSpace;", "\u{200b}"),
-                    ("otLeftTriangleBar;", "\u{29cf}\u{338}"),
-                    ("egativeThinSpace;", "\u{200b}"),
-                    ("otGreaterGreater;", "\u{226b}\u{338}"),
-                    ("otLessSlantEqual;", "\u{2a7d}\u{338}"),
-                    ("otNestedLessLess;", "\u{2aa1}\u{338}"),
-                    ("otReverseElement;", "\u{220c}"),
-                    ("otSquareSuperset;", "\u{2290}\u{338}"),
-                    ("otTildeFullEqual;", "\u{2247}"),
-                    ("onBreakingSpace;", "\u{a0}"),
-                    ("otPrecedesEqual;", "\u{2aaf}\u{338}"),
-                    ("otRightTriangle;", "\u{22eb}"),
-                    ("otSucceedsEqual;", "\u{2ab0}\u{338}"),
-                    ("otSucceedsTilde;", "\u{227f}\u{338}"),
-                    ("otSupersetEqual;", "\u{2289}"),
-                    ("otGreaterEqual;", "\u{2271}"),
-                    ("otGreaterTilde;", "\u{2275}"),
-                    ("otHumpDownHump;", "\u{224e}\u{338}"),
-                    ("otLeftTriangle;", "\u{22ea}"),
-                    ("otSquareSubset;", "\u{228f}\u{338}"),
-                    ("estedLessLess;", "\u{226a}"),
-                    ("otGreaterLess;", "\u{2279}"),
-                    ("otLessGreater;", "\u{2278}"),
-                    ("otSubsetEqual;", "\u{2288}"),
-                    ("otVerticalBar;", "\u{2224}"),
-                    ("otEqualTilde;", "\u{2242}\u{338}"),
-                    ("otTildeEqual;", "\u{2244}"),
-                    ("otTildeTilde;", "\u{2249}"),
-                    ("otCongruent;", "\u{2262}"),
-                    ("otHumpEqual;", "\u{224f}\u{338}"),
-                    ("otLessEqual;", "\u{2270}"),
-                    ("otLessTilde;", "\u{2274}"),
-                    ("otLessLess;", "\u{226a}\u{338}"),
-                    ("otPrecedes;", "\u{2280}"),
-                    ("otSucceeds;", "\u{2281}"),
-                    ("otSuperset;", "\u{2283}\u{20d2}"),
-                    ("otElement;", "\u{2209}"),
-                    ("otGreater;", "\u{226f}"),
-                    ("otCupCap;", "\u{226d}"),
-                    ("otExists;", "\u{2204}"),
-                    ("otSubset;", "\u{2282}\u{20d2}"),
-                    ("otEqual;", "\u{2260}"),
-                    ("otTilde;", "\u{2241}"),
-                    ("ewLine;", "\u{a}"),
-                    ("oBreak;", "\u{2060}"),
-                    ("otLess;", "\u{226e}"),
-                    ("acute;", "\u{143}"),
-                    ("caron;", "\u{147}"),
-                    ("cedil;", "\u{145}"),
-                    ("tilde;", "\u{d1}"),
-                    ("tilde", "\u{d1}"),
-                    ("Jcy;", "\u{40a}"),
-                    ("opf;", "\u{2115}"),
-                    ("scr;", "\u{1d4a9}"),
-                    ("cy;", "\u{41d}"),
-                    ("fr;", "\u{1d511}"),
-                    ("ot;", "\u{2aec}"),
-                    ("u;", "\u{39d}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_N(try_read)
-        }
-
-        'O' => {
-            #[allow(non_snake_case)]
-            fn branch_O<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("penCurlyDoubleQuote;", "\u{201c}"),
-                    ("verParenthesis;", "\u{23dc}"),
-                    ("penCurlyQuote;", "\u{2018}"),
-                    ("verBracket;", "\u{23b4}"),
-                    ("verBrace;", "\u{23de}"),
-                    ("micron;", "\u{39f}"),
-                    ("verBar;", "\u{203e}"),
-                    ("acute;", "\u{d3}"),
-                    ("dblac;", "\u{150}"),
-                    ("grave;", "\u{d2}"),
-                    ("slash;", "\u{d8}"),
-                    ("tilde;", "\u{d5}"),
-                    ("times;", "\u{2a37}"),
-                    ("Elig;", "\u{152}"),
-                    ("acute", "\u{d3}"),
-                    ("circ;", "\u{d4}"),
-                    ("grave", "\u{d2}"),
-                    ("macr;", "\u{14c}"),
-                    ("mega;", "\u{3a9}"),
-                    ("slash", "\u{d8}"),
-                    ("tilde", "\u{d5}"),
-                    ("circ", "\u{d4}"),
-                    ("opf;", "\u{1d546}"),
-                    ("scr;", "\u{1d4aa}"),
-                    ("uml;", "\u{d6}"),
-                    ("cy;", "\u{41e}"),
-                    ("fr;", "\u{1d512}"),
-                    ("uml", "\u{d6}"),
-                    ("r;", "\u{2a54}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_O(try_read)
-        }
-
-        'P' => {
-            #[allow(non_snake_case)]
-            fn branch_P<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("recedesSlantEqual;", "\u{227c}"),
-                    ("oincareplane;", "\u{210c}"),
-                    ("recedesEqual;", "\u{2aaf}"),
-                    ("recedesTilde;", "\u{227e}"),
-                    ("roportional;", "\u{221d}"),
-                    ("roportion;", "\u{2237}"),
-                    ("lusMinus;", "\u{b1}"),
-                    ("artialD;", "\u{2202}"),
-                    ("recedes;", "\u{227a}"),
-                    ("roduct;", "\u{220f}"),
-                    ("rime;", "\u{2033}"),
-                    ("opf;", "\u{2119}"),
-                    ("scr;", "\u{1d4ab}"),
-                    ("cy;", "\u{41f}"),
-                    ("fr;", "\u{1d513}"),
-                    ("hi;", "\u{3a6}"),
-                    ("si;", "\u{3a8}"),
-                    ("i;", "\u{3a0}"),
-                    ("r;", "\u{2abb}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_P(try_read)
-        }
-
-        'Q' => {
-            #[allow(non_snake_case)]
-            fn branch_Q<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("UOT;", "\u{22}"),
-                    ("opf;", "\u{211a}"),
-                    ("scr;", "\u{1d4ac}"),
-                    ("UOT", "\u{22}"),
-                    ("fr;", "\u{1d514}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_Q(try_read)
-        }
-
-        'R' => {
-            #[allow(non_snake_case)]
-            fn branch_R<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("everseUpEquilibrium;", "\u{296f}"),
-                    ("ightArrowLeftArrow;", "\u{21c4}"),
-                    ("everseEquilibrium;", "\u{21cb}"),
-                    ("ightDoubleBracket;", "\u{27e7}"),
-                    ("ightDownTeeVector;", "\u{295d}"),
-                    ("ightDownVectorBar;", "\u{2955}"),
-                    ("ightTriangleEqual;", "\u{22b5}"),
-                    ("ightAngleBracket;", "\u{27e9}"),
-                    ("ightUpDownVector;", "\u{294f}"),
-                    ("ightTriangleBar;", "\u{29d0}"),
-                    ("ightUpTeeVector;", "\u{295c}"),
-                    ("ightUpVectorBar;", "\u{2954}"),
-                    ("ightDownVector;", "\u{21c2}"),
-                    ("everseElement;", "\u{220b}"),
-                    ("ightTeeVector;", "\u{295b}"),
-                    ("ightVectorBar;", "\u{2953}"),
-                    ("ightArrowBar;", "\u{21e5}"),
-                    ("ightTeeArrow;", "\u{21a6}"),
-                    ("ightTriangle;", "\u{22b3}"),
-                    ("ightUpVector;", "\u{21be}"),
-                    ("ightCeiling;", "\u{2309}"),
-                    ("oundImplies;", "\u{2970}"),
-                    ("ightVector;", "\u{21c0}"),
-                    ("rightarrow;", "\u{21db}"),
-                    ("uleDelayed;", "\u{29f4}"),
-                    ("ightArrow;", "\u{2192}"),
-                    ("ightFloor;", "\u{230b}"),
-                    ("ightarrow;", "\u{21d2}"),
-                    ("ightTee;", "\u{22a2}"),
-                    ("acute;", "\u{154}"),
-                    ("arrtl;", "\u{2916}"),
-                    ("caron;", "\u{158}"),
-                    ("cedil;", "\u{156}"),
-                    ("Barr;", "\u{2910}"),
-                    ("ang;", "\u{27eb}"),
-                    ("arr;", "\u{21a0}"),
-                    ("opf;", "\u{211d}"),
-                    ("scr;", "\u{211b}"),
-                    ("EG;", "\u{ae}"),
-                    ("cy;", "\u{420}"),
-                    ("fr;", "\u{211c}"),
-                    ("ho;", "\u{3a1}"),
-                    ("sh;", "\u{21b1}"),
-                    ("EG", "\u{ae}"),
-                    ("e;", "\u{211c}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_R(try_read)
-        }
-
-        'S' => {
-            #[allow(non_snake_case)]
-            fn branch_S<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("quareSupersetEqual;", "\u{2292}"),
-                    ("quareIntersection;", "\u{2293}"),
-                    ("ucceedsSlantEqual;", "\u{227d}"),
-                    ("quareSubsetEqual;", "\u{2291}"),
-                    ("hortRightArrow;", "\u{2192}"),
-                    ("hortDownArrow;", "\u{2193}"),
-                    ("hortLeftArrow;", "\u{2190}"),
-                    ("quareSuperset;", "\u{2290}"),
-                    ("ucceedsEqual;", "\u{2ab0}"),
-                    ("ucceedsTilde;", "\u{227f}"),
-                    ("upersetEqual;", "\u{2287}"),
-                    ("hortUpArrow;", "\u{2191}"),
-                    ("quareSubset;", "\u{228f}"),
-                    ("mallCircle;", "\u{2218}"),
-                    ("quareUnion;", "\u{2294}"),
-                    ("ubsetEqual;", "\u{2286}"),
-                    ("ucceeds;", "\u{227b}"),
-                    ("uchThat;", "\u{220b}"),
-                    ("uperset;", "\u{2283}"),
-                    ("HCHcy;", "\u{429}"),
-                    ("OFTcy;", "\u{42c}"),
-                    ("acute;", "\u{15a}"),
-                    ("caron;", "\u{160}"),
-                    ("cedil;", "\u{15e}"),
-                    ("quare;", "\u{25a1}"),
-                    ("ubset;", "\u{22d0}"),
-                    ("upset;", "\u{22d1}"),
-                    ("circ;", "\u{15c}"),
-                    ("igma;", "\u{3a3}"),
-                    ("Hcy;", "\u{428}"),
-                    ("opf;", "\u{1d54a}"),
-                    ("qrt;", "\u{221a}"),
-                    ("scr;", "\u{1d4ae}"),
-                    ("tar;", "\u{22c6}"),
-                    ("cy;", "\u{421}"),
-                    ("fr;", "\u{1d516}"),
-                    ("ub;", "\u{22d0}"),
-                    ("um;", "\u{2211}"),
-                    ("up;", "\u{22d1}"),
-                    ("c;", "\u{2abc}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_S(try_read)
-        }
-
-        'T' => {
-            #[allow(non_snake_case)]
-            fn branch_T<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("ildeFullEqual;", "\u{2245}"),
-                    ("hickSpace;", "\u{205f}\u{200a}"),
-                    ("ildeEqual;", "\u{2243}"),
-                    ("ildeTilde;", "\u{2248}"),
-                    ("herefore;", "\u{2234}"),
-                    ("hinSpace;", "\u{2009}"),
-                    ("ripleDot;", "\u{20db}"),
-                    ("caron;", "\u{164}"),
-                    ("cedil;", "\u{162}"),
-                    ("strok;", "\u{166}"),
-                    ("HORN;", "\u{de}"),
-                    ("RADE;", "\u{2122}"),
-                    ("SHcy;", "\u{40b}"),
-                    ("heta;", "\u{398}"),
-                    ("ilde;", "\u{223c}"),
-                    ("HORN", "\u{de}"),
-                    ("Scy;", "\u{426}"),
-                    ("opf;", "\u{1d54b}"),
-                    ("scr;", "\u{1d4af}"),
-                    ("ab;", "\u{9}"),
-                    ("au;", "\u{3a4}"),
-                    ("cy;", "\u{422}"),
-                    ("fr;", "\u{1d517}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_T(try_read)
-        }
-
-        'U' => {
-            #[allow(non_snake_case)]
-            fn branch_U<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("nderParenthesis;", "\u{23dd}"),
-                    ("pArrowDownArrow;", "\u{21c5}"),
-                    ("pperRightArrow;", "\u{2197}"),
-                    ("pperLeftArrow;", "\u{2196}"),
-                    ("pEquilibrium;", "\u{296e}"),
-                    ("nderBracket;", "\u{23b5}"),
-                    ("pDownArrow;", "\u{2195}"),
-                    ("pdownarrow;", "\u{21d5}"),
-                    ("nderBrace;", "\u{23df}"),
-                    ("pArrowBar;", "\u{2912}"),
-                    ("pTeeArrow;", "\u{21a5}"),
-                    ("nionPlus;", "\u{228e}"),
-                    ("arrocir;", "\u{2949}"),
-                    ("nderBar;", "\u{5f}"),
-                    ("pArrow;", "\u{2191}"),
-                    ("parrow;", "\u{21d1}"),
-                    ("psilon;", "\u{3a5}"),
-                    ("acute;", "\u{da}"),
-                    ("breve;", "\u{16c}"),
-                    ("dblac;", "\u{170}"),
-                    ("grave;", "\u{d9}"),
-                    ("tilde;", "\u{168}"),
-                    ("acute", "\u{da}"),
-                    ("brcy;", "\u{40e}"),
-                    ("circ;", "\u{db}"),
-                    ("grave", "\u{d9}"),
-                    ("macr;", "\u{16a}"),
-                    ("nion;", "\u{22c3}"),
-                    ("ogon;", "\u{172}"),
-                    ("pTee;", "\u{22a5}"),
-                    ("ring;", "\u{16e}"),
-                    ("arr;", "\u{219f}"),
-                    ("circ", "\u{db}"),
-                    ("opf;", "\u{1d54c}"),
-                    ("psi;", "\u{3d2}"),
-                    ("scr;", "\u{1d4b0}"),
-                    ("uml;", "\u{dc}"),
-                    ("cy;", "\u{423}"),
-                    ("fr;", "\u{1d518}"),
-                    ("uml", "\u{dc}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_U(try_read)
-        }
-
-        'V' => {
-            #[allow(non_snake_case)]
-            fn branch_V<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("erticalSeparator;", "\u{2758}"),
-                    ("erticalTilde;", "\u{2240}"),
-                    ("eryThinSpace;", "\u{200a}"),
-                    ("erticalLine;", "\u{7c}"),
-                    ("erticalBar;", "\u{2223}"),
-                    ("dashl;", "\u{2ae6}"),
-                    ("erbar;", "\u{2016}"),
-                    ("vdash;", "\u{22aa}"),
-                    ("Dash;", "\u{22ab}"),
-                    ("dash;", "\u{22a9}"),
-                    ("bar;", "\u{2aeb}"),
-                    ("ert;", "\u{2016}"),
-                    ("opf;", "\u{1d54d}"),
-                    ("scr;", "\u{1d4b1}"),
-                    ("cy;", "\u{412}"),
-                    ("ee;", "\u{22c1}"),
-                    ("fr;", "\u{1d519}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_V(try_read)
-        }
-
-        'W' => {
-            #[allow(non_snake_case)]
-            fn branch_W<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("circ;", "\u{174}"),
-                    ("edge;", "\u{22c0}"),
-                    ("opf;", "\u{1d54e}"),
-                    ("scr;", "\u{1d4b2}"),
-                    ("fr;", "\u{1d51a}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_W(try_read)
-        }
-
-        'X' => {
-            #[allow(non_snake_case)]
-            fn branch_X<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("opf;", "\u{1d54f}"),
-                    ("scr;", "\u{1d4b3}"),
-                    ("fr;", "\u{1d51b}"),
-                    ("i;", "\u{39e}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_X(try_read)
-        }
-
-        'Y' => {
-            #[allow(non_snake_case)]
-            fn branch_Y<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("acute;", "\u{dd}"),
-                    ("acute", "\u{dd}"),
-                    ("circ;", "\u{176}"),
-                    ("Acy;", "\u{42f}"),
-                    ("Icy;", "\u{407}"),
-                    ("Ucy;", "\u{42e}"),
-                    ("opf;", "\u{1d550}"),
-                    ("scr;", "\u{1d4b4}"),
-                    ("uml;", "\u{178}"),
-                    ("cy;", "\u{42b}"),
-                    ("fr;", "\u{1d51c}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_Y(try_read)
-        }
-
-        'Z' => {
-            #[allow(non_snake_case)]
-            fn branch_Z<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("eroWidthSpace;", "\u{200b}"),
-                    ("acute;", "\u{179}"),
-                    ("caron;", "\u{17d}"),
-                    ("Hcy;", "\u{416}"),
-                    ("dot;", "\u{17b}"),
-                    ("eta;", "\u{396}"),
-                    ("opf;", "\u{2124}"),
-                    ("scr;", "\u{1d4b5}"),
-                    ("cy;", "\u{417}"),
-                    ("fr;", "\u{2128}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_Z(try_read)
-        }
-
-        'a' => {
-            #[allow(non_snake_case)]
-            fn branch_a<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("ndslope;", "\u{2a58}"),
-                    ("ngmsdaa;", "\u{29a8}"),
-                    ("ngmsdab;", "\u{29a9}"),
-                    ("ngmsdac;", "\u{29aa}"),
-                    ("ngmsdad;", "\u{29ab}"),
-                    ("ngmsdae;", "\u{29ac}"),
-                    ("ngmsdaf;", "\u{29ad}"),
-                    ("ngmsdag;", "\u{29ae}"),
-                    ("ngmsdah;", "\u{29af}"),
-                    ("ngrtvbd;", "\u{299d}"),
-                    ("pproxeq;", "\u{224a}"),
-                    ("wconint;", "\u{2233}"),
-                    ("lefsym;", "\u{2135}"),
-                    ("ngrtvb;", "\u{22be}"),
-                    ("ngzarr;", "\u{237c}"),
-                    ("sympeq;", "\u{224d}"),
-                    ("acute;", "\u{e1}"),
-                    ("breve;", "\u{103}"),
-                    ("grave;", "\u{e0}"),
-                    ("ndand;", "\u{2a55}"),
-                    ("ngmsd;", "\u{2221}"),
-                    ("ngsph;", "\u{2222}"),
-                    ("pacir;", "\u{2a6f}"),
-                    ("pprox;", "\u{2248}"),
-                    ("tilde;", "\u{e3}"),
-                    ("acute", "\u{e1}"),
-                    ("circ;", "\u{e2}"),
-                    ("cute;", "\u{b4}"),
-                    ("elig;", "\u{e6}"),
-                    ("grave", "\u{e0}"),
-                    ("leph;", "\u{2135}"),
-                    ("lpha;", "\u{3b1}"),
-                    ("macr;", "\u{101}"),
-                    ("malg;", "\u{2a3f}"),
-                    ("ngle;", "\u{2220}"),
-                    ("ngrt;", "\u{221f}"),
-                    ("ngst;", "\u{c5}"),
-                    ("ogon;", "\u{105}"),
-                    ("ring;", "\u{e5}"),
-                    ("symp;", "\u{2248}"),
-                    ("tilde", "\u{e3}"),
-                    ("wint;", "\u{2a11}"),
-                    ("circ", "\u{e2}"),
-                    ("cute", "\u{b4}"),
-                    ("elig", "\u{e6}"),
-                    ("ndd;", "\u{2a5c}"),
-                    ("ndv;", "\u{2a5a}"),
-                    ("nge;", "\u{29a4}"),
-                    ("opf;", "\u{1d552}"),
-                    ("pid;", "\u{224b}"),
-                    ("pos;", "\u{27}"),
-                    ("ring", "\u{e5}"),
-                    ("scr;", "\u{1d4b6}"),
-                    ("uml;", "\u{e4}"),
-                    ("cE;", "\u{223e}\u{333}"),
-                    ("cd;", "\u{223f}"),
-                    ("cy;", "\u{430}"),
-                    ("fr;", "\u{1d51e}"),
-                    ("mp;", "\u{26}"),
-                    ("nd;", "\u{2227}"),
-                    ("ng;", "\u{2220}"),
-                    ("pE;", "\u{2a70}"),
-                    ("pe;", "\u{224a}"),
-                    ("st;", "\u{2a}"),
-                    ("uml", "\u{e4}"),
-                    ("c;", "\u{223e}"),
-                    ("f;", "\u{2061}"),
-                    ("mp", "\u{26}"),
-                    ("p;", "\u{2248}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_a(try_read)
-        }
-
-        'b' => {
-            #[allow(non_snake_case)]
-            fn branch_b<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("lacktriangleright;", "\u{25b8}"),
-                    ("lacktriangledown;", "\u{25be}"),
-                    ("lacktriangleleft;", "\u{25c2}"),
-                    ("igtriangledown;", "\u{25bd}"),
-                    ("igtriangleup;", "\u{25b3}"),
-                    ("lacktriangle;", "\u{25b4}"),
-                    ("lacklozenge;", "\u{29eb}"),
-                    ("ackepsilon;", "\u{3f6}"),
-                    ("lacksquare;", "\u{25aa}"),
-                    ("ackprime;", "\u{2035}"),
-                    ("acksimeq;", "\u{22cd}"),
-                    ("igotimes;", "\u{2a02}"),
-                    ("ackcong;", "\u{224c}"),
-                    ("arwedge;", "\u{2305}"),
-                    ("brktbrk;", "\u{23b6}"),
-                    ("igoplus;", "\u{2a01}"),
-                    ("igsqcup;", "\u{2a06}"),
-                    ("iguplus;", "\u{2a04}"),
-                    ("igwedge;", "\u{22c0}"),
-                    ("oxminus;", "\u{229f}"),
-                    ("oxtimes;", "\u{22a0}"),
-                    ("solhsub;", "\u{27c8}"),
-                    ("acksim;", "\u{223d}"),
-                    ("ecause;", "\u{2235}"),
-                    ("emptyv;", "\u{29b0}"),
-                    ("etween;", "\u{226c}"),
-                    ("igcirc;", "\u{25ef}"),
-                    ("igodot;", "\u{2a00}"),
-                    ("igstar;", "\u{2605}"),
-                    ("nequiv;", "\u{2261}\u{20e5}"),
-                    ("oxplus;", "\u{229e}"),
-                    ("arvee;", "\u{22bd}"),
-                    ("arwed;", "\u{2305}"),
-                    ("ecaus;", "\u{2235}"),
-                    ("ernou;", "\u{212c}"),
-                    ("igcap;", "\u{22c2}"),
-                    ("igcup;", "\u{22c3}"),
-                    ("igvee;", "\u{22c1}"),
-                    ("karow;", "\u{290d}"),
-                    ("ottom;", "\u{22a5}"),
-                    ("owtie;", "\u{22c8}"),
-                    ("oxbox;", "\u{29c9}"),
-                    ("prime;", "\u{2035}"),
-                    ("rvbar;", "\u{a6}"),
-                    ("ullet;", "\u{2022}"),
-                    ("umpeq;", "\u{224f}"),
-                    ("cong;", "\u{224c}"),
-                    ("dquo;", "\u{201e}"),
-                    ("epsi;", "\u{3f6}"),
-                    ("lank;", "\u{2423}"),
-                    ("lk12;", "\u{2592}"),
-                    ("lk14;", "\u{2591}"),
-                    ("lk34;", "\u{2593}"),
-                    ("lock;", "\u{2588}"),
-                    ("oxDL;", "\u{2557}"),
-                    ("oxDR;", "\u{2554}"),
-                    ("oxDl;", "\u{2556}"),
-                    ("oxDr;", "\u{2553}"),
-                    ("oxHD;", "\u{2566}"),
-                    ("oxHU;", "\u{2569}"),
-                    ("oxHd;", "\u{2564}"),
-                    ("oxHu;", "\u{2567}"),
-                    ("oxUL;", "\u{255d}"),
-                    ("oxUR;", "\u{255a}"),
-                    ("oxUl;", "\u{255c}"),
-                    ("oxUr;", "\u{2559}"),
-                    ("oxVH;", "\u{256c}"),
-                    ("oxVL;", "\u{2563}"),
-                    ("oxVR;", "\u{2560}"),
-                    ("oxVh;", "\u{256b}"),
-                    ("oxVl;", "\u{2562}"),
-                    ("oxVr;", "\u{255f}"),
-                    ("oxdL;", "\u{2555}"),
-                    ("oxdR;", "\u{2552}"),
-                    ("oxdl;", "\u{2510}"),
-                    ("oxdr;", "\u{250c}"),
-                    ("oxhD;", "\u{2565}"),
-                    ("oxhU;", "\u{2568}"),
-                    ("oxhd;", "\u{252c}"),
-                    ("oxhu;", "\u{2534}"),
-                    ("oxuL;", "\u{255b}"),
-                    ("oxuR;", "\u{2558}"),
-                    ("oxul;", "\u{2518}"),
-                    ("oxur;", "\u{2514}"),
-                    ("oxvH;", "\u{256a}"),
-                    ("oxvL;", "\u{2561}"),
-                    ("oxvR;", "\u{255e}"),
-                    ("oxvh;", "\u{253c}"),
-                    ("oxvl;", "\u{2524}"),
-                    ("oxvr;", "\u{251c}"),
-                    ("reve;", "\u{2d8}"),
-                    ("rvbar", "\u{a6}"),
-                    ("semi;", "\u{204f}"),
-                    ("sime;", "\u{22cd}"),
-                    ("solb;", "\u{29c5}"),
-                    ("umpE;", "\u{2aae}"),
-                    ("umpe;", "\u{224f}"),
-                    ("Not;", "\u{2aed}"),
-                    ("brk;", "\u{23b5}"),
-                    ("eta;", "\u{3b2}"),
-                    ("eth;", "\u{2136}"),
-                    ("not;", "\u{2310}"),
-                    ("opf;", "\u{1d553}"),
-                    ("oxH;", "\u{2550}"),
-                    ("oxV;", "\u{2551}"),
-                    ("oxh;", "\u{2500}"),
-                    ("oxv;", "\u{2502}"),
-                    ("scr;", "\u{1d4b7}"),
-                    ("sim;", "\u{223d}"),
-                    ("sol;", "\u{5c}"),
-                    ("ull;", "\u{2022}"),
-                    ("ump;", "\u{224e}"),
-                    ("cy;", "\u{431}"),
-                    ("fr;", "\u{1d51f}"),
-                    ("ne;", "\u{3d}\u{20e5}"),
-                    ("ot;", "\u{22a5}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_b(try_read)
-        }
-
-        'c' => {
-            #[allow(non_snake_case)]
-            fn branch_c<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("irclearrowright;", "\u{21bb}"),
-                    ("irclearrowleft;", "\u{21ba}"),
-                    ("urvearrowright;", "\u{21b7}"),
-                    ("urvearrowleft;", "\u{21b6}"),
-                    ("ircledcirc;", "\u{229a}"),
-                    ("ircleddash;", "\u{229d}"),
-                    ("urlyeqprec;", "\u{22de}"),
-                    ("urlyeqsucc;", "\u{22df}"),
-                    ("ircledast;", "\u{229b}"),
-                    ("omplement;", "\u{2201}"),
-                    ("urlywedge;", "\u{22cf}"),
-                    ("enterdot;", "\u{b7}"),
-                    ("heckmark;", "\u{2713}"),
-                    ("omplexes;", "\u{2102}"),
-                    ("apbrcup;", "\u{2a49}"),
-                    ("ircledR;", "\u{ae}"),
-                    ("ircledS;", "\u{24c8}"),
-                    ("irfnint;", "\u{2a10}"),
-                    ("lubsuit;", "\u{2663}"),
-                    ("upbrcap;", "\u{2a48}"),
-                    ("urlyvee;", "\u{22ce}"),
-                    ("wconint;", "\u{2232}"),
-                    ("cupssm;", "\u{2a50}"),
-                    ("emptyv;", "\u{29b2}"),
-                    ("irscir;", "\u{29c2}"),
-                    ("oloneq;", "\u{2254}"),
-                    ("ongdot;", "\u{2a6d}"),
-                    ("udarrl;", "\u{2938}"),
-                    ("udarrr;", "\u{2935}"),
-                    ("ularrp;", "\u{293d}"),
-                    ("urarrm;", "\u{293c}"),
-                    ("acute;", "\u{107}"),
-                    ("apand;", "\u{2a44}"),
-                    ("apcap;", "\u{2a4b}"),
-                    ("apcup;", "\u{2a47}"),
-                    ("apdot;", "\u{2a40}"),
-                    ("caron;", "\u{10d}"),
-                    ("cedil;", "\u{e7}"),
-                    ("irceq;", "\u{2257}"),
-                    ("irmid;", "\u{2aef}"),
-                    ("olone;", "\u{2254}"),
-                    ("ommat;", "\u{40}"),
-                    ("ompfn;", "\u{2218}"),
-                    ("onint;", "\u{222e}"),
-                    ("oprod;", "\u{2210}"),
-                    ("opysr;", "\u{2117}"),
-                    ("ularr;", "\u{21b6}"),
-                    ("upcap;", "\u{2a46}"),
-                    ("upcup;", "\u{2a4a}"),
-                    ("updot;", "\u{228d}"),
-                    ("urarr;", "\u{21b7}"),
-                    ("urren;", "\u{a4}"),
-                    ("ylcty;", "\u{232d}"),
-                    ("aret;", "\u{2041}"),
-                    ("aron;", "\u{2c7}"),
-                    ("caps;", "\u{2a4d}"),
-                    ("cedil", "\u{e7}"),
-                    ("circ;", "\u{109}"),
-                    ("cups;", "\u{2a4c}"),
-                    ("edil;", "\u{b8}"),
-                    ("heck;", "\u{2713}"),
-                    ("lubs;", "\u{2663}"),
-                    ("olon;", "\u{3a}"),
-                    ("omma;", "\u{2c}"),
-                    ("rarr;", "\u{21b5}"),
-                    ("ross;", "\u{2717}"),
-                    ("sube;", "\u{2ad1}"),
-                    ("supe;", "\u{2ad2}"),
-                    ("tdot;", "\u{22ef}"),
-                    ("uepr;", "\u{22de}"),
-                    ("uesc;", "\u{22df}"),
-                    ("upor;", "\u{2a45}"),
-                    ("urren", "\u{a4}"),
-                    ("uvee;", "\u{22ce}"),
-                    ("uwed;", "\u{22cf}"),
-                    ("wint;", "\u{2231}"),
-                    ("aps;", "\u{2229}\u{fe00}"),
-                    ("dot;", "\u{10b}"),
-                    ("edil", "\u{b8}"),
-                    ("ent;", "\u{a2}"),
-                    ("hcy;", "\u{447}"),
-                    ("irE;", "\u{29c3}"),
-                    ("irc;", "\u{2c6}"),
-                    ("ire;", "\u{2257}"),
-                    ("omp;", "\u{2201}"),
-                    ("ong;", "\u{2245}"),
-                    ("opf;", "\u{1d554}"),
-                    ("opy;", "\u{a9}"),
-                    ("scr;", "\u{1d4b8}"),
-                    ("sub;", "\u{2acf}"),
-                    ("sup;", "\u{2ad0}"),
-                    ("ups;", "\u{222a}\u{fe00}"),
-                    ("ap;", "\u{2229}"),
-                    ("ent", "\u{a2}"),
-                    ("fr;", "\u{1d520}"),
-                    ("hi;", "\u{3c7}"),
-                    ("ir;", "\u{25cb}"),
-                    ("opy", "\u{a9}"),
-                    ("up;", "\u{222a}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_c(try_read)
-        }
-
-        'd' => {
-            #[allow(non_snake_case)]
-            fn branch_d<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("ownharpoonright;", "\u{21c2}"),
-                    ("ownharpoonleft;", "\u{21c3}"),
-                    ("oublebarwedge;", "\u{2306}"),
-                    ("owndownarrows;", "\u{21ca}"),
-                    ("ivideontimes;", "\u{22c7}"),
-                    ("iamondsuit;", "\u{2666}"),
-                    ("otsquare;", "\u{22a1}"),
-                    ("ownarrow;", "\u{2193}"),
-                    ("oteqdot;", "\u{2251}"),
-                    ("otminus;", "\u{2238}"),
-                    ("rbkarow;", "\u{2910}"),
-                    ("zigrarr;", "\u{27ff}"),
-                    ("bkarow;", "\u{290f}"),
-                    ("dagger;", "\u{2021}"),
-                    ("dotseq;", "\u{2a77}"),
-                    ("emptyv;", "\u{29b1}"),
-                    ("iamond;", "\u{22c4}"),
-                    ("igamma;", "\u{3dd}"),
-                    ("otplus;", "\u{2214}"),
-                    ("wangle;", "\u{29a6}"),
-                    ("agger;", "\u{2020}"),
-                    ("aleth;", "\u{2138}"),
-                    ("caron;", "\u{10f}"),
-                    ("fisht;", "\u{297f}"),
-                    ("ivide;", "\u{f7}"),
-                    ("ivonx;", "\u{22c7}"),
-                    ("lcorn;", "\u{231e}"),
-                    ("lcrop;", "\u{230d}"),
-                    ("ollar;", "\u{24}"),
-                    ("rcorn;", "\u{231f}"),
-                    ("rcrop;", "\u{230c}"),
-                    ("strok;", "\u{111}"),
-                    ("ashv;", "\u{22a3}"),
-                    ("blac;", "\u{2dd}"),
-                    ("darr;", "\u{21ca}"),
-                    ("elta;", "\u{3b4}"),
-                    ("harl;", "\u{21c3}"),
-                    ("harr;", "\u{21c2}"),
-                    ("iams;", "\u{2666}"),
-                    ("isin;", "\u{22f2}"),
-                    ("ivide", "\u{f7}"),
-                    ("oteq;", "\u{2250}"),
-                    ("tdot;", "\u{22f1}"),
-                    ("trif;", "\u{25be}"),
-                    ("uarr;", "\u{21f5}"),
-                    ("uhar;", "\u{296f}"),
-                    ("Arr;", "\u{21d3}"),
-                    ("Har;", "\u{2965}"),
-                    ("arr;", "\u{2193}"),
-                    ("ash;", "\u{2010}"),
-                    ("iam;", "\u{22c4}"),
-                    ("jcy;", "\u{452}"),
-                    ("opf;", "\u{1d555}"),
-                    ("scr;", "\u{1d4b9}"),
-                    ("scy;", "\u{455}"),
-                    ("sol;", "\u{29f6}"),
-                    ("tri;", "\u{25bf}"),
-                    ("zcy;", "\u{45f}"),
-                    ("cy;", "\u{434}"),
-                    ("eg;", "\u{b0}"),
-                    ("fr;", "\u{1d521}"),
-                    ("ie;", "\u{a8}"),
-                    ("iv;", "\u{f7}"),
-                    ("ot;", "\u{2d9}"),
-                    ("d;", "\u{2146}"),
-                    ("eg", "\u{b0}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_d(try_read)
-        }
-
-        'e' => {
-            #[allow(non_snake_case)]
-            fn branch_e<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("xponentiale;", "\u{2147}"),
-                    ("qslantless;", "\u{2a95}"),
-                    ("xpectation;", "\u{2130}"),
-                    ("qslantgtr;", "\u{2a96}"),
-                    ("linters;", "\u{23e7}"),
-                    ("mptyset;", "\u{2205}"),
-                    ("qvparsl;", "\u{29e5}"),
-                    ("psilon;", "\u{3b5}"),
-                    ("qcolon;", "\u{2255}"),
-                    ("quivDD;", "\u{2a78}"),
-                    ("acute;", "\u{e9}"),
-                    ("aster;", "\u{2a6e}"),
-                    ("caron;", "\u{11b}"),
-                    ("colon;", "\u{2255}"),
-                    ("grave;", "\u{e8}"),
-                    ("gsdot;", "\u{2a98}"),
-                    ("lsdot;", "\u{2a97}"),
-                    ("mptyv;", "\u{2205}"),
-                    ("msp13;", "\u{2004}"),
-                    ("msp14;", "\u{2005}"),
-                    ("parsl;", "\u{29e3}"),
-                    ("qcirc;", "\u{2256}"),
-                    ("quals;", "\u{3d}"),
-                    ("quest;", "\u{225f}"),
-                    ("DDot;", "\u{2a77}"),
-                    ("acute", "\u{e9}"),
-                    ("circ;", "\u{ea}"),
-                    ("fDot;", "\u{2252}"),
-                    ("grave", "\u{e8}"),
-                    ("macr;", "\u{113}"),
-                    ("mpty;", "\u{2205}"),
-                    ("ogon;", "\u{119}"),
-                    ("plus;", "\u{2a71}"),
-                    ("psiv;", "\u{3f5}"),
-                    ("qsim;", "\u{2242}"),
-                    ("quiv;", "\u{2261}"),
-                    ("rDot;", "\u{2253}"),
-                    ("rarr;", "\u{2971}"),
-                    ("sdot;", "\u{2250}"),
-                    ("xist;", "\u{2203}"),
-                    ("Dot;", "\u{2251}"),
-                    ("cir;", "\u{2256}"),
-                    ("circ", "\u{ea}"),
-                    ("dot;", "\u{117}"),
-                    ("msp;", "\u{2003}"),
-                    ("nsp;", "\u{2002}"),
-                    ("opf;", "\u{1d556}"),
-                    ("par;", "\u{22d5}"),
-                    ("psi;", "\u{3b5}"),
-                    ("scr;", "\u{212f}"),
-                    ("sim;", "\u{2242}"),
-                    ("uml;", "\u{eb}"),
-                    ("uro;", "\u{20ac}"),
-                    ("xcl;", "\u{21}"),
-                    ("cy;", "\u{44d}"),
-                    ("fr;", "\u{1d522}"),
-                    ("gs;", "\u{2a96}"),
-                    ("ll;", "\u{2113}"),
-                    ("ls;", "\u{2a95}"),
-                    ("ng;", "\u{14b}"),
-                    ("ta;", "\u{3b7}"),
-                    ("th;", "\u{f0}"),
-                    ("uml", "\u{eb}"),
-                    ("e;", "\u{2147}"),
-                    ("g;", "\u{2a9a}"),
-                    ("l;", "\u{2a99}"),
-                    ("th", "\u{f0}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_e(try_read)
-        }
-
-        'f' => {
-            #[allow(non_snake_case)]
-            fn branch_f<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("allingdotseq;", "\u{2252}"),
-                    ("partint;", "\u{2a0d}"),
-                    ("emale;", "\u{2640}"),
-                    ("filig;", "\u{fb03}"),
-                    ("fllig;", "\u{fb04}"),
-                    ("orall;", "\u{2200}"),
-                    ("rac12;", "\u{bd}"),
-                    ("rac13;", "\u{2153}"),
-                    ("rac14;", "\u{bc}"),
-                    ("rac15;", "\u{2155}"),
-                    ("rac16;", "\u{2159}"),
-                    ("rac18;", "\u{215b}"),
-                    ("rac23;", "\u{2154}"),
-                    ("rac25;", "\u{2156}"),
-                    ("rac34;", "\u{be}"),
-                    ("rac35;", "\u{2157}"),
-                    ("rac38;", "\u{215c}"),
-                    ("rac45;", "\u{2158}"),
-                    ("rac56;", "\u{215a}"),
-                    ("rac58;", "\u{215d}"),
-                    ("rac78;", "\u{215e}"),
-                    ("flig;", "\u{fb00}"),
-                    ("ilig;", "\u{fb01}"),
-                    ("jlig;", "\u{66}\u{6a}"),
-                    ("llig;", "\u{fb02}"),
-                    ("ltns;", "\u{25b1}"),
-                    ("orkv;", "\u{2ad9}"),
-                    ("rac12", "\u{bd}"),
-                    ("rac14", "\u{bc}"),
-                    ("rac34", "\u{be}"),
-                    ("rasl;", "\u{2044}"),
-                    ("rown;", "\u{2322}"),
-                    ("lat;", "\u{266d}"),
-                    ("nof;", "\u{192}"),
-                    ("opf;", "\u{1d557}"),
-                    ("ork;", "\u{22d4}"),
-                    ("scr;", "\u{1d4bb}"),
-                    ("cy;", "\u{444}"),
-                    ("fr;", "\u{1d523}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_f(try_read)
-        }
-
-        'g' => {
-            #[allow(non_snake_case)]
-            fn branch_g<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("treqqless;", "\u{2a8c}"),
-                    ("trapprox;", "\u{2a86}"),
-                    ("treqless;", "\u{22db}"),
-                    ("vertneqq;", "\u{2269}\u{fe00}"),
-                    ("eqslant;", "\u{2a7e}"),
-                    ("esdotol;", "\u{2a84}"),
-                    ("napprox;", "\u{2a8a}"),
-                    ("esdoto;", "\u{2a82}"),
-                    ("tquest;", "\u{2a7c}"),
-                    ("trless;", "\u{2277}"),
-                    ("acute;", "\u{1f5}"),
-                    ("ammad;", "\u{3dd}"),
-                    ("breve;", "\u{11f}"),
-                    ("esdot;", "\u{2a80}"),
-                    ("esles;", "\u{2a94}"),
-                    ("tlPar;", "\u{2995}"),
-                    ("trarr;", "\u{2978}"),
-                    ("trdot;", "\u{22d7}"),
-                    ("trsim;", "\u{2273}"),
-                    ("amma;", "\u{3b3}"),
-                    ("circ;", "\u{11d}"),
-                    ("escc;", "\u{2aa9}"),
-                    ("imel;", "\u{2137}"),
-                    ("neqq;", "\u{2269}"),
-                    ("nsim;", "\u{22e7}"),
-                    ("rave;", "\u{60}"),
-                    ("sime;", "\u{2a8e}"),
-                    ("siml;", "\u{2a90}"),
-                    ("tcir;", "\u{2a7a}"),
-                    ("tdot;", "\u{22d7}"),
-                    ("dot;", "\u{121}"),
-                    ("eqq;", "\u{2267}"),
-                    ("esl;", "\u{22db}\u{fe00}"),
-                    ("jcy;", "\u{453}"),
-                    ("nap;", "\u{2a8a}"),
-                    ("neq;", "\u{2a88}"),
-                    ("opf;", "\u{1d558}"),
-                    ("scr;", "\u{210a}"),
-                    ("sim;", "\u{2273}"),
-                    ("tcc;", "\u{2aa7}"),
-                    ("vnE;", "\u{2269}\u{fe00}"),
-                    ("El;", "\u{2a8c}"),
-                    ("ap;", "\u{2a86}"),
-                    ("cy;", "\u{433}"),
-                    ("el;", "\u{22db}"),
-                    ("eq;", "\u{2265}"),
-                    ("es;", "\u{2a7e}"),
-                    ("fr;", "\u{1d524}"),
-                    ("gg;", "\u{22d9}"),
-                    ("lE;", "\u{2a92}"),
-                    ("la;", "\u{2aa5}"),
-                    ("lj;", "\u{2aa4}"),
-                    ("nE;", "\u{2269}"),
-                    ("ne;", "\u{2a88}"),
-                    ("E;", "\u{2267}"),
-                    ("e;", "\u{2265}"),
-                    ("g;", "\u{226b}"),
-                    ("l;", "\u{2277}"),
-                    ("t;", "\u{3e}"),
-                    ("t", "\u{3e}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_g(try_read)
-        }
-
-        'h' => {
-            #[allow(non_snake_case)]
-            fn branch_h<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("ookrightarrow;", "\u{21aa}"),
-                    ("ookleftarrow;", "\u{21a9}"),
-                    ("eartsuit;", "\u{2665}"),
-                    ("ksearow;", "\u{2925}"),
-                    ("kswarow;", "\u{2926}"),
-                    ("arrcir;", "\u{2948}"),
-                    ("airsp;", "\u{200a}"),
-                    ("amilt;", "\u{210b}"),
-                    ("ardcy;", "\u{44a}"),
-                    ("earts;", "\u{2665}"),
-                    ("ellip;", "\u{2026}"),
-                    ("ercon;", "\u{22b9}"),
-                    ("omtht;", "\u{223b}"),
-                    ("orbar;", "\u{2015}"),
-                    ("slash;", "\u{210f}"),
-                    ("strok;", "\u{127}"),
-                    ("ybull;", "\u{2043}"),
-                    ("yphen;", "\u{2010}"),
-                    ("arrw;", "\u{21ad}"),
-                    ("circ;", "\u{125}"),
-                    ("oarr;", "\u{21ff}"),
-                    ("Arr;", "\u{21d4}"),
-                    ("alf;", "\u{bd}"),
-                    ("arr;", "\u{2194}"),
-                    ("bar;", "\u{210f}"),
-                    ("opf;", "\u{1d559}"),
-                    ("scr;", "\u{1d4bd}"),
-                    ("fr;", "\u{1d525}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_h(try_read)
-        }
-
-        'i' => {
-            #[allow(non_snake_case)]
-            fn branch_i<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("magline;", "\u{2110}"),
-                    ("magpart;", "\u{2111}"),
-                    ("nfintie;", "\u{29dd}"),
-                    ("ntegers;", "\u{2124}"),
-                    ("ntercal;", "\u{22ba}"),
-                    ("ntlarhk;", "\u{2a17}"),
-                    ("ntprod;", "\u{2a3c}"),
-                    ("sindot;", "\u{22f5}"),
-                    ("acute;", "\u{ed}"),
-                    ("grave;", "\u{ec}"),
-                    ("iiint;", "\u{2a0c}"),
-                    ("infin;", "\u{29dc}"),
-                    ("ncare;", "\u{2105}"),
-                    ("nodot;", "\u{131}"),
-                    ("ntcal;", "\u{22ba}"),
-                    ("quest;", "\u{bf}"),
-                    ("sinsv;", "\u{22f3}"),
-                    ("tilde;", "\u{129}"),
-                    ("acute", "\u{ed}"),
-                    ("circ;", "\u{ee}"),
-                    ("excl;", "\u{a1}"),
-                    ("grave", "\u{ec}"),
-                    ("iint;", "\u{222d}"),
-                    ("iota;", "\u{2129}"),
-                    ("jlig;", "\u{133}"),
-                    ("macr;", "\u{12b}"),
-                    ("mage;", "\u{2111}"),
-                    ("math;", "\u{131}"),
-                    ("mped;", "\u{1b5}"),
-                    ("nfin;", "\u{221e}"),
-                    ("ogon;", "\u{12f}"),
-                    ("prod;", "\u{2a3c}"),
-                    ("quest", "\u{bf}"),
-                    ("sinE;", "\u{22f9}"),
-                    ("sins;", "\u{22f4}"),
-                    ("sinv;", "\u{2208}"),
-                    ("ukcy;", "\u{456}"),
-                    ("circ", "\u{ee}"),
-                    ("ecy;", "\u{435}"),
-                    ("excl", "\u{a1}"),
-                    ("mof;", "\u{22b7}"),
-                    ("ocy;", "\u{451}"),
-                    ("opf;", "\u{1d55a}"),
-                    ("ota;", "\u{3b9}"),
-                    ("scr;", "\u{1d4be}"),
-                    ("sin;", "\u{2208}"),
-                    ("uml;", "\u{ef}"),
-                    ("cy;", "\u{438}"),
-                    ("ff;", "\u{21d4}"),
-                    ("fr;", "\u{1d526}"),
-                    ("nt;", "\u{222b}"),
-                    ("uml", "\u{ef}"),
-                    ("c;", "\u{2063}"),
-                    ("i;", "\u{2148}"),
-                    ("n;", "\u{2208}"),
-                    ("t;", "\u{2062}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_i(try_read)
-        }
-
-        'j' => {
-            #[allow(non_snake_case)]
-            fn branch_j<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("sercy;", "\u{458}"),
-                    ("circ;", "\u{135}"),
-                    ("math;", "\u{237}"),
-                    ("ukcy;", "\u{454}"),
-                    ("opf;", "\u{1d55b}"),
-                    ("scr;", "\u{1d4bf}"),
-                    ("cy;", "\u{439}"),
-                    ("fr;", "\u{1d527}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_j(try_read)
-        }
-
-        'k' => {
-            #[allow(non_snake_case)]
-            fn branch_k<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("appav;", "\u{3f0}"),
-                    ("cedil;", "\u{137}"),
-                    ("green;", "\u{138}"),
-                    ("appa;", "\u{3ba}"),
-                    ("hcy;", "\u{445}"),
-                    ("jcy;", "\u{45c}"),
-                    ("opf;", "\u{1d55c}"),
-                    ("scr;", "\u{1d4c0}"),
-                    ("cy;", "\u{43a}"),
-                    ("fr;", "\u{1d528}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_k(try_read)
-        }
-
-        'l' => {
-            #[allow(non_snake_case)]
-            fn branch_l<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("eftrightsquigarrow;", "\u{21ad}"),
-                    ("ongleftrightarrow;", "\u{27f7}"),
-                    ("eftrightharpoons;", "\u{21cb}"),
-                    ("eftharpoondown;", "\u{21bd}"),
-                    ("eftrightarrows;", "\u{21c6}"),
-                    ("eftleftarrows;", "\u{21c7}"),
-                    ("eftrightarrow;", "\u{2194}"),
-                    ("eftthreetimes;", "\u{22cb}"),
-                    ("ongrightarrow;", "\u{27f6}"),
-                    ("ooparrowright;", "\u{21ac}"),
-                    ("eftarrowtail;", "\u{21a2}"),
-                    ("eftharpoonup;", "\u{21bc}"),
-                    ("ongleftarrow;", "\u{27f5}"),
-                    ("ooparrowleft;", "\u{21ab}"),
-                    ("essapprox;", "\u{2a85}"),
-                    ("esseqqgtr;", "\u{2a8b}"),
-                    ("moustache;", "\u{23b0}"),
-                    ("ongmapsto;", "\u{27fc}"),
-                    ("eftarrow;", "\u{2190}"),
-                    ("esseqgtr;", "\u{22da}"),
-                    ("vertneqq;", "\u{2268}\u{fe00}"),
-                    ("aemptyv;", "\u{29b4}"),
-                    ("drushar;", "\u{294b}"),
-                    ("eqslant;", "\u{2a7d}"),
-                    ("esdotor;", "\u{2a83}"),
-                    ("lcorner;", "\u{231e}"),
-                    ("napprox;", "\u{2a89}"),
-                    ("rcorner;", "\u{231f}"),
-                    ("urdshar;", "\u{294a}"),
-                    ("arrbfs;", "\u{291f}"),
-                    ("arrsim;", "\u{2973}"),
-                    ("brksld;", "\u{298f}"),
-                    ("brkslu;", "\u{298d}"),
-                    ("drdhar;", "\u{2967}"),
-                    ("esdoto;", "\u{2a81}"),
-                    ("essdot;", "\u{22d6}"),
-                    ("essgtr;", "\u{2276}"),
-                    ("esssim;", "\u{2272}"),
-                    ("otimes;", "\u{2a34}"),
-                    ("ozenge;", "\u{25ca}"),
-                    ("tquest;", "\u{2a7b}"),
-                    ("uruhar;", "\u{2966}"),
-                    ("Atail;", "\u{291b}"),
-                    ("acute;", "\u{13a}"),
-                    ("agran;", "\u{2112}"),
-                    ("ambda;", "\u{3bb}"),
-                    ("angle;", "\u{27e8}"),
-                    ("arrfs;", "\u{291d}"),
-                    ("arrhk;", "\u{21a9}"),
-                    ("arrlp;", "\u{21ab}"),
-                    ("arrpl;", "\u{2939}"),
-                    ("arrtl;", "\u{21a2}"),
-                    ("atail;", "\u{2919}"),
-                    ("brace;", "\u{7b}"),
-                    ("brack;", "\u{5b}"),
-                    ("caron;", "\u{13e}"),
-                    ("cedil;", "\u{13c}"),
-                    ("dquor;", "\u{201e}"),
-                    ("esdot;", "\u{2a7f}"),
-                    ("esges;", "\u{2a93}"),
-                    ("fisht;", "\u{297c}"),
-                    ("floor;", "\u{230a}"),
-                    ("harul;", "\u{296a}"),
-                    ("lhard;", "\u{296b}"),
-                    ("midot;", "\u{140}"),
-                    ("moust;", "\u{23b0}"),
-                    ("oplus;", "\u{2a2d}"),
-                    ("owast;", "\u{2217}"),
-                    ("owbar;", "\u{5f}"),
-                    ("parlt;", "\u{2993}"),
-                    ("rhard;", "\u{296d}"),
-                    ("saquo;", "\u{2039}"),
-                    ("squor;", "\u{201a}"),
-                    ("strok;", "\u{142}"),
-                    ("three;", "\u{22cb}"),
-                    ("times;", "\u{22c9}"),
-                    ("tlarr;", "\u{2976}"),
-                    ("trPar;", "\u{2996}"),
-                    ("Aarr;", "\u{21da}"),
-                    ("Barr;", "\u{290e}"),
-                    ("angd;", "\u{2991}"),
-                    ("aquo;", "\u{ab}"),
-                    ("arrb;", "\u{21e4}"),
-                    ("ates;", "\u{2aad}\u{fe00}"),
-                    ("barr;", "\u{290c}"),
-                    ("bbrk;", "\u{2772}"),
-                    ("brke;", "\u{298b}"),
-                    ("ceil;", "\u{2308}"),
-                    ("dquo;", "\u{201c}"),
-                    ("escc;", "\u{2aa8}"),
-                    ("hard;", "\u{21bd}"),
-                    ("haru;", "\u{21bc}"),
-                    ("hblk;", "\u{2584}"),
-                    ("larr;", "\u{21c7}"),
-                    ("ltri;", "\u{25fa}"),
-                    ("neqq;", "\u{2268}"),
-                    ("nsim;", "\u{22e6}"),
-                    ("oang;", "\u{27ec}"),
-                    ("oarr;", "\u{21fd}"),
-                    ("obrk;", "\u{27e6}"),
-                    ("opar;", "\u{2985}"),
-                    ("rarr;", "\u{21c6}"),
-                    ("rhar;", "\u{21cb}"),
-                    ("rtri;", "\u{22bf}"),
-                    ("sime;", "\u{2a8d}"),
-                    ("simg;", "\u{2a8f}"),
-                    ("squo;", "\u{2018}"),
-                    ("tcir;", "\u{2a79}"),
-                    ("tdot;", "\u{22d6}"),
-                    ("trie;", "\u{22b4}"),
-                    ("trif;", "\u{25c2}"),
-                    ("Arr;", "\u{21d0}"),
-                    ("Har;", "\u{2962}"),
-                    ("ang;", "\u{27e8}"),
-                    ("aquo", "\u{ab}"),
-                    ("arr;", "\u{2190}"),
-                    ("ate;", "\u{2aad}"),
-                    ("cub;", "\u{7b}"),
-                    ("dca;", "\u{2936}"),
-                    ("dsh;", "\u{21b2}"),
-                    ("eqq;", "\u{2266}"),
-                    ("esg;", "\u{22da}\u{fe00}"),
-                    ("jcy;", "\u{459}"),
-                    ("nap;", "\u{2a89}"),
-                    ("neq;", "\u{2a87}"),
-                    ("opf;", "\u{1d55d}"),
-                    ("ozf;", "\u{29eb}"),
-                    ("par;", "\u{28}"),
-                    ("scr;", "\u{1d4c1}"),
-                    ("sim;", "\u{2272}"),
-                    ("sqb;", "\u{5b}"),
-                    ("tcc;", "\u{2aa6}"),
-                    ("tri;", "\u{25c3}"),
-                    ("vnE;", "\u{2268}\u{fe00}"),
-                    ("Eg;", "\u{2a8b}"),
-                    ("ap;", "\u{2a85}"),
-                    ("at;", "\u{2aab}"),
-                    ("cy;", "\u{43b}"),
-                    ("eg;", "\u{22da}"),
-                    ("eq;", "\u{2264}"),
-                    ("es;", "\u{2a7d}"),
-                    ("fr;", "\u{1d529}"),
-                    ("gE;", "\u{2a91}"),
-                    ("nE;", "\u{2268}"),
-                    ("ne;", "\u{2a87}"),
-                    ("oz;", "\u{25ca}"),
-                    ("rm;", "\u{200e}"),
-                    ("sh;", "\u{21b0}"),
-                    ("E;", "\u{2266}"),
-                    ("e;", "\u{2264}"),
-                    ("g;", "\u{2276}"),
-                    ("l;", "\u{226a}"),
-                    ("t;", "\u{3c}"),
-                    ("t", "\u{3c}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_l(try_read)
-        }
-
-        'm' => {
-            #[allow(non_snake_case)]
-            fn branch_m<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("easuredangle;", "\u{2221}"),
-                    ("apstodown;", "\u{21a7}"),
-                    ("apstoleft;", "\u{21a4}"),
-                    ("apstoup;", "\u{21a5}"),
-                    ("ultimap;", "\u{22b8}"),
-                    ("altese;", "\u{2720}"),
-                    ("inusdu;", "\u{2a2a}"),
-                    ("apsto;", "\u{21a6}"),
-                    ("arker;", "\u{25ae}"),
-                    ("comma;", "\u{2a29}"),
-                    ("idast;", "\u{2a}"),
-                    ("idcir;", "\u{2af0}"),
-                    ("iddot;", "\u{b7}"),
-                    ("inusb;", "\u{229f}"),
-                    ("inusd;", "\u{2238}"),
-                    ("nplus;", "\u{2213}"),
-                    ("odels;", "\u{22a7}"),
-                    ("stpos;", "\u{223e}"),
-                    ("DDot;", "\u{223a}"),
-                    ("dash;", "\u{2014}"),
-                    ("icro;", "\u{b5}"),
-                    ("iddot", "\u{b7}"),
-                    ("inus;", "\u{2212}"),
-                    ("umap;", "\u{22b8}"),
-                    ("acr;", "\u{af}"),
-                    ("ale;", "\u{2642}"),
-                    ("alt;", "\u{2720}"),
-                    ("icro", "\u{b5}"),
-                    ("lcp;", "\u{2adb}"),
-                    ("ldr;", "\u{2026}"),
-                    ("opf;", "\u{1d55e}"),
-                    ("scr;", "\u{1d4c2}"),
-                    ("acr", "\u{af}"),
-                    ("ap;", "\u{21a6}"),
-                    ("cy;", "\u{43c}"),
-                    ("fr;", "\u{1d52a}"),
-                    ("ho;", "\u{2127}"),
-                    ("id;", "\u{2223}"),
-                    ("p;", "\u{2213}"),
-                    ("u;", "\u{3bc}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_m(try_read)
-        }
-
-        'n' => {
-            #[allow(non_snake_case)]
-            fn branch_n<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("trianglerighteq;", "\u{22ed}"),
-                    ("Leftrightarrow;", "\u{21ce}"),
-                    ("leftrightarrow;", "\u{21ae}"),
-                    ("trianglelefteq;", "\u{22ec}"),
-                    ("shortparallel;", "\u{2226}"),
-                    ("triangleright;", "\u{22eb}"),
-                    ("triangleleft;", "\u{22ea}"),
-                    ("Rightarrow;", "\u{21cf}"),
-                    ("rightarrow;", "\u{219b}"),
-                    ("Leftarrow;", "\u{21cd}"),
-                    ("leftarrow;", "\u{219a}"),
-                    ("subseteqq;", "\u{2ac5}\u{338}"),
-                    ("supseteqq;", "\u{2ac6}\u{338}"),
-                    ("geqslant;", "\u{2a7e}\u{338}"),
-                    ("leqslant;", "\u{2a7d}\u{338}"),
-                    ("parallel;", "\u{2226}"),
-                    ("shortmid;", "\u{2224}"),
-                    ("subseteq;", "\u{2288}"),
-                    ("supseteq;", "\u{2289}"),
-                    ("aturals;", "\u{2115}"),
-                    ("congdot;", "\u{2a6d}\u{338}"),
-                    ("otindot;", "\u{22f5}\u{338}"),
-                    ("approx;", "\u{2249}"),
-                    ("atural;", "\u{266e}"),
-                    ("earrow;", "\u{2197}"),
-                    ("exists;", "\u{2204}"),
-                    ("otinva;", "\u{2209}"),
-                    ("otinvb;", "\u{22f7}"),
-                    ("otinvc;", "\u{22f6}"),
-                    ("otniva;", "\u{220c}"),
-                    ("otnivb;", "\u{22fe}"),
-                    ("otnivc;", "\u{22fd}"),
-                    ("polint;", "\u{2a14}"),
-                    ("preceq;", "\u{2aaf}\u{338}"),
-                    ("sqsube;", "\u{22e2}"),
-                    ("sqsupe;", "\u{22e3}"),
-                    ("subset;", "\u{2282}\u{20d2}"),
-                    ("succeq;", "\u{2ab0}\u{338}"),
-                    ("supset;", "\u{2283}\u{20d2}"),
-                    ("vinfin;", "\u{29de}"),
-                    ("vltrie;", "\u{22b4}\u{20d2}"),
-                    ("vrtrie;", "\u{22b5}\u{20d2}"),
-                    ("warrow;", "\u{2196}"),
-                    ("VDash;", "\u{22af}"),
-                    ("Vdash;", "\u{22ae}"),
-                    ("acute;", "\u{144}"),
-                    ("bumpe;", "\u{224f}\u{338}"),
-                    ("caron;", "\u{148}"),
-                    ("cedil;", "\u{146}"),
-                    ("earhk;", "\u{2924}"),
-                    ("equiv;", "\u{2262}"),
-                    ("esear;", "\u{2928}"),
-                    ("exist;", "\u{2204}"),
-                    ("ltrie;", "\u{22ec}"),
-                    ("otinE;", "\u{22f9}\u{338}"),
-                    ("parsl;", "\u{2afd}\u{20e5}"),
-                    ("prcue;", "\u{22e0}"),
-                    ("rarrc;", "\u{2933}\u{338}"),
-                    ("rarrw;", "\u{219d}\u{338}"),
-                    ("rtrie;", "\u{22ed}"),
-                    ("sccue;", "\u{22e1}"),
-                    ("simeq;", "\u{2244}"),
-                    ("tilde;", "\u{f1}"),
-                    ("umero;", "\u{2116}"),
-                    ("vDash;", "\u{22ad}"),
-                    ("vHarr;", "\u{2904}"),
-                    ("vdash;", "\u{22ac}"),
-                    ("vlArr;", "\u{2902}"),
-                    ("vrArr;", "\u{2903}"),
-                    ("warhk;", "\u{2923}"),
-                    ("wnear;", "\u{2927}"),
-                    ("abla;", "\u{2207}"),
-                    ("apid;", "\u{224b}\u{338}"),
-                    ("apos;", "\u{149}"),
-                    ("atur;", "\u{266e}"),
-                    ("bump;", "\u{224e}\u{338}"),
-                    ("cong;", "\u{2247}"),
-                    ("dash;", "\u{2013}"),
-                    ("eArr;", "\u{21d7}"),
-                    ("earr;", "\u{2197}"),
-                    ("edot;", "\u{2250}\u{338}"),
-                    ("esim;", "\u{2242}\u{338}"),
-                    ("geqq;", "\u{2267}\u{338}"),
-                    ("gsim;", "\u{2275}"),
-                    ("hArr;", "\u{21ce}"),
-                    ("harr;", "\u{21ae}"),
-                    ("hpar;", "\u{2af2}"),
-                    ("lArr;", "\u{21cd}"),
-                    ("larr;", "\u{219a}"),
-                    ("leqq;", "\u{2266}\u{338}"),
-                    ("less;", "\u{226e}"),
-                    ("lsim;", "\u{2274}"),
-                    ("ltri;", "\u{22ea}"),
-                    ("otin;", "\u{2209}"),
-                    ("otni;", "\u{220c}"),
-                    ("part;", "\u{2202}\u{338}"),
-                    ("prec;", "\u{2280}"),
-                    ("rArr;", "\u{21cf}"),
-                    ("rarr;", "\u{219b}"),
-                    ("rtri;", "\u{22eb}"),
-                    ("sime;", "\u{2244}"),
-                    ("smid;", "\u{2224}"),
-                    ("spar;", "\u{2226}"),
-                    ("subE;", "\u{2ac5}\u{338}"),
-                    ("sube;", "\u{2288}"),
-                    ("succ;", "\u{2281}"),
-                    ("supE;", "\u{2ac6}\u{338}"),
-                    ("supe;", "\u{2289}"),
-                    ("tilde", "\u{f1}"),
-                    ("umsp;", "\u{2007}"),
-                    ("vsim;", "\u{223c}\u{20d2}"),
-                    ("wArr;", "\u{21d6}"),
-                    ("warr;", "\u{2196}"),
-                    ("Gtv;", "\u{226b}\u{338}"),
-                    ("Ltv;", "\u{226a}\u{338}"),
-                    ("ang;", "\u{2220}\u{20d2}"),
-                    ("apE;", "\u{2a70}\u{338}"),
-                    ("bsp;", "\u{a0}"),
-                    ("cap;", "\u{2a43}"),
-                    ("cup;", "\u{2a42}"),
-                    ("geq;", "\u{2271}"),
-                    ("ges;", "\u{2a7e}\u{338}"),
-                    ("gtr;", "\u{226f}"),
-                    ("isd;", "\u{22fa}"),
-                    ("jcy;", "\u{45a}"),
-                    ("ldr;", "\u{2025}"),
-                    ("leq;", "\u{2270}"),
-                    ("les;", "\u{2a7d}\u{338}"),
-                    ("mid;", "\u{2224}"),
-                    ("opf;", "\u{1d55f}"),
-                    ("par;", "\u{2226}"),
-                    ("pre;", "\u{2aaf}\u{338}"),
-                    ("sce;", "\u{2ab0}\u{338}"),
-                    ("scr;", "\u{1d4c3}"),
-                    ("sim;", "\u{2241}"),
-                    ("sub;", "\u{2284}"),
-                    ("sup;", "\u{2285}"),
-                    ("tgl;", "\u{2279}"),
-                    ("tlg;", "\u{2278}"),
-                    ("vap;", "\u{224d}\u{20d2}"),
-                    ("vge;", "\u{2265}\u{20d2}"),
-                    ("vgt;", "\u{3e}\u{20d2}"),
-                    ("vle;", "\u{2264}\u{20d2}"),
-                    ("vlt;", "\u{3c}\u{20d2}"),
-                    ("Gg;", "\u{22d9}\u{338}"),
-                    ("Gt;", "\u{226b}\u{20d2}"),
-                    ("Ll;", "\u{22d8}\u{338}"),
-                    ("Lt;", "\u{226a}\u{20d2}"),
-                    ("ap;", "\u{2249}"),
-                    ("bsp", "\u{a0}"),
-                    ("cy;", "\u{43d}"),
-                    ("fr;", "\u{1d52b}"),
-                    ("gE;", "\u{2267}\u{338}"),
-                    ("ge;", "\u{2271}"),
-                    ("gt;", "\u{226f}"),
-                    ("is;", "\u{22fc}"),
-                    ("iv;", "\u{220b}"),
-                    ("lE;", "\u{2266}\u{338}"),
-                    ("le;", "\u{2270}"),
-                    ("lt;", "\u{226e}"),
-                    ("ot;", "\u{ac}"),
-                    ("pr;", "\u{2280}"),
-                    ("sc;", "\u{2281}"),
-                    ("um;", "\u{23}"),
-                    ("e;", "\u{2260}"),
-                    ("i;", "\u{220b}"),
-                    ("ot", "\u{ac}"),
-                    ("u;", "\u{3bd}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_n(try_read)
-        }
-
-        'o' => {
-            #[allow(non_snake_case)]
-            fn branch_o<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("timesas;", "\u{2a36}"),
-                    ("lcross;", "\u{29bb}"),
-                    ("micron;", "\u{3bf}"),
-                    ("rderof;", "\u{2134}"),
-                    ("rslope;", "\u{2a57}"),
-                    ("acute;", "\u{f3}"),
-                    ("dblac;", "\u{151}"),
-                    ("dsold;", "\u{29bc}"),
-                    ("grave;", "\u{f2}"),
-                    ("minus;", "\u{2296}"),
-                    ("rigof;", "\u{22b6}"),
-                    ("slash;", "\u{f8}"),
-                    ("tilde;", "\u{f5}"),
-                    ("times;", "\u{2297}"),
-                    ("acute", "\u{f3}"),
-                    ("circ;", "\u{f4}"),
-                    ("dash;", "\u{229d}"),
-                    ("elig;", "\u{153}"),
-                    ("fcir;", "\u{29bf}"),
-                    ("grave", "\u{f2}"),
-                    ("hbar;", "\u{29b5}"),
-                    ("larr;", "\u{21ba}"),
-                    ("lcir;", "\u{29be}"),
-                    ("line;", "\u{203e}"),
-                    ("macr;", "\u{14d}"),
-                    ("mega;", "\u{3c9}"),
-                    ("perp;", "\u{29b9}"),
-                    ("plus;", "\u{2295}"),
-                    ("rarr;", "\u{21bb}"),
-                    ("rder;", "\u{2134}"),
-                    ("slash", "\u{f8}"),
-                    ("tilde", "\u{f5}"),
-                    ("vbar;", "\u{233d}"),
-                    ("ast;", "\u{229b}"),
-                    ("cir;", "\u{229a}"),
-                    ("circ", "\u{f4}"),
-                    ("div;", "\u{2a38}"),
-                    ("dot;", "\u{2299}"),
-                    ("gon;", "\u{2db}"),
-                    ("int;", "\u{222e}"),
-                    ("mid;", "\u{29b6}"),
-                    ("opf;", "\u{1d560}"),
-                    ("par;", "\u{29b7}"),
-                    ("rdf;", "\u{aa}"),
-                    ("rdm;", "\u{ba}"),
-                    ("ror;", "\u{2a56}"),
-                    ("scr;", "\u{2134}"),
-                    ("sol;", "\u{2298}"),
-                    ("uml;", "\u{f6}"),
-                    ("cy;", "\u{43e}"),
-                    ("fr;", "\u{1d52c}"),
-                    ("gt;", "\u{29c1}"),
-                    ("hm;", "\u{3a9}"),
-                    ("lt;", "\u{29c0}"),
-                    ("rd;", "\u{2a5d}"),
-                    ("rdf", "\u{aa}"),
-                    ("rdm", "\u{ba}"),
-                    ("rv;", "\u{2a5b}"),
-                    ("uml", "\u{f6}"),
-                    ("S;", "\u{24c8}"),
-                    ("r;", "\u{2228}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_o(try_read)
-        }
-
-        'p' => {
-            #[allow(non_snake_case)]
-            fn branch_p<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("reccurlyeq;", "\u{227c}"),
-                    ("recnapprox;", "\u{2ab9}"),
-                    ("recapprox;", "\u{2ab7}"),
-                    ("itchfork;", "\u{22d4}"),
-                    ("arallel;", "\u{2225}"),
-                    ("lusacir;", "\u{2a23}"),
-                    ("ointint;", "\u{2a15}"),
-                    ("recneqq;", "\u{2ab5}"),
-                    ("recnsim;", "\u{22e8}"),
-                    ("rofalar;", "\u{232e}"),
-                    ("rofline;", "\u{2312}"),
-                    ("rofsurf;", "\u{2313}"),
-                    ("ertenk;", "\u{2031}"),
-                    ("lanckh;", "\u{210e}"),
-                    ("luscir;", "\u{2a22}"),
-                    ("lussim;", "\u{2a26}"),
-                    ("lustwo;", "\u{2a27}"),
-                    ("recsim;", "\u{227e}"),
-                    ("arsim;", "\u{2af3}"),
-                    ("ercnt;", "\u{25}"),
-                    ("eriod;", "\u{2e}"),
-                    ("ermil;", "\u{2030}"),
-                    ("hmmat;", "\u{2133}"),
-                    ("lanck;", "\u{210f}"),
-                    ("lankv;", "\u{210f}"),
-                    ("lusdo;", "\u{2214}"),
-                    ("lusdu;", "\u{2a25}"),
-                    ("lusmn;", "\u{b1}"),
-                    ("receq;", "\u{2aaf}"),
-                    ("rimes;", "\u{2119}"),
-                    ("rnsim;", "\u{22e8}"),
-                    ("ropto;", "\u{221d}"),
-                    ("rurel;", "\u{22b0}"),
-                    ("uncsp;", "\u{2008}"),
-                    ("arsl;", "\u{2afd}"),
-                    ("hone;", "\u{260e}"),
-                    ("lusb;", "\u{229e}"),
-                    ("luse;", "\u{2a72}"),
-                    ("lusmn", "\u{b1}"),
-                    ("ound;", "\u{a3}"),
-                    ("rcue;", "\u{227c}"),
-                    ("rime;", "\u{2032}"),
-                    ("rnap;", "\u{2ab9}"),
-                    ("rsim;", "\u{227e}"),
-                    ("ara;", "\u{b6}"),
-                    ("art;", "\u{2202}"),
-                    ("erp;", "\u{22a5}"),
-                    ("hiv;", "\u{3d5}"),
-                    ("lus;", "\u{2b}"),
-                    ("opf;", "\u{1d561}"),
-                    ("ound", "\u{a3}"),
-                    ("rap;", "\u{2ab7}"),
-                    ("rec;", "\u{227a}"),
-                    ("rnE;", "\u{2ab5}"),
-                    ("rod;", "\u{220f}"),
-                    ("rop;", "\u{221d}"),
-                    ("scr;", "\u{1d4c5}"),
-                    ("ar;", "\u{2225}"),
-                    ("ara", "\u{b6}"),
-                    ("cy;", "\u{43f}"),
-                    ("fr;", "\u{1d52d}"),
-                    ("hi;", "\u{3c6}"),
-                    ("iv;", "\u{3d6}"),
-                    ("rE;", "\u{2ab3}"),
-                    ("re;", "\u{2aaf}"),
-                    ("si;", "\u{3c8}"),
-                    ("i;", "\u{3c0}"),
-                    ("m;", "\u{b1}"),
-                    ("r;", "\u{227a}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_p(try_read)
-        }
-
-        'q' => {
-            #[allow(non_snake_case)]
-            fn branch_q<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("uaternions;", "\u{210d}"),
-                    ("uatint;", "\u{2a16}"),
-                    ("uesteq;", "\u{225f}"),
-                    ("prime;", "\u{2057}"),
-                    ("uest;", "\u{3f}"),
-                    ("int;", "\u{2a0c}"),
-                    ("opf;", "\u{1d562}"),
-                    ("scr;", "\u{1d4c6}"),
-                    ("uot;", "\u{22}"),
-                    ("fr;", "\u{1d52e}"),
-                    ("uot", "\u{22}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_q(try_read)
-        }
-
-        'r' => {
-            #[allow(non_snake_case)]
-            fn branch_r<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("ightleftharpoons;", "\u{21cc}"),
-                    ("ightharpoondown;", "\u{21c1}"),
-                    ("ightrightarrows;", "\u{21c9}"),
-                    ("ightleftarrows;", "\u{21c4}"),
-                    ("ightsquigarrow;", "\u{219d}"),
-                    ("ightthreetimes;", "\u{22cc}"),
-                    ("ightarrowtail;", "\u{21a3}"),
-                    ("ightharpoonup;", "\u{21c0}"),
-                    ("isingdotseq;", "\u{2253}"),
-                    ("ightarrow;", "\u{2192}"),
-                    ("moustache;", "\u{23b1}"),
-                    ("ationals;", "\u{211a}"),
-                    ("aemptyv;", "\u{29b3}"),
-                    ("ealpart;", "\u{211c}"),
-                    ("ppolint;", "\u{2a12}"),
-                    ("triltri;", "\u{29ce}"),
-                    ("arrbfs;", "\u{2920}"),
-                    ("arrsim;", "\u{2974}"),
-                    ("brksld;", "\u{298e}"),
-                    ("brkslu;", "\u{2990}"),
-                    ("dldhar;", "\u{2969}"),
-                    ("ealine;", "\u{211b}"),
-                    ("otimes;", "\u{2a35}"),
-                    ("uluhar;", "\u{2968}"),
-                    ("Atail;", "\u{291c}"),
-                    ("acute;", "\u{155}"),
-                    ("angle;", "\u{27e9}"),
-                    ("arrap;", "\u{2975}"),
-                    ("arrfs;", "\u{291e}"),
-                    ("arrhk;", "\u{21aa}"),
-                    ("arrlp;", "\u{21ac}"),
-                    ("arrpl;", "\u{2945}"),
-                    ("arrtl;", "\u{21a3}"),
-                    ("atail;", "\u{291a}"),
-                    ("brace;", "\u{7d}"),
-                    ("brack;", "\u{5d}"),
-                    ("caron;", "\u{159}"),
-                    ("cedil;", "\u{157}"),
-                    ("dquor;", "\u{201d}"),
-                    ("fisht;", "\u{297d}"),
-                    ("floor;", "\u{230b}"),
-                    ("harul;", "\u{296c}"),
-                    ("moust;", "\u{23b1}"),
-                    ("oplus;", "\u{2a2e}"),
-                    ("pargt;", "\u{2994}"),
-                    ("saquo;", "\u{203a}"),
-                    ("squor;", "\u{2019}"),
-                    ("three;", "\u{22cc}"),
-                    ("times;", "\u{22ca}"),
-                    ("Aarr;", "\u{21db}"),
-                    ("Barr;", "\u{290f}"),
-                    ("adic;", "\u{221a}"),
-                    ("angd;", "\u{2992}"),
-                    ("ange;", "\u{29a5}"),
-                    ("aquo;", "\u{bb}"),
-                    ("arrb;", "\u{21e5}"),
-                    ("arrc;", "\u{2933}"),
-                    ("arrw;", "\u{219d}"),
-                    ("atio;", "\u{2236}"),
-                    ("barr;", "\u{290d}"),
-                    ("bbrk;", "\u{2773}"),
-                    ("brke;", "\u{298c}"),
-                    ("ceil;", "\u{2309}"),
-                    ("dquo;", "\u{201d}"),
-                    ("eals;", "\u{211d}"),
-                    ("hard;", "\u{21c1}"),
-                    ("haru;", "\u{21c0}"),
-                    ("larr;", "\u{21c4}"),
-                    ("lhar;", "\u{21cc}"),
-                    ("nmid;", "\u{2aee}"),
-                    ("oang;", "\u{27ed}"),
-                    ("oarr;", "\u{21fe}"),
-                    ("obrk;", "\u{27e7}"),
-                    ("opar;", "\u{2986}"),
-                    ("rarr;", "\u{21c9}"),
-                    ("squo;", "\u{2019}"),
-                    ("trie;", "\u{22b5}"),
-                    ("trif;", "\u{25b8}"),
-                    ("Arr;", "\u{21d2}"),
-                    ("Har;", "\u{2964}"),
-                    ("ace;", "\u{223d}\u{331}"),
-                    ("ang;", "\u{27e9}"),
-                    ("aquo", "\u{bb}"),
-                    ("arr;", "\u{2192}"),
-                    ("cub;", "\u{7d}"),
-                    ("dca;", "\u{2937}"),
-                    ("dsh;", "\u{21b3}"),
-                    ("eal;", "\u{211c}"),
-                    ("ect;", "\u{25ad}"),
-                    ("hov;", "\u{3f1}"),
-                    ("ing;", "\u{2da}"),
-                    ("opf;", "\u{1d563}"),
-                    ("par;", "\u{29}"),
-                    ("scr;", "\u{1d4c7}"),
-                    ("sqb;", "\u{5d}"),
-                    ("tri;", "\u{25b9}"),
-                    ("cy;", "\u{440}"),
-                    ("eg;", "\u{ae}"),
-                    ("fr;", "\u{1d52f}"),
-                    ("ho;", "\u{3c1}"),
-                    ("lm;", "\u{200f}"),
-                    ("sh;", "\u{21b1}"),
-                    ("eg", "\u{ae}"),
-                    ("x;", "\u{211e}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_r(try_read)
-        }
-
-        's' => {
-            #[allow(non_snake_case)]
-            fn branch_s<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("traightepsilon;", "\u{3f5}"),
-                    ("hortparallel;", "\u{2225}"),
-                    ("mallsetminus;", "\u{2216}"),
-                    ("traightphi;", "\u{3d5}"),
-                    ("ucccurlyeq;", "\u{227d}"),
-                    ("uccnapprox;", "\u{2aba}"),
-                    ("qsubseteq;", "\u{2291}"),
-                    ("qsupseteq;", "\u{2292}"),
-                    ("ubsetneqq;", "\u{2acb}"),
-                    ("uccapprox;", "\u{2ab8}"),
-                    ("upsetneqq;", "\u{2acc}"),
-                    ("padesuit;", "\u{2660}"),
-                    ("ubseteqq;", "\u{2ac5}"),
-                    ("ubsetneq;", "\u{228a}"),
-                    ("upseteqq;", "\u{2ac6}"),
-                    ("upsetneq;", "\u{228b}"),
-                    ("cpolint;", "\u{2a13}"),
-                    ("etminus;", "\u{2216}"),
-                    ("hortmid;", "\u{2223}"),
-                    ("meparsl;", "\u{29e4}"),
-                    ("qsubset;", "\u{228f}"),
-                    ("qsupset;", "\u{2290}"),
-                    ("ubseteq;", "\u{2286}"),
-                    ("uccneqq;", "\u{2ab6}"),
-                    ("uccnsim;", "\u{22e9}"),
-                    ("upseteq;", "\u{2287}"),
-                    ("earrow;", "\u{2198}"),
-                    ("implus;", "\u{2a24}"),
-                    ("imrarr;", "\u{2972}"),
-                    ("ubedot;", "\u{2ac3}"),
-                    ("ubmult;", "\u{2ac1}"),
-                    ("ubplus;", "\u{2abf}"),
-                    ("ubrarr;", "\u{2979}"),
-                    ("uccsim;", "\u{227f}"),
-                    ("updsub;", "\u{2ad8}"),
-                    ("upedot;", "\u{2ac4}"),
-                    ("uphsol;", "\u{27c9}"),
-                    ("uphsub;", "\u{2ad7}"),
-                    ("uplarr;", "\u{297b}"),
-                    ("upmult;", "\u{2ac2}"),
-                    ("upplus;", "\u{2ac0}"),
-                    ("warrow;", "\u{2199}"),
-                    ("acute;", "\u{15b}"),
-                    ("caron;", "\u{161}"),
-                    ("cedil;", "\u{15f}"),
-                    ("cnsim;", "\u{22e9}"),
-                    ("earhk;", "\u{2925}"),
-                    ("eswar;", "\u{2929}"),
-                    ("frown;", "\u{2322}"),
-                    ("hchcy;", "\u{449}"),
-                    ("igmaf;", "\u{3c2}"),
-                    ("igmav;", "\u{3c2}"),
-                    ("imdot;", "\u{2a6a}"),
-                    ("mashp;", "\u{2a33}"),
-                    ("oftcy;", "\u{44c}"),
-                    ("olbar;", "\u{233f}"),
-                    ("pades;", "\u{2660}"),
-                    ("qcaps;", "\u{2293}\u{fe00}"),
-                    ("qcups;", "\u{2294}\u{fe00}"),
-                    ("qsube;", "\u{2291}"),
-                    ("qsupe;", "\u{2292}"),
-                    ("quare;", "\u{25a1}"),
-                    ("quarf;", "\u{25aa}"),
-                    ("setmn;", "\u{2216}"),
-                    ("smile;", "\u{2323}"),
-                    ("starf;", "\u{22c6}"),
-                    ("ubdot;", "\u{2abd}"),
-                    ("ubset;", "\u{2282}"),
-                    ("ubsim;", "\u{2ac7}"),
-                    ("ubsub;", "\u{2ad5}"),
-                    ("ubsup;", "\u{2ad3}"),
-                    ("ucceq;", "\u{2ab0}"),
-                    ("updot;", "\u{2abe}"),
-                    ("upset;", "\u{2283}"),
-                    ("upsim;", "\u{2ac8}"),
-                    ("upsub;", "\u{2ad4}"),
-                    ("upsup;", "\u{2ad6}"),
-                    ("warhk;", "\u{2926}"),
-                    ("wnwar;", "\u{292a}"),
-                    ("bquo;", "\u{201a}"),
-                    ("ccue;", "\u{227d}"),
-                    ("circ;", "\u{15d}"),
-                    ("cnap;", "\u{2aba}"),
-                    ("csim;", "\u{227f}"),
-                    ("dotb;", "\u{22a1}"),
-                    ("dote;", "\u{2a66}"),
-                    ("eArr;", "\u{21d8}"),
-                    ("earr;", "\u{2198}"),
-                    ("etmn;", "\u{2216}"),
-                    ("harp;", "\u{266f}"),
-                    ("igma;", "\u{3c3}"),
-                    ("imeq;", "\u{2243}"),
-                    ("imgE;", "\u{2aa0}"),
-                    ("imlE;", "\u{2a9f}"),
-                    ("imne;", "\u{2246}"),
-                    ("larr;", "\u{2190}"),
-                    ("mile;", "\u{2323}"),
-                    ("mtes;", "\u{2aac}\u{fe00}"),
-                    ("qcap;", "\u{2293}"),
-                    ("qcup;", "\u{2294}"),
-                    ("qsub;", "\u{228f}"),
-                    ("qsup;", "\u{2290}"),
-                    ("rarr;", "\u{2192}"),
-                    ("tarf;", "\u{2605}"),
-                    ("trns;", "\u{af}"),
-                    ("ubnE;", "\u{2acb}"),
-                    ("ubne;", "\u{228a}"),
-                    ("upnE;", "\u{2acc}"),
-                    ("upne;", "\u{228b}"),
-                    ("wArr;", "\u{21d9}"),
-                    ("warr;", "\u{2199}"),
-                    ("zlig;", "\u{df}"),
-                    ("cap;", "\u{2ab8}"),
-                    ("cnE;", "\u{2ab6}"),
-                    ("dot;", "\u{22c5}"),
-                    ("ect;", "\u{a7}"),
-                    ("emi;", "\u{3b}"),
-                    ("ext;", "\u{2736}"),
-                    ("hcy;", "\u{448}"),
-                    ("ime;", "\u{2243}"),
-                    ("img;", "\u{2a9e}"),
-                    ("iml;", "\u{2a9d}"),
-                    ("mid;", "\u{2223}"),
-                    ("mte;", "\u{2aac}"),
-                    ("olb;", "\u{29c4}"),
-                    ("opf;", "\u{1d564}"),
-                    ("par;", "\u{2225}"),
-                    ("quf;", "\u{25aa}"),
-                    ("scr;", "\u{1d4c8}"),
-                    ("tar;", "\u{2606}"),
-                    ("ubE;", "\u{2ac5}"),
-                    ("ube;", "\u{2286}"),
-                    ("ucc;", "\u{227b}"),
-                    ("ung;", "\u{266a}"),
-                    ("up1;", "\u{b9}"),
-                    ("up2;", "\u{b2}"),
-                    ("up3;", "\u{b3}"),
-                    ("upE;", "\u{2ac6}"),
-                    ("upe;", "\u{2287}"),
-                    ("zlig", "\u{df}"),
-                    ("cE;", "\u{2ab4}"),
-                    ("ce;", "\u{2ab0}"),
-                    ("cy;", "\u{441}"),
-                    ("ect", "\u{a7}"),
-                    ("fr;", "\u{1d530}"),
-                    ("hy;", "\u{ad}"),
-                    ("im;", "\u{223c}"),
-                    ("mt;", "\u{2aaa}"),
-                    ("ol;", "\u{2f}"),
-                    ("qu;", "\u{25a1}"),
-                    ("ub;", "\u{2282}"),
-                    ("um;", "\u{2211}"),
-                    ("up1", "\u{b9}"),
-                    ("up2", "\u{b2}"),
-                    ("up3", "\u{b3}"),
-                    ("up;", "\u{2283}"),
-                    ("c;", "\u{227b}"),
-                    ("hy", "\u{ad}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_s(try_read)
-        }
-
-        't' => {
-            #[allow(non_snake_case)]
-            fn branch_t<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("woheadrightarrow;", "\u{21a0}"),
-                    ("woheadleftarrow;", "\u{219e}"),
-                    ("rianglerighteq;", "\u{22b5}"),
-                    ("rianglelefteq;", "\u{22b4}"),
-                    ("riangleright;", "\u{25b9}"),
-                    ("riangledown;", "\u{25bf}"),
-                    ("riangleleft;", "\u{25c3}"),
-                    ("hickapprox;", "\u{2248}"),
-                    ("herefore;", "\u{2234}"),
-                    ("riangleq;", "\u{225c}"),
-                    ("hetasym;", "\u{3d1}"),
-                    ("hicksim;", "\u{223c}"),
-                    ("imesbar;", "\u{2a31}"),
-                    ("riangle;", "\u{25b5}"),
-                    ("riminus;", "\u{2a3a}"),
-                    ("rpezium;", "\u{23e2}"),
-                    ("opfork;", "\u{2ada}"),
-                    ("riplus;", "\u{2a39}"),
-                    ("ritime;", "\u{2a3b}"),
-                    ("arget;", "\u{2316}"),
-                    ("caron;", "\u{165}"),
-                    ("cedil;", "\u{163}"),
-                    ("elrec;", "\u{2315}"),
-                    ("here4;", "\u{2234}"),
-                    ("hetav;", "\u{3d1}"),
-                    ("hinsp;", "\u{2009}"),
-                    ("hksim;", "\u{223c}"),
-                    ("imesb;", "\u{22a0}"),
-                    ("imesd;", "\u{2a30}"),
-                    ("opbot;", "\u{2336}"),
-                    ("opcir;", "\u{2af1}"),
-                    ("prime;", "\u{2034}"),
-                    ("ridot;", "\u{25ec}"),
-                    ("strok;", "\u{167}"),
-                    ("heta;", "\u{3b8}"),
-                    ("hkap;", "\u{2248}"),
-                    ("horn;", "\u{fe}"),
-                    ("ilde;", "\u{2dc}"),
-                    ("imes;", "\u{d7}"),
-                    ("rade;", "\u{2122}"),
-                    ("risb;", "\u{29cd}"),
-                    ("shcy;", "\u{45b}"),
-                    ("wixt;", "\u{226c}"),
-                    ("brk;", "\u{23b4}"),
-                    ("dot;", "\u{20db}"),
-                    ("horn", "\u{fe}"),
-                    ("imes", "\u{d7}"),
-                    ("int;", "\u{222d}"),
-                    ("oea;", "\u{2928}"),
-                    ("opf;", "\u{1d565}"),
-                    ("osa;", "\u{2929}"),
-                    ("rie;", "\u{225c}"),
-                    ("scr;", "\u{1d4c9}"),
-                    ("scy;", "\u{446}"),
-                    ("au;", "\u{3c4}"),
-                    ("cy;", "\u{442}"),
-                    ("fr;", "\u{1d531}"),
-                    ("op;", "\u{22a4}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_t(try_read)
-        }
-
-        'u' => {
-            #[allow(non_snake_case)]
-            fn branch_u<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("pharpoonright;", "\u{21be}"),
-                    ("pharpoonleft;", "\u{21bf}"),
-                    ("pdownarrow;", "\u{2195}"),
-                    ("puparrows;", "\u{21c8}"),
-                    ("lcorner;", "\u{231c}"),
-                    ("rcorner;", "\u{231d}"),
-                    ("parrow;", "\u{2191}"),
-                    ("psilon;", "\u{3c5}"),
-                    ("wangle;", "\u{29a7}"),
-                    ("acute;", "\u{fa}"),
-                    ("breve;", "\u{16d}"),
-                    ("dblac;", "\u{171}"),
-                    ("fisht;", "\u{297e}"),
-                    ("grave;", "\u{f9}"),
-                    ("lcorn;", "\u{231c}"),
-                    ("lcrop;", "\u{230f}"),
-                    ("rcorn;", "\u{231d}"),
-                    ("rcrop;", "\u{230e}"),
-                    ("tilde;", "\u{169}"),
-                    ("acute", "\u{fa}"),
-                    ("brcy;", "\u{45e}"),
-                    ("circ;", "\u{fb}"),
-                    ("darr;", "\u{21c5}"),
-                    ("dhar;", "\u{296e}"),
-                    ("grave", "\u{f9}"),
-                    ("harl;", "\u{21bf}"),
-                    ("harr;", "\u{21be}"),
-                    ("hblk;", "\u{2580}"),
-                    ("ltri;", "\u{25f8}"),
-                    ("macr;", "\u{16b}"),
-                    ("ogon;", "\u{173}"),
-                    ("plus;", "\u{228e}"),
-                    ("psih;", "\u{3d2}"),
-                    ("ring;", "\u{16f}"),
-                    ("rtri;", "\u{25f9}"),
-                    ("tdot;", "\u{22f0}"),
-                    ("trif;", "\u{25b4}"),
-                    ("uarr;", "\u{21c8}"),
-                    ("Arr;", "\u{21d1}"),
-                    ("Har;", "\u{2963}"),
-                    ("arr;", "\u{2191}"),
-                    ("circ", "\u{fb}"),
-                    ("opf;", "\u{1d566}"),
-                    ("psi;", "\u{3c5}"),
-                    ("scr;", "\u{1d4ca}"),
-                    ("tri;", "\u{25b5}"),
-                    ("uml;", "\u{fc}"),
-                    ("cy;", "\u{443}"),
-                    ("fr;", "\u{1d532}"),
-                    ("ml;", "\u{a8}"),
-                    ("uml", "\u{fc}"),
-                    ("ml", "\u{a8}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_u(try_read)
-        }
-
-        'v' => {
-            #[allow(non_snake_case)]
-            fn branch_v<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("artriangleright;", "\u{22b3}"),
-                    ("artriangleleft;", "\u{22b2}"),
-                    ("arsubsetneqq;", "\u{2acb}\u{fe00}"),
-                    ("arsupsetneqq;", "\u{2acc}\u{fe00}"),
-                    ("arsubsetneq;", "\u{228a}\u{fe00}"),
-                    ("arsupsetneq;", "\u{228b}\u{fe00}"),
-                    ("arepsilon;", "\u{3f5}"),
-                    ("arnothing;", "\u{2205}"),
-                    ("arpropto;", "\u{221d}"),
-                    ("arkappa;", "\u{3f0}"),
-                    ("arsigma;", "\u{3c2}"),
-                    ("artheta;", "\u{3d1}"),
-                    ("zigzag;", "\u{299a}"),
-                    ("angrt;", "\u{299c}"),
-                    ("arphi;", "\u{3d5}"),
-                    ("arrho;", "\u{3f1}"),
-                    ("eebar;", "\u{22bb}"),
-                    ("ellip;", "\u{22ee}"),
-                    ("erbar;", "\u{7c}"),
-                    ("subnE;", "\u{2acb}\u{fe00}"),
-                    ("subne;", "\u{228a}\u{fe00}"),
-                    ("supnE;", "\u{2acc}\u{fe00}"),
-                    ("supne;", "\u{228b}\u{fe00}"),
-                    ("Barv;", "\u{2ae9}"),
-                    ("Dash;", "\u{22a8}"),
-                    ("arpi;", "\u{3d6}"),
-                    ("dash;", "\u{22a2}"),
-                    ("eeeq;", "\u{225a}"),
-                    ("ltri;", "\u{22b2}"),
-                    ("nsub;", "\u{2282}\u{20d2}"),
-                    ("nsup;", "\u{2283}\u{20d2}"),
-                    ("prop;", "\u{221d}"),
-                    ("rtri;", "\u{22b3}"),
-                    ("Arr;", "\u{21d5}"),
-                    ("Bar;", "\u{2ae8}"),
-                    ("arr;", "\u{2195}"),
-                    ("ert;", "\u{7c}"),
-                    ("opf;", "\u{1d567}"),
-                    ("scr;", "\u{1d4cb}"),
-                    ("cy;", "\u{432}"),
-                    ("ee;", "\u{2228}"),
-                    ("fr;", "\u{1d533}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_v(try_read)
-        }
-
-        'w' => {
-            #[allow(non_snake_case)]
-            fn branch_w<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("edbar;", "\u{2a5f}"),
-                    ("edgeq;", "\u{2259}"),
-                    ("eierp;", "\u{2118}"),
-                    ("reath;", "\u{2240}"),
-                    ("circ;", "\u{175}"),
-                    ("edge;", "\u{2227}"),
-                    ("opf;", "\u{1d568}"),
-                    ("scr;", "\u{1d4cc}"),
-                    ("fr;", "\u{1d534}"),
-                    ("p;", "\u{2118}"),
-                    ("r;", "\u{2240}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_w(try_read)
-        }
-
-        'x' => {
-            #[allow(non_snake_case)]
-            fn branch_x<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("oplus;", "\u{2a01}"),
-                    ("otime;", "\u{2a02}"),
-                    ("sqcup;", "\u{2a06}"),
-                    ("uplus;", "\u{2a04}"),
-                    ("wedge;", "\u{22c0}"),
-                    ("circ;", "\u{25ef}"),
-                    ("dtri;", "\u{25bd}"),
-                    ("hArr;", "\u{27fa}"),
-                    ("harr;", "\u{27f7}"),
-                    ("lArr;", "\u{27f8}"),
-                    ("larr;", "\u{27f5}"),
-                    ("odot;", "\u{2a00}"),
-                    ("rArr;", "\u{27f9}"),
-                    ("rarr;", "\u{27f6}"),
-                    ("utri;", "\u{25b3}"),
-                    ("cap;", "\u{22c2}"),
-                    ("cup;", "\u{22c3}"),
-                    ("map;", "\u{27fc}"),
-                    ("nis;", "\u{22fb}"),
-                    ("opf;", "\u{1d569}"),
-                    ("scr;", "\u{1d4cd}"),
-                    ("vee;", "\u{22c1}"),
-                    ("fr;", "\u{1d535}"),
-                    ("i;", "\u{3be}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_x(try_read)
-        }
-
-        'y' => {
-            #[allow(non_snake_case)]
-            fn branch_y<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("acute;", "\u{fd}"),
-                    ("acute", "\u{fd}"),
-                    ("circ;", "\u{177}"),
-                    ("acy;", "\u{44f}"),
-                    ("icy;", "\u{457}"),
-                    ("opf;", "\u{1d56a}"),
-                    ("scr;", "\u{1d4ce}"),
-                    ("ucy;", "\u{44e}"),
-                    ("uml;", "\u{ff}"),
-                    ("cy;", "\u{44b}"),
-                    ("en;", "\u{a5}"),
-                    ("fr;", "\u{1d536}"),
-                    ("uml", "\u{ff}"),
-                    ("en", "\u{a5}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_y(try_read)
-        }
-
-        'z' => {
-            #[allow(non_snake_case)]
-            fn branch_z<E>(
-                mut try_read: impl FnMut(&str) -> Result<bool, E>,
-            ) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-                    ("igrarr;", "\u{21dd}"),
-                    ("acute;", "\u{17a}"),
-                    ("caron;", "\u{17e}"),
-                    ("eetrf;", "\u{2128}"),
-                    ("dot;", "\u{17c}"),
-                    ("eta;", "\u{3b6}"),
-                    ("hcy;", "\u{436}"),
-                    ("opf;", "\u{1d56b}"),
-                    ("scr;", "\u{1d4cf}"),
-                    ("wnj;", "\u{200c}"),
-                    ("cy;", "\u{437}"),
-                    ("fr;", "\u{1d537}"),
-                    ("wj;", "\u{200d}"),
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef {
-                            name: other_chars,
-                            characters,
-                        }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_z(try_read)
-        }
-
-        _ => Ok(None),
+    }
+
+    Ok(None)
+}
+
+/// All names that start with `first_char` and `second_char`, without the first character, in the
+/// order in which they need to be tried.
+pub(crate) fn candidates(
+    first_char: u8,
+    second_char: u8,
+) -> &'static [(&'static str, &'static str)] {
+    match (first_char, second_char) {
+        (b'A', b'E') => &[("Elig;", "\u{c6}"), ("Elig", "\u{c6}")],
+        (b'A', b'M') => &[("MP;", "\u{26}"), ("MP", "\u{26}")],
+        (b'A', b'a') => &[("acute;", "\u{c1}"), ("acute", "\u{c1}")],
+        (b'A', b'b') => &[("breve;", "\u{102}")],
+        (b'A', b'c') => &[("cy;", "\u{410}"), ("circ;", "\u{c2}"), ("circ", "\u{c2}")],
+        (b'A', b'f') => &[("fr;", "\u{1d504}")],
+        (b'A', b'g') => &[("grave;", "\u{c0}"), ("grave", "\u{c0}")],
+        (b'A', b'l') => &[("lpha;", "\u{391}")],
+        (b'A', b'm') => &[("macr;", "\u{100}")],
+        (b'A', b'n') => &[("nd;", "\u{2a53}")],
+        (b'A', b'o') => &[("opf;", "\u{1d538}"), ("ogon;", "\u{104}")],
+        (b'A', b'p') => &[("pplyFunction;", "\u{2061}")],
+        (b'A', b'r') => &[("ring;", "\u{c5}"), ("ring", "\u{c5}")],
+        (b'A', b's') => &[("scr;", "\u{1d49c}"), ("ssign;", "\u{2254}")],
+        (b'A', b't') => &[("tilde;", "\u{c3}"), ("tilde", "\u{c3}")],
+        (b'A', b'u') => &[("uml;", "\u{c4}"), ("uml", "\u{c4}")],
+        (b'B', b'a') => &[
+            ("arv;", "\u{2ae7}"),
+            ("arwed;", "\u{2306}"),
+            ("ackslash;", "\u{2216}"),
+        ],
+        (b'B', b'c') => &[("cy;", "\u{411}")],
+        (b'B', b'e') => &[
+            ("eta;", "\u{392}"),
+            ("ecause;", "\u{2235}"),
+            ("ernoullis;", "\u{212c}"),
+        ],
+        (b'B', b'f') => &[("fr;", "\u{1d505}")],
+        (b'B', b'o') => &[("opf;", "\u{1d539}")],
+        (b'B', b'r') => &[("reve;", "\u{2d8}")],
+        (b'B', b's') => &[("scr;", "\u{212c}")],
+        (b'B', b'u') => &[("umpeq;", "\u{224e}")],
+        (b'C', b'H') => &[("Hcy;", "\u{427}")],
+        (b'C', b'O') => &[("OPY;", "\u{a9}"), ("OPY", "\u{a9}")],
+        (b'C', b'a') => &[
+            ("ap;", "\u{22d2}"),
+            ("acute;", "\u{106}"),
+            ("ayleys;", "\u{212d}"),
+            ("apitalDifferentialD;", "\u{2145}"),
+        ],
+        (b'C', b'c') => &[
+            ("circ;", "\u{108}"),
+            ("caron;", "\u{10c}"),
+            ("cedil;", "\u{c7}"),
+            ("conint;", "\u{2230}"),
+            ("cedil", "\u{c7}"),
+        ],
+        (b'C', b'd') => &[("dot;", "\u{10a}")],
+        (b'C', b'e') => &[("edilla;", "\u{b8}"), ("enterDot;", "\u{b7}")],
+        (b'C', b'f') => &[("fr;", "\u{212d}")],
+        (b'C', b'h') => &[("hi;", "\u{3a7}")],
+        (b'C', b'i') => &[
+            ("ircleDot;", "\u{2299}"),
+            ("irclePlus;", "\u{2295}"),
+            ("ircleMinus;", "\u{2296}"),
+            ("ircleTimes;", "\u{2297}"),
+        ],
+        (b'C', b'l') => &[
+            ("loseCurlyQuote;", "\u{2019}"),
+            ("loseCurlyDoubleQuote;", "\u{201d}"),
+            ("lockwiseContourIntegral;", "\u{2232}"),
+        ],
+        (b'C', b'o') => &[
+            ("opf;", "\u{2102}"),
+            ("olon;", "\u{2237}"),
+            ("olone;", "\u{2a74}"),
+            ("onint;", "\u{222f}"),
+            ("ongruent;", "\u{2261}"),
+            ("oproduct;", "\u{2210}"),
+            ("ontourIntegral;", "\u{222e}"),
+            ("ounterClockwiseContourIntegral;", "\u{2233}"),
+        ],
+        (b'C', b'r') => &[("ross;", "\u{2a2f}")],
+        (b'C', b's') => &[("scr;", "\u{1d49e}")],
+        (b'C', b'u') => &[("up;", "\u{22d3}"), ("upCap;", "\u{224d}")],
+        (b'D', b'D') => &[("D;", "\u{2145}"), ("Dotrahd;", "\u{2911}")],
+        (b'D', b'J') => &[("Jcy;", "\u{402}")],
+        (b'D', b'S') => &[("Scy;", "\u{405}")],
+        (b'D', b'Z') => &[("Zcy;", "\u{40f}")],
+        (b'D', b'a') => &[
+            ("arr;", "\u{21a1}"),
+            ("ashv;", "\u{2ae4}"),
+            ("agger;", "\u{2021}"),
+        ],
+        (b'D', b'c') => &[("cy;", "\u{414}"), ("caron;", "\u{10e}")],
+        (b'D', b'e') => &[("el;", "\u{2207}"), ("elta;", "\u{394}")],
+        (b'D', b'f') => &[("fr;", "\u{1d507}")],
+        (b'D', b'i') => &[
+            ("iamond;", "\u{22c4}"),
+            ("ifferentialD;", "\u{2146}"),
+            ("iacriticalDot;", "\u{2d9}"),
+            ("iacriticalAcute;", "\u{b4}"),
+            ("iacriticalGrave;", "\u{60}"),
+            ("iacriticalTilde;", "\u{2dc}"),
+            ("iacriticalDoubleAcute;", "\u{2dd}"),
+        ],
+        (b'D', b'o') => &[
+            ("ot;", "\u{a8}"),
+            ("opf;", "\u{1d53b}"),
+            ("otDot;", "\u{20dc}"),
+            ("ownTee;", "\u{22a4}"),
+            ("otEqual;", "\u{2250}"),
+            ("oubleDot;", "\u{a8}"),
+            ("ownArrow;", "\u{2193}"),
+            ("ownBreve;", "\u{311}"),
+            ("ownarrow;", "\u{21d3}"),
+            ("ownArrowBar;", "\u{2913}"),
+            ("ownTeeArrow;", "\u{21a7}"),
+            ("oubleLeftTee;", "\u{2ae4}"),
+            ("oubleUpArrow;", "\u{21d1}"),
+            ("oubleRightTee;", "\u{22a8}"),
+            ("ownLeftVector;", "\u{21bd}"),
+            ("oubleDownArrow;", "\u{21d3}"),
+            ("oubleLeftArrow;", "\u{21d0}"),
+            ("ownRightVector;", "\u{21c1}"),
+            ("oubleRightArrow;", "\u{21d2}"),
+            ("ownArrowUpArrow;", "\u{21f5}"),
+            ("oubleUpDownArrow;", "\u{21d5}"),
+            ("oubleVerticalBar;", "\u{2225}"),
+            ("ownLeftTeeVector;", "\u{295e}"),
+            ("ownLeftVectorBar;", "\u{2956}"),
+            ("ownRightTeeVector;", "\u{295f}"),
+            ("ownRightVectorBar;", "\u{2957}"),
+            ("oubleLongLeftArrow;", "\u{27f8}"),
+            ("ownLeftRightVector;", "\u{2950}"),
+            ("oubleLeftRightArrow;", "\u{21d4}"),
+            ("oubleLongRightArrow;", "\u{27f9}"),
+            ("oubleContourIntegral;", "\u{222f}"),
+            ("oubleLongLeftRightArrow;", "\u{27fa}"),
+        ],
+        (b'D', b's') => &[("scr;", "\u{1d49f}"), ("strok;", "\u{110}")],
+        (b'E', b'N') => &[("NG;", "\u{14a}")],
+        (b'E', b'T') => &[("TH;", "\u{d0}"), ("TH", "\u{d0}")],
+        (b'E', b'a') => &[("acute;", "\u{c9}"), ("acute", "\u{c9}")],
+        (b'E', b'c') => &[
+            ("cy;", "\u{42d}"),
+            ("circ;", "\u{ca}"),
+            ("caron;", "\u{11a}"),
+            ("circ", "\u{ca}"),
+        ],
+        (b'E', b'd') => &[("dot;", "\u{116}")],
+        (b'E', b'f') => &[("fr;", "\u{1d508}")],
+        (b'E', b'g') => &[("grave;", "\u{c8}"), ("grave", "\u{c8}")],
+        (b'E', b'l') => &[("lement;", "\u{2208}")],
+        (b'E', b'm') => &[
+            ("macr;", "\u{112}"),
+            ("mptySmallSquare;", "\u{25fb}"),
+            ("mptyVerySmallSquare;", "\u{25ab}"),
+        ],
+        (b'E', b'o') => &[("opf;", "\u{1d53c}"), ("ogon;", "\u{118}")],
+        (b'E', b'p') => &[("psilon;", "\u{395}")],
+        (b'E', b'q') => &[
+            ("qual;", "\u{2a75}"),
+            ("qualTilde;", "\u{2242}"),
+            ("quilibrium;", "\u{21cc}"),
+        ],
+        (b'E', b's') => &[("scr;", "\u{2130}"), ("sim;", "\u{2a73}")],
+        (b'E', b't') => &[("ta;", "\u{397}")],
+        (b'E', b'u') => &[("uml;", "\u{cb}"), ("uml", "\u{cb}")],
+        (b'E', b'x') => &[("xists;", "\u{2203}"), ("xponentialE;", "\u{2147}")],
+        (b'F', b'c') => &[("cy;", "\u{424}")],
+        (b'F', b'f') => &[("fr;", "\u{1d509}")],
+        (b'F', b'i') => &[
+            ("illedSmallSquare;", "\u{25fc}"),
+            ("illedVerySmallSquare;", "\u{25aa}"),
+        ],
+        (b'F', b'o') => &[
+            ("opf;", "\u{1d53d}"),
+            ("orAll;", "\u{2200}"),
+            ("ouriertrf;", "\u{2131}"),
+        ],
+        (b'F', b's') => &[("scr;", "\u{2131}")],
+        (b'G', b'J') => &[("Jcy;", "\u{403}")],
+        (b'G', b'T') => &[("T;", "\u{3e}"), ("T", "\u{3e}")],
+        (b'G', b'a') => &[("amma;", "\u{393}"), ("ammad;", "\u{3dc}")],
+        (b'G', b'b') => &[("breve;", "\u{11e}")],
+        (b'G', b'c') => &[
+            ("cy;", "\u{413}"),
+            ("circ;", "\u{11c}"),
+            ("cedil;", "\u{122}"),
+        ],
+        (b'G', b'd') => &[("dot;", "\u{120}")],
+        (b'G', b'f') => &[("fr;", "\u{1d50a}")],
+        (b'G', b'g') => &[("g;", "\u{22d9}")],
+        (b'G', b'o') => &[("opf;", "\u{1d53e}")],
+        (b'G', b'r') => &[
+            ("reaterLess;", "\u{2277}"),
+            ("reaterEqual;", "\u{2265}"),
+            ("reaterTilde;", "\u{2273}"),
+            ("reaterGreater;", "\u{2aa2}"),
+            ("reaterEqualLess;", "\u{22db}"),
+            ("reaterFullEqual;", "\u{2267}"),
+            ("reaterSlantEqual;", "\u{2a7e}"),
+        ],
+        (b'G', b's') => &[("scr;", "\u{1d4a2}")],
+        (b'G', b't') => &[("t;", "\u{226b}")],
+        (b'H', b'A') => &[("ARDcy;", "\u{42a}")],
+        (b'H', b'a') => &[("at;", "\u{5e}"), ("acek;", "\u{2c7}")],
+        (b'H', b'c') => &[("circ;", "\u{124}")],
+        (b'H', b'f') => &[("fr;", "\u{210c}")],
+        (b'H', b'i') => &[("ilbertSpace;", "\u{210b}")],
+        (b'H', b'o') => &[("opf;", "\u{210d}"), ("orizontalLine;", "\u{2500}")],
+        (b'H', b's') => &[("scr;", "\u{210b}"), ("strok;", "\u{126}")],
+        (b'H', b'u') => &[("umpEqual;", "\u{224f}"), ("umpDownHump;", "\u{224e}")],
+        (b'I', b'E') => &[("Ecy;", "\u{415}")],
+        (b'I', b'J') => &[("Jlig;", "\u{132}")],
+        (b'I', b'O') => &[("Ocy;", "\u{401}")],
+        (b'I', b'a') => &[("acute;", "\u{cd}"), ("acute", "\u{cd}")],
+        (b'I', b'c') => &[("cy;", "\u{418}"), ("circ;", "\u{ce}"), ("circ", "\u{ce}")],
+        (b'I', b'd') => &[("dot;", "\u{130}")],
+        (b'I', b'f') => &[("fr;", "\u{2111}")],
+        (b'I', b'g') => &[("grave;", "\u{cc}"), ("grave", "\u{cc}")],
+        (b'I', b'm') => &[
+            ("m;", "\u{2111}"),
+            ("macr;", "\u{12a}"),
+            ("mplies;", "\u{21d2}"),
+            ("maginaryI;", "\u{2148}"),
+        ],
+        (b'I', b'n') => &[
+            ("nt;", "\u{222c}"),
+            ("ntegral;", "\u{222b}"),
+            ("ntersection;", "\u{22c2}"),
+            ("nvisibleComma;", "\u{2063}"),
+            ("nvisibleTimes;", "\u{2062}"),
+        ],
+        (b'I', b'o') => &[
+            ("opf;", "\u{1d540}"),
+            ("ota;", "\u{399}"),
+            ("ogon;", "\u{12e}"),
+        ],
+        (b'I', b's') => &[("scr;", "\u{2110}")],
+        (b'I', b't') => &[("tilde;", "\u{128}")],
+        (b'I', b'u') => &[("uml;", "\u{cf}"), ("ukcy;", "\u{406}"), ("uml", "\u{cf}")],
+        (b'J', b'c') => &[("cy;", "\u{419}"), ("circ;", "\u{134}")],
+        (b'J', b'f') => &[("fr;", "\u{1d50d}")],
+        (b'J', b'o') => &[("opf;", "\u{1d541}")],
+        (b'J', b's') => &[("scr;", "\u{1d4a5}"), ("sercy;", "\u{408}")],
+        (b'J', b'u') => &[("ukcy;", "\u{404}")],
+        (b'K', b'H') => &[("Hcy;", "\u{425}")],
+        (b'K', b'J') => &[("Jcy;", "\u{40c}")],
+        (b'K', b'a') => &[("appa;", "\u{39a}")],
+        (b'K', b'c') => &[("cy;", "\u{41a}"), ("cedil;", "\u{136}")],
+        (b'K', b'f') => &[("fr;", "\u{1d50e}")],
+        (b'K', b'o') => &[("opf;", "\u{1d542}")],
+        (b'K', b's') => &[("scr;", "\u{1d4a6}")],
+        (b'L', b'J') => &[("Jcy;", "\u{409}")],
+        (b'L', b'T') => &[("T;", "\u{3c}"), ("T", "\u{3c}")],
+        (b'L', b'a') => &[
+            ("ang;", "\u{27ea}"),
+            ("arr;", "\u{219e}"),
+            ("acute;", "\u{139}"),
+            ("ambda;", "\u{39b}"),
+            ("aplacetrf;", "\u{2112}"),
+        ],
+        (b'L', b'c') => &[
+            ("cy;", "\u{41b}"),
+            ("caron;", "\u{13d}"),
+            ("cedil;", "\u{13b}"),
+        ],
+        (b'L', b'e') => &[
+            ("eftTee;", "\u{22a3}"),
+            ("essLess;", "\u{2aa1}"),
+            ("eftArrow;", "\u{2190}"),
+            ("eftFloor;", "\u{230a}"),
+            ("eftarrow;", "\u{21d0}"),
+            ("essTilde;", "\u{2272}"),
+            ("eftVector;", "\u{21bc}"),
+            ("eftCeiling;", "\u{2308}"),
+            ("essGreater;", "\u{2276}"),
+            ("eftArrowBar;", "\u{21e4}"),
+            ("eftTeeArrow;", "\u{21a4}"),
+            ("eftTriangle;", "\u{22b2}"),
+            ("eftUpVector;", "\u{21bf}"),
+            ("eftTeeVector;", "\u{295a}"),
+            ("eftVectorBar;", "\u{2952}"),
+            ("essFullEqual;", "\u{2266}"),
+            ("eftDownVector;", "\u{21c3}"),
+            ("eftRightArrow;", "\u{2194}"),
+            ("eftrightarrow;", "\u{21d4}"),
+            ("essSlantEqual;", "\u{2a7d}"),
+            ("eftRightVector;", "\u{294e}"),
+            ("eftTriangleBar;", "\u{29cf}"),
+            ("eftUpTeeVector;", "\u{2960}"),
+            ("eftUpVectorBar;", "\u{2958}"),
+            ("eftAngleBracket;", "\u{27e8}"),
+            ("eftUpDownVector;", "\u{2951}"),
+            ("essEqualGreater;", "\u{22da}"),
+            ("eftDoubleBracket;", "\u{27e6}"),
+            ("eftDownTeeVector;", "\u{2961}"),
+            ("eftDownVectorBar;", "\u{2959}"),
+            ("eftTriangleEqual;", "\u{22b4}"),
+            ("eftArrowRightArrow;", "\u{21c6}"),
+        ],
+        (b'L', b'f') => &[("fr;", "\u{1d50f}")],
+        (b'L', b'l') => &[("l;", "\u{22d8}"), ("leftarrow;", "\u{21da}")],
+        (b'L', b'm') => &[("midot;", "\u{13f}")],
+        (b'L', b'o') => &[
+            ("opf;", "\u{1d543}"),
+            ("ongLeftArrow;", "\u{27f5}"),
+            ("ongleftarrow;", "\u{27f8}"),
+            ("ongRightArrow;", "\u{27f6}"),
+            ("ongrightarrow;", "\u{27f9}"),
+            ("owerLeftArrow;", "\u{2199}"),
+            ("owerRightArrow;", "\u{2198}"),
+            ("ongLeftRightArrow;", "\u{27f7}"),
+            ("ongleftrightarrow;", "\u{27fa}"),
+        ],
+        (b'L', b's') => &[
+            ("sh;", "\u{21b0}"),
+            ("scr;", "\u{2112}"),
+            ("strok;", "\u{141}"),
+        ],
+        (b'L', b't') => &[("t;", "\u{226a}")],
+        (b'M', b'a') => &[("ap;", "\u{2905}")],
+        (b'M', b'c') => &[("cy;", "\u{41c}")],
+        (b'M', b'e') => &[("ellintrf;", "\u{2133}"), ("ediumSpace;", "\u{205f}")],
+        (b'M', b'f') => &[("fr;", "\u{1d510}")],
+        (b'M', b'i') => &[("inusPlus;", "\u{2213}")],
+        (b'M', b'o') => &[("opf;", "\u{1d544}")],
+        (b'M', b's') => &[("scr;", "\u{2133}")],
+        (b'M', b'u') => &[("u;", "\u{39c}")],
+        (b'N', b'J') => &[("Jcy;", "\u{40a}")],
+        (b'N', b'a') => &[("acute;", "\u{143}")],
+        (b'N', b'c') => &[
+            ("cy;", "\u{41d}"),
+            ("caron;", "\u{147}"),
+            ("cedil;", "\u{145}"),
+        ],
+        (b'N', b'e') => &[
+            ("ewLine;", "\u{a}"),
+            ("estedLessLess;", "\u{226a}"),
+            ("egativeThinSpace;", "\u{200b}"),
+            ("egativeThickSpace;", "\u{200b}"),
+            ("egativeMediumSpace;", "\u{200b}"),
+            ("estedGreaterGreater;", "\u{226b}"),
+            ("egativeVeryThinSpace;", "\u{200b}"),
+        ],
+        (b'N', b'f') => &[("fr;", "\u{1d511}")],
+        (b'N', b'o') => &[
+            ("ot;", "\u{2aec}"),
+            ("opf;", "\u{2115}"),
+            ("oBreak;", "\u{2060}"),
+            ("otLess;", "\u{226e}"),
+            ("otEqual;", "\u{2260}"),
+            ("otTilde;", "\u{2241}"),
+            ("otCupCap;", "\u{226d}"),
+            ("otExists;", "\u{2204}"),
+            ("otSubset;", "\u{2282}\u{20d2}"),
+            ("otElement;", "\u{2209}"),
+            ("otGreater;", "\u{226f}"),
+            ("otLessLess;", "\u{226a}\u{338}"),
+            ("otPrecedes;", "\u{2280}"),
+            ("otSucceeds;", "\u{2281}"),
+            ("otSuperset;", "\u{2283}\u{20d2}"),
+            ("otCongruent;", "\u{2262}"),
+            ("otHumpEqual;", "\u{224f}\u{338}"),
+            ("otLessEqual;", "\u{2270}"),
+            ("otLessTilde;", "\u{2274}"),
+            ("otEqualTilde;", "\u{2242}\u{338}"),
+            ("otTildeEqual;", "\u{2244}"),
+            ("otTildeTilde;", "\u{2249}"),
+            ("otGreaterLess;", "\u{2279}"),
+            ("otLessGreater;", "\u{2278}"),
+            ("otSubsetEqual;", "\u{2288}"),
+            ("otVerticalBar;", "\u{2224}"),
+            ("otGreaterEqual;", "\u{2271}"),
+            ("otGreaterTilde;", "\u{2275}"),
+            ("otHumpDownHump;", "\u{224e}\u{338}"),
+            ("otLeftTriangle;", "\u{22ea}"),
+            ("otSquareSubset;", "\u{228f}\u{338}"),
+            ("onBreakingSpace;", "\u{a0}"),
+            ("otPrecedesEqual;", "\u{2aaf}\u{338}"),
+            ("otRightTriangle;", "\u{22eb}"),
+            ("otSucceedsEqual;", "\u{2ab0}\u{338}"),
+            ("otSucceedsTilde;", "\u{227f}\u{338}"),
+            ("otSupersetEqual;", "\u{2289}"),
+            ("otGreaterGreater;", "\u{226b}\u{338}"),
+            ("otLessSlantEqual;", "\u{2a7d}\u{338}"),
+            ("otNestedLessLess;", "\u{2aa1}\u{338}"),
+            ("otReverseElement;", "\u{220c}"),
+            ("otSquareSuperset;", "\u{2290}\u{338}"),
+            ("otTildeFullEqual;", "\u{2247}"),
+            ("otLeftTriangleBar;", "\u{29cf}\u{338}"),
+            ("otGreaterFullEqual;", "\u{2267}\u{338}"),
+            ("otRightTriangleBar;", "\u{29d0}\u{338}"),
+            ("otDoubleVerticalBar;", "\u{2226}"),
+            ("otGreaterSlantEqual;", "\u{2a7e}\u{338}"),
+            ("otLeftTriangleEqual;", "\u{22ec}"),
+            ("otSquareSubsetEqual;", "\u{22e2}"),
+            ("otPrecedesSlantEqual;", "\u{22e0}"),
+            ("otRightTriangleEqual;", "\u{22ed}"),
+            ("otSucceedsSlantEqual;", "\u{22e1}"),
+            ("otSquareSupersetEqual;", "\u{22e3}"),
+            ("otNestedGreaterGreater;", "\u{2aa2}\u{338}"),
+        ],
+        (b'N', b's') => &[("scr;", "\u{1d4a9}")],
+        (b'N', b't') => &[("tilde;", "\u{d1}"), ("tilde", "\u{d1}")],
+        (b'N', b'u') => &[("u;", "\u{39d}")],
+        (b'O', b'E') => &[("Elig;", "\u{152}")],
+        (b'O', b'a') => &[("acute;", "\u{d3}"), ("acute", "\u{d3}")],
+        (b'O', b'c') => &[("cy;", "\u{41e}"), ("circ;", "\u{d4}"), ("circ", "\u{d4}")],
+        (b'O', b'd') => &[("dblac;", "\u{150}")],
+        (b'O', b'f') => &[("fr;", "\u{1d512}")],
+        (b'O', b'g') => &[("grave;", "\u{d2}"), ("grave", "\u{d2}")],
+        (b'O', b'm') => &[
+            ("macr;", "\u{14c}"),
+            ("mega;", "\u{3a9}"),
+            ("micron;", "\u{39f}"),
+        ],
+        (b'O', b'o') => &[("opf;", "\u{1d546}")],
+        (b'O', b'p') => &[
+            ("penCurlyQuote;", "\u{2018}"),
+            ("penCurlyDoubleQuote;", "\u{201c}"),
+        ],
+        (b'O', b'r') => &[("r;", "\u{2a54}")],
+        (b'O', b's') => &[
+            ("scr;", "\u{1d4aa}"),
+            ("slash;", "\u{d8}"),
+            ("slash", "\u{d8}"),
+        ],
+        (b'O', b't') => &[
+            ("tilde;", "\u{d5}"),
+            ("times;", "\u{2a37}"),
+            ("tilde", "\u{d5}"),
+        ],
+        (b'O', b'u') => &[("uml;", "\u{d6}"), ("uml", "\u{d6}")],
+        (b'O', b'v') => &[
+            ("verBar;", "\u{203e}"),
+            ("verBrace;", "\u{23de}"),
+            ("verBracket;", "\u{23b4}"),
+            ("verParenthesis;", "\u{23dc}"),
+        ],
+        (b'P', b'a') => &[("artialD;", "\u{2202}")],
+        (b'P', b'c') => &[("cy;", "\u{41f}")],
+        (b'P', b'f') => &[("fr;", "\u{1d513}")],
+        (b'P', b'h') => &[("hi;", "\u{3a6}")],
+        (b'P', b'i') => &[("i;", "\u{3a0}")],
+        (b'P', b'l') => &[("lusMinus;", "\u{b1}")],
+        (b'P', b'o') => &[("opf;", "\u{2119}"), ("oincareplane;", "\u{210c}")],
+        (b'P', b'r') => &[
+            ("r;", "\u{2abb}"),
+            ("rime;", "\u{2033}"),
+            ("roduct;", "\u{220f}"),
+            ("recedes;", "\u{227a}"),
+            ("roportion;", "\u{2237}"),
+            ("roportional;", "\u{221d}"),
+            ("recedesEqual;", "\u{2aaf}"),
+            ("recedesTilde;", "\u{227e}"),
+            ("recedesSlantEqual;", "\u{227c}"),
+        ],
+        (b'P', b's') => &[("si;", "\u{3a8}"), ("scr;", "\u{1d4ab}")],
+        (b'Q', b'U') => &[("UOT;", "\u{22}"), ("UOT", "\u{22}")],
+        (b'Q', b'f') => &[("fr;", "\u{1d514}")],
+        (b'Q', b'o') => &[("opf;", "\u{211a}")],
+        (b'Q', b's') => &[("scr;", "\u{1d4ac}")],
+        (b'R', b'B') => &[("Barr;", "\u{2910}")],
+        (b'R', b'E') => &[("EG;", "\u{ae}"), ("EG", "\u{ae}")],
+        (b'R', b'a') => &[
+            ("ang;", "\u{27eb}"),
+            ("arr;", "\u{21a0}"),
+            ("acute;", "\u{154}"),
+            ("arrtl;", "\u{2916}"),
+        ],
+        (b'R', b'c') => &[
+            ("cy;", "\u{420}"),
+            ("caron;", "\u{158}"),
+            ("cedil;", "\u{156}"),
+        ],
+        (b'R', b'e') => &[
+            ("e;", "\u{211c}"),
+            ("everseElement;", "\u{220b}"),
+            ("everseEquilibrium;", "\u{21cb}"),
+            ("everseUpEquilibrium;", "\u{296f}"),
+        ],
+        (b'R', b'f') => &[("fr;", "\u{211c}")],
+        (b'R', b'h') => &[("ho;", "\u{3a1}")],
+        (b'R', b'i') => &[
+            ("ightTee;", "\u{22a2}"),
+            ("ightArrow;", "\u{2192}"),
+            ("ightFloor;", "\u{230b}"),
+            ("ightarrow;", "\u{21d2}"),
+            ("ightVector;", "\u{21c0}"),
+            ("ightCeiling;", "\u{2309}"),
+            ("ightArrowBar;", "\u{21e5}"),
+            ("ightTeeArrow;", "\u{21a6}"),
+            ("ightTriangle;", "\u{22b3}"),
+            ("ightUpVector;", "\u{21be}"),
+            ("ightTeeVector;", "\u{295b}"),
+            ("ightVectorBar;", "\u{2953}"),
+            ("ightDownVector;", "\u{21c2}"),
+            ("ightTriangleBar;", "\u{29d0}"),
+            ("ightUpTeeVector;", "\u{295c}"),
+            ("ightUpVectorBar;", "\u{2954}"),
+            ("ightAngleBracket;", "\u{27e9}"),
+            ("ightUpDownVector;", "\u{294f}"),
+            ("ightDoubleBracket;", "\u{27e7}"),
+            ("ightDownTeeVector;", "\u{295d}"),
+            ("ightDownVectorBar;", "\u{2955}"),
+            ("ightTriangleEqual;", "\u{22b5}"),
+            ("ightArrowLeftArrow;", "\u{21c4}"),
+        ],
+        (b'R', b'o') => &[("opf;", "\u{211d}"), ("oundImplies;", "\u{2970}")],
+        (b'R', b'r') => &[("rightarrow;", "\u{21db}")],
+        (b'R', b's') => &[("sh;", "\u{21b1}"), ("scr;", "\u{211b}")],
+        (b'R', b'u') => &[("uleDelayed;", "\u{29f4}")],
+        (b'S', b'H') => &[("Hcy;", "\u{428}"), ("HCHcy;", "\u{429}")],
+        (b'S', b'O') => &[("OFTcy;", "\u{42c}")],
+        (b'S', b'a') => &[("acute;", "\u{15a}")],
+        (b'S', b'c') => &[
+            ("c;", "\u{2abc}"),
+            ("cy;", "\u{421}"),
+            ("circ;", "\u{15c}"),
+            ("caron;", "\u{160}"),
+            ("cedil;", "\u{15e}"),
+        ],
+        (b'S', b'f') => &[("fr;", "\u{1d516}")],
+        (b'S', b'h') => &[
+            ("hortUpArrow;", "\u{2191}"),
+            ("hortDownArrow;", "\u{2193}"),
+            ("hortLeftArrow;", "\u{2190}"),
+            ("hortRightArrow;", "\u{2192}"),
+        ],
+        (b'S', b'i') => &[("igma;", "\u{3a3}")],
+        (b'S', b'm') => &[("mallCircle;", "\u{2218}")],
+        (b'S', b'o') => &[("opf;", "\u{1d54a}")],
+        (b'S', b'q') => &[
+            ("qrt;", "\u{221a}"),
+            ("quare;", "\u{25a1}"),
+            ("quareUnion;", "\u{2294}"),
+            ("quareSubset;", "\u{228f}"),
+            ("quareSuperset;", "\u{2290}"),
+            ("quareSubsetEqual;", "\u{2291}"),
+            ("quareIntersection;", "\u{2293}"),
+            ("quareSupersetEqual;", "\u{2292}"),
+        ],
+        (b'S', b's') => &[("scr;", "\u{1d4ae}")],
+        (b'S', b't') => &[("tar;", "\u{22c6}")],
+        (b'S', b'u') => &[
+            ("ub;", "\u{22d0}"),
+            ("um;", "\u{2211}"),
+            ("up;", "\u{22d1}"),
+            ("ubset;", "\u{22d0}"),
+            ("upset;", "\u{22d1}"),
+            ("ucceeds;", "\u{227b}"),
+            ("uchThat;", "\u{220b}"),
+            ("uperset;", "\u{2283}"),
+            ("ubsetEqual;", "\u{2286}"),
+            ("ucceedsEqual;", "\u{2ab0}"),
+            ("ucceedsTilde;", "\u{227f}"),
+            ("upersetEqual;", "\u{2287}"),
+            ("ucceedsSlantEqual;", "\u{227d}"),
+        ],
+        (b'T', b'H') => &[("HORN;", "\u{de}"), ("HORN", "\u{de}")],
+        (b'T', b'R') => &[("RADE;", "\u{2122}")],
+        (b'T', b'S') => &[("Scy;", "\u{426}"), ("SHcy;", "\u{40b}")],
+        (b'T', b'a') => &[("ab;", "\u{9}"), ("au;", "\u{3a4}")],
+        (b'T', b'c') => &[
+            ("cy;", "\u{422}"),
+            ("caron;", "\u{164}"),
+            ("cedil;", "\u{162}"),
+        ],
+        (b'T', b'f') => &[("fr;", "\u{1d517}")],
+        (b'T', b'h') => &[
+            ("heta;", "\u{398}"),
+            ("herefore;", "\u{2234}"),
+            ("hinSpace;", "\u{2009}"),
+            ("hickSpace;", "\u{205f}\u{200a}"),
+        ],
+        (b'T', b'i') => &[
+            ("ilde;", "\u{223c}"),
+            ("ildeEqual;", "\u{2243}"),
+            ("ildeTilde;", "\u{2248}"),
+            ("ildeFullEqual;", "\u{2245}"),
+        ],
+        (b'T', b'o') => &[("opf;", "\u{1d54b}")],
+        (b'T', b'r') => &[("ripleDot;", "\u{20db}")],
+        (b'T', b's') => &[("scr;", "\u{1d4af}"), ("strok;", "\u{166}")],
+        (b'U', b'a') => &[
+            ("arr;", "\u{219f}"),
+            ("acute;", "\u{da}"),
+            ("arrocir;", "\u{2949}"),
+            ("acute", "\u{da}"),
+        ],
+        (b'U', b'b') => &[("brcy;", "\u{40e}"), ("breve;", "\u{16c}")],
+        (b'U', b'c') => &[("cy;", "\u{423}"), ("circ;", "\u{db}"), ("circ", "\u{db}")],
+        (b'U', b'd') => &[("dblac;", "\u{170}")],
+        (b'U', b'f') => &[("fr;", "\u{1d518}")],
+        (b'U', b'g') => &[("grave;", "\u{d9}"), ("grave", "\u{d9}")],
+        (b'U', b'm') => &[("macr;", "\u{16a}")],
+        (b'U', b'n') => &[
+            ("nion;", "\u{22c3}"),
+            ("nderBar;", "\u{5f}"),
+            ("nionPlus;", "\u{228e}"),
+            ("nderBrace;", "\u{23df}"),
+            ("nderBracket;", "\u{23b5}"),
+            ("nderParenthesis;", "\u{23dd}"),
+        ],
+        (b'U', b'o') => &[("opf;", "\u{1d54c}"), ("ogon;", "\u{172}")],
+        (b'U', b'p') => &[
+            ("psi;", "\u{3d2}"),
+            ("pTee;", "\u{22a5}"),
+            ("pArrow;", "\u{2191}"),
+            ("parrow;", "\u{21d1}"),
+            ("psilon;", "\u{3a5}"),
+            ("pArrowBar;", "\u{2912}"),
+            ("pTeeArrow;", "\u{21a5}"),
+            ("pDownArrow;", "\u{2195}"),
+            ("pdownarrow;", "\u{21d5}"),
+            ("pEquilibrium;", "\u{296e}"),
+            ("pperLeftArrow;", "\u{2196}"),
+            ("pperRightArrow;", "\u{2197}"),
+            ("pArrowDownArrow;", "\u{21c5}"),
+        ],
+        (b'U', b'r') => &[("ring;", "\u{16e}")],
+        (b'U', b's') => &[("scr;", "\u{1d4b0}")],
+        (b'U', b't') => &[("tilde;", "\u{168}")],
+        (b'U', b'u') => &[("uml;", "\u{dc}"), ("uml", "\u{dc}")],
+        (b'V', b'D') => &[("Dash;", "\u{22ab}")],
+        (b'V', b'b') => &[("bar;", "\u{2aeb}")],
+        (b'V', b'c') => &[("cy;", "\u{412}")],
+        (b'V', b'd') => &[("dash;", "\u{22a9}"), ("dashl;", "\u{2ae6}")],
+        (b'V', b'e') => &[
+            ("ee;", "\u{22c1}"),
+            ("ert;", "\u{2016}"),
+            ("erbar;", "\u{2016}"),
+            ("erticalBar;", "\u{2223}"),
+            ("erticalLine;", "\u{7c}"),
+            ("erticalTilde;", "\u{2240}"),
+            ("eryThinSpace;", "\u{200a}"),
+            ("erticalSeparator;", "\u{2758}"),
+        ],
+        (b'V', b'f') => &[("fr;", "\u{1d519}")],
+        (b'V', b'o') => &[("opf;", "\u{1d54d}")],
+        (b'V', b's') => &[("scr;", "\u{1d4b1}")],
+        (b'V', b'v') => &[("vdash;", "\u{22aa}")],
+        (b'W', b'c') => &[("circ;", "\u{174}")],
+        (b'W', b'e') => &[("edge;", "\u{22c0}")],
+        (b'W', b'f') => &[("fr;", "\u{1d51a}")],
+        (b'W', b'o') => &[("opf;", "\u{1d54e}")],
+        (b'W', b's') => &[("scr;", "\u{1d4b2}")],
+        (b'X', b'f') => &[("fr;", "\u{1d51b}")],
+        (b'X', b'i') => &[("i;", "\u{39e}")],
+        (b'X', b'o') => &[("opf;", "\u{1d54f}")],
+        (b'X', b's') => &[("scr;", "\u{1d4b3}")],
+        (b'Y', b'A') => &[("Acy;", "\u{42f}")],
+        (b'Y', b'I') => &[("Icy;", "\u{407}")],
+        (b'Y', b'U') => &[("Ucy;", "\u{42e}")],
+        (b'Y', b'a') => &[("acute;", "\u{dd}"), ("acute", "\u{dd}")],
+        (b'Y', b'c') => &[("cy;", "\u{42b}"), ("circ;", "\u{176}")],
+        (b'Y', b'f') => &[("fr;", "\u{1d51c}")],
+        (b'Y', b'o') => &[("opf;", "\u{1d550}")],
+        (b'Y', b's') => &[("scr;", "\u{1d4b4}")],
+        (b'Y', b'u') => &[("uml;", "\u{178}")],
+        (b'Z', b'H') => &[("Hcy;", "\u{416}")],
+        (b'Z', b'a') => &[("acute;", "\u{179}")],
+        (b'Z', b'c') => &[("cy;", "\u{417}"), ("caron;", "\u{17d}")],
+        (b'Z', b'd') => &[("dot;", "\u{17b}")],
+        (b'Z', b'e') => &[("eta;", "\u{396}"), ("eroWidthSpace;", "\u{200b}")],
+        (b'Z', b'f') => &[("fr;", "\u{2128}")],
+        (b'Z', b'o') => &[("opf;", "\u{2124}")],
+        (b'Z', b's') => &[("scr;", "\u{1d4b5}")],
+        (b'a', b'a') => &[("acute;", "\u{e1}"), ("acute", "\u{e1}")],
+        (b'a', b'b') => &[("breve;", "\u{103}")],
+        (b'a', b'c') => &[
+            ("c;", "\u{223e}"),
+            ("cE;", "\u{223e}\u{333}"),
+            ("cd;", "\u{223f}"),
+            ("cy;", "\u{430}"),
+            ("circ;", "\u{e2}"),
+            ("cute;", "\u{b4}"),
+            ("circ", "\u{e2}"),
+            ("cute", "\u{b4}"),
+        ],
+        (b'a', b'e') => &[("elig;", "\u{e6}"), ("elig", "\u{e6}")],
+        (b'a', b'f') => &[("f;", "\u{2061}"), ("fr;", "\u{1d51e}")],
+        (b'a', b'g') => &[("grave;", "\u{e0}"), ("grave", "\u{e0}")],
+        (b'a', b'l') => &[
+            ("leph;", "\u{2135}"),
+            ("lpha;", "\u{3b1}"),
+            ("lefsym;", "\u{2135}"),
+        ],
+        (b'a', b'm') => &[
+            ("mp;", "\u{26}"),
+            ("macr;", "\u{101}"),
+            ("malg;", "\u{2a3f}"),
+            ("mp", "\u{26}"),
+        ],
+        (b'a', b'n') => &[
+            ("nd;", "\u{2227}"),
+            ("ng;", "\u{2220}"),
+            ("ndd;", "\u{2a5c}"),
+            ("ndv;", "\u{2a5a}"),
+            ("nge;", "\u{29a4}"),
+            ("ngle;", "\u{2220}"),
+            ("ngrt;", "\u{221f}"),
+            ("ngst;", "\u{c5}"),
+            ("ndand;", "\u{2a55}"),
+            ("ngmsd;", "\u{2221}"),
+            ("ngsph;", "\u{2222}"),
+            ("ngrtvb;", "\u{22be}"),
+            ("ngzarr;", "\u{237c}"),
+            ("ndslope;", "\u{2a58}"),
+            ("ngmsdaa;", "\u{29a8}"),
+            ("ngmsdab;", "\u{29a9}"),
+            ("ngmsdac;", "\u{29aa}"),
+            ("ngmsdad;", "\u{29ab}"),
+            ("ngmsdae;", "\u{29ac}"),
+            ("ngmsdaf;", "\u{29ad}"),
+            ("ngmsdag;", "\u{29ae}"),
+            ("ngmsdah;", "\u{29af}"),
+            ("ngrtvbd;", "\u{299d}"),
+        ],
+        (b'a', b'o') => &[("opf;", "\u{1d552}"), ("ogon;", "\u{105}")],
+        (b'a', b'p') => &[
+            ("p;", "\u{2248}"),
+            ("pE;", "\u{2a70}"),
+            ("pe;", "\u{224a}"),
+            ("pid;", "\u{224b}"),
+            ("pos;", "\u{27}"),
+            ("pacir;", "\u{2a6f}"),
+            ("pprox;", "\u{2248}"),
+            ("pproxeq;", "\u{224a}"),
+        ],
+        (b'a', b'r') => &[("ring;", "\u{e5}"), ("ring", "\u{e5}")],
+        (b'a', b's') => &[
+            ("st;", "\u{2a}"),
+            ("scr;", "\u{1d4b6}"),
+            ("symp;", "\u{2248}"),
+            ("sympeq;", "\u{224d}"),
+        ],
+        (b'a', b't') => &[("tilde;", "\u{e3}"), ("tilde", "\u{e3}")],
+        (b'a', b'u') => &[("uml;", "\u{e4}"), ("uml", "\u{e4}")],
+        (b'a', b'w') => &[("wint;", "\u{2a11}"), ("wconint;", "\u{2233}")],
+        (b'b', b'N') => &[("Not;", "\u{2aed}")],
+        (b'b', b'a') => &[
+            ("arvee;", "\u{22bd}"),
+            ("arwed;", "\u{2305}"),
+            ("acksim;", "\u{223d}"),
+            ("ackcong;", "\u{224c}"),
+            ("arwedge;", "\u{2305}"),
+            ("ackprime;", "\u{2035}"),
+            ("acksimeq;", "\u{22cd}"),
+            ("ackepsilon;", "\u{3f6}"),
+        ],
+        (b'b', b'b') => &[("brk;", "\u{23b5}"), ("brktbrk;", "\u{23b6}")],
+        (b'b', b'c') => &[("cy;", "\u{431}"), ("cong;", "\u{224c}")],
+        (b'b', b'd') => &[("dquo;", "\u{201e}")],
+        (b'b', b'e') => &[
+            ("eta;", "\u{3b2}"),
+            ("eth;", "\u{2136}"),
+            ("epsi;", "\u{3f6}"),
+            ("ecaus;", "\u{2235}"),
+            ("ernou;", "\u{212c}"),
+            ("ecause;", "\u{2235}"),
+            ("emptyv;", "\u{29b0}"),
+            ("etween;", "\u{226c}"),
+        ],
+        (b'b', b'f') => &[("fr;", "\u{1d51f}")],
+        (b'b', b'i') => &[
+            ("igcap;", "\u{22c2}"),
+            ("igcup;", "\u{22c3}"),
+            ("igvee;", "\u{22c1}"),
+            ("igcirc;", "\u{25ef}"),
+            ("igodot;", "\u{2a00}"),
+            ("igstar;", "\u{2605}"),
+            ("igoplus;", "\u{2a01}"),
+            ("igsqcup;", "\u{2a06}"),
+            ("iguplus;", "\u{2a04}"),
+            ("igwedge;", "\u{22c0}"),
+            ("igotimes;", "\u{2a02}"),
+            ("igtriangleup;", "\u{25b3}"),
+            ("igtriangledown;", "\u{25bd}"),
+        ],
+        (b'b', b'k') => &[("karow;", "\u{290d}")],
+        (b'b', b'l') => &[
+            ("lank;", "\u{2423}"),
+            ("lk12;", "\u{2592}"),
+            ("lk14;", "\u{2591}"),
+            ("lk34;", "\u{2593}"),
+            ("lock;", "\u{2588}"),
+            ("lacksquare;", "\u{25aa}"),
+            ("lacklozenge;", "\u{29eb}"),
+            ("lacktriangle;", "\u{25b4}"),
+            ("lacktriangledown;", "\u{25be}"),
+            ("lacktriangleleft;", "\u{25c2}"),
+            ("lacktriangleright;", "\u{25b8}"),
+        ],
+        (b'b', b'n') => &[
+            ("ne;", "\u{3d}\u{20e5}"),
+            ("not;", "\u{2310}"),
+            ("nequiv;", "\u{2261}\u{20e5}"),
+        ],
+        (b'b', b'o') => &[
+            ("ot;", "\u{22a5}"),
+            ("opf;", "\u{1d553}"),
+            ("oxH;", "\u{2550}"),
+            ("oxV;", "\u{2551}"),
+            ("oxh;", "\u{2500}"),
+            ("oxv;", "\u{2502}"),
+            ("oxDL;", "\u{2557}"),
+            ("oxDR;", "\u{2554}"),
+            ("oxDl;", "\u{2556}"),
+            ("oxDr;", "\u{2553}"),
+            ("oxHD;", "\u{2566}"),
+            ("oxHU;", "\u{2569}"),
+            ("oxHd;", "\u{2564}"),
+            ("oxHu;", "\u{2567}"),
+            ("oxUL;", "\u{255d}"),
+            ("oxUR;", "\u{255a}"),
+            ("oxUl;", "\u{255c}"),
+            ("oxUr;", "\u{2559}"),
+            ("oxVH;", "\u{256c}"),
+            ("oxVL;", "\u{2563}"),
+            ("oxVR;", "\u{2560}"),
+            ("oxVh;", "\u{256b}"),
+            ("oxVl;", "\u{2562}"),
+            ("oxVr;", "\u{255f}"),
+            ("oxdL;", "\u{2555}"),
+            ("oxdR;", "\u{2552}"),
+            ("oxdl;", "\u{2510}"),
+            ("oxdr;", "\u{250c}"),
+            ("oxhD;", "\u{2565}"),
+            ("oxhU;", "\u{2568}"),
+            ("oxhd;", "\u{252c}"),
+            ("oxhu;", "\u{2534}"),
+            ("oxuL;", "\u{255b}"),
+            ("oxuR;", "\u{2558}"),
+            ("oxul;", "\u{2518}"),
+            ("oxur;", "\u{2514}"),
+            ("oxvH;", "\u{256a}"),
+            ("oxvL;", "\u{2561}"),
+            ("oxvR;", "\u{255e}"),
+            ("oxvh;", "\u{253c}"),
+            ("oxvl;", "\u{2524}"),
+            ("oxvr;", "\u{251c}"),
+            ("ottom;", "\u{22a5}"),
+            ("owtie;", "\u{22c8}"),
+            ("oxbox;", "\u{29c9}"),
+            ("oxplus;", "\u{229e}"),
+            ("oxminus;", "\u{229f}"),
+            ("oxtimes;", "\u{22a0}"),
+        ],
+        (b'b', b'p') => &[("prime;", "\u{2035}")],
+        (b'b', b'r') => &[
+            ("reve;", "\u{2d8}"),
+            ("rvbar;", "\u{a6}"),
+            ("rvbar", "\u{a6}"),
+        ],
+        (b'b', b's') => &[
+            ("scr;", "\u{1d4b7}"),
+            ("sim;", "\u{223d}"),
+            ("sol;", "\u{5c}"),
+            ("semi;", "\u{204f}"),
+            ("sime;", "\u{22cd}"),
+            ("solb;", "\u{29c5}"),
+            ("solhsub;", "\u{27c8}"),
+        ],
+        (b'b', b'u') => &[
+            ("ull;", "\u{2022}"),
+            ("ump;", "\u{224e}"),
+            ("umpE;", "\u{2aae}"),
+            ("umpe;", "\u{224f}"),
+            ("ullet;", "\u{2022}"),
+            ("umpeq;", "\u{224f}"),
+        ],
+        (b'c', b'a') => &[
+            ("ap;", "\u{2229}"),
+            ("aps;", "\u{2229}\u{fe00}"),
+            ("aret;", "\u{2041}"),
+            ("aron;", "\u{2c7}"),
+            ("acute;", "\u{107}"),
+            ("apand;", "\u{2a44}"),
+            ("apcap;", "\u{2a4b}"),
+            ("apcup;", "\u{2a47}"),
+            ("apdot;", "\u{2a40}"),
+            ("apbrcup;", "\u{2a49}"),
+        ],
+        (b'c', b'c') => &[
+            ("caps;", "\u{2a4d}"),
+            ("circ;", "\u{109}"),
+            ("cups;", "\u{2a4c}"),
+            ("caron;", "\u{10d}"),
+            ("cedil;", "\u{e7}"),
+            ("cupssm;", "\u{2a50}"),
+            ("cedil", "\u{e7}"),
+        ],
+        (b'c', b'd') => &[("dot;", "\u{10b}")],
+        (b'c', b'e') => &[
+            ("ent;", "\u{a2}"),
+            ("edil;", "\u{b8}"),
+            ("emptyv;", "\u{29b2}"),
+            ("enterdot;", "\u{b7}"),
+            ("edil", "\u{b8}"),
+            ("ent", "\u{a2}"),
+        ],
+        (b'c', b'f') => &[("fr;", "\u{1d520}")],
+        (b'c', b'h') => &[
+            ("hi;", "\u{3c7}"),
+            ("hcy;", "\u{447}"),
+            ("heck;", "\u{2713}"),
+            ("heckmark;", "\u{2713}"),
+        ],
+        (b'c', b'i') => &[
+            ("ir;", "\u{25cb}"),
+            ("irE;", "\u{29c3}"),
+            ("irc;", "\u{2c6}"),
+            ("ire;", "\u{2257}"),
+            ("irceq;", "\u{2257}"),
+            ("irmid;", "\u{2aef}"),
+            ("irscir;", "\u{29c2}"),
+            ("ircledR;", "\u{ae}"),
+            ("ircledS;", "\u{24c8}"),
+            ("irfnint;", "\u{2a10}"),
+            ("ircledast;", "\u{229b}"),
+            ("ircledcirc;", "\u{229a}"),
+            ("ircleddash;", "\u{229d}"),
+            ("irclearrowleft;", "\u{21ba}"),
+            ("irclearrowright;", "\u{21bb}"),
+        ],
+        (b'c', b'l') => &[("lubs;", "\u{2663}"), ("lubsuit;", "\u{2663}")],
+        (b'c', b'o') => &[
+            ("omp;", "\u{2201}"),
+            ("ong;", "\u{2245}"),
+            ("opf;", "\u{1d554}"),
+            ("opy;", "\u{a9}"),
+            ("olon;", "\u{3a}"),
+            ("omma;", "\u{2c}"),
+            ("olone;", "\u{2254}"),
+            ("ommat;", "\u{40}"),
+            ("ompfn;", "\u{2218}"),
+            ("onint;", "\u{222e}"),
+            ("oprod;", "\u{2210}"),
+            ("opysr;", "\u{2117}"),
+            ("oloneq;", "\u{2254}"),
+            ("ongdot;", "\u{2a6d}"),
+            ("omplexes;", "\u{2102}"),
+            ("omplement;", "\u{2201}"),
+            ("opy", "\u{a9}"),
+        ],
+        (b'c', b'r') => &[("rarr;", "\u{21b5}"), ("ross;", "\u{2717}")],
+        (b'c', b's') => &[
+            ("scr;", "\u{1d4b8}"),
+            ("sub;", "\u{2acf}"),
+            ("sup;", "\u{2ad0}"),
+            ("sube;", "\u{2ad1}"),
+            ("supe;", "\u{2ad2}"),
+        ],
+        (b'c', b't') => &[("tdot;", "\u{22ef}")],
+        (b'c', b'u') => &[
+            ("up;", "\u{222a}"),
+            ("ups;", "\u{222a}\u{fe00}"),
+            ("uepr;", "\u{22de}"),
+            ("uesc;", "\u{22df}"),
+            ("upor;", "\u{2a45}"),
+            ("uvee;", "\u{22ce}"),
+            ("uwed;", "\u{22cf}"),
+            ("ularr;", "\u{21b6}"),
+            ("upcap;", "\u{2a46}"),
+            ("upcup;", "\u{2a4a}"),
+            ("updot;", "\u{228d}"),
+            ("urarr;", "\u{21b7}"),
+            ("urren;", "\u{a4}"),
+            ("udarrl;", "\u{2938}"),
+            ("udarrr;", "\u{2935}"),
+            ("ularrp;", "\u{293d}"),
+            ("urarrm;", "\u{293c}"),
+            ("upbrcap;", "\u{2a48}"),
+            ("urlyvee;", "\u{22ce}"),
+            ("urlywedge;", "\u{22cf}"),
+            ("urlyeqprec;", "\u{22de}"),
+            ("urlyeqsucc;", "\u{22df}"),
+            ("urvearrowleft;", "\u{21b6}"),
+            ("urvearrowright;", "\u{21b7}"),
+            ("urren", "\u{a4}"),
+        ],
+        (b'c', b'w') => &[("wint;", "\u{2231}"), ("wconint;", "\u{2232}")],
+        (b'c', b'y') => &[("ylcty;", "\u{232d}")],
+        (b'd', b'A') => &[("Arr;", "\u{21d3}")],
+        (b'd', b'H') => &[("Har;", "\u{2965}")],
+        (b'd', b'a') => &[
+            ("arr;", "\u{2193}"),
+            ("ash;", "\u{2010}"),
+            ("ashv;", "\u{22a3}"),
+            ("agger;", "\u{2020}"),
+            ("aleth;", "\u{2138}"),
+        ],
+        (b'd', b'b') => &[("blac;", "\u{2dd}"), ("bkarow;", "\u{290f}")],
+        (b'd', b'c') => &[("cy;", "\u{434}"), ("caron;", "\u{10f}")],
+        (b'd', b'd') => &[
+            ("d;", "\u{2146}"),
+            ("darr;", "\u{21ca}"),
+            ("dagger;", "\u{2021}"),
+            ("dotseq;", "\u{2a77}"),
+        ],
+        (b'd', b'e') => &[
+            ("eg;", "\u{b0}"),
+            ("elta;", "\u{3b4}"),
+            ("emptyv;", "\u{29b1}"),
+            ("eg", "\u{b0}"),
+        ],
+        (b'd', b'f') => &[("fr;", "\u{1d521}"), ("fisht;", "\u{297f}")],
+        (b'd', b'h') => &[("harl;", "\u{21c3}"), ("harr;", "\u{21c2}")],
+        (b'd', b'i') => &[
+            ("ie;", "\u{a8}"),
+            ("iv;", "\u{f7}"),
+            ("iam;", "\u{22c4}"),
+            ("iams;", "\u{2666}"),
+            ("isin;", "\u{22f2}"),
+            ("ivide;", "\u{f7}"),
+            ("ivonx;", "\u{22c7}"),
+            ("iamond;", "\u{22c4}"),
+            ("igamma;", "\u{3dd}"),
+            ("iamondsuit;", "\u{2666}"),
+            ("ivideontimes;", "\u{22c7}"),
+            ("ivide", "\u{f7}"),
+        ],
+        (b'd', b'j') => &[("jcy;", "\u{452}")],
+        (b'd', b'l') => &[("lcorn;", "\u{231e}"), ("lcrop;", "\u{230d}")],
+        (b'd', b'o') => &[
+            ("ot;", "\u{2d9}"),
+            ("opf;", "\u{1d555}"),
+            ("oteq;", "\u{2250}"),
+            ("ollar;", "\u{24}"),
+            ("otplus;", "\u{2214}"),
+            ("oteqdot;", "\u{2251}"),
+            ("otminus;", "\u{2238}"),
+            ("otsquare;", "\u{22a1}"),
+            ("ownarrow;", "\u{2193}"),
+            ("oublebarwedge;", "\u{2306}"),
+            ("owndownarrows;", "\u{21ca}"),
+            ("ownharpoonleft;", "\u{21c3}"),
+            ("ownharpoonright;", "\u{21c2}"),
+        ],
+        (b'd', b'r') => &[
+            ("rcorn;", "\u{231f}"),
+            ("rcrop;", "\u{230c}"),
+            ("rbkarow;", "\u{2910}"),
+        ],
+        (b'd', b's') => &[
+            ("scr;", "\u{1d4b9}"),
+            ("scy;", "\u{455}"),
+            ("sol;", "\u{29f6}"),
+            ("strok;", "\u{111}"),
+        ],
+        (b'd', b't') => &[
+            ("tri;", "\u{25bf}"),
+            ("tdot;", "\u{22f1}"),
+            ("trif;", "\u{25be}"),
+        ],
+        (b'd', b'u') => &[("uarr;", "\u{21f5}"), ("uhar;", "\u{296f}")],
+        (b'd', b'w') => &[("wangle;", "\u{29a6}")],
+        (b'd', b'z') => &[("zcy;", "\u{45f}"), ("zigrarr;", "\u{27ff}")],
+        (b'e', b'D') => &[("Dot;", "\u{2251}"), ("DDot;", "\u{2a77}")],
+        (b'e', b'a') => &[
+            ("acute;", "\u{e9}"),
+            ("aster;", "\u{2a6e}"),
+            ("acute", "\u{e9}"),
+        ],
+        (b'e', b'c') => &[
+            ("cy;", "\u{44d}"),
+            ("cir;", "\u{2256}"),
+            ("circ;", "\u{ea}"),
+            ("caron;", "\u{11b}"),
+            ("colon;", "\u{2255}"),
+            ("circ", "\u{ea}"),
+        ],
+        (b'e', b'd') => &[("dot;", "\u{117}")],
+        (b'e', b'e') => &[("e;", "\u{2147}")],
+        (b'e', b'f') => &[("fr;", "\u{1d522}"), ("fDot;", "\u{2252}")],
+        (b'e', b'g') => &[
+            ("g;", "\u{2a9a}"),
+            ("gs;", "\u{2a96}"),
+            ("grave;", "\u{e8}"),
+            ("gsdot;", "\u{2a98}"),
+            ("grave", "\u{e8}"),
+        ],
+        (b'e', b'l') => &[
+            ("l;", "\u{2a99}"),
+            ("ll;", "\u{2113}"),
+            ("ls;", "\u{2a95}"),
+            ("lsdot;", "\u{2a97}"),
+            ("linters;", "\u{23e7}"),
+        ],
+        (b'e', b'm') => &[
+            ("msp;", "\u{2003}"),
+            ("macr;", "\u{113}"),
+            ("mpty;", "\u{2205}"),
+            ("mptyv;", "\u{2205}"),
+            ("msp13;", "\u{2004}"),
+            ("msp14;", "\u{2005}"),
+            ("mptyset;", "\u{2205}"),
+        ],
+        (b'e', b'n') => &[("ng;", "\u{14b}"), ("nsp;", "\u{2002}")],
+        (b'e', b'o') => &[("opf;", "\u{1d556}"), ("ogon;", "\u{119}")],
+        (b'e', b'p') => &[
+            ("par;", "\u{22d5}"),
+            ("psi;", "\u{3b5}"),
+            ("plus;", "\u{2a71}"),
+            ("psiv;", "\u{3f5}"),
+            ("parsl;", "\u{29e3}"),
+            ("psilon;", "\u{3b5}"),
+        ],
+        (b'e', b'q') => &[
+            ("qsim;", "\u{2242}"),
+            ("quiv;", "\u{2261}"),
+            ("qcirc;", "\u{2256}"),
+            ("quals;", "\u{3d}"),
+            ("quest;", "\u{225f}"),
+            ("qcolon;", "\u{2255}"),
+            ("quivDD;", "\u{2a78}"),
+            ("qvparsl;", "\u{29e5}"),
+            ("qslantgtr;", "\u{2a96}"),
+            ("qslantless;", "\u{2a95}"),
+        ],
+        (b'e', b'r') => &[("rDot;", "\u{2253}"), ("rarr;", "\u{2971}")],
+        (b'e', b's') => &[
+            ("scr;", "\u{212f}"),
+            ("sim;", "\u{2242}"),
+            ("sdot;", "\u{2250}"),
+        ],
+        (b'e', b't') => &[("ta;", "\u{3b7}"), ("th;", "\u{f0}"), ("th", "\u{f0}")],
+        (b'e', b'u') => &[("uml;", "\u{eb}"), ("uro;", "\u{20ac}"), ("uml", "\u{eb}")],
+        (b'e', b'x') => &[
+            ("xcl;", "\u{21}"),
+            ("xist;", "\u{2203}"),
+            ("xpectation;", "\u{2130}"),
+            ("xponentiale;", "\u{2147}"),
+        ],
+        (b'f', b'a') => &[("allingdotseq;", "\u{2252}")],
+        (b'f', b'c') => &[("cy;", "\u{444}")],
+        (b'f', b'e') => &[("emale;", "\u{2640}")],
+        (b'f', b'f') => &[
+            ("fr;", "\u{1d523}"),
+            ("flig;", "\u{fb00}"),
+            ("filig;", "\u{fb03}"),
+            ("fllig;", "\u{fb04}"),
+        ],
+        (b'f', b'i') => &[("ilig;", "\u{fb01}")],
+        (b'f', b'j') => &[("jlig;", "\u{66}\u{6a}")],
+        (b'f', b'l') => &[
+            ("lat;", "\u{266d}"),
+            ("llig;", "\u{fb02}"),
+            ("ltns;", "\u{25b1}"),
+        ],
+        (b'f', b'n') => &[("nof;", "\u{192}")],
+        (b'f', b'o') => &[
+            ("opf;", "\u{1d557}"),
+            ("ork;", "\u{22d4}"),
+            ("orkv;", "\u{2ad9}"),
+            ("orall;", "\u{2200}"),
+        ],
+        (b'f', b'p') => &[("partint;", "\u{2a0d}")],
+        (b'f', b'r') => &[
+            ("rasl;", "\u{2044}"),
+            ("rown;", "\u{2322}"),
+            ("rac12;", "\u{bd}"),
+            ("rac13;", "\u{2153}"),
+            ("rac14;", "\u{bc}"),
+            ("rac15;", "\u{2155}"),
+            ("rac16;", "\u{2159}"),
+            ("rac18;", "\u{215b}"),
+            ("rac23;", "\u{2154}"),
+            ("rac25;", "\u{2156}"),
+            ("rac34;", "\u{be}"),
+            ("rac35;", "\u{2157}"),
+            ("rac38;", "\u{215c}"),
+            ("rac45;", "\u{2158}"),
+            ("rac56;", "\u{215a}"),
+            ("rac58;", "\u{215d}"),
+            ("rac78;", "\u{215e}"),
+            ("rac12", "\u{bd}"),
+            ("rac14", "\u{bc}"),
+            ("rac34", "\u{be}"),
+        ],
+        (b'f', b's') => &[("scr;", "\u{1d4bb}")],
+        (b'g', b'E') => &[("E;", "\u{2267}"), ("El;", "\u{2a8c}")],
+        (b'g', b'a') => &[
+            ("ap;", "\u{2a86}"),
+            ("amma;", "\u{3b3}"),
+            ("acute;", "\u{1f5}"),
+            ("ammad;", "\u{3dd}"),
+        ],
+        (b'g', b'b') => &[("breve;", "\u{11f}")],
+        (b'g', b'c') => &[("cy;", "\u{433}"), ("circ;", "\u{11d}")],
+        (b'g', b'd') => &[("dot;", "\u{121}")],
+        (b'g', b'e') => &[
+            ("e;", "\u{2265}"),
+            ("el;", "\u{22db}"),
+            ("eq;", "\u{2265}"),
+            ("es;", "\u{2a7e}"),
+            ("eqq;", "\u{2267}"),
+            ("esl;", "\u{22db}\u{fe00}"),
+            ("escc;", "\u{2aa9}"),
+            ("esdot;", "\u{2a80}"),
+            ("esles;", "\u{2a94}"),
+            ("esdoto;", "\u{2a82}"),
+            ("eqslant;", "\u{2a7e}"),
+            ("esdotol;", "\u{2a84}"),
+        ],
+        (b'g', b'f') => &[("fr;", "\u{1d524}")],
+        (b'g', b'g') => &[("g;", "\u{226b}"), ("gg;", "\u{22d9}")],
+        (b'g', b'i') => &[("imel;", "\u{2137}")],
+        (b'g', b'j') => &[("jcy;", "\u{453}")],
+        (b'g', b'l') => &[
+            ("l;", "\u{2277}"),
+            ("lE;", "\u{2a92}"),
+            ("la;", "\u{2aa5}"),
+            ("lj;", "\u{2aa4}"),
+        ],
+        (b'g', b'n') => &[
+            ("nE;", "\u{2269}"),
+            ("ne;", "\u{2a88}"),
+            ("nap;", "\u{2a8a}"),
+            ("neq;", "\u{2a88}"),
+            ("neqq;", "\u{2269}"),
+            ("nsim;", "\u{22e7}"),
+            ("napprox;", "\u{2a8a}"),
+        ],
+        (b'g', b'o') => &[("opf;", "\u{1d558}")],
+        (b'g', b'r') => &[("rave;", "\u{60}")],
+        (b'g', b's') => &[
+            ("scr;", "\u{210a}"),
+            ("sim;", "\u{2273}"),
+            ("sime;", "\u{2a8e}"),
+            ("siml;", "\u{2a90}"),
+        ],
+        (b'g', b't') => &[
+            ("t;", "\u{3e}"),
+            ("tcc;", "\u{2aa7}"),
+            ("tcir;", "\u{2a7a}"),
+            ("tdot;", "\u{22d7}"),
+            ("tlPar;", "\u{2995}"),
+            ("trarr;", "\u{2978}"),
+            ("trdot;", "\u{22d7}"),
+            ("trsim;", "\u{2273}"),
+            ("tquest;", "\u{2a7c}"),
+            ("trless;", "\u{2277}"),
+            ("trapprox;", "\u{2a86}"),
+            ("treqless;", "\u{22db}"),
+            ("treqqless;", "\u{2a8c}"),
+            ("t", "\u{3e}"),
+        ],
+        (b'g', b'v') => &[
+            ("vnE;", "\u{2269}\u{fe00}"),
+            ("vertneqq;", "\u{2269}\u{fe00}"),
+        ],
+        (b'h', b'A') => &[("Arr;", "\u{21d4}")],
+        (b'h', b'a') => &[
+            ("alf;", "\u{bd}"),
+            ("arr;", "\u{2194}"),
+            ("arrw;", "\u{21ad}"),
+            ("airsp;", "\u{200a}"),
+            ("amilt;", "\u{210b}"),
+            ("ardcy;", "\u{44a}"),
+            ("arrcir;", "\u{2948}"),
+        ],
+        (b'h', b'b') => &[("bar;", "\u{210f}")],
+        (b'h', b'c') => &[("circ;", "\u{125}")],
+        (b'h', b'e') => &[
+            ("earts;", "\u{2665}"),
+            ("ellip;", "\u{2026}"),
+            ("ercon;", "\u{22b9}"),
+            ("eartsuit;", "\u{2665}"),
+        ],
+        (b'h', b'f') => &[("fr;", "\u{1d525}")],
+        (b'h', b'k') => &[("ksearow;", "\u{2925}"), ("kswarow;", "\u{2926}")],
+        (b'h', b'o') => &[
+            ("opf;", "\u{1d559}"),
+            ("oarr;", "\u{21ff}"),
+            ("omtht;", "\u{223b}"),
+            ("orbar;", "\u{2015}"),
+            ("ookleftarrow;", "\u{21a9}"),
+            ("ookrightarrow;", "\u{21aa}"),
+        ],
+        (b'h', b's') => &[
+            ("scr;", "\u{1d4bd}"),
+            ("slash;", "\u{210f}"),
+            ("strok;", "\u{127}"),
+        ],
+        (b'h', b'y') => &[("ybull;", "\u{2043}"), ("yphen;", "\u{2010}")],
+        (b'i', b'a') => &[("acute;", "\u{ed}"), ("acute", "\u{ed}")],
+        (b'i', b'c') => &[
+            ("c;", "\u{2063}"),
+            ("cy;", "\u{438}"),
+            ("circ;", "\u{ee}"),
+            ("circ", "\u{ee}"),
+        ],
+        (b'i', b'e') => &[("ecy;", "\u{435}"), ("excl;", "\u{a1}"), ("excl", "\u{a1}")],
+        (b'i', b'f') => &[("ff;", "\u{21d4}"), ("fr;", "\u{1d526}")],
+        (b'i', b'g') => &[("grave;", "\u{ec}"), ("grave", "\u{ec}")],
+        (b'i', b'i') => &[
+            ("i;", "\u{2148}"),
+            ("iint;", "\u{222d}"),
+            ("iota;", "\u{2129}"),
+            ("iiint;", "\u{2a0c}"),
+            ("infin;", "\u{29dc}"),
+        ],
+        (b'i', b'j') => &[("jlig;", "\u{133}")],
+        (b'i', b'm') => &[
+            ("mof;", "\u{22b7}"),
+            ("macr;", "\u{12b}"),
+            ("mage;", "\u{2111}"),
+            ("math;", "\u{131}"),
+            ("mped;", "\u{1b5}"),
+            ("magline;", "\u{2110}"),
+            ("magpart;", "\u{2111}"),
+        ],
+        (b'i', b'n') => &[
+            ("n;", "\u{2208}"),
+            ("nt;", "\u{222b}"),
+            ("nfin;", "\u{221e}"),
+            ("ncare;", "\u{2105}"),
+            ("nodot;", "\u{131}"),
+            ("ntcal;", "\u{22ba}"),
+            ("ntprod;", "\u{2a3c}"),
+            ("nfintie;", "\u{29dd}"),
+            ("ntegers;", "\u{2124}"),
+            ("ntercal;", "\u{22ba}"),
+            ("ntlarhk;", "\u{2a17}"),
+        ],
+        (b'i', b'o') => &[
+            ("ocy;", "\u{451}"),
+            ("opf;", "\u{1d55a}"),
+            ("ota;", "\u{3b9}"),
+            ("ogon;", "\u{12f}"),
+        ],
+        (b'i', b'p') => &[("prod;", "\u{2a3c}")],
+        (b'i', b'q') => &[("quest;", "\u{bf}"), ("quest", "\u{bf}")],
+        (b'i', b's') => &[
+            ("scr;", "\u{1d4be}"),
+            ("sin;", "\u{2208}"),
+            ("sinE;", "\u{22f9}"),
+            ("sins;", "\u{22f4}"),
+            ("sinv;", "\u{2208}"),
+            ("sinsv;", "\u{22f3}"),
+            ("sindot;", "\u{22f5}"),
+        ],
+        (b'i', b't') => &[("t;", "\u{2062}"), ("tilde;", "\u{129}")],
+        (b'i', b'u') => &[("uml;", "\u{ef}"), ("ukcy;", "\u{456}"), ("uml", "\u{ef}")],
+        (b'j', b'c') => &[("cy;", "\u{439}"), ("circ;", "\u{135}")],
+        (b'j', b'f') => &[("fr;", "\u{1d527}")],
+        (b'j', b'm') => &[("math;", "\u{237}")],
+        (b'j', b'o') => &[("opf;", "\u{1d55b}")],
+        (b'j', b's') => &[("scr;", "\u{1d4bf}"), ("sercy;", "\u{458}")],
+        (b'j', b'u') => &[("ukcy;", "\u{454}")],
+        (b'k', b'a') => &[("appa;", "\u{3ba}"), ("appav;", "\u{3f0}")],
+        (b'k', b'c') => &[("cy;", "\u{43a}"), ("cedil;", "\u{137}")],
+        (b'k', b'f') => &[("fr;", "\u{1d528}")],
+        (b'k', b'g') => &[("green;", "\u{138}")],
+        (b'k', b'h') => &[("hcy;", "\u{445}")],
+        (b'k', b'j') => &[("jcy;", "\u{45c}")],
+        (b'k', b'o') => &[("opf;", "\u{1d55c}")],
+        (b'k', b's') => &[("scr;", "\u{1d4c0}")],
+        (b'l', b'A') => &[
+            ("Arr;", "\u{21d0}"),
+            ("Aarr;", "\u{21da}"),
+            ("Atail;", "\u{291b}"),
+        ],
+        (b'l', b'B') => &[("Barr;", "\u{290e}")],
+        (b'l', b'E') => &[("E;", "\u{2266}"), ("Eg;", "\u{2a8b}")],
+        (b'l', b'H') => &[("Har;", "\u{2962}")],
+        (b'l', b'a') => &[
+            ("ap;", "\u{2a85}"),
+            ("at;", "\u{2aab}"),
+            ("ang;", "\u{27e8}"),
+            ("arr;", "\u{2190}"),
+            ("ate;", "\u{2aad}"),
+            ("angd;", "\u{2991}"),
+            ("aquo;", "\u{ab}"),
+            ("arrb;", "\u{21e4}"),
+            ("ates;", "\u{2aad}\u{fe00}"),
+            ("acute;", "\u{13a}"),
+            ("agran;", "\u{2112}"),
+            ("ambda;", "\u{3bb}"),
+            ("angle;", "\u{27e8}"),
+            ("arrfs;", "\u{291d}"),
+            ("arrhk;", "\u{21a9}"),
+            ("arrlp;", "\u{21ab}"),
+            ("arrpl;", "\u{2939}"),
+            ("arrtl;", "\u{21a2}"),
+            ("atail;", "\u{2919}"),
+            ("arrbfs;", "\u{291f}"),
+            ("arrsim;", "\u{2973}"),
+            ("aemptyv;", "\u{29b4}"),
+            ("aquo", "\u{ab}"),
+        ],
+        (b'l', b'b') => &[
+            ("barr;", "\u{290c}"),
+            ("bbrk;", "\u{2772}"),
+            ("brke;", "\u{298b}"),
+            ("brace;", "\u{7b}"),
+            ("brack;", "\u{5b}"),
+            ("brksld;", "\u{298f}"),
+            ("brkslu;", "\u{298d}"),
+        ],
+        (b'l', b'c') => &[
+            ("cy;", "\u{43b}"),
+            ("cub;", "\u{7b}"),
+            ("ceil;", "\u{2308}"),
+            ("caron;", "\u{13e}"),
+            ("cedil;", "\u{13c}"),
+        ],
+        (b'l', b'd') => &[
+            ("dca;", "\u{2936}"),
+            ("dsh;", "\u{21b2}"),
+            ("dquo;", "\u{201c}"),
+            ("dquor;", "\u{201e}"),
+            ("drdhar;", "\u{2967}"),
+            ("drushar;", "\u{294b}"),
+        ],
+        (b'l', b'e') => &[
+            ("e;", "\u{2264}"),
+            ("eg;", "\u{22da}"),
+            ("eq;", "\u{2264}"),
+            ("es;", "\u{2a7d}"),
+            ("eqq;", "\u{2266}"),
+            ("esg;", "\u{22da}\u{fe00}"),
+            ("escc;", "\u{2aa8}"),
+            ("esdot;", "\u{2a7f}"),
+            ("esges;", "\u{2a93}"),
+            ("esdoto;", "\u{2a81}"),
+            ("essdot;", "\u{22d6}"),
+            ("essgtr;", "\u{2276}"),
+            ("esssim;", "\u{2272}"),
+            ("eqslant;", "\u{2a7d}"),
+            ("esdotor;", "\u{2a83}"),
+            ("eftarrow;", "\u{2190}"),
+            ("esseqgtr;", "\u{22da}"),
+            ("essapprox;", "\u{2a85}"),
+            ("esseqqgtr;", "\u{2a8b}"),
+            ("eftarrowtail;", "\u{21a2}"),
+            ("eftharpoonup;", "\u{21bc}"),
+            ("eftleftarrows;", "\u{21c7}"),
+            ("eftrightarrow;", "\u{2194}"),
+            ("eftthreetimes;", "\u{22cb}"),
+            ("eftharpoondown;", "\u{21bd}"),
+            ("eftrightarrows;", "\u{21c6}"),
+            ("eftrightharpoons;", "\u{21cb}"),
+            ("eftrightsquigarrow;", "\u{21ad}"),
+        ],
+        (b'l', b'f') => &[
+            ("fr;", "\u{1d529}"),
+            ("fisht;", "\u{297c}"),
+            ("floor;", "\u{230a}"),
+        ],
+        (b'l', b'g') => &[("g;", "\u{2276}"), ("gE;", "\u{2a91}")],
+        (b'l', b'h') => &[
+            ("hard;", "\u{21bd}"),
+            ("haru;", "\u{21bc}"),
+            ("hblk;", "\u{2584}"),
+            ("harul;", "\u{296a}"),
+        ],
+        (b'l', b'j') => &[("jcy;", "\u{459}")],
+        (b'l', b'l') => &[
+            ("l;", "\u{226a}"),
+            ("larr;", "\u{21c7}"),
+            ("ltri;", "\u{25fa}"),
+            ("lhard;", "\u{296b}"),
+            ("lcorner;", "\u{231e}"),
+        ],
+        (b'l', b'm') => &[
+            ("midot;", "\u{140}"),
+            ("moust;", "\u{23b0}"),
+            ("moustache;", "\u{23b0}"),
+        ],
+        (b'l', b'n') => &[
+            ("nE;", "\u{2268}"),
+            ("ne;", "\u{2a87}"),
+            ("nap;", "\u{2a89}"),
+            ("neq;", "\u{2a87}"),
+            ("neqq;", "\u{2268}"),
+            ("nsim;", "\u{22e6}"),
+            ("napprox;", "\u{2a89}"),
+        ],
+        (b'l', b'o') => &[
+            ("oz;", "\u{25ca}"),
+            ("opf;", "\u{1d55d}"),
+            ("ozf;", "\u{29eb}"),
+            ("oang;", "\u{27ec}"),
+            ("oarr;", "\u{21fd}"),
+            ("obrk;", "\u{27e6}"),
+            ("opar;", "\u{2985}"),
+            ("oplus;", "\u{2a2d}"),
+            ("owast;", "\u{2217}"),
+            ("owbar;", "\u{5f}"),
+            ("otimes;", "\u{2a34}"),
+            ("ozenge;", "\u{25ca}"),
+            ("ongmapsto;", "\u{27fc}"),
+            ("ongleftarrow;", "\u{27f5}"),
+            ("ooparrowleft;", "\u{21ab}"),
+            ("ongrightarrow;", "\u{27f6}"),
+            ("ooparrowright;", "\u{21ac}"),
+            ("ongleftrightarrow;", "\u{27f7}"),
+        ],
+        (b'l', b'p') => &[("par;", "\u{28}"), ("parlt;", "\u{2993}")],
+        (b'l', b'r') => &[
+            ("rm;", "\u{200e}"),
+            ("rarr;", "\u{21c6}"),
+            ("rhar;", "\u{21cb}"),
+            ("rtri;", "\u{22bf}"),
+            ("rhard;", "\u{296d}"),
+            ("rcorner;", "\u{231f}"),
+        ],
+        (b'l', b's') => &[
+            ("sh;", "\u{21b0}"),
+            ("scr;", "\u{1d4c1}"),
+            ("sim;", "\u{2272}"),
+            ("sqb;", "\u{5b}"),
+            ("sime;", "\u{2a8d}"),
+            ("simg;", "\u{2a8f}"),
+            ("squo;", "\u{2018}"),
+            ("saquo;", "\u{2039}"),
+            ("squor;", "\u{201a}"),
+            ("strok;", "\u{142}"),
+        ],
+        (b'l', b't') => &[
+            ("t;", "\u{3c}"),
+            ("tcc;", "\u{2aa6}"),
+            ("tri;", "\u{25c3}"),
+            ("tcir;", "\u{2a79}"),
+            ("tdot;", "\u{22d6}"),
+            ("trie;", "\u{22b4}"),
+            ("trif;", "\u{25c2}"),
+            ("three;", "\u{22cb}"),
+            ("times;", "\u{22c9}"),
+            ("tlarr;", "\u{2976}"),
+            ("trPar;", "\u{2996}"),
+            ("tquest;", "\u{2a7b}"),
+            ("t", "\u{3c}"),
+        ],
+        (b'l', b'u') => &[("uruhar;", "\u{2966}"), ("urdshar;", "\u{294a}")],
+        (b'l', b'v') => &[
+            ("vnE;", "\u{2268}\u{fe00}"),
+            ("vertneqq;", "\u{2268}\u{fe00}"),
+        ],
+        (b'm', b'D') => &[("DDot;", "\u{223a}")],
+        (b'm', b'a') => &[
+            ("ap;", "\u{21a6}"),
+            ("acr;", "\u{af}"),
+            ("ale;", "\u{2642}"),
+            ("alt;", "\u{2720}"),
+            ("apsto;", "\u{21a6}"),
+            ("arker;", "\u{25ae}"),
+            ("altese;", "\u{2720}"),
+            ("apstoup;", "\u{21a5}"),
+            ("apstodown;", "\u{21a7}"),
+            ("apstoleft;", "\u{21a4}"),
+            ("acr", "\u{af}"),
+        ],
+        (b'm', b'c') => &[("cy;", "\u{43c}"), ("comma;", "\u{2a29}")],
+        (b'm', b'd') => &[("dash;", "\u{2014}")],
+        (b'm', b'e') => &[("easuredangle;", "\u{2221}")],
+        (b'm', b'f') => &[("fr;", "\u{1d52a}")],
+        (b'm', b'h') => &[("ho;", "\u{2127}")],
+        (b'm', b'i') => &[
+            ("id;", "\u{2223}"),
+            ("icro;", "\u{b5}"),
+            ("inus;", "\u{2212}"),
+            ("idast;", "\u{2a}"),
+            ("idcir;", "\u{2af0}"),
+            ("iddot;", "\u{b7}"),
+            ("inusb;", "\u{229f}"),
+            ("inusd;", "\u{2238}"),
+            ("inusdu;", "\u{2a2a}"),
+            ("iddot", "\u{b7}"),
+            ("icro", "\u{b5}"),
+        ],
+        (b'm', b'l') => &[("lcp;", "\u{2adb}"), ("ldr;", "\u{2026}")],
+        (b'm', b'n') => &[("nplus;", "\u{2213}")],
+        (b'm', b'o') => &[("opf;", "\u{1d55e}"), ("odels;", "\u{22a7}")],
+        (b'm', b'p') => &[("p;", "\u{2213}")],
+        (b'm', b's') => &[("scr;", "\u{1d4c2}"), ("stpos;", "\u{223e}")],
+        (b'm', b'u') => &[
+            ("u;", "\u{3bc}"),
+            ("umap;", "\u{22b8}"),
+            ("ultimap;", "\u{22b8}"),
+        ],
+        (b'n', b'G') => &[
+            ("Gg;", "\u{22d9}\u{338}"),
+            ("Gt;", "\u{226b}\u{20d2}"),
+            ("Gtv;", "\u{226b}\u{338}"),
+        ],
+        (b'n', b'L') => &[
+            ("Ll;", "\u{22d8}\u{338}"),
+            ("Lt;", "\u{226a}\u{20d2}"),
+            ("Ltv;", "\u{226a}\u{338}"),
+            ("Leftarrow;", "\u{21cd}"),
+            ("Leftrightarrow;", "\u{21ce}"),
+        ],
+        (b'n', b'R') => &[("Rightarrow;", "\u{21cf}")],
+        (b'n', b'V') => &[("VDash;", "\u{22af}"), ("Vdash;", "\u{22ae}")],
+        (b'n', b'a') => &[
+            ("ap;", "\u{2249}"),
+            ("ang;", "\u{2220}\u{20d2}"),
+            ("apE;", "\u{2a70}\u{338}"),
+            ("abla;", "\u{2207}"),
+            ("apid;", "\u{224b}\u{338}"),
+            ("apos;", "\u{149}"),
+            ("atur;", "\u{266e}"),
+            ("acute;", "\u{144}"),
+            ("approx;", "\u{2249}"),
+            ("atural;", "\u{266e}"),
+            ("aturals;", "\u{2115}"),
+        ],
+        (b'n', b'b') => &[
+            ("bsp;", "\u{a0}"),
+            ("bump;", "\u{224e}\u{338}"),
+            ("bumpe;", "\u{224f}\u{338}"),
+            ("bsp", "\u{a0}"),
+        ],
+        (b'n', b'c') => &[
+            ("cy;", "\u{43d}"),
+            ("cap;", "\u{2a43}"),
+            ("cup;", "\u{2a42}"),
+            ("cong;", "\u{2247}"),
+            ("caron;", "\u{148}"),
+            ("cedil;", "\u{146}"),
+            ("congdot;", "\u{2a6d}\u{338}"),
+        ],
+        (b'n', b'd') => &[("dash;", "\u{2013}")],
+        (b'n', b'e') => &[
+            ("e;", "\u{2260}"),
+            ("eArr;", "\u{21d7}"),
+            ("earr;", "\u{2197}"),
+            ("edot;", "\u{2250}\u{338}"),
+            ("esim;", "\u{2242}\u{338}"),
+            ("earhk;", "\u{2924}"),
+            ("equiv;", "\u{2262}"),
+            ("esear;", "\u{2928}"),
+            ("exist;", "\u{2204}"),
+            ("earrow;", "\u{2197}"),
+            ("exists;", "\u{2204}"),
+        ],
+        (b'n', b'f') => &[("fr;", "\u{1d52b}")],
+        (b'n', b'g') => &[
+            ("gE;", "\u{2267}\u{338}"),
+            ("ge;", "\u{2271}"),
+            ("gt;", "\u{226f}"),
+            ("geq;", "\u{2271}"),
+            ("ges;", "\u{2a7e}\u{338}"),
+            ("gtr;", "\u{226f}"),
+            ("geqq;", "\u{2267}\u{338}"),
+            ("gsim;", "\u{2275}"),
+            ("geqslant;", "\u{2a7e}\u{338}"),
+        ],
+        (b'n', b'h') => &[
+            ("hArr;", "\u{21ce}"),
+            ("harr;", "\u{21ae}"),
+            ("hpar;", "\u{2af2}"),
+        ],
+        (b'n', b'i') => &[
+            ("i;", "\u{220b}"),
+            ("is;", "\u{22fc}"),
+            ("iv;", "\u{220b}"),
+            ("isd;", "\u{22fa}"),
+        ],
+        (b'n', b'j') => &[("jcy;", "\u{45a}")],
+        (b'n', b'l') => &[
+            ("lE;", "\u{2266}\u{338}"),
+            ("le;", "\u{2270}"),
+            ("lt;", "\u{226e}"),
+            ("ldr;", "\u{2025}"),
+            ("leq;", "\u{2270}"),
+            ("les;", "\u{2a7d}\u{338}"),
+            ("lArr;", "\u{21cd}"),
+            ("larr;", "\u{219a}"),
+            ("leqq;", "\u{2266}\u{338}"),
+            ("less;", "\u{226e}"),
+            ("lsim;", "\u{2274}"),
+            ("ltri;", "\u{22ea}"),
+            ("ltrie;", "\u{22ec}"),
+            ("leqslant;", "\u{2a7d}\u{338}"),
+            ("leftarrow;", "\u{219a}"),
+            ("leftrightarrow;", "\u{21ae}"),
+        ],
+        (b'n', b'm') => &[("mid;", "\u{2224}")],
+        (b'n', b'o') => &[
+            ("ot;", "\u{ac}"),
+            ("opf;", "\u{1d55f}"),
+            ("otin;", "\u{2209}"),
+            ("otni;", "\u{220c}"),
+            ("otinE;", "\u{22f9}\u{338}"),
+            ("otinva;", "\u{2209}"),
+            ("otinvb;", "\u{22f7}"),
+            ("otinvc;", "\u{22f6}"),
+            ("otniva;", "\u{220c}"),
+            ("otnivb;", "\u{22fe}"),
+            ("otnivc;", "\u{22fd}"),
+            ("otindot;", "\u{22f5}\u{338}"),
+            ("ot", "\u{ac}"),
+        ],
+        (b'n', b'p') => &[
+            ("pr;", "\u{2280}"),
+            ("par;", "\u{2226}"),
+            ("pre;", "\u{2aaf}\u{338}"),
+            ("part;", "\u{2202}\u{338}"),
+            ("prec;", "\u{2280}"),
+            ("parsl;", "\u{2afd}\u{20e5}"),
+            ("prcue;", "\u{22e0}"),
+            ("polint;", "\u{2a14}"),
+            ("preceq;", "\u{2aaf}\u{338}"),
+            ("parallel;", "\u{2226}"),
+        ],
+        (b'n', b'r') => &[
+            ("rArr;", "\u{21cf}"),
+            ("rarr;", "\u{219b}"),
+            ("rtri;", "\u{22eb}"),
+            ("rarrc;", "\u{2933}\u{338}"),
+            ("rarrw;", "\u{219d}\u{338}"),
+            ("rtrie;", "\u{22ed}"),
+            ("rightarrow;", "\u{219b}"),
+        ],
+        (b'n', b's') => &[
+            ("sc;", "\u{2281}"),
+            ("sce;", "\u{2ab0}\u{338}"),
+            ("scr;", "\u{1d4c3}"),
+            ("sim;", "\u{2241}"),
+            ("sub;", "\u{2284}"),
+            ("sup;", "\u{2285}"),
+            ("sime;", "\u{2244}"),
+            ("smid;", "\u{2224}"),
+            ("spar;", "\u{2226}"),
+            ("subE;", "\u{2ac5}\u{338}"),
+            ("sube;", "\u{2288}"),
+            ("succ;", "\u{2281}"),
+            ("supE;", "\u{2ac6}\u{338}"),
+            ("supe;", "\u{2289}"),
+            ("sccue;", "\u{22e1}"),
+            ("simeq;", "\u{2244}"),
+            ("sqsube;", "\u{22e2}"),
+            ("sqsupe;", "\u{22e3}"),
+            ("subset;", "\u{2282}\u{20d2}"),
+            ("succeq;", "\u{2ab0}\u{338}"),
+            ("supset;", "\u{2283}\u{20d2}"),
+            ("shortmid;", "\u{2224}"),
+            ("subseteq;", "\u{2288}"),
+            ("supseteq;", "\u{2289}"),
+            ("subseteqq;", "\u{2ac5}\u{338}"),
+            ("supseteqq;", "\u{2ac6}\u{338}"),
+            ("shortparallel;", "\u{2226}"),
+        ],
+        (b'n', b't') => &[
+            ("tgl;", "\u{2279}"),
+            ("tlg;", "\u{2278}"),
+            ("tilde;", "\u{f1}"),
+            ("triangleleft;", "\u{22ea}"),
+            ("triangleright;", "\u{22eb}"),
+            ("trianglelefteq;", "\u{22ec}"),
+            ("trianglerighteq;", "\u{22ed}"),
+            ("tilde", "\u{f1}"),
+        ],
+        (b'n', b'u') => &[
+            ("u;", "\u{3bd}"),
+            ("um;", "\u{23}"),
+            ("umsp;", "\u{2007}"),
+            ("umero;", "\u{2116}"),
+        ],
+        (b'n', b'v') => &[
+            ("vap;", "\u{224d}\u{20d2}"),
+            ("vge;", "\u{2265}\u{20d2}"),
+            ("vgt;", "\u{3e}\u{20d2}"),
+            ("vle;", "\u{2264}\u{20d2}"),
+            ("vlt;", "\u{3c}\u{20d2}"),
+            ("vsim;", "\u{223c}\u{20d2}"),
+            ("vDash;", "\u{22ad}"),
+            ("vHarr;", "\u{2904}"),
+            ("vdash;", "\u{22ac}"),
+            ("vlArr;", "\u{2902}"),
+            ("vrArr;", "\u{2903}"),
+            ("vinfin;", "\u{29de}"),
+            ("vltrie;", "\u{22b4}\u{20d2}"),
+            ("vrtrie;", "\u{22b5}\u{20d2}"),
+        ],
+        (b'n', b'w') => &[
+            ("wArr;", "\u{21d6}"),
+            ("warr;", "\u{2196}"),
+            ("warhk;", "\u{2923}"),
+            ("wnear;", "\u{2927}"),
+            ("warrow;", "\u{2196}"),
+        ],
+        (b'o', b'S') => &[("S;", "\u{24c8}")],
+        (b'o', b'a') => &[
+            ("ast;", "\u{229b}"),
+            ("acute;", "\u{f3}"),
+            ("acute", "\u{f3}"),
+        ],
+        (b'o', b'c') => &[
+            ("cy;", "\u{43e}"),
+            ("cir;", "\u{229a}"),
+            ("circ;", "\u{f4}"),
+            ("circ", "\u{f4}"),
+        ],
+        (b'o', b'd') => &[
+            ("div;", "\u{2a38}"),
+            ("dot;", "\u{2299}"),
+            ("dash;", "\u{229d}"),
+            ("dblac;", "\u{151}"),
+            ("dsold;", "\u{29bc}"),
+        ],
+        (b'o', b'e') => &[("elig;", "\u{153}")],
+        (b'o', b'f') => &[("fr;", "\u{1d52c}"), ("fcir;", "\u{29bf}")],
+        (b'o', b'g') => &[
+            ("gt;", "\u{29c1}"),
+            ("gon;", "\u{2db}"),
+            ("grave;", "\u{f2}"),
+            ("grave", "\u{f2}"),
+        ],
+        (b'o', b'h') => &[("hm;", "\u{3a9}"), ("hbar;", "\u{29b5}")],
+        (b'o', b'i') => &[("int;", "\u{222e}")],
+        (b'o', b'l') => &[
+            ("lt;", "\u{29c0}"),
+            ("larr;", "\u{21ba}"),
+            ("lcir;", "\u{29be}"),
+            ("line;", "\u{203e}"),
+            ("lcross;", "\u{29bb}"),
+        ],
+        (b'o', b'm') => &[
+            ("mid;", "\u{29b6}"),
+            ("macr;", "\u{14d}"),
+            ("mega;", "\u{3c9}"),
+            ("minus;", "\u{2296}"),
+            ("micron;", "\u{3bf}"),
+        ],
+        (b'o', b'o') => &[("opf;", "\u{1d560}")],
+        (b'o', b'p') => &[
+            ("par;", "\u{29b7}"),
+            ("perp;", "\u{29b9}"),
+            ("plus;", "\u{2295}"),
+        ],
+        (b'o', b'r') => &[
+            ("r;", "\u{2228}"),
+            ("rd;", "\u{2a5d}"),
+            ("rv;", "\u{2a5b}"),
+            ("rdf;", "\u{aa}"),
+            ("rdm;", "\u{ba}"),
+            ("ror;", "\u{2a56}"),
+            ("rarr;", "\u{21bb}"),
+            ("rder;", "\u{2134}"),
+            ("rigof;", "\u{22b6}"),
+            ("rderof;", "\u{2134}"),
+            ("rslope;", "\u{2a57}"),
+            ("rdf", "\u{aa}"),
+            ("rdm", "\u{ba}"),
+        ],
+        (b'o', b's') => &[
+            ("scr;", "\u{2134}"),
+            ("sol;", "\u{2298}"),
+            ("slash;", "\u{f8}"),
+            ("slash", "\u{f8}"),
+        ],
+        (b'o', b't') => &[
+            ("tilde;", "\u{f5}"),
+            ("times;", "\u{2297}"),
+            ("timesas;", "\u{2a36}"),
+            ("tilde", "\u{f5}"),
+        ],
+        (b'o', b'u') => &[("uml;", "\u{f6}"), ("uml", "\u{f6}")],
+        (b'o', b'v') => &[("vbar;", "\u{233d}")],
+        (b'p', b'a') => &[
+            ("ar;", "\u{2225}"),
+            ("ara;", "\u{b6}"),
+            ("art;", "\u{2202}"),
+            ("arsl;", "\u{2afd}"),
+            ("arsim;", "\u{2af3}"),
+            ("arallel;", "\u{2225}"),
+            ("ara", "\u{b6}"),
+        ],
+        (b'p', b'c') => &[("cy;", "\u{43f}")],
+        (b'p', b'e') => &[
+            ("erp;", "\u{22a5}"),
+            ("ercnt;", "\u{25}"),
+            ("eriod;", "\u{2e}"),
+            ("ermil;", "\u{2030}"),
+            ("ertenk;", "\u{2031}"),
+        ],
+        (b'p', b'f') => &[("fr;", "\u{1d52d}")],
+        (b'p', b'h') => &[
+            ("hi;", "\u{3c6}"),
+            ("hiv;", "\u{3d5}"),
+            ("hone;", "\u{260e}"),
+            ("hmmat;", "\u{2133}"),
+        ],
+        (b'p', b'i') => &[
+            ("i;", "\u{3c0}"),
+            ("iv;", "\u{3d6}"),
+            ("itchfork;", "\u{22d4}"),
+        ],
+        (b'p', b'l') => &[
+            ("lus;", "\u{2b}"),
+            ("lusb;", "\u{229e}"),
+            ("luse;", "\u{2a72}"),
+            ("lanck;", "\u{210f}"),
+            ("lankv;", "\u{210f}"),
+            ("lusdo;", "\u{2214}"),
+            ("lusdu;", "\u{2a25}"),
+            ("lusmn;", "\u{b1}"),
+            ("lanckh;", "\u{210e}"),
+            ("luscir;", "\u{2a22}"),
+            ("lussim;", "\u{2a26}"),
+            ("lustwo;", "\u{2a27}"),
+            ("lusacir;", "\u{2a23}"),
+            ("lusmn", "\u{b1}"),
+        ],
+        (b'p', b'm') => &[("m;", "\u{b1}")],
+        (b'p', b'o') => &[
+            ("opf;", "\u{1d561}"),
+            ("ound;", "\u{a3}"),
+            ("ointint;", "\u{2a15}"),
+            ("ound", "\u{a3}"),
+        ],
+        (b'p', b'r') => &[
+            ("r;", "\u{227a}"),
+            ("rE;", "\u{2ab3}"),
+            ("re;", "\u{2aaf}"),
+            ("rap;", "\u{2ab7}"),
+            ("rec;", "\u{227a}"),
+            ("rnE;", "\u{2ab5}"),
+            ("rod;", "\u{220f}"),
+            ("rop;", "\u{221d}"),
+            ("rcue;", "\u{227c}"),
+            ("rime;", "\u{2032}"),
+            ("rnap;", "\u{2ab9}"),
+            ("rsim;", "\u{227e}"),
+            ("receq;", "\u{2aaf}"),
+            ("rimes;", "\u{2119}"),
+            ("rnsim;", "\u{22e8}"),
+            ("ropto;", "\u{221d}"),
+            ("rurel;", "\u{22b0}"),
+            ("recsim;", "\u{227e}"),
+            ("recneqq;", "\u{2ab5}"),
+            ("recnsim;", "\u{22e8}"),
+            ("rofalar;", "\u{232e}"),
+            ("rofline;", "\u{2312}"),
+            ("rofsurf;", "\u{2313}"),
+            ("recapprox;", "\u{2ab7}"),
+            ("reccurlyeq;", "\u{227c}"),
+            ("recnapprox;", "\u{2ab9}"),
+        ],
+        (b'p', b's') => &[("si;", "\u{3c8}"), ("scr;", "\u{1d4c5}")],
+        (b'p', b'u') => &[("uncsp;", "\u{2008}")],
+        (b'q', b'f') => &[("fr;", "\u{1d52e}")],
+        (b'q', b'i') => &[("int;", "\u{2a0c}")],
+        (b'q', b'o') => &[("opf;", "\u{1d562}")],
+        (b'q', b'p') => &[("prime;", "\u{2057}")],
+        (b'q', b's') => &[("scr;", "\u{1d4c6}")],
+        (b'q', b'u') => &[
+            ("uot;", "\u{22}"),
+            ("uest;", "\u{3f}"),
+            ("uatint;", "\u{2a16}"),
+            ("uesteq;", "\u{225f}"),
+            ("uaternions;", "\u{210d}"),
+            ("uot", "\u{22}"),
+        ],
+        (b'r', b'A') => &[
+            ("Arr;", "\u{21d2}"),
+            ("Aarr;", "\u{21db}"),
+            ("Atail;", "\u{291c}"),
+        ],
+        (b'r', b'B') => &[("Barr;", "\u{290f}")],
+        (b'r', b'H') => &[("Har;", "\u{2964}")],
+        (b'r', b'a') => &[
+            ("ace;", "\u{223d}\u{331}"),
+            ("ang;", "\u{27e9}"),
+            ("arr;", "\u{2192}"),
+            ("adic;", "\u{221a}"),
+            ("angd;", "\u{2992}"),
+            ("ange;", "\u{29a5}"),
+            ("aquo;", "\u{bb}"),
+            ("arrb;", "\u{21e5}"),
+            ("arrc;", "\u{2933}"),
+            ("arrw;", "\u{219d}"),
+            ("atio;", "\u{2236}"),
+            ("acute;", "\u{155}"),
+            ("angle;", "\u{27e9}"),
+            ("arrap;", "\u{2975}"),
+            ("arrfs;", "\u{291e}"),
+            ("arrhk;", "\u{21aa}"),
+            ("arrlp;", "\u{21ac}"),
+            ("arrpl;", "\u{2945}"),
+            ("arrtl;", "\u{21a3}"),
+            ("atail;", "\u{291a}"),
+            ("arrbfs;", "\u{2920}"),
+            ("arrsim;", "\u{2974}"),
+            ("aemptyv;", "\u{29b3}"),
+            ("ationals;", "\u{211a}"),
+            ("aquo", "\u{bb}"),
+        ],
+        (b'r', b'b') => &[
+            ("barr;", "\u{290d}"),
+            ("bbrk;", "\u{2773}"),
+            ("brke;", "\u{298c}"),
+            ("brace;", "\u{7d}"),
+            ("brack;", "\u{5d}"),
+            ("brksld;", "\u{298e}"),
+            ("brkslu;", "\u{2990}"),
+        ],
+        (b'r', b'c') => &[
+            ("cy;", "\u{440}"),
+            ("cub;", "\u{7d}"),
+            ("ceil;", "\u{2309}"),
+            ("caron;", "\u{159}"),
+            ("cedil;", "\u{157}"),
+        ],
+        (b'r', b'd') => &[
+            ("dca;", "\u{2937}"),
+            ("dsh;", "\u{21b3}"),
+            ("dquo;", "\u{201d}"),
+            ("dquor;", "\u{201d}"),
+            ("dldhar;", "\u{2969}"),
+        ],
+        (b'r', b'e') => &[
+            ("eg;", "\u{ae}"),
+            ("eal;", "\u{211c}"),
+            ("ect;", "\u{25ad}"),
+            ("eals;", "\u{211d}"),
+            ("ealine;", "\u{211b}"),
+            ("ealpart;", "\u{211c}"),
+            ("eg", "\u{ae}"),
+        ],
+        (b'r', b'f') => &[
+            ("fr;", "\u{1d52f}"),
+            ("fisht;", "\u{297d}"),
+            ("floor;", "\u{230b}"),
+        ],
+        (b'r', b'h') => &[
+            ("ho;", "\u{3c1}"),
+            ("hov;", "\u{3f1}"),
+            ("hard;", "\u{21c1}"),
+            ("haru;", "\u{21c0}"),
+            ("harul;", "\u{296c}"),
+        ],
+        (b'r', b'i') => &[
+            ("ing;", "\u{2da}"),
+            ("ightarrow;", "\u{2192}"),
+            ("isingdotseq;", "\u{2253}"),
+            ("ightarrowtail;", "\u{21a3}"),
+            ("ightharpoonup;", "\u{21c0}"),
+            ("ightleftarrows;", "\u{21c4}"),
+            ("ightsquigarrow;", "\u{219d}"),
+            ("ightthreetimes;", "\u{22cc}"),
+            ("ightharpoondown;", "\u{21c1}"),
+            ("ightrightarrows;", "\u{21c9}"),
+            ("ightleftharpoons;", "\u{21cc}"),
+        ],
+        (b'r', b'l') => &[
+            ("lm;", "\u{200f}"),
+            ("larr;", "\u{21c4}"),
+            ("lhar;", "\u{21cc}"),
+        ],
+        (b'r', b'm') => &[("moust;", "\u{23b1}"), ("moustache;", "\u{23b1}")],
+        (b'r', b'n') => &[("nmid;", "\u{2aee}")],
+        (b'r', b'o') => &[
+            ("opf;", "\u{1d563}"),
+            ("oang;", "\u{27ed}"),
+            ("oarr;", "\u{21fe}"),
+            ("obrk;", "\u{27e7}"),
+            ("opar;", "\u{2986}"),
+            ("oplus;", "\u{2a2e}"),
+            ("otimes;", "\u{2a35}"),
+        ],
+        (b'r', b'p') => &[
+            ("par;", "\u{29}"),
+            ("pargt;", "\u{2994}"),
+            ("ppolint;", "\u{2a12}"),
+        ],
+        (b'r', b'r') => &[("rarr;", "\u{21c9}")],
+        (b'r', b's') => &[
+            ("sh;", "\u{21b1}"),
+            ("scr;", "\u{1d4c7}"),
+            ("sqb;", "\u{5d}"),
+            ("squo;", "\u{2019}"),
+            ("saquo;", "\u{203a}"),
+            ("squor;", "\u{2019}"),
+        ],
+        (b'r', b't') => &[
+            ("tri;", "\u{25b9}"),
+            ("trie;", "\u{22b5}"),
+            ("trif;", "\u{25b8}"),
+            ("three;", "\u{22cc}"),
+            ("times;", "\u{22ca}"),
+            ("triltri;", "\u{29ce}"),
+        ],
+        (b'r', b'u') => &[("uluhar;", "\u{2968}")],
+        (b'r', b'x') => &[("x;", "\u{211e}")],
+        (b's', b'a') => &[("acute;", "\u{15b}")],
+        (b's', b'b') => &[("bquo;", "\u{201a}")],
+        (b's', b'c') => &[
+            ("c;", "\u{227b}"),
+            ("cE;", "\u{2ab4}"),
+            ("ce;", "\u{2ab0}"),
+            ("cy;", "\u{441}"),
+            ("cap;", "\u{2ab8}"),
+            ("cnE;", "\u{2ab6}"),
+            ("ccue;", "\u{227d}"),
+            ("circ;", "\u{15d}"),
+            ("cnap;", "\u{2aba}"),
+            ("csim;", "\u{227f}"),
+            ("caron;", "\u{161}"),
+            ("cedil;", "\u{15f}"),
+            ("cnsim;", "\u{22e9}"),
+            ("cpolint;", "\u{2a13}"),
+        ],
+        (b's', b'd') => &[
+            ("dot;", "\u{22c5}"),
+            ("dotb;", "\u{22a1}"),
+            ("dote;", "\u{2a66}"),
+        ],
+        (b's', b'e') => &[
+            ("ect;", "\u{a7}"),
+            ("emi;", "\u{3b}"),
+            ("ext;", "\u{2736}"),
+            ("eArr;", "\u{21d8}"),
+            ("earr;", "\u{2198}"),
+            ("etmn;", "\u{2216}"),
+            ("earhk;", "\u{2925}"),
+            ("eswar;", "\u{2929}"),
+            ("earrow;", "\u{2198}"),
+            ("etminus;", "\u{2216}"),
+            ("ect", "\u{a7}"),
+        ],
+        (b's', b'f') => &[("fr;", "\u{1d530}"), ("frown;", "\u{2322}")],
+        (b's', b'h') => &[
+            ("hy;", "\u{ad}"),
+            ("hcy;", "\u{448}"),
+            ("harp;", "\u{266f}"),
+            ("hchcy;", "\u{449}"),
+            ("hortmid;", "\u{2223}"),
+            ("hortparallel;", "\u{2225}"),
+            ("hy", "\u{ad}"),
+        ],
+        (b's', b'i') => &[
+            ("im;", "\u{223c}"),
+            ("ime;", "\u{2243}"),
+            ("img;", "\u{2a9e}"),
+            ("iml;", "\u{2a9d}"),
+            ("igma;", "\u{3c3}"),
+            ("imeq;", "\u{2243}"),
+            ("imgE;", "\u{2aa0}"),
+            ("imlE;", "\u{2a9f}"),
+            ("imne;", "\u{2246}"),
+            ("igmaf;", "\u{3c2}"),
+            ("igmav;", "\u{3c2}"),
+            ("imdot;", "\u{2a6a}"),
+            ("implus;", "\u{2a24}"),
+            ("imrarr;", "\u{2972}"),
+        ],
+        (b's', b'l') => &[("larr;", "\u{2190}")],
+        (b's', b'm') => &[
+            ("mt;", "\u{2aaa}"),
+            ("mid;", "\u{2223}"),
+            ("mte;", "\u{2aac}"),
+            ("mile;", "\u{2323}"),
+            ("mtes;", "\u{2aac}\u{fe00}"),
+            ("mashp;", "\u{2a33}"),
+            ("meparsl;", "\u{29e4}"),
+            ("mallsetminus;", "\u{2216}"),
+        ],
+        (b's', b'o') => &[
+            ("ol;", "\u{2f}"),
+            ("olb;", "\u{29c4}"),
+            ("opf;", "\u{1d564}"),
+            ("oftcy;", "\u{44c}"),
+            ("olbar;", "\u{233f}"),
+        ],
+        (b's', b'p') => &[
+            ("par;", "\u{2225}"),
+            ("pades;", "\u{2660}"),
+            ("padesuit;", "\u{2660}"),
+        ],
+        (b's', b'q') => &[
+            ("qu;", "\u{25a1}"),
+            ("quf;", "\u{25aa}"),
+            ("qcap;", "\u{2293}"),
+            ("qcup;", "\u{2294}"),
+            ("qsub;", "\u{228f}"),
+            ("qsup;", "\u{2290}"),
+            ("qcaps;", "\u{2293}\u{fe00}"),
+            ("qcups;", "\u{2294}\u{fe00}"),
+            ("qsube;", "\u{2291}"),
+            ("qsupe;", "\u{2292}"),
+            ("quare;", "\u{25a1}"),
+            ("quarf;", "\u{25aa}"),
+            ("qsubset;", "\u{228f}"),
+            ("qsupset;", "\u{2290}"),
+            ("qsubseteq;", "\u{2291}"),
+            ("qsupseteq;", "\u{2292}"),
+        ],
+        (b's', b'r') => &[("rarr;", "\u{2192}")],
+        (b's', b's') => &[
+            ("scr;", "\u{1d4c8}"),
+            ("setmn;", "\u{2216}"),
+            ("smile;", "\u{2323}"),
+            ("starf;", "\u{22c6}"),
+        ],
+        (b's', b't') => &[
+            ("tar;", "\u{2606}"),
+            ("tarf;", "\u{2605}"),
+            ("trns;", "\u{af}"),
+            ("traightphi;", "\u{3d5}"),
+            ("traightepsilon;", "\u{3f5}"),
+        ],
+        (b's', b'u') => &[
+            ("ub;", "\u{2282}"),
+            ("um;", "\u{2211}"),
+            ("up;", "\u{2283}"),
+            ("ubE;", "\u{2ac5}"),
+            ("ube;", "\u{2286}"),
+            ("ucc;", "\u{227b}"),
+            ("ung;", "\u{266a}"),
+            ("up1;", "\u{b9}"),
+            ("up2;", "\u{b2}"),
+            ("up3;", "\u{b3}"),
+            ("upE;", "\u{2ac6}"),
+            ("upe;", "\u{2287}"),
+            ("ubnE;", "\u{2acb}"),
+            ("ubne;", "\u{228a}"),
+            ("upnE;", "\u{2acc}"),
+            ("upne;", "\u{228b}"),
+            ("ubdot;", "\u{2abd}"),
+            ("ubset;", "\u{2282}"),
+            ("ubsim;", "\u{2ac7}"),
+            ("ubsub;", "\u{2ad5}"),
+            ("ubsup;", "\u{2ad3}"),
+            ("ucceq;", "\u{2ab0}"),
+            ("updot;", "\u{2abe}"),
+            ("upset;", "\u{2283}"),
+            ("upsim;", "\u{2ac8}"),
+            ("upsub;", "\u{2ad4}"),
+            ("upsup;", "\u{2ad6}"),
+            ("ubedot;", "\u{2ac3}"),
+            ("ubmult;", "\u{2ac1}"),
+            ("ubplus;", "\u{2abf}"),
+            ("ubrarr;", "\u{2979}"),
+            ("uccsim;", "\u{227f}"),
+            ("updsub;", "\u{2ad8}"),
+            ("upedot;", "\u{2ac4}"),
+            ("uphsol;", "\u{27c9}"),
+            ("uphsub;", "\u{2ad7}"),
+            ("uplarr;", "\u{297b}"),
+            ("upmult;", "\u{2ac2}"),
+            ("upplus;", "\u{2ac0}"),
+            ("ubseteq;", "\u{2286}"),
+            ("uccneqq;", "\u{2ab6}"),
+            ("uccnsim;", "\u{22e9}"),
+            ("upseteq;", "\u{2287}"),
+            ("ubseteqq;", "\u{2ac5}"),
+            ("ubsetneq;", "\u{228a}"),
+            ("upseteqq;", "\u{2ac6}"),
+            ("upsetneq;", "\u{228b}"),
+            ("ubsetneqq;", "\u{2acb}"),
+            ("uccapprox;", "\u{2ab8}"),
+            ("upsetneqq;", "\u{2acc}"),
+            ("ucccurlyeq;", "\u{227d}"),
+            ("uccnapprox;", "\u{2aba}"),
+            ("up1", "\u{b9}"),
+            ("up2", "\u{b2}"),
+            ("up3", "\u{b3}"),
+        ],
+        (b's', b'w') => &[
+            ("wArr;", "\u{21d9}"),
+            ("warr;", "\u{2199}"),
+            ("warhk;", "\u{2926}"),
+            ("wnwar;", "\u{292a}"),
+            ("warrow;", "\u{2199}"),
+        ],
+        (b's', b'z') => &[("zlig;", "\u{df}"), ("zlig", "\u{df}")],
+        (b't', b'a') => &[("au;", "\u{3c4}"), ("arget;", "\u{2316}")],
+        (b't', b'b') => &[("brk;", "\u{23b4}")],
+        (b't', b'c') => &[
+            ("cy;", "\u{442}"),
+            ("caron;", "\u{165}"),
+            ("cedil;", "\u{163}"),
+        ],
+        (b't', b'd') => &[("dot;", "\u{20db}")],
+        (b't', b'e') => &[("elrec;", "\u{2315}")],
+        (b't', b'f') => &[("fr;", "\u{1d531}")],
+        (b't', b'h') => &[
+            ("heta;", "\u{3b8}"),
+            ("hkap;", "\u{2248}"),
+            ("horn;", "\u{fe}"),
+            ("here4;", "\u{2234}"),
+            ("hetav;", "\u{3d1}"),
+            ("hinsp;", "\u{2009}"),
+            ("hksim;", "\u{223c}"),
+            ("hetasym;", "\u{3d1}"),
+            ("hicksim;", "\u{223c}"),
+            ("herefore;", "\u{2234}"),
+            ("hickapprox;", "\u{2248}"),
+            ("horn", "\u{fe}"),
+        ],
+        (b't', b'i') => &[
+            ("int;", "\u{222d}"),
+            ("ilde;", "\u{2dc}"),
+            ("imes;", "\u{d7}"),
+            ("imesb;", "\u{22a0}"),
+            ("imesd;", "\u{2a30}"),
+            ("imesbar;", "\u{2a31}"),
+            ("imes", "\u{d7}"),
+        ],
+        (b't', b'o') => &[
+            ("op;", "\u{22a4}"),
+            ("oea;", "\u{2928}"),
+            ("opf;", "\u{1d565}"),
+            ("osa;", "\u{2929}"),
+            ("opbot;", "\u{2336}"),
+            ("opcir;", "\u{2af1}"),
+            ("opfork;", "\u{2ada}"),
+        ],
+        (b't', b'p') => &[("prime;", "\u{2034}")],
+        (b't', b'r') => &[
+            ("rie;", "\u{225c}"),
+            ("rade;", "\u{2122}"),
+            ("risb;", "\u{29cd}"),
+            ("ridot;", "\u{25ec}"),
+            ("riplus;", "\u{2a39}"),
+            ("ritime;", "\u{2a3b}"),
+            ("riangle;", "\u{25b5}"),
+            ("riminus;", "\u{2a3a}"),
+            ("rpezium;", "\u{23e2}"),
+            ("riangleq;", "\u{225c}"),
+            ("riangledown;", "\u{25bf}"),
+            ("riangleleft;", "\u{25c3}"),
+            ("riangleright;", "\u{25b9}"),
+            ("rianglelefteq;", "\u{22b4}"),
+            ("rianglerighteq;", "\u{22b5}"),
+        ],
+        (b't', b's') => &[
+            ("scr;", "\u{1d4c9}"),
+            ("scy;", "\u{446}"),
+            ("shcy;", "\u{45b}"),
+            ("strok;", "\u{167}"),
+        ],
+        (b't', b'w') => &[
+            ("wixt;", "\u{226c}"),
+            ("woheadleftarrow;", "\u{219e}"),
+            ("woheadrightarrow;", "\u{21a0}"),
+        ],
+        (b'u', b'A') => &[("Arr;", "\u{21d1}")],
+        (b'u', b'H') => &[("Har;", "\u{2963}")],
+        (b'u', b'a') => &[
+            ("arr;", "\u{2191}"),
+            ("acute;", "\u{fa}"),
+            ("acute", "\u{fa}"),
+        ],
+        (b'u', b'b') => &[("brcy;", "\u{45e}"), ("breve;", "\u{16d}")],
+        (b'u', b'c') => &[("cy;", "\u{443}"), ("circ;", "\u{fb}"), ("circ", "\u{fb}")],
+        (b'u', b'd') => &[
+            ("darr;", "\u{21c5}"),
+            ("dhar;", "\u{296e}"),
+            ("dblac;", "\u{171}"),
+        ],
+        (b'u', b'f') => &[("fr;", "\u{1d532}"), ("fisht;", "\u{297e}")],
+        (b'u', b'g') => &[("grave;", "\u{f9}"), ("grave", "\u{f9}")],
+        (b'u', b'h') => &[
+            ("harl;", "\u{21bf}"),
+            ("harr;", "\u{21be}"),
+            ("hblk;", "\u{2580}"),
+        ],
+        (b'u', b'l') => &[
+            ("ltri;", "\u{25f8}"),
+            ("lcorn;", "\u{231c}"),
+            ("lcrop;", "\u{230f}"),
+            ("lcorner;", "\u{231c}"),
+        ],
+        (b'u', b'm') => &[("ml;", "\u{a8}"), ("macr;", "\u{16b}"), ("ml", "\u{a8}")],
+        (b'u', b'o') => &[("opf;", "\u{1d566}"), ("ogon;", "\u{173}")],
+        (b'u', b'p') => &[
+            ("psi;", "\u{3c5}"),
+            ("plus;", "\u{228e}"),
+            ("psih;", "\u{3d2}"),
+            ("parrow;", "\u{2191}"),
+            ("psilon;", "\u{3c5}"),
+            ("puparrows;", "\u{21c8}"),
+            ("pdownarrow;", "\u{2195}"),
+            ("pharpoonleft;", "\u{21bf}"),
+            ("pharpoonright;", "\u{21be}"),
+        ],
+        (b'u', b'r') => &[
+            ("ring;", "\u{16f}"),
+            ("rtri;", "\u{25f9}"),
+            ("rcorn;", "\u{231d}"),
+            ("rcrop;", "\u{230e}"),
+            ("rcorner;", "\u{231d}"),
+        ],
+        (b'u', b's') => &[("scr;", "\u{1d4ca}")],
+        (b'u', b't') => &[
+            ("tri;", "\u{25b5}"),
+            ("tdot;", "\u{22f0}"),
+            ("trif;", "\u{25b4}"),
+            ("tilde;", "\u{169}"),
+        ],
+        (b'u', b'u') => &[("uml;", "\u{fc}"), ("uarr;", "\u{21c8}"), ("uml", "\u{fc}")],
+        (b'u', b'w') => &[("wangle;", "\u{29a7}")],
+        (b'v', b'A') => &[("Arr;", "\u{21d5}")],
+        (b'v', b'B') => &[("Bar;", "\u{2ae8}"), ("Barv;", "\u{2ae9}")],
+        (b'v', b'D') => &[("Dash;", "\u{22a8}")],
+        (b'v', b'a') => &[
+            ("arr;", "\u{2195}"),
+            ("arpi;", "\u{3d6}"),
+            ("angrt;", "\u{299c}"),
+            ("arphi;", "\u{3d5}"),
+            ("arrho;", "\u{3f1}"),
+            ("arkappa;", "\u{3f0}"),
+            ("arsigma;", "\u{3c2}"),
+            ("artheta;", "\u{3d1}"),
+            ("arpropto;", "\u{221d}"),
+            ("arepsilon;", "\u{3f5}"),
+            ("arnothing;", "\u{2205}"),
+            ("arsubsetneq;", "\u{228a}\u{fe00}"),
+            ("arsupsetneq;", "\u{228b}\u{fe00}"),
+            ("arsubsetneqq;", "\u{2acb}\u{fe00}"),
+            ("arsupsetneqq;", "\u{2acc}\u{fe00}"),
+            ("artriangleleft;", "\u{22b2}"),
+            ("artriangleright;", "\u{22b3}"),
+        ],
+        (b'v', b'c') => &[("cy;", "\u{432}")],
+        (b'v', b'd') => &[("dash;", "\u{22a2}")],
+        (b'v', b'e') => &[
+            ("ee;", "\u{2228}"),
+            ("ert;", "\u{7c}"),
+            ("eeeq;", "\u{225a}"),
+            ("eebar;", "\u{22bb}"),
+            ("ellip;", "\u{22ee}"),
+            ("erbar;", "\u{7c}"),
+        ],
+        (b'v', b'f') => &[("fr;", "\u{1d533}")],
+        (b'v', b'l') => &[("ltri;", "\u{22b2}")],
+        (b'v', b'n') => &[("nsub;", "\u{2282}\u{20d2}"), ("nsup;", "\u{2283}\u{20d2}")],
+        (b'v', b'o') => &[("opf;", "\u{1d567}")],
+        (b'v', b'p') => &[("prop;", "\u{221d}")],
+        (b'v', b'r') => &[("rtri;", "\u{22b3}")],
+        (b'v', b's') => &[
+            ("scr;", "\u{1d4cb}"),
+            ("subnE;", "\u{2acb}\u{fe00}"),
+            ("subne;", "\u{228a}\u{fe00}"),
+            ("supnE;", "\u{2acc}\u{fe00}"),
+            ("supne;", "\u{228b}\u{fe00}"),
+        ],
+        (b'v', b'z') => &[("zigzag;", "\u{299a}")],
+        (b'w', b'c') => &[("circ;", "\u{175}")],
+        (b'w', b'e') => &[
+            ("edge;", "\u{2227}"),
+            ("edbar;", "\u{2a5f}"),
+            ("edgeq;", "\u{2259}"),
+            ("eierp;", "\u{2118}"),
+        ],
+        (b'w', b'f') => &[("fr;", "\u{1d534}")],
+        (b'w', b'o') => &[("opf;", "\u{1d568}")],
+        (b'w', b'p') => &[("p;", "\u{2118}")],
+        (b'w', b'r') => &[("r;", "\u{2240}"), ("reath;", "\u{2240}")],
+        (b'w', b's') => &[("scr;", "\u{1d4cc}")],
+        (b'x', b'c') => &[
+            ("cap;", "\u{22c2}"),
+            ("cup;", "\u{22c3}"),
+            ("circ;", "\u{25ef}"),
+        ],
+        (b'x', b'd') => &[("dtri;", "\u{25bd}")],
+        (b'x', b'f') => &[("fr;", "\u{1d535}")],
+        (b'x', b'h') => &[("hArr;", "\u{27fa}"), ("harr;", "\u{27f7}")],
+        (b'x', b'i') => &[("i;", "\u{3be}")],
+        (b'x', b'l') => &[("lArr;", "\u{27f8}"), ("larr;", "\u{27f5}")],
+        (b'x', b'm') => &[("map;", "\u{27fc}")],
+        (b'x', b'n') => &[("nis;", "\u{22fb}")],
+        (b'x', b'o') => &[
+            ("opf;", "\u{1d569}"),
+            ("odot;", "\u{2a00}"),
+            ("oplus;", "\u{2a01}"),
+            ("otime;", "\u{2a02}"),
+        ],
+        (b'x', b'r') => &[("rArr;", "\u{27f9}"), ("rarr;", "\u{27f6}")],
+        (b'x', b's') => &[("scr;", "\u{1d4cd}"), ("sqcup;", "\u{2a06}")],
+        (b'x', b'u') => &[("utri;", "\u{25b3}"), ("uplus;", "\u{2a04}")],
+        (b'x', b'v') => &[("vee;", "\u{22c1}")],
+        (b'x', b'w') => &[("wedge;", "\u{22c0}")],
+        (b'y', b'a') => &[
+            ("acy;", "\u{44f}"),
+            ("acute;", "\u{fd}"),
+            ("acute", "\u{fd}"),
+        ],
+        (b'y', b'c') => &[("cy;", "\u{44b}"), ("circ;", "\u{177}")],
+        (b'y', b'e') => &[("en;", "\u{a5}"), ("en", "\u{a5}")],
+        (b'y', b'f') => &[("fr;", "\u{1d536}")],
+        (b'y', b'i') => &[("icy;", "\u{457}")],
+        (b'y', b'o') => &[("opf;", "\u{1d56a}")],
+        (b'y', b's') => &[("scr;", "\u{1d4ce}")],
+        (b'y', b'u') => &[("ucy;", "\u{44e}"), ("uml;", "\u{ff}"), ("uml", "\u{ff}")],
+        (b'z', b'a') => &[("acute;", "\u{17a}")],
+        (b'z', b'c') => &[("cy;", "\u{437}"), ("caron;", "\u{17e}")],
+        (b'z', b'd') => &[("dot;", "\u{17c}")],
+        (b'z', b'e') => &[("eta;", "\u{3b6}"), ("eetrf;", "\u{2128}")],
+        (b'z', b'f') => &[("fr;", "\u{1d537}")],
+        (b'z', b'h') => &[("hcy;", "\u{436}")],
+        (b'z', b'i') => &[("igrarr;", "\u{21dd}")],
+        (b'z', b'o') => &[("opf;", "\u{1d56b}")],
+        (b'z', b's') => &[("scr;", "\u{1d4cf}")],
+        (b'z', b'w') => &[("wj;", "\u{200d}"), ("wnj;", "\u{200c}")],
+        _ => &[],
     }
 }

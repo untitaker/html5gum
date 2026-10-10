@@ -1910,8 +1910,13 @@ pub(crate) mod states {
         let c = read_byte!(slf)?;
 
         let char_ref = match c {
-            Some(x) => try_read_character_reference(x as char, |x| slf.try_read_string(x, true))?
-                .map(|char_ref| (x, char_ref)),
+            Some(x) => {
+                // Peek at the next character, so that only the few names that start with both
+                // characters need to be tried.
+                let next_char = slf.peek_byte()?;
+                try_read_character_reference(x, next_char, |x| slf.try_read_string(x, true))?
+                    .map(|char_ref| (x, char_ref))
+            }
 
             None => None,
         };
@@ -1949,7 +1954,23 @@ pub(crate) mod states {
             slf.machine_helper
                 .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
             slf.emitter.move_position(1);
-            reconsume_in!(slf, c, AmbiguousAmpersand)
+
+            if let Some(x) = c {
+                // The peeked character is still pending, so `c` cannot be reconsumed. It is
+                // alphanumeric: emit it like the ambiguous ampersand state would, and let that
+                // state reconsume the peeked character instead.
+                debug_assert!(x.is_ascii_alphanumeric());
+                if slf.machine_helper.is_consumed_as_part_of_an_attribute() {
+                    slf.emitter.push_attribute_value(&[x]);
+                } else {
+                    slf.emitter.emit_string(&[x]);
+                }
+
+                let next_char = slf.read_peeked_byte()?;
+                reconsume_in!(slf, next_char, AmbiguousAmpersand)
+            } else {
+                reconsume_in!(slf, c, AmbiguousAmpersand)
+            }
         }
     });
 

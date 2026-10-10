@@ -1,19 +1,35 @@
 import json
 import sys
 
-key_and_value = list(json.load(sys.stdin).items())
-# Sort by descending length so we match the largest prefix first
-key_and_value.sort(key=lambda x: (-len(x[0]), x[0]))
+# The tokenizer consumes the first character of a named character reference and peeks at the
+# second one, so group the names by their first two characters. Then only a handful of candidates
+# need to be compared against the input, instead of every name with the same first character.
+groups = {}
 
-match_arms = {}
-
-for key, value in key_and_value:
+for key, value in json.load(sys.stdin).items():
     assert key[0] == "&"
-    key = key[1:]
-    first_char = key[0]
-    key = key[1:]
+    name = key[1:]
+    assert len(name) >= 2
+    assert name[:2].isascii() and name[:2].isalnum()
+    # A `;` can only be the last character, see `candidate_order`.
+    assert ";" not in name[:-1]
+    groups.setdefault(name[:2], []).append((name, value))
 
-    match_arms.setdefault(first_char, []).append((key, value))
+
+# The longest name that matches the input has to win, and the candidates are tried in order until
+# one matches:
+#
+# * A name that ends with `;` is never a prefix of another name, so at most one of them can match,
+#   and it is always the longest match. Try those first, shortest first, so that common references
+#   such as `&amp;`, `&lt;` and `&quot;` match on the first attempt.
+# * A legacy name without `;` (`&amp`, `&not`) can be a prefix of other names (`&amp;`, `&notin;`).
+#   It can only be the longest match if no name with `;` matches. Try those last, longest first.
+def candidate_order(entry):
+    name = entry[0]
+    if name.endswith(";"):
+        return (0, len(name), name)
+    return (1, -len(name), name)
+
 
 with open("src/entities.rs", "w") as f:
     f.write(
@@ -23,64 +39,58 @@ with open("src/entities.rs", "w") as f:
 // curl https://html.spec.whatwg.org/entities.json | python generate_entities.py
 
 pub(crate) struct CharRef {
-    /// Name as it appears escaped in HTML
+    /// Name as it appears escaped in HTML, without the leading `&` and the first character
     pub(crate) name: &'static str,
     /// Unescaped character codepoints
     pub(crate) characters: &'static str,
 }
 
-pub(crate) fn try_read_character_reference<E>(first_char: char, try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
-    match first_char {
+/// Read the rest of a named character reference whose first character `first_char` has already
+/// been consumed.
+///
+/// `next_char` is the next character of the input, which has not been consumed yet. Only the names
+/// that continue with it are passed to `try_read`, which should consume the given string if the
+/// input continues with it. Returns the longest name that matches.
+pub(crate) fn try_read_character_reference<E>(
+    first_char: u8,
+    next_char: Option<u8>,
+    mut try_read: impl FnMut(&str) -> Result<bool, E>,
+) -> Result<Option<CharRef>, E> {
+    let Some(next_char) = next_char else {
+        return Ok(None);
+    };
+
+    for &(name, characters) in candidates(first_char, next_char) {
+        if try_read(name)? {
+            return Ok(Some(CharRef { name, characters }));
+        }
+    }
+
+    Ok(None)
+}
+
+/// All names that start with `first_char` and `second_char`, without the first character, in the
+/// order in which they need to be tried.
+pub(crate) fn candidates(
+    first_char: u8,
+    second_char: u8,
+) -> &'static [(&'static str, &'static str)] {
+    match (first_char, second_char) {
 """
     )
 
-    for first_char, if_statements in sorted(match_arms.items()):
-        # Write each branch of the match stmt as its own function such that
-        # compilation is faster.
-        f.write(
-            """
-        '%(first_char)s' => {
-            #[allow(non_snake_case)]
-            fn branch_%(first_char)s<E>(mut try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
-        """
-            % {"first_char": first_char}
-        )
+    for prefix, entries in sorted(groups.items()):
+        f.write("(b'%s', b'%s') => &[" % (prefix[0], prefix[1]))
 
-        for other_chars, value in if_statements:
-            characters = ""
-            for c in value["codepoints"]:
-                characters += r"\u{" + hex(c)[2:] + r"}"
+        for name, value in sorted(entries, key=candidate_order):
+            characters = "".join(r"\u{%x}" % c for c in value["codepoints"])
+            f.write('("%s", "%s"),' % (name[1:], characters))
 
-            f.write(
-                """
-                    ("%(other_chars)s", "%(characters)s"),
-            """
-                % {"other_chars": other_chars, "characters": characters}
-            )
-
-        f.write(
-            """
-                ] {
-                    if try_read(other_chars)? {
-                        return Ok(Some(CharRef { name: other_chars, characters }));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            branch_%(first_char)s(try_read)
-
-        }
-        """
-            % {"first_char": first_char}
-        )
+        f.write("],\n")
 
     f.write(
-        """
-        _ => Ok(None)
+        """        _ => &[],
     }
 }
-    """
+"""
     )

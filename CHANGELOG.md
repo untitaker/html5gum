@@ -1,6 +1,7 @@
 # Unreleased
 
 - Change types around `Token::Doctype` so that `.value` is no longer necessary. [PR 139](https://github.com/untitaker/html5gum/pull/139)
+- Speed up named character references such as `&amp;` by only trying names that start with the same two characters. [PR 150](https://github.com/untitaker/html5gum/pull/150)
 
 # 0.8.4
 

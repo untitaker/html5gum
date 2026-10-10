@@ -54,6 +54,23 @@ pub fn trace_log(msg: &str) {
     });
 }
 
+/// All named character references in the generated table, as pairs of the name (without the
+/// leading `&`) and the characters it stands for.
+pub fn named_character_references() -> Vec<(String, &'static str)> {
+    let mut rv = Vec::new();
+
+    for first_char in 0..=u8::MAX {
+        for second_char in 0..=u8::MAX {
+            for &(name, characters) in crate::entities::candidates(first_char, second_char) {
+                assert_eq!(name.as_bytes()[0], second_char);
+                rv.push((format!("{}{}", char::from(first_char), name), characters));
+            }
+        }
+    }
+
+    rv
+}
+
 /// A kind of reader that implements `read_until` very poorly. Only available in tests
 #[derive(Debug)]
 pub struct SlowReader<R: Reader>(pub R);
