@@ -3,6 +3,7 @@ name = "html5gum"
 authors = ["Markus Unterwaditzer <markus-honeypot@unterwaditzer.net>"]
 description = "A WHATWG-compliant HTML5 tokenizer and tag soup parser."
 edition = "2018"
+rust-version = "1.82"
 readme = "README.md"
 keywords = ["html", "html5", "whatwg", "parser", "tokenizer"]
 categories = [ "parser-implementations", "web-programming" ]
