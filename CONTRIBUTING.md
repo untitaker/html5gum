@@ -1,9 +1,12 @@
 # Contributing to html5gum
 
-This project is very small and has little collaboration right now, so feel free
-to just open issues if something is unclear or open PRs directly.
+## AI policy
 
-What follows is basically a FAQ.
+PR descriptions and issues should be human-authored. There is no ban on
+AI-generated code in this repo.
+
+This policy is mainly there so that people properly explain their motivations
+and keep their PR descriptions terse.
 
 ## Testing
 
