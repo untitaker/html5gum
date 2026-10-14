@@ -29,7 +29,48 @@ impl<R: Reader> ReadHelper<R> {
             return Ok(c);
         }
 
-        let mut c = self.reader.read_byte();
+        let c = self.reader.read_byte();
+        self.preprocess_byte(c, char_validator, emitter)
+    }
+
+    /// Return the next byte without consuming it.
+    ///
+    /// The byte is returned as it appears in the input, and it is only preprocessed and validated
+    /// once it is consumed. Unlike with `read_byte` followed by `unread_byte`, peeking at a byte
+    /// therefore does not change the order in which errors are emitted.
+    ///
+    /// The byte has to be consumed with `read_peeked_byte` before reading anything else.
+    #[inline(always)]
+    pub(crate) fn peek_byte(&mut self) -> Result<Option<u8>, R::Error> {
+        debug_assert!(self.to_reconsume.is_none());
+        let c = self.reader.read_byte()?;
+        self.to_reconsume = Some(c);
+        Ok(c)
+    }
+
+    /// Like `read_byte`, but for use after `peek_byte`: the peeked byte is preprocessed and
+    /// validated exactly like it would have been if it had not been peeked at.
+    #[inline]
+    pub(crate) fn read_peeked_byte<E: Emitter>(
+        &mut self,
+        char_validator: &mut CharValidator,
+        emitter: &mut E,
+    ) -> Result<Option<u8>, R::Error> {
+        let c = match self.to_reconsume.take() {
+            Some(c) => Ok(c),
+            None => self.reader.read_byte(),
+        };
+        self.preprocess_byte(c, char_validator, emitter)
+    }
+
+    /// Newline normalization and validation of a byte that was taken from the reader.
+    #[inline(always)]
+    fn preprocess_byte<E: Emitter>(
+        &mut self,
+        mut c: Result<Option<u8>, R::Error>,
+        char_validator: &mut CharValidator,
+        emitter: &mut E,
+    ) -> Result<Option<u8>, R::Error> {
         if self.last_character_was_cr && matches!(c, Ok(Some(b'\n'))) {
             // TODO: we are scattering move_position in the read
             // path across many places: read helper, tokenizer.rs,

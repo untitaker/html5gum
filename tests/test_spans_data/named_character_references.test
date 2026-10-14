@@ -1,0 +1,308 @@
+{
+  "tests": [
+    {
+      "description": "named character reference: end of input after the first character",
+      "input": "&a",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","&a",0,2]
+      ]
+    },
+    {
+      "description": "named character reference: carriage return after the first character",
+      "input": "&a\r",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","&a\n",0,3]
+      ]
+    },
+    {
+      "description": "named character reference: CRLF after the first character",
+      "input": "&a\r\nb",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","&a\nb",0,5]
+      ]
+    },
+    {
+      "description": "named character reference: line feed after the first character",
+      "input": "&a\nb",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","&a\nb",0,4]
+      ]
+    },
+    {
+      "description": "named character reference: null character after the first character",
+      "input": "&a\u0000b",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","UnexpectedNullCharacter",3,3],
+        ["Character","&a\u0000b",0,4]
+      ]
+    },
+    {
+      "description": "named character reference: control character after the first character",
+      "input": "&a\u0001b",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",2,2],
+        ["Character","&a\u0001b",0,4]
+      ]
+    },
+    {
+      "description": "named character reference: C1 control character after the first character",
+      "input": "&a\u0085b",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",3,3],
+        ["Character","&a\u0085b",0,5]
+      ]
+    },
+    {
+      "description": "named character reference: noncharacter after the first character",
+      "input": "&a\uffffb",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","NoncharacterInInputStream",3,3],
+        ["Character","&a\uffffb",0,6]
+      ]
+    },
+    {
+      "description": "named character reference: non-ASCII character after the first character",
+      "input": "&a\u00e9b",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","&a\u00e9b",0,5]
+      ]
+    },
+    {
+      "description": "named character reference: semicolon after the first character",
+      "input": "&a;",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","UnknownNamedCharacterReference",3,3],
+        ["Character","&a;",0,3]
+      ]
+    },
+    {
+      "description": "named character reference: ampersand after the first character",
+      "input": "&a&amp;",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","&a&",0,6]
+      ]
+    },
+    {
+      "description": "named character reference: tag after the first character",
+      "input": "&a<b>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","&a",0,2],
+        ["StartTag","b",{},false,2,5]
+      ]
+    },
+    {
+      "description": "named character reference: control character after a digit",
+      "input": "&1\u0001",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",2,2],
+        ["Character","&1\u0001",0,3]
+      ]
+    },
+    {
+      "description": "named character reference: control character after the first character of nbsp",
+      "input": "&n\u0001bsp;",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",2,2],
+        ["Character","&n\u0001bsp;",0,7]
+      ]
+    },
+    {
+      "description": "named character reference: control character after the first two characters of nbsp",
+      "input": "&nb\u0001",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",3,3],
+        ["Character","&nb\u0001",0,4]
+      ]
+    },
+    {
+      "description": "named character reference: control character after a legacy name",
+      "input": "&amp\u0001",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",4,4],
+        ["Error","MissingSemicolonAfterCharacterReference",5,5],
+        ["Character","&\u0001",0,5]
+      ]
+    },
+    {
+      "description": "named character reference: control character after a name with semicolon",
+      "input": "&amp;\u0001",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",5,5],
+        ["Character","&\u0001",0,6]
+      ]
+    },
+    {
+      "description": "named character reference: CRLF after a legacy name",
+      "input": "&lt\r\n",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","MissingSemicolonAfterCharacterReference",4,4],
+        ["Character","<\n",0,5]
+      ]
+    },
+    {
+      "description": "named character reference: control character after a prefix of a longer name",
+      "input": "&notin\u0001",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","MissingSemicolonAfterCharacterReference",5,5],
+        ["Error","ControlCharacterInInputStream",5,5],
+        ["Character","\u00acin\u0001",0,7]
+      ]
+    },
+    {
+      "description": "named character reference: control character after the first character in a double-quoted attribute value",
+      "input": "<a b=\"&a\u0001\">",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",8,8],
+        ["StartTag","a",{"b":["&a\u0001",3,10]},false,0,11]
+      ]
+    },
+    {
+      "description": "named character reference: CRLF after the first character in a single-quoted attribute value",
+      "input": "<a b='&a\r\n'>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["StartTag","a",{"b":["&a\n",3,11]},false,0,12]
+      ]
+    },
+    {
+      "description": "named character reference: control character after the first character in an unquoted attribute value",
+      "input": "<a b=&a\u0001>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",7,7],
+        ["StartTag","a",{"b":["&a\u0001",3,9]},false,0,9]
+      ]
+    },
+    {
+      "description": "named character reference: carriage return after the first character in an unquoted attribute value",
+      "input": "<a b=&a\r>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["StartTag","a",{"b":["&a",3,8]},false,0,9]
+      ]
+    },
+    {
+      "description": "named character reference: closing quote after the first character",
+      "input": "<a b=\"&a\">",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["StartTag","a",{"b":["&a",3,9]},false,0,10]
+      ]
+    },
+    {
+      "description": "named character reference: closing angle bracket after the first character",
+      "input": "<a b=&a>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["StartTag","a",{"b":["&a",3,8]},false,0,8]
+      ]
+    },
+    {
+      "description": "named character reference: null character after the first character in an attribute value",
+      "input": "<a b=\"&a\u0000\">",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","UnexpectedNullCharacter",9,9],
+        ["StartTag","a",{"b":["&a\ufffd",3,10]},false,0,11]
+      ]
+    },
+    {
+      "description": "named character reference: end of input after the first character in an attribute value",
+      "input": "<a b=\"&a",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","EofInTag",8,8]
+      ]
+    },
+    {
+      "description": "named character reference: end of input after the first character in an unquoted attribute value",
+      "input": "<a b=&a",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","EofInTag",7,7]
+      ]
+    },
+    {
+      "description": "named character reference: duplicate attribute, control character after the first character",
+      "input": "<a b b=\"&a\u0001\">",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","DuplicateAttribute",5,6],
+        ["Error","ControlCharacterInInputStream",10,10],
+        ["StartTag","a",{"b":["",3,4]},false,0,13]
+      ]
+    },
+    {
+      "description": "named character reference: duplicate attribute, noncharacter after the first character",
+      "input": "<a b b='&a\uffff'>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","DuplicateAttribute",5,6],
+        ["Error","NoncharacterInInputStream",11,11],
+        ["StartTag","a",{"b":["",3,4]},false,0,15]
+      ]
+    },
+    {
+      "description": "named character reference: duplicate attribute, control character after the first character, unquoted",
+      "input": "<a b b=&n\u0001>",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","DuplicateAttribute",5,6],
+        ["Error","ControlCharacterInInputStream",9,9],
+        ["StartTag","a",{"b":["",3,4]},false,0,11]
+      ]
+    },
+    {
+      "description": "named character reference: duplicate attribute, control character after a legacy name",
+      "input": "<a b b=\"&amp\u0001\">",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","ControlCharacterInInputStream",12,12],
+        ["Error","MissingSemicolonAfterCharacterReference",13,13],
+        ["Error","DuplicateAttribute",5,6],
+        ["StartTag","a",{"b":["",3,4]},false,0,15]
+      ]
+    },
+    {
+      "description": "named character reference: control character after the first character in RCDATA",
+      "input": "<title>&a\u0001</title>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","title",{},false,0,7],
+        ["Error","ControlCharacterInInputStream",9,9],
+        ["Character","&a\u0001",7,10],
+        ["EndTag","title",10,18]
+      ]
+    },
+    {
+      "description": "named character reference: CRLF after the first character in RCDATA",
+      "input": "<textarea>&a\r\n</textarea>",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","textarea",{},false,0,10],
+        ["Character","&a\n",10,14],
+        ["EndTag","textarea",14,25]
+      ]
+    }
+  ]
+}

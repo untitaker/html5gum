@@ -1918,13 +1918,27 @@ pub(crate) mod states {
         let c = read_byte!(slf)?;
 
         let char_ref = match c {
-            Some(x) => try_read_character_reference(x as char, |x| slf.try_read_string(x, true))?
-                .map(|char_ref| (x, char_ref)),
+            Some(x) => match slf.peek_byte()? {
+                // Every name continues with an alphanumeric character, and consuming one cannot
+                // emit an error. So consume it, and only try the rest of the names that start
+                // with both characters.
+                Some(y) if y.is_ascii_alphanumeric() => {
+                    slf.read_peeked_byte()?;
+                    let char_ref = try_read_character_reference(x as char, y as char, |x| {
+                        slf.try_read_string(x, true)
+                    })?;
+                    if char_ref.is_none() {
+                        slf.unread_byte(Some(y));
+                    }
+                    char_ref.map(|char_ref| (x, y, char_ref))
+                }
+                _ => None,
+            },
 
             None => None,
         };
 
-        if let Some((x, char_ref)) = char_ref {
+        if let Some((x, y, char_ref)) = char_ref {
             let char_ref_name_last_character = char_ref.name.chars().last();
             let next_character = read_byte!(slf)?;
 
@@ -1941,7 +1955,7 @@ pub(crate) mod states {
                     .temporary_buffer
                     .extend(char_ref.characters.as_bytes());
             } else {
-                slf.machine_helper.temporary_buffer.extend(&[x]);
+                slf.machine_helper.temporary_buffer.extend(&[x, y]);
                 slf.machine_helper
                     .temporary_buffer
                     .extend(char_ref.name.as_bytes());
@@ -1957,7 +1971,24 @@ pub(crate) mod states {
             slf.machine_helper
                 .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
             slf.emitter.move_position(1);
-            reconsume_in!(slf, c, AmbiguousAmpersand)
+
+            if let Some(x) = c {
+                // The next character is still pending, because it was only peeked at or put back
+                // above, so `c` cannot be reconsumed. `c` is alphanumeric: emit it like the
+                // ambiguous ampersand state would, and let that state reconsume the next
+                // character instead.
+                debug_assert!(x.is_ascii_alphanumeric());
+                if slf.machine_helper.is_consumed_as_part_of_an_attribute() {
+                    slf.emitter.push_attribute_value(&[x]);
+                } else {
+                    slf.emitter.emit_string(&[x]);
+                }
+
+                let next_char = slf.read_peeked_byte()?;
+                reconsume_in!(slf, next_char, AmbiguousAmpersand)
+            } else {
+                reconsume_in!(slf, c, AmbiguousAmpersand)
+            }
         }
     });
 
