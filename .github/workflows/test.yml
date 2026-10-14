@@ -38,6 +38,25 @@ jobs:
       - run: cargo test --no-default-features
       - run: cargo test
       - run: cargo test --examples
+  msrv:
+    name: MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      # Cargo.lock is not committed, so select dependency versions that still support
+      # the MSRV declared in Cargo.toml before switching to that toolchain.
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.82.0"
+      - run: cargo +stable generate-lockfile --config 'resolver.incompatible-rust-versions="fallback"'
+      - run: cargo +1.82.0 test --locked --no-default-features
+      - run: cargo +1.82.0 test --locked
+      - run: cargo +1.82.0 test --locked --examples
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
