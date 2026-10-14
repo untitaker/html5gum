@@ -88,6 +88,11 @@ impl<S: SpanBound> Callback<Token<S>, S> for OurCallback<S> {
                 system_identifier: system_identifier.map(|x| x.to_owned().into()),
                 span,
             })),
+            CallbackEvent::ProcessingInstruction { target, data } => Some(Token::ProcessingInstruction(ProcessingInstruction {
+                target: target.to_owned().into(),
+                data: data.to_owned().into(),
+                span
+            })),
             CallbackEvent::Error(error) => Some(Token::Error(Spanned { value: error, span })),
         }
     }
@@ -186,6 +191,19 @@ pub struct Doctype<S: SpanBound> {
     pub span: Span<S>,
 }
 
+/// A processing intruction, like `<?target name="example" ?>`
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ProcessingInstruction<S: SpanBound> {
+    /// The processig instruction's target.
+    pub target: HtmlString,
+
+    /// The data of the processing instruction.
+    pub data: HtmlString,
+
+    /// The span of the processing instruction. Includes exactly `<?target ...>`.
+    pub span: Span<S>,
+}
+
 /// The token type used by default. You can define your own token type by implementing the
 /// [`crate::Emitter`] trait and using [`crate::Tokenizer::new_with_emitter`].
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -200,6 +218,8 @@ pub enum Token<S: SpanBound = ()> {
     Comment(Spanned<HtmlString, S>),
     /// A HTML doctype declaration.
     Doctype(Doctype<S>),
+    /// A HTML processing instruction.
+    ProcessingInstruction(ProcessingInstruction<S>),
     /// A HTML parsing error.
     ///
     /// Can be skipped over, the tokenizer is supposed to recover from the error and continues with
