@@ -7,7 +7,7 @@ use afl::{ijon_hashint, ijon_state};
 #[derive(Debug)]
 pub(crate) struct MachineState<R: Reader, E: Emitter> {
     #[allow(clippy::type_complexity)]
-    pub function: fn(&mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, R::Error>,
+    pub function: fn(&mut Tokenizer<R, E>, Reconsume) -> Result<ControlToken<R, E>, R::Error>,
     #[cfg(debug_assertions)]
     pub debug_name: &'static str,
 }
@@ -19,10 +19,19 @@ impl<R: Reader, E: Emitter> Clone for MachineState<R, E> {
     }
 }
 
+/// A character that the next state has to consume first, before reading from the input:
+/// `Some(Some(x))` for a byte, `Some(None)` for EOF, `None` for nothing.
+///
+/// The byte has already been preprocessed and validated, and the emitter's position is already
+/// after it. So consuming it does not change the position.
+#[allow(clippy::option_option)]
+pub(crate) type Reconsume = Option<Option<u8>>;
+
 pub(crate) enum ControlToken<R: Reader, E: Emitter> {
     Eof,
     Continue,
-    SwitchTo(MachineState<R, E>),
+    /// Switch to the state, which then reconsumes the character, if any.
+    SwitchTo(MachineState<R, E>, Reconsume),
 }
 
 impl<R: Reader, E: Emitter> ControlToken<R, E> {
@@ -32,9 +41,9 @@ impl<R: Reader, E: Emitter> ControlToken<R, E> {
         tokenizer: &mut Tokenizer<R, E>,
     ) -> Result<Self, R::Error> {
         match self {
-            ControlToken::SwitchTo(state) => {
+            ControlToken::SwitchTo(state, reconsume) => {
                 tokenizer.machine_helper.switch_to(state);
-                (state.function)(tokenizer)
+                (state.function)(tokenizer, reconsume)
             }
             _ => {
                 #[cfg(debug_assertions)]
@@ -185,7 +194,7 @@ pub(crate) use emit_current_tag_and_switch_to;
 macro_rules! switch_to {
     ($slf:expr, $state:ident) => {{
         let new_state = $crate::machine_helper::state_ref!($state);
-        Ok(ControlToken::SwitchTo(new_state))
+        Ok(ControlToken::SwitchTo(new_state, None))
     }};
 }
 
@@ -213,20 +222,33 @@ pub(crate) use exit_state;
 macro_rules! reconsume_in {
     ($slf:expr, $c:expr, $state:ident) => {{
         let new_state = $crate::machine_helper::state_ref!($state);
-        let c = $c;
-        $slf.unread_byte(c);
-        Ok(ControlToken::SwitchTo(new_state))
+        let c: Option<u8> = $c;
+        Ok(ControlToken::SwitchTo(new_state, Some(c)))
     }};
 }
 
 pub(crate) use reconsume_in;
 
+/// Like `reconsume_in!(...)?.inline_next_state(slf)`, but with a direct call, which is faster.
+///
+/// Inlining the next state must not create a cycle of direct calls (or LLVM stops inlining).
+///
+/// `machine_helper.state` is not updated: the next state ends by switching states anyway (or by
+/// returning `Eof`), so it must not depend on the current state, i.e. not use `enter_state!`.
+macro_rules! reconsume_in_inline {
+    ($slf:expr, $c:expr, $state:ident) => {{
+        let c: Option<u8> = $c;
+        crate::machine::states::$state::run($slf, Some(c))
+    }};
+}
+
+pub(crate) use reconsume_in_inline;
+
 macro_rules! reconsume_in_return_state {
     ($slf:expr, $c:expr) => {{
         let new_state = $slf.machine_helper.pop_return_state();
-        let c = $c;
-        $slf.unread_byte(c);
-        Ok(ControlToken::SwitchTo(new_state))
+        let c: Option<u8> = $c;
+        Ok(ControlToken::SwitchTo(new_state, Some(c)))
     }};
 }
 

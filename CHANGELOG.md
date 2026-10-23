@@ -5,6 +5,7 @@
 - Fix `CallbackEmitter` reporting unquoted attribute value spans that start one byte late. [PR 146](https://github.com/untitaker/html5gum/pull/146)
 - Fix spans of text that ends at EOF in the RCDATA, RAWTEXT, script data and character reference states, which ended one byte early. [PR 148](https://github.com/untitaker/html5gum/pull/148)
 - Speed up named character references such as `&amp;` by only trying names that start with the same two characters. [PR 150](https://github.com/untitaker/html5gum/pull/150)
+- Pass reconsumed characters to the next state by value instead of through the reader. This simplifies the reader and lets some states handle the reconsumed character without a round-trip through the state machine.
 
 # 0.8.4
 
