@@ -104,6 +104,15 @@ impl<R: Reader, E: Emitter> MachineHelper<R, E> {
         self.temporary_buffer.clear();
     }
 
+    pub(crate) fn convert_temporary_buffer_to_comment(&mut self, emitter: &mut E) {
+        emitter.init_comment();
+        emitter.push_comment(b"?");
+        emitter.push_comment(&self.temporary_buffer);
+        // NOTE: should this really be done? the flush_buffer_characters method does this but the
+        // spec doesn't specify it
+        self.temporary_buffer.clear();
+    }
+
     pub(crate) fn enter_state(&mut self, state: MachineState<R, E>, is_attribute: bool) {
         debug_assert!(self.return_state.is_none());
         let return_state = (self.state, is_attribute);

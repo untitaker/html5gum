@@ -125,6 +125,14 @@ pub enum CallbackEvent<'a> {
         force_quirks: bool,
     },
 
+    /// Visit a processing instruction, like `<?marker name="example" ?>`
+    ProcessingInstruction {
+        /// The target of the processing instruction.
+        target: &'a [u8],
+        /// The data of the processing instruction.
+        data: &'a [u8],
+    },
+
     /// Visit a parsing error.
     Error(Error),
 }
@@ -213,6 +221,9 @@ struct EmitterState<S: SpanBound> {
     doctype_public_identifier: Vec<u8>,
     doctype_system_identifier: Vec<u8>,
     doctype_force_quirks: bool,
+
+    processing_instruction_target: Vec<u8>,
+    processing_instruction_data: Vec<u8>,
 
     current_taglike_span: S,
     position: S,
@@ -512,6 +523,19 @@ where
         );
     }
 
+    fn emit_current_processing_instruction(&mut self) {
+        self.callback_state.emit_event(
+            CallbackEvent::ProcessingInstruction {
+                target: &self.emitter_state.processing_instruction_target,
+                data: &self.emitter_state.processing_instruction_data
+            },
+            Span {
+                start: self.emitter_state.current_taglike_span,
+                end: self.emitter_state.position,
+            },
+        );
+    }
+
     fn set_self_closing(&mut self) {
         trace_log!("set_self_closing");
         if matches!(self.emitter_state.current_tag_type, Some(CurrentTag::End)) {
@@ -553,6 +577,12 @@ where
         self.emitter_state.doctype_force_quirks = false;
     }
 
+    fn init_processing_instruction(&mut self) {
+        self.flush_current_characters();
+        self.emitter_state.processing_instruction_target.clear();
+        self.emitter_state.processing_instruction_data.clear();
+    }
+
     fn init_attribute(&mut self) {
         self.flush_open_start_tag();
         self.flush_attribute();
@@ -590,6 +620,14 @@ where
     }
     fn push_doctype_system_identifier(&mut self, value: &[u8]) {
         self.emitter_state.doctype_system_identifier.extend(value);
+    }
+
+    fn push_processing_instruction_target(&mut self, value: &[u8]) {
+        self.emitter_state.processing_instruction_target.extend(value);
+    }
+
+    fn push_processing_instruction_data(&mut self, value: &[u8]) {
+        self.emitter_state.processing_instruction_data.extend(value);
     }
 
     fn start_open_tag(&mut self) {
@@ -664,6 +702,12 @@ fn round_trip() {
                 rt.extend(b"-->");
             }
             CallbackEvent::Doctype { .. } => {}
+            CallbackEvent::ProcessingInstruction { target, data } => {
+                rt.extend(b"<?");
+                rt.extend(target);
+                rt.extend(data);
+                rt.extend(b"?>");
+            }
             CallbackEvent::Error(_) => {}
         }
 
