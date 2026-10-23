@@ -1,21 +1,24 @@
 use crate::entities::try_read_character_reference;
 use crate::machine_helper::{
     cont, emit_before, emit_current_tag_and_switch_to, enter_state, eof, error, error_immediate,
-    exit_state, mutate_character_reference, read_byte, reconsume_in, reconsume_in_return_state,
-    switch_to, ControlToken,
+    exit_state, mutate_character_reference, read_byte, reconsume_in, reconsume_in_inline,
+    reconsume_in_return_state, switch_to, ControlToken, Reconsume,
 };
 use crate::read_helper::{fast_read_char, slow_read_byte};
 use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str};
 use crate::{Emitter, Error, Reader, Tokenizer};
 
 macro_rules! define_state {
-    ($state:ident, $slf:ident, $($body:tt)*) => {
+    ($state:ident, $slf:ident, $reconsume_char:ident, $($body:tt)*) => {
         #[allow(non_snake_case)]
         pub(crate) mod $state {
             use super::*;
 
+            /// Run the state. It consumes the character to reconsume, if any, before reading from
+            /// the input, see `Reconsume`.
             #[inline(always)]
-            pub(crate) fn run<R: Reader, E: Emitter>($slf: &mut Tokenizer<R, E>) -> Result<ControlToken<R, E>, R::Error> {
+            #[allow(unused_variables, unused_mut)]
+            pub(crate) fn run<R: Reader, E: Emitter>($slf: &mut Tokenizer<R, E>, mut $reconsume_char: Reconsume) -> Result<ControlToken<R, E>, R::Error> {
                 $($body)*
             }
         }
@@ -25,10 +28,12 @@ macro_rules! define_state {
 pub(crate) mod states {
     use super::*;
 
-    define_state!(Data, slf, {
-        slf.emitter.init_string();
+    define_state!(Data, slf, reconsume_char, {
+        // The string starts at the character to reconsume, if any.
+        emit_before!(slf, reconsume_char.flatten(), slf.emitter.init_string());
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"&") => {
                     enter_state!(slf, CharacterReference, false)
@@ -53,10 +58,12 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(RcData, slf, {
-        slf.emitter.init_string();
+    define_state!(RcData, slf, reconsume_char, {
+        // The string starts at the character to reconsume, if any.
+        emit_before!(slf, reconsume_char.flatten(), slf.emitter.init_string());
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"&") => {
                     enter_state!(slf, CharacterReference, false)
@@ -81,9 +88,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(RawText, slf, {
+    define_state!(RawText, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"<") => {
                     slf.emitter.start_open_tag();
@@ -105,9 +113,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptData, slf, {
+    define_state!(ScriptData, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"<") => {
                     slf.emitter.start_open_tag();
@@ -129,9 +138,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(PlainText, slf, {
+    define_state!(PlainText, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"\0") => {
                     error!(slf, Error::UnexpectedNullCharacter);
@@ -149,9 +159,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(TagOpen, slf, {
+    define_state!(TagOpen, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'!') => {
                     switch_to!(slf, MarkupDeclarationOpen)
@@ -161,7 +172,7 @@ pub(crate) mod states {
                 }
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.init_start_tag();
-                    reconsume_in!(slf, Some(x), TagName)?.inline_next_state(slf)
+                    reconsume_in_inline!(slf, Some(x), TagName)
                 }
                 c @ Some(b'?') => {
                     error!(slf, Error::UnexpectedQuestionMarkInsteadOfTagName);
@@ -184,13 +195,14 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(EndTagOpen, slf, {
+    define_state!(EndTagOpen, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.init_end_tag();
-                    reconsume_in!(slf, Some(x), TagName)
+                    reconsume_in_inline!(slf, Some(x), TagName)
                 }
                 Some(b'>') => {
                     error!(slf, Error::MissingEndTagName);
@@ -210,9 +222,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(TagName, slf, {
+    define_state!(TagName, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
                     switch_to!(slf, BeforeAttributeName)
@@ -245,9 +258,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(RcDataLessThanSign, slf, {
+    define_state!(RcDataLessThanSign, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'/') => {
                     slf.machine_helper.temporary_buffer.clear();
@@ -261,9 +275,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(RcDataEndTagOpen, slf, {
+    define_state!(RcDataEndTagOpen, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.init_end_tag();
@@ -277,9 +292,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(RcDataEndTagName, slf, {
+    define_state!(RcDataEndTagName, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
                     if slf.emitter.current_is_appropriate_end_tag_token() =>
@@ -308,9 +324,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(RawTextLessThanSign, slf, {
+    define_state!(RawTextLessThanSign, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'/') => {
                     slf.machine_helper.temporary_buffer.clear();
@@ -324,9 +341,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(RawTextEndTagOpen, slf, {
+    define_state!(RawTextEndTagOpen, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.init_end_tag();
@@ -340,9 +358,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(RawTextEndTagName, slf, {
+    define_state!(RawTextEndTagName, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
                     if slf.emitter.current_is_appropriate_end_tag_token() =>
@@ -371,9 +390,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataLessThanSign, slf, {
+    define_state!(ScriptDataLessThanSign, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'/') => {
                     slf.machine_helper.temporary_buffer.clear();
@@ -391,9 +411,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEndTagOpen, slf, {
+    define_state!(ScriptDataEndTagOpen, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.init_end_tag();
@@ -407,9 +428,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEndTagName, slf, {
+    define_state!(ScriptDataEndTagName, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
                     if slf.emitter.current_is_appropriate_end_tag_token() =>
@@ -438,9 +460,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEscapeStart, slf, {
+    define_state!(ScriptDataEscapeStart, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     slf.emitter.emit_string(b"-");
@@ -453,9 +476,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEscapeStartDash, slf, {
+    define_state!(ScriptDataEscapeStartDash, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     slf.emitter.emit_string(b"-");
@@ -468,9 +492,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEscaped, slf, {
+    define_state!(ScriptDataEscaped, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"-") => {
                     slf.emitter.emit_string(b"-");
@@ -497,9 +522,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEscapedDash, slf, {
+    define_state!(ScriptDataEscapedDash, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     slf.emitter.emit_string(b"-");
@@ -526,9 +552,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEscapedDashDash, slf, {
+    define_state!(ScriptDataEscapedDashDash, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     slf.emitter.emit_string(b"-");
@@ -559,9 +586,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEscapedLessThanSign, slf, {
+    define_state!(ScriptDataEscapedLessThanSign, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'/') => {
                     slf.machine_helper.temporary_buffer.clear();
@@ -580,9 +608,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEscapedEndTagOpen, slf, {
+    define_state!(ScriptDataEscapedEndTagOpen, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x) if x.is_ascii_alphabetic() => {
                     slf.emitter.init_end_tag();
@@ -596,9 +625,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataEscapedEndTagName, slf, {
+    define_state!(ScriptDataEscapedEndTagName, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ')
                     if slf.emitter.current_is_appropriate_end_tag_token() =>
@@ -627,9 +657,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataDoubleEscapeStart, slf, {
+    define_state!(ScriptDataDoubleEscapeStart, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
                     slf.emitter.emit_string(&[x]);
@@ -653,9 +684,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataDoubleEscaped, slf, {
+    define_state!(ScriptDataDoubleEscaped, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"-") => {
                     slf.emitter.emit_string(b"-");
@@ -682,9 +714,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataDoubleEscapedDash, slf, {
+    define_state!(ScriptDataDoubleEscapedDash, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     slf.emitter.emit_string(b"-");
@@ -711,9 +744,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataDoubleEscapedDashDash, slf, {
+    define_state!(ScriptDataDoubleEscapedDashDash, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     slf.emitter.emit_string(b"-");
@@ -744,9 +778,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataDoubleEscapedLessThanSign, slf, {
+    define_state!(ScriptDataDoubleEscapedLessThanSign, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'/') => {
                     slf.machine_helper.temporary_buffer.clear();
@@ -760,9 +795,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(ScriptDataDoubleEscapeEnd, slf, {
+    define_state!(ScriptDataDoubleEscapeEnd, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x @ (b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>')) => {
                     slf.emitter.emit_string(&[x]);
@@ -787,13 +823,14 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(BeforeAttributeName, slf, {
+    define_state!(BeforeAttributeName, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 c @ (Some(b'/' | b'>') | None) => {
-                    reconsume_in!(slf, c, AfterAttributeName)?.inline_next_state(slf)
+                    reconsume_in_inline!(slf, c, AfterAttributeName)
                 }
                 Some(b'=') => {
                     error!(slf, Error::UnexpectedEqualsSignBeforeAttributeName);
@@ -803,18 +840,19 @@ pub(crate) mod states {
                 }
                 Some(x) => {
                     slf.emitter.init_attribute();
-                    reconsume_in!(slf, Some(x), AttributeName)?.inline_next_state(slf)
+                    reconsume_in_inline!(slf, Some(x), AttributeName)
                 }
             }
         )
     });
 
-    define_state!(AttributeName, slf, {
+    define_state!(AttributeName, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" " | b"/" | b">") => {
-                    reconsume_in!(slf, Some(xs.unwrap()[0]), AfterAttributeName)
+                    reconsume_in_inline!(slf, Some(xs.unwrap()[0]), AfterAttributeName)
                 }
                 Some(b"=") => {
                     switch_to!(slf, BeforeAttributeValue)?.inline_next_state(slf)
@@ -843,9 +881,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(AfterAttributeName, slf, {
+    define_state!(AfterAttributeName, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'/') => {
@@ -863,15 +902,18 @@ pub(crate) mod states {
                 }
                 Some(x) => {
                     slf.emitter.init_attribute();
+                    // Not reconsume_in_inline!, as AttributeName inlines this state, and a cycle
+                    // of direct calls makes LLVM stop inlining.
                     reconsume_in!(slf, Some(x), AttributeName)
                 }
             }
         )
     });
 
-    define_state!(BeforeAttributeValue, slf, {
+    define_state!(BeforeAttributeValue, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
@@ -902,9 +944,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(AttributeValueDoubleQuoted, slf, {
+    define_state!(AttributeValueDoubleQuoted, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"\"") => {
                     switch_to!(slf, AfterAttributeValueQuoted)?.inline_next_state(slf)
@@ -929,9 +972,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(AttributeValueSingleQuoted, slf, {
+    define_state!(AttributeValueSingleQuoted, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"'") => {
                     switch_to!(slf, AfterAttributeValueQuoted)
@@ -956,9 +1000,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(AttributeValueUnquoted, slf, {
+    define_state!(AttributeValueUnquoted, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
                     switch_to!(slf, BeforeAttributeName)
@@ -991,12 +1036,13 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(AfterAttributeValueQuoted, slf, {
+    define_state!(AfterAttributeValueQuoted, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 c @ (Some(b'\t' | b'\x0A' | b'\x0C' | b' ' | b'/' | b'>') | None) => {
-                    reconsume_in!(slf, c, BeforeAttributeName)?.inline_next_state(slf)
+                    reconsume_in_inline!(slf, c, BeforeAttributeName)
                 }
                 c => {
                     error!(slf, Error::MissingWhitespaceBetweenAttributes);
@@ -1006,9 +1052,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(SelfClosingStartTag, slf, {
+    define_state!(SelfClosingStartTag, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'>') => {
                     slf.emitter.set_self_closing();
@@ -1026,9 +1073,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(BogusComment, slf, {
+    define_state!(BogusComment, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b">") => {
                     slf.emitter.emit_current_comment();
@@ -1051,9 +1099,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(MarkupDeclarationOpen, slf, {
+    define_state!(MarkupDeclarationOpen, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') if slf.try_read_string("-", true)? => {
                     slf.emitter.init_comment();
@@ -1085,9 +1134,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CommentStart, slf, {
+    define_state!(CommentStart, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     switch_to!(slf, CommentStartDash)
@@ -1104,9 +1154,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CommentStartDash, slf, {
+    define_state!(CommentStartDash, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     switch_to!(slf, CommentEnd)
@@ -1129,9 +1180,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(Comment, slf, {
+    define_state!(Comment, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"<") => {
                     slf.emitter.push_comment(b"<");
@@ -1158,9 +1210,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CommentLessThanSign, slf, {
+    define_state!(CommentLessThanSign, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'!') => {
                     slf.emitter.push_comment(b"!");
@@ -1177,9 +1230,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CommentLessThanSignBang, slf, {
+    define_state!(CommentLessThanSignBang, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     switch_to!(slf, CommentLessThanSignBangDash)
@@ -1191,9 +1245,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CommentLessThanSignBangDash, slf, {
+    define_state!(CommentLessThanSignBangDash, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     switch_to!(slf, CommentLessThanSignBangDashDash)
@@ -1205,9 +1260,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CommentLessThanSignBangDashDash, slf, {
+    define_state!(CommentLessThanSignBangDashDash, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 c @ (Some(b'>') | None) => {
                     reconsume_in!(slf, c, CommentEnd)
@@ -1220,9 +1276,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CommentEndDash, slf, {
+    define_state!(CommentEndDash, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     switch_to!(slf, CommentEnd)
@@ -1240,9 +1297,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CommentEnd, slf, {
+    define_state!(CommentEnd, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'>') => {
                     slf.emitter.emit_current_comment();
@@ -1268,9 +1326,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CommentEndBang, slf, {
+    define_state!(CommentEndBang, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'-') => {
                     slf.emitter.push_comment(b"--!");
@@ -1294,9 +1353,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(Doctype, slf, {
+    define_state!(Doctype, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
                     switch_to!(slf, BeforeDoctypeName)
@@ -1319,9 +1379,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(BeforeDoctypeName, slf, {
+    define_state!(BeforeDoctypeName, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'\0') => {
@@ -1353,9 +1414,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(DoctypeName, slf, {
+    define_state!(DoctypeName, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"\t" | b"\x0A" | b"\x0C" | b" ") => {
                     switch_to!(slf, AfterDoctypeName)
@@ -1386,9 +1448,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(AfterDoctypeName, slf, {
+    define_state!(AfterDoctypeName, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'>') => {
@@ -1416,9 +1479,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(AfterDoctypePublicKeyword, slf, {
+    define_state!(AfterDoctypePublicKeyword, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
                     switch_to!(slf, BeforeDoctypePublicIdentifier)
@@ -1454,9 +1518,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(BeforeDoctypePublicIdentifier, slf, {
+    define_state!(BeforeDoctypePublicIdentifier, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
@@ -1488,9 +1553,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(DoctypePublicIdentifierDoubleQuoted, slf, {
+    define_state!(DoctypePublicIdentifierDoubleQuoted, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"\"") => {
                     switch_to!(slf, AfterDoctypePublicIdentifier)
@@ -1521,9 +1587,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(DoctypePublicIdentifierSingleQuoted, slf, {
+    define_state!(DoctypePublicIdentifierSingleQuoted, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"'") => {
                     switch_to!(slf, AfterDoctypePublicIdentifier)
@@ -1554,9 +1621,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(AfterDoctypePublicIdentifier, slf, {
+    define_state!(AfterDoctypePublicIdentifier, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
                     switch_to!(slf, BetweenDoctypePublicAndSystemIdentifiers)
@@ -1596,41 +1664,48 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(BetweenDoctypePublicAndSystemIdentifiers, slf, {
-        slow_read_byte!(
-            slf,
-            match c {
-                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
-                Some(b'>') => {
-                    slf.emitter.emit_current_doctype();
-                    switch_to!(slf, Data)
+    define_state!(
+        BetweenDoctypePublicAndSystemIdentifiers,
+        slf,
+        reconsume_char,
+        {
+            slow_read_byte!(
+                slf,
+                reconsume_char,
+                match c {
+                    Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                    Some(b'>') => {
+                        slf.emitter.emit_current_doctype();
+                        switch_to!(slf, Data)
+                    }
+                    Some(b'"') => {
+                        slf.emitter.set_doctype_system_identifier(b"");
+                        switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
+                    }
+                    Some(b'\'') => {
+                        slf.emitter.set_doctype_system_identifier(b"");
+                        switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
+                    }
+                    None => {
+                        error!(slf, Error::EofInDoctype);
+                        slf.emitter.set_force_quirks();
+                        slf.emitter.emit_current_doctype();
+                        eof!()
+                    }
+                    c @ Some(_) => {
+                        error!(slf, Error::MissingQuoteBeforeDoctypeSystemIdentifier);
+                        slf.emitter.set_force_quirks();
+                        reconsume_in!(slf, c, BogusDoctype)
+                    }
                 }
-                Some(b'"') => {
-                    slf.emitter.set_doctype_system_identifier(b"");
-                    switch_to!(slf, DoctypeSystemIdentifierDoubleQuoted)
-                }
-                Some(b'\'') => {
-                    slf.emitter.set_doctype_system_identifier(b"");
-                    switch_to!(slf, DoctypeSystemIdentifierSingleQuoted)
-                }
-                None => {
-                    error!(slf, Error::EofInDoctype);
-                    slf.emitter.set_force_quirks();
-                    slf.emitter.emit_current_doctype();
-                    eof!()
-                }
-                c @ Some(_) => {
-                    error!(slf, Error::MissingQuoteBeforeDoctypeSystemIdentifier);
-                    slf.emitter.set_force_quirks();
-                    reconsume_in!(slf, c, BogusDoctype)
-                }
-            }
-        )
-    });
+            )
+        }
+    );
 
-    define_state!(AfterDoctypeSystemKeyword, slf, {
+    define_state!(AfterDoctypeSystemKeyword, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => {
                     switch_to!(slf, BeforeDoctypeSystemIdentifier)
@@ -1666,9 +1741,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(BeforeDoctypeSystemIdentifier, slf, {
+    define_state!(BeforeDoctypeSystemIdentifier, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
@@ -1700,9 +1776,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(DoctypeSystemIdentifierDoubleQuoted, slf, {
+    define_state!(DoctypeSystemIdentifierDoubleQuoted, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"\"") => {
                     switch_to!(slf, AfterDoctypeSystemIdentifier)
@@ -1733,9 +1810,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(DoctypeSystemIdentifierSingleQuoted, slf, {
+    define_state!(DoctypeSystemIdentifierSingleQuoted, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"\'") => {
                     switch_to!(slf, AfterDoctypeSystemIdentifier)
@@ -1766,9 +1844,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(AfterDoctypeSystemIdentifier, slf, {
+    define_state!(AfterDoctypeSystemIdentifier, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'>') => {
@@ -1789,9 +1868,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(BogusDoctype, slf, {
+    define_state!(BogusDoctype, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b">") => {
                     slf.emitter.emit_current_doctype();
@@ -1812,9 +1892,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CdataSection, slf, {
+    define_state!(CdataSection, slf, reconsume_char, {
         fast_read_char!(
             slf,
+            reconsume_char,
             match xs {
                 Some(b"]") => {
                     switch_to!(slf, CdataSectionBracket)
@@ -1831,9 +1912,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CdataSectionBracket, slf, {
+    define_state!(CdataSectionBracket, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b']') => {
                     switch_to!(slf, CdataSectionEnd)
@@ -1846,9 +1928,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CdataSectionEnd, slf, {
+    define_state!(CdataSectionEnd, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(b']') => {
                     slf.emitter.emit_string(b"]");
@@ -1865,12 +1948,13 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(CharacterReference, slf, {
+    define_state!(CharacterReference, slf, reconsume_char, {
         slf.machine_helper.temporary_buffer.clear();
         slf.machine_helper.temporary_buffer.push(b'&');
 
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x) if x.is_ascii_alphanumeric() => {
                     reconsume_in!(slf, Some(x), NamedCharacterReference)
@@ -1892,25 +1976,39 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(NamedCharacterReference, slf, {
-        let c = read_byte!(slf)?;
+    define_state!(NamedCharacterReference, slf, reconsume_char, {
+        // `CharacterReference` reconsumes the first character in this state.
+        let c = match reconsume_char {
+            Some(c) => c,
+            None => read_byte!(slf)?,
+        };
+
+        // The character after `c`, which has only been read with `read_raw_byte`.
+        let mut next_raw = None;
 
         let char_ref = match c {
-            Some(x) => match slf.peek_byte()? {
-                // Every name continues with an alphanumeric character, and consuming one cannot
-                // emit an error. So consume it, and only try the rest of the names that start
-                // with both characters.
+            Some(x) => match slf.read_raw_byte()? {
+                // Every name continues with an alphanumeric character, so only try the rest of
+                // the names that start with both characters. Consuming `y` cannot emit an error,
+                // so it does not matter that this happens after reading the rest of the name.
                 Some(y) if y.is_ascii_alphanumeric() => {
-                    slf.read_peeked_byte()?;
-                    let char_ref = try_read_character_reference(x as char, y as char, |x| {
+                    match try_read_character_reference(x as char, y as char, |x| {
                         slf.try_read_string(x, true)
-                    })?;
-                    if char_ref.is_none() {
-                        slf.unread_byte(Some(y));
+                    })? {
+                        Some(char_ref) => {
+                            slf.consume_raw_byte(Some(y))?;
+                            Some((x, y, char_ref))
+                        }
+                        None => {
+                            next_raw = Some(y);
+                            None
+                        }
                     }
-                    char_ref.map(|char_ref| (x, y, char_ref))
                 }
-                _ => None,
+                y => {
+                    next_raw = y;
+                    None
+                }
             },
 
             None => None,
@@ -1953,10 +2051,9 @@ pub(crate) mod states {
             slf.emitter.move_position(1);
 
             if let Some(x) = c {
-                // The next character is still pending, because it was only peeked at or put back
-                // above, so `c` cannot be reconsumed. `c` is alphanumeric: emit it like the
-                // ambiguous ampersand state would, and let that state reconsume the next
-                // character instead.
+                // `c` cannot be reconsumed, as the next character has been read already. `c` is
+                // alphanumeric: emit it like the ambiguous ampersand state would, and let that
+                // state reconsume the next character instead.
                 debug_assert!(x.is_ascii_alphanumeric());
                 if slf.machine_helper.is_consumed_as_part_of_an_attribute() {
                     slf.emitter.push_attribute_value(&[x]);
@@ -1964,7 +2061,7 @@ pub(crate) mod states {
                     slf.emitter.emit_string(&[x]);
                 }
 
-                let next_char = slf.read_peeked_byte()?;
+                let next_char = slf.consume_raw_byte(next_raw)?;
                 reconsume_in!(slf, next_char, AmbiguousAmpersand)
             } else {
                 reconsume_in!(slf, c, AmbiguousAmpersand)
@@ -1972,9 +2069,10 @@ pub(crate) mod states {
         }
     });
 
-    define_state!(AmbiguousAmpersand, slf, {
+    define_state!(AmbiguousAmpersand, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x) if x.is_ascii_alphanumeric() => {
                     if slf.machine_helper.is_consumed_as_part_of_an_attribute() {
@@ -1996,11 +2094,12 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(NumericCharacterReference, slf, {
+    define_state!(NumericCharacterReference, slf, reconsume_char, {
         slf.machine_helper.character_reference_code = 0;
 
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x @ (b'x' | b'X')) => {
                     slf.machine_helper.temporary_buffer.push(x);
@@ -2023,9 +2122,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(HexadecimalCharacterReferenceStart, slf, {
+    define_state!(HexadecimalCharacterReferenceStart, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 c @ Some(b'0'..=b'9' | b'A'..=b'F' | b'a'..=b'f') => {
                     reconsume_in!(slf, c, HexadecimalCharacterReference)
@@ -2044,9 +2144,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(HexadecimalCharacterReference, slf, {
+    define_state!(HexadecimalCharacterReference, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x @ b'0'..=b'9') => {
                     mutate_character_reference!(slf, *16 + x - 0x0030);
@@ -2071,9 +2172,10 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(DecimalCharacterReference, slf, {
+    define_state!(DecimalCharacterReference, slf, reconsume_char, {
         slow_read_byte!(
             slf,
+            reconsume_char,
             match c {
                 Some(x @ b'0'..=b'9') => {
                     mutate_character_reference!(slf, *10 + x - 0x0030);
@@ -2090,7 +2192,15 @@ pub(crate) mod states {
         )
     });
 
-    define_state!(NumericCharacterReferenceEnd, slf, {
+    define_state!(NumericCharacterReferenceEnd, slf, reconsume_char, {
+        // This state does not consume anything, so the character to reconsume, if any, comes after
+        // the character reference. Step back over it.
+        let c = reconsume_char;
+        let is_consumed = matches!(c, Some(Some(_)));
+        if is_consumed {
+            slf.emitter.move_position(-1);
+        }
+
         match slf.machine_helper.character_reference_code {
             0x00 => {
                 error!(slf, Error::NullCharacterReference);
@@ -2154,6 +2264,14 @@ pub(crate) mod states {
         );
         slf.machine_helper
             .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-        exit_state!(slf)
+        if is_consumed {
+            slf.emitter.move_position(1);
+        }
+
+        // The character to reconsume, if any, is for the return state.
+        match c {
+            Some(c) => reconsume_in_return_state!(slf, c),
+            None => exit_state!(slf),
+        }
     });
 }

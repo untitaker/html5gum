@@ -6,8 +6,6 @@ use crate::Reader;
 pub(crate) struct ReadHelper<R: Reader> {
     pub(crate) reader: R,
     last_character_was_cr: bool,
-    #[allow(clippy::option_option)]
-    to_reconsume: Option<Option<u8>>,
 }
 
 impl<R: Reader> ReadHelper<R> {
@@ -15,7 +13,6 @@ impl<R: Reader> ReadHelper<R> {
         ReadHelper {
             reader,
             last_character_was_cr: false,
-            to_reconsume: None,
         }
     }
 
@@ -25,42 +22,32 @@ impl<R: Reader> ReadHelper<R> {
         char_validator: &mut CharValidator,
         emitter: &mut E,
     ) -> Result<Option<u8>, R::Error> {
-        if let Some(c) = self.to_reconsume.take() {
-            return Ok(c);
-        }
-
         let c = self.reader.read_byte();
         self.preprocess_byte(c, char_validator, emitter)
     }
 
-    /// Return the next byte without consuming it.
+    /// Read the next byte as it appears in the input, without preprocessing and validating it.
     ///
-    /// The byte is returned as it appears in the input, and it is only preprocessed and validated
-    /// once it is consumed. Unlike with `read_byte` followed by `unread_byte`, peeking at a byte
-    /// therefore does not change the order in which errors are emitted.
+    /// This allows to look at the next byte before deciding whether it is consumed. Unlike with
+    /// reading and later reconsuming it, this does not change the order in which errors are
+    /// emitted.
     ///
-    /// The byte has to be consumed with `read_peeked_byte` before reading anything else.
+    /// The byte has to be passed to `consume_raw_byte` before reading anything else.
     #[inline(always)]
-    pub(crate) fn peek_byte(&mut self) -> Result<Option<u8>, R::Error> {
-        debug_assert!(self.to_reconsume.is_none());
-        let c = self.reader.read_byte()?;
-        self.to_reconsume = Some(c);
-        Ok(c)
+    pub(crate) fn read_raw_byte(&mut self) -> Result<Option<u8>, R::Error> {
+        self.reader.read_byte()
     }
 
-    /// Like `read_byte`, but for use after `peek_byte`: the peeked byte is preprocessed and
-    /// validated exactly like it would have been if it had not been peeked at.
+    /// Preprocess and validate a byte returned by `read_raw_byte`, exactly like `read_byte` would
+    /// have done.
     #[inline]
-    pub(crate) fn read_peeked_byte<E: Emitter>(
+    pub(crate) fn consume_raw_byte<E: Emitter>(
         &mut self,
+        c: Option<u8>,
         char_validator: &mut CharValidator,
         emitter: &mut E,
     ) -> Result<Option<u8>, R::Error> {
-        let c = match self.to_reconsume.take() {
-            Some(c) => Ok(c),
-            None => self.reader.read_byte(),
-        };
-        self.preprocess_byte(c, char_validator, emitter)
+        self.preprocess_byte(Ok(c), char_validator, emitter)
     }
 
     /// Newline normalization and validation of a byte that was taken from the reader.
@@ -97,34 +84,17 @@ impl<R: Reader> ReadHelper<R> {
     pub(crate) fn try_read_string(
         &mut self,
         char_validator: &mut CharValidator,
-        mut s: &str,
+        s: &str,
         case_sensitive: bool,
     ) -> Result<bool, R::Error> {
         debug_assert!(!s.is_empty());
         debug_assert!(!s.contains('\r'));
 
-        let to_reconsume_bak = self.to_reconsume;
-        let mut bytes = s.as_bytes().iter();
-        if let Some(c) = self.to_reconsume.take() {
-            match (c, bytes.next()) {
-                (Some(x), Some(&x2))
-                    if x == x2 || (!case_sensitive && x.eq_ignore_ascii_case(&x2)) =>
-                {
-                    s = &s[1..];
-                }
-                _ => {
-                    self.to_reconsume = to_reconsume_bak;
-                    return Ok(false);
-                }
-            }
-        }
-
-        if s.is_empty() || self.reader.try_read_string(s.as_bytes(), case_sensitive)? {
+        if self.reader.try_read_string(s.as_bytes(), case_sensitive)? {
             self.last_character_was_cr = false;
             char_validator.reset();
             Ok(true)
         } else {
-            self.to_reconsume = to_reconsume_bak;
             Ok(false)
         }
     }
@@ -138,17 +108,6 @@ impl<R: Reader> ReadHelper<R> {
         char_buf: &'b mut [u8; 4],
     ) -> Result<Option<&'b [u8]>, R::Error> {
         const MAX_NEEDLE_LEN: usize = 13;
-
-        match self.to_reconsume.take() {
-            Some(Some(x)) => {
-                return Ok(Some({
-                    char_buf[0] = x;
-                    &char_buf[..1]
-                }))
-            }
-            Some(None) => return Ok(None),
-            None => (),
-        }
 
         let mut needle2 = [b'\0'; MAX_NEEDLE_LEN];
         // Assert that we will have space for adding \r
@@ -185,11 +144,6 @@ impl<R: Reader> ReadHelper<R> {
             }
         }
     }
-
-    #[inline]
-    pub(crate) fn unread_byte(&mut self, c: Option<u8>) {
-        self.to_reconsume = Some(c);
-    }
 }
 
 /// A version of `match read_helper.read_char()` that "knows" about matched characters, so it can
@@ -211,7 +165,7 @@ impl<R: Reader> ReadHelper<R> {
 /// }
 ///
 /// fn after<R: Reader>(slf: &mut Tokenizer<R>) {
-///     fast_read_char!(slf, emitter, match xs {
+///     fast_read_char!(slf, reconsume_char, match xs {
 ///         Some("<") => {
 ///             todo!()
 ///         }
@@ -225,22 +179,30 @@ impl<R: Reader> ReadHelper<R> {
 /// }
 /// ```
 macro_rules! fast_read_char {
-    ($slf:expr, match $read_char:ident {
+    ($slf:expr, $reconsume_char:ident, match $read_char:ident {
         $(Some($($lit:literal)|*) => $arm:block)*
         Some($xs:ident) => $catchall:block
         None => $eof_catchall:block
     }) => { loop {
         let mut char_buf = [0; 4];
-        let $read_char = $crate::Tokenizer::read_until(
-            &mut $slf.reader,
-            &[ $($({
-                debug_assert_eq!($lit.len(), 1);
-                $lit[0]
-            }),*),* ],
-            &mut $slf.validator,
-            &mut $slf.emitter,
-            &mut char_buf,
-        )?;
+        let $read_char = match $reconsume_char.take() {
+            // A character to reconsume, passed to the state by value.
+            Some(Some(x)) => {
+                char_buf[0] = x;
+                Some(&char_buf[..1])
+            }
+            Some(None) => None,
+            None => $crate::Tokenizer::read_until(
+                &mut $slf.reader,
+                &[ $($({
+                    debug_assert_eq!($lit.len(), 1);
+                    $lit[0]
+                }),*),* ],
+                &mut $slf.validator,
+                &mut $slf.emitter,
+                &mut char_buf,
+            )?,
+        };
         break match $read_char {
             $(
                 Some($($lit)|*) => {
@@ -271,15 +233,18 @@ macro_rules! fast_read_char {
 pub(crate) use fast_read_char;
 
 macro_rules! slow_read_byte {
-    ($slf:expr, match c {
+    ($slf:expr, $reconsume_char:ident, match c {
         $($tt:tt)*
-    }) => {
-        loop {
-            break match $slf.read_byte()? {
-                $($tt)*
-            };
-        }
-    };
+    }) => { loop {
+        let c = match $reconsume_char.take() {
+            // A character to reconsume, passed to the state by value.
+            Some(c) => c,
+            None => $slf.read_byte()?,
+        };
+        break match c {
+            $($tt)*
+        };
+    } };
 }
 
 pub(crate) use slow_read_byte;
