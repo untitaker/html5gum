@@ -178,21 +178,9 @@ impl<'a> Reader for StringReader<'a> {
             return Ok(None);
         }
 
-        if let Some(needle_pos) = fast_find(needle, self.input) {
-            if needle_pos == 0 {
-                let (rv, new_input) = self.input.split_at(1);
-                self.input = new_input;
-                Ok(Some(rv))
-            } else {
-                let (rv, new_input) = self.input.split_at(needle_pos);
-                self.input = new_input;
-                Ok(Some(rv))
-            }
-        } else {
-            let rv = self.input;
-            self.input = b"";
-            Ok(Some(rv))
-        }
+        let (rv, rest) = split_chunk(needle, self.input);
+        self.input = rest;
+        Ok(Some(rv))
     }
 
     #[inline(always)]
@@ -401,17 +389,10 @@ impl<R: Read, Buffer: AsRef<[u8]> + AsMut<[u8]>> Reader for IoReader<R, Buffer> 
         let buf = &self.buf.as_ref()[self.read_cursor..self.write_cursor];
         if buf.is_empty() {
             Ok(None)
-        } else if let Some(needle_pos) = fast_find(needle, buf) {
-            if needle_pos == 0 {
-                self.read_cursor += 1;
-                Ok(Some(&buf[..1]))
-            } else {
-                self.read_cursor += needle_pos;
-                Ok(Some(&buf[..needle_pos]))
-            }
         } else {
-            self.read_cursor += buf.len();
-            Ok(Some(buf))
+            let (rv, _) = split_chunk(needle, buf);
+            self.read_cursor += rv.len();
+            Ok(Some(rv))
         }
     }
 }
@@ -424,17 +405,281 @@ impl<'a> Readable<'a> for File {
     }
 }
 
-#[inline]
-fn fast_find(needle: &[u8], haystack: &[u8]) -> Option<usize> {
+/// Split `haystack` into the chunk that `read_until` returns and the rest: the first byte alone if
+/// it is in `needle`, otherwise everything before the first byte that is in `needle` (the whole
+/// haystack if there is none).
+///
+/// The split has to be exact, and not just somewhere before the first needle byte: chunk
+/// boundaries are observable, for example in the spans of character errors.
+#[inline(always)]
+fn split_chunk<'a>(needle: &[u8], haystack: &'a [u8]) -> (&'a [u8], &'a [u8]) {
     #[cfg(feature = "jetscii")]
     {
         debug_assert!(needle.len() <= 16);
         let mut needle_arr = [0; 16];
         needle_arr[..needle.len()].copy_from_slice(needle);
         #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-        jetscii::Bytes::new(needle_arr, needle.len() as i32, |b| needle.contains(&b)).find(haystack)
+        let pos = jetscii::Bytes::new(needle_arr, needle.len() as i32, |b| needle.contains(&b))
+            .find(haystack);
+        match pos {
+            Some(pos) => haystack.split_at(pos.max(1)),
+            None => (haystack, &[]),
+        }
     }
 
     #[cfg(not(feature = "jetscii"))]
-    haystack.iter().position(|b| needle.contains(b))
+    swar_split_chunk(needle, haystack)
+}
+
+/// Portable "SIMD within a register" implementation of `split_chunk`, processing 8 bytes at a
+/// time.
+///
+/// The search runs a list of tests on every 8-byte word `x`. A test `(m, c, n)` flags the bytes `b`
+/// with `(b & m) ^ c < n`: with `y = (x & splat(m)) ^ splat(c)`, that is
+/// `y.wrapping_sub(splat(n)) & !y & HI` (for `n <= 0x80`). That formula can produce false
+/// positives, but only in bytes *above* a truly flagged byte (they are caused by the borrow out of
+/// that byte), so the lowest flagged byte is always exact. OR-ing the results of all tests keeps
+/// that property: the lowest flagged byte of the union is the lowest of the per-test lowest flagged
+/// bytes, each of which is exact. Words are loaded little-endian so that the lowest byte is the
+/// first one in memory.
+///
+/// A needle byte `b` can always be tested on its own with `(0xff, b, 1)`. To need fewer tests per
+/// word, some groups of needle bytes are tested together, but the combined tests also flag some
+/// bytes that are not in `needle`. So the lowest flagged byte is verified, and if it is not in
+/// `needle`, the rest of the haystack is searched with one exact test per needle byte.
+#[inline(always)]
+#[cfg(any(test, not(feature = "jetscii")))]
+fn swar_split_chunk<'a>(needle: &[u8], haystack: &'a [u8]) -> (&'a [u8], &'a [u8]) {
+    // Very often the delimiter is the very first byte, so check that cheaply before doing any word
+    // setup.
+    match haystack.first() {
+        None => return (haystack, haystack),
+        Some(first) if needle.contains(first) => return haystack.split_at(1),
+        Some(_) => {}
+    }
+
+    // This only depends on `needle`, which is a constant after inlining, so the tests are computed
+    // at compile time.
+    let mut tests = [(0xff, 0, 1); 16];
+    let mut num_tests = 0;
+    // States that stop at all whitespace test for `b < 0x21` instead of testing whitespace, NUL and
+    // CR individually. This also flags other control characters, which are rare.
+    let low = needle.contains(&b'\t')
+        && needle.contains(&b'\n')
+        && needle.contains(&b'\x0c')
+        && needle.contains(&b' ');
+    if low {
+        tests[num_tests] = (0xff, 0, 0x21);
+        num_tests += 1;
+    }
+    // Most states stop at NUL and CR (which are rare), but not at tab or LF (which may be
+    // frequent). `b & 0xf2 == 0` flags NUL and CR, but also 0x01, 0x04, 0x05, 0x08, tab and 0x0c,
+    // and no other byte.
+    let nul_cr = !low && needle.contains(&0) && needle.contains(&b'\r');
+    if nul_cr {
+        tests[num_tests] = (0xf2, 0, 1);
+        num_tests += 1;
+    }
+    for &b in needle {
+        if !(low && b < 0x21) && !(nul_cr && (b == 0 || b == b'\r')) {
+            tests[num_tests] = (0xff, b, 1);
+            num_tests += 1;
+        }
+    }
+
+    // The first byte is known not to be in `needle`, but words are cheaper to load from offset 0.
+    match swar_scan(needle, &tests[..num_tests], haystack, 0, low || nul_cr) {
+        Ok(rv) => rv,
+        Err(false_candidate) => {
+            let mut exact = [(0xff, 0, 1); 16];
+            for (test, &b) in exact.iter_mut().zip(needle) {
+                test.1 = b;
+            }
+            match swar_scan(
+                needle,
+                &exact[..needle.len()],
+                haystack,
+                false_candidate + 1,
+                false,
+            ) {
+                Ok(rv) => rv,
+                // Exact tests do not produce false candidates.
+                Err(_) => unreachable!(),
+            }
+        }
+    }
+}
+
+/// Run the tests on one word, see `swar_split_chunk`.
+#[inline(always)]
+#[cfg(any(test, not(feature = "jetscii")))]
+fn swar_word(tests: &[(u8, u8, u8)], chunk: &[u8; 8]) -> u64 {
+    const LO: u64 = u64::from_ne_bytes([0x01; 8]);
+    const HI: u64 = u64::from_ne_bytes([0x80; 8]);
+
+    let x = u64::from_le_bytes(*chunk);
+    let mut found = 0;
+    for &(m, c, n) in tests {
+        let y = (x & (LO * u64::from(m))) ^ (LO * u64::from(c));
+        found |= y.wrapping_sub(LO * u64::from(n)) & !y & HI;
+    }
+    found
+}
+
+/// Search `haystack[offset..]` with the given tests and split `haystack` at the first flagged byte,
+/// see `swar_split_chunk`. If `verify` is set and the lowest flagged byte is not actually in
+/// `needle`, its position is returned as `Err`.
+#[inline(always)]
+#[cfg(any(test, not(feature = "jetscii")))]
+fn swar_scan<'a>(
+    needle: &[u8],
+    tests: &[(u8, u8, u8)],
+    haystack: &'a [u8],
+    mut offset: usize,
+    verify: bool,
+) -> Result<(&'a [u8], &'a [u8]), usize> {
+    // Most chunks are short, so check one word before checking two at a time.
+    if let Some(chunk) = haystack.get(offset..).and_then(|rest| rest.first_chunk()) {
+        let found = swar_word(tests, chunk);
+        if found != 0 {
+            let pos = offset + (found.trailing_zeros() / 8) as usize;
+            if verify && !needle.contains(&haystack[pos]) {
+                return Err(pos);
+            }
+            return Ok(haystack.split_at(pos));
+        }
+        offset += 8;
+    }
+
+    let mut chunks = haystack[offset..].chunks_exact(16);
+    for chunk in &mut chunks {
+        let found0 = swar_word(tests, chunk.first_chunk().unwrap());
+        let found1 = swar_word(tests, chunk.last_chunk().unwrap());
+        if found0 | found1 != 0 {
+            let pos = offset
+                + if found0 != 0 {
+                    (found0.trailing_zeros() / 8) as usize
+                } else {
+                    8 + (found1.trailing_zeros() / 8) as usize
+                };
+            if verify && !needle.contains(&haystack[pos]) {
+                return Err(pos);
+            }
+            return Ok(haystack.split_at(pos));
+        }
+        offset += 16;
+    }
+
+    match chunks.remainder().iter().position(|b| needle.contains(b)) {
+        Some(i) => Ok(haystack.split_at(offset + i)),
+        None => Ok((haystack, &[])),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{split_chunk, swar_split_chunk};
+    use proptest::prelude::*;
+
+    /// The needles used by the tokenizer, plus some that provoke SWAR edge cases.
+    const NEEDLES: &[&[u8]] = &[
+        b"\r",
+        b"<\r",
+        b"&<\r",
+        b"\0\r",
+        b"\x01\r",
+        b"\x80\r",
+        b"\xff\x7f\r",
+        b"\t\n\x0c />\0\r",
+        b"\t\n\x0c \"&'<=>`\0\r",
+        b"\"&\0\r",
+        b"&<\0\r",
+        b"\t\n\x0c \r",
+        b"\t\n\x0c >\0\r",
+        b"\t\n\x0c />=\0\"'<\r",
+    ];
+
+    fn naive_split_chunk<'a>(needle: &[u8], haystack: &'a [u8]) -> (&'a [u8], &'a [u8]) {
+        match haystack.iter().position(|b| needle.contains(b)) {
+            Some(pos) => haystack.split_at(pos.max(1)),
+            None => (haystack, &[]),
+        }
+    }
+
+    fn check(needle: &[u8], haystack: &[u8]) {
+        let expected = naive_split_chunk(needle, haystack);
+        assert_eq!(
+            swar_split_chunk(needle, haystack),
+            expected,
+            "swar_split_chunk needle={needle:?} haystack={haystack:?}"
+        );
+        assert_eq!(
+            split_chunk(needle, haystack),
+            expected,
+            "split_chunk needle={needle:?} haystack={haystack:?}"
+        );
+    }
+
+    #[test]
+    fn needle_at_every_offset() {
+        // Filler bytes chosen to provoke SWAR edge cases: bytes adjacent to needle bytes (0x01 and
+        // 0x81 next to 0x00 and 0x80), high-bit bytes, and bytes that differ by one from a needle.
+        let fillers: &[u8] = &[
+            b'a', 0x00, 0x01, 0x02, 0x04, 0x05, 0x08, b'\t', 0x0c, 0x0e, 0x1f, b' ', b'!', 0x7f,
+            0x80, 0x81, 0x8d, 0xa1, 0xfe, 0xff,
+        ];
+
+        for needle in NEEDLES {
+            for len in 0..60 {
+                for &filler in fillers {
+                    let haystack = vec![filler; len];
+                    check(needle, &haystack);
+                    for pos in 0..len {
+                        for &hit in *needle {
+                            let mut h = haystack.clone();
+                            h[pos] = hit;
+                            check(needle, &h);
+                            if pos + 1 < len {
+                                // a byte next to a needle byte, then also a second hit later
+                                h[pos + 1] = 0x01;
+                                check(needle, &h);
+                                h[len - 1] = hit;
+                                check(needle, &h);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// A needle, and a haystack biased towards needle bytes, their neighbours and control
+    /// characters (which the grouped tests in `swar_split_chunk` flag as candidates).
+    fn needle_and_haystack() -> impl Strategy<Value = (Vec<u8>, Vec<u8>)> {
+        prop_oneof![
+            prop::sample::select(NEEDLES).prop_map(<[u8]>::to_vec),
+            prop::collection::vec(any::<u8>(), 1..=13),
+        ]
+        .prop_flat_map(|needle| {
+            let byte = prop_oneof![
+                prop::sample::select(needle.clone()),
+                prop::sample::select(needle.clone()).prop_map(|b| b.wrapping_add(1)),
+                prop::sample::select(needle.clone()).prop_map(|b| b ^ 0x80),
+                0u8..0x23,
+                any::<u8>(),
+            ];
+            (Just(needle), prop::collection::vec(byte, 0..80))
+        })
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(10_000))]
+
+        #[test]
+        fn matches_naive_find((needle, haystack) in needle_and_haystack()) {
+            let expected = naive_split_chunk(&needle, &haystack);
+            prop_assert_eq!(swar_split_chunk(&needle, &haystack), expected);
+            prop_assert_eq!(split_chunk(&needle, &haystack), expected);
+        }
+    }
 }

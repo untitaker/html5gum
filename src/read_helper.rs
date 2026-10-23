@@ -127,19 +127,24 @@ impl<R: Reader> ReadHelper<R> {
             Some(mut xs) => {
                 char_validator.validate_bytes(emitter, xs);
 
-                if self.last_character_was_cr && xs.starts_with(b"\n") {
-                    // TODO: we are scattering move_position in the read
-                    // path across many places: read helper, tokenizer.rs,
-                    // ... consolidate!
-                    emitter.move_position(1);
-                    xs = &xs[1..];
+                // Only store when the flag is set: this runs for every chunk.
+                if self.last_character_was_cr {
+                    if xs.starts_with(b"\n") {
+                        // TODO: we are scattering move_position in the read
+                        // path across many places: read helper, tokenizer.rs,
+                        // ... consolidate!
+                        emitter.move_position(1);
+                        xs = &xs[1..];
+                    }
+                    self.last_character_was_cr = false;
                 }
 
-                self.last_character_was_cr = false;
                 Ok(Some(xs))
             }
             None => {
-                self.last_character_was_cr = false;
+                if self.last_character_was_cr {
+                    self.last_character_was_cr = false;
+                }
                 Ok(None)
             }
         }

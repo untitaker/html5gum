@@ -6,6 +6,7 @@
 - Fix spans of text that ends at EOF in the RCDATA, RAWTEXT, script data and character reference states, which ended one byte early. [PR 148](https://github.com/untitaker/html5gum/pull/148)
 - Speed up named character references such as `&amp;` by only trying names that start with the same two characters. [PR 150](https://github.com/untitaker/html5gum/pull/150)
 - Pass reconsumed characters to the next state by value instead of through the reader. This simplifies the reader and lets some states handle the reconsumed character without a round-trip through the state machine.
+- Search for delimiters with a portable SWAR implementation, which processes 8 bytes at a time, and make `jetscii` an optional feature that is disabled by default. The new search is faster than jetscii except when SSE4.2 is enabled at compile time.
 
 # 0.8.4
 
