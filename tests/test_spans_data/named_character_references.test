@@ -90,7 +90,7 @@
       "input": "&a&amp;",
       "naively_switch_states": false,
       "expected_tokens": [
-        ["Character","&a&",0,6]
+        ["Character","&a&",0,7]
       ]
     },
     {
