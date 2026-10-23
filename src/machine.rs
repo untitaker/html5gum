@@ -1,8 +1,8 @@
 use crate::entities::try_read_character_reference;
 use crate::machine_helper::{
-    cont, emit_current_tag_and_switch_to, enter_state, eof, error, error_immediate, exit_state,
-    mutate_character_reference, read_byte, reconsume_in, reconsume_in_return_state, switch_to,
-    ControlToken,
+    cont, emit_before, emit_current_tag_and_switch_to, enter_state, eof, error, error_immediate,
+    exit_state, mutate_character_reference, read_byte, reconsume_in, reconsume_in_return_state,
+    switch_to, ControlToken,
 };
 use crate::read_helper::{fast_read_char, slow_read_byte};
 use crate::utils::{ctostr, noncharacter_pat, surrogate_pat, with_lowercase_str};
@@ -254,9 +254,7 @@ pub(crate) mod states {
                     switch_to!(slf, RcDataEndTagOpen)
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"<");
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, slf.emitter.emit_string(b"<"));
                     reconsume_in!(slf, c, RcData)
                 }
             }
@@ -272,9 +270,7 @@ pub(crate) mod states {
                     reconsume_in!(slf, Some(x), RcDataEndTagName)
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"</");
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, slf.emitter.emit_string(b"</"));
                     reconsume_in!(slf, c, RcData)
                 }
             }
@@ -302,10 +298,10 @@ pub(crate) mod states {
                     cont!()
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"</");
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, {
+                        slf.emitter.emit_string(b"</");
+                        slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    });
                     reconsume_in!(slf, c, RcData)
                 }
             }
@@ -321,9 +317,7 @@ pub(crate) mod states {
                     switch_to!(slf, RawTextEndTagOpen)
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"<");
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, slf.emitter.emit_string(b"<"));
                     reconsume_in!(slf, c, RawText)
                 }
             }
@@ -339,9 +333,7 @@ pub(crate) mod states {
                     reconsume_in!(slf, Some(x), RawTextEndTagName)
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"</");
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, slf.emitter.emit_string(b"</"));
                     reconsume_in!(slf, c, RawText)
                 }
             }
@@ -369,10 +361,10 @@ pub(crate) mod states {
                     cont!()
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"</");
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, {
+                        slf.emitter.emit_string(b"</");
+                        slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    });
                     reconsume_in!(slf, c, RawText)
                 }
             }
@@ -392,9 +384,7 @@ pub(crate) mod states {
                     switch_to!(slf, ScriptDataEscapeStart)
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"<");
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, slf.emitter.emit_string(b"<"));
                     reconsume_in!(slf, c, ScriptData)
                 }
             }
@@ -410,9 +400,7 @@ pub(crate) mod states {
                     reconsume_in!(slf, Some(x), ScriptDataEndTagName)
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"</");
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, slf.emitter.emit_string(b"</"));
                     reconsume_in!(slf, c, ScriptData)
                 }
             }
@@ -440,10 +428,10 @@ pub(crate) mod states {
                     cont!()
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"</");
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, {
+                        slf.emitter.emit_string(b"</");
+                        slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    });
                     reconsume_in!(slf, c, ScriptData)
                 }
             }
@@ -585,9 +573,7 @@ pub(crate) mod states {
                     reconsume_in!(slf, Some(x), ScriptDataDoubleEscapeStart)
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"<");
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, slf.emitter.emit_string(b"<"));
                     reconsume_in!(slf, c, ScriptDataEscaped)
                 }
             }
@@ -603,9 +589,7 @@ pub(crate) mod states {
                     reconsume_in!(slf, Some(x), ScriptDataEscapedEndTagName)
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"</");
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, slf.emitter.emit_string(b"</"));
                     reconsume_in!(slf, c, ScriptDataEscaped)
                 }
             }
@@ -633,10 +617,10 @@ pub(crate) mod states {
                     cont!()
                 }
                 c => {
-                    slf.emitter.move_position(-1);
-                    slf.emitter.emit_string(b"</");
-                    slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
-                    slf.emitter.move_position(1);
+                    emit_before!(slf, c, {
+                        slf.emitter.emit_string(b"</");
+                        slf.machine_helper.flush_buffer_characters(&mut slf.emitter);
+                    });
                     reconsume_in!(slf, c, ScriptDataEscaped)
                 }
             }
@@ -1896,18 +1880,12 @@ pub(crate) mod states {
                     switch_to!(slf, NumericCharacterReference)
                 }
                 c => {
-                    // since c is not part of the flushed characters, we temporarily undo the
-                    // move_position done by slow_read_byte, then redo it, then let reconsume
-                    // re-undo the redo.
-                    //
-                    // 1. move_position(-1) // revert slow_read_byte
-                    // 2. flush code points
-                    // 3. move_position(1)
-                    // 4. reconsume: move_position(-1)
-                    slf.emitter.move_position(-1);
-                    slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                    slf.emitter.move_position(1);
+                    emit_before!(
+                        slf,
+                        c,
+                        slf.machine_helper
+                            .flush_code_points_consumed_as_character_reference(&mut slf.emitter)
+                    );
                     reconsume_in_return_state!(slf, c)
                 }
             }
@@ -1947,10 +1925,12 @@ pub(crate) mod states {
                     .extend(char_ref.name.as_bytes());
             }
 
-            slf.emitter.move_position(-1);
-            slf.machine_helper
-                .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-            slf.emitter.move_position(1);
+            emit_before!(
+                slf,
+                next_character,
+                slf.machine_helper
+                    .flush_code_points_consumed_as_character_reference(&mut slf.emitter)
+            );
             reconsume_in_return_state!(slf, next_character)
         } else {
             slf.emitter.move_position(-1);
@@ -2000,10 +1980,12 @@ pub(crate) mod states {
                 }
                 c => {
                     error!(slf, Error::AbsenceOfDigitsInNumericCharacterReference);
-                    slf.emitter.move_position(-1);
-                    slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                    slf.emitter.move_position(1);
+                    emit_before!(
+                        slf,
+                        c,
+                        slf.machine_helper
+                            .flush_code_points_consumed_as_character_reference(&mut slf.emitter)
+                    );
                     reconsume_in_return_state!(slf, c)
                 }
             }
@@ -2019,10 +2001,12 @@ pub(crate) mod states {
                 }
                 c => {
                     error!(slf, Error::AbsenceOfDigitsInNumericCharacterReference);
-                    slf.emitter.move_position(-1);
-                    slf.machine_helper
-                        .flush_code_points_consumed_as_character_reference(&mut slf.emitter);
-                    slf.emitter.move_position(1);
+                    emit_before!(
+                        slf,
+                        c,
+                        slf.machine_helper
+                            .flush_code_points_consumed_as_character_reference(&mut slf.emitter)
+                    );
                     reconsume_in_return_state!(slf, c)
                 }
             }

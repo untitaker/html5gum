@@ -232,6 +232,23 @@ macro_rules! reconsume_in_return_state {
 
 pub(crate) use reconsume_in_return_state;
 
+/// Emit what comes before `c`, the character that was just read, at the position where `c`
+/// starts. At EOF nothing was consumed, so there is nothing to step back over.
+macro_rules! emit_before {
+    ($slf:expr, $c:expr, $emit:expr) => {{
+        let is_consumed = $c.is_some();
+        if is_consumed {
+            $slf.emitter.move_position(-1);
+        }
+        $emit;
+        if is_consumed {
+            $slf.emitter.move_position(1);
+        }
+    }};
+}
+
+pub(crate) use emit_before;
+
 macro_rules! cont {
     () => {{
         continue;

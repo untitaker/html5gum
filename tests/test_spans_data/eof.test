@@ -1,0 +1,150 @@
+{
+  "tests": [
+    {
+      "description": "EOF in RCDATA less-than sign state",
+      "input": "<title>a<",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","title",{},false,0,7],
+        ["Character","a<",7,9]
+      ]
+    },
+    {
+      "description": "EOF in RCDATA end tag open state",
+      "input": "<title>a</",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","title",{},false,0,7],
+        ["Character","a</",7,10]
+      ]
+    },
+    {
+      "description": "EOF in RCDATA end tag name state",
+      "input": "<title>a</ti",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","title",{},false,0,7],
+        ["Character","a</ti",7,12]
+      ]
+    },
+    {
+      "description": "EOF in RAWTEXT less-than sign state",
+      "input": "<style>a<",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","style",{},false,0,7],
+        ["Character","a<",7,9]
+      ]
+    },
+    {
+      "description": "EOF in RAWTEXT end tag open state",
+      "input": "<style>a</",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","style",{},false,0,7],
+        ["Character","a</",7,10]
+      ]
+    },
+    {
+      "description": "EOF in RAWTEXT end tag name state",
+      "input": "<style>a</st",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","style",{},false,0,7],
+        ["Character","a</st",7,12]
+      ]
+    },
+    {
+      "description": "EOF in script data less-than sign state",
+      "input": "<script>a<",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","a<",8,10]
+      ]
+    },
+    {
+      "description": "EOF in script data end tag open state",
+      "input": "<script>a</",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","a</",8,11]
+      ]
+    },
+    {
+      "description": "EOF in script data end tag name state",
+      "input": "<script>a</sc",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Character","a</sc",8,13]
+      ]
+    },
+    {
+      "description": "EOF in script data escaped less-than sign state",
+      "input": "<script><!--a<",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Error","EofInScriptHtmlCommentLikeText",14,14],
+        ["Character","<!--a<",8,14]
+      ]
+    },
+    {
+      "description": "EOF in script data escaped end tag open state",
+      "input": "<script><!--a</",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Error","EofInScriptHtmlCommentLikeText",15,15],
+        ["Character","<!--a</",8,15]
+      ]
+    },
+    {
+      "description": "EOF in script data escaped end tag name state",
+      "input": "<script><!--a</sc",
+      "naively_switch_states": true,
+      "expected_tokens": [
+        ["StartTag","script",{},false,0,8],
+        ["Error","EofInScriptHtmlCommentLikeText",17,17],
+        ["Character","<!--a</sc",8,17]
+      ]
+    },
+    {
+      "description": "EOF in character reference state",
+      "input": "a&",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Character","a&",0,2]
+      ]
+    },
+    {
+      "description": "EOF after a named character reference",
+      "input": "a&amp",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","MissingSemicolonAfterCharacterReference",5,5],
+        ["Character","a&",0,5]
+      ]
+    },
+    {
+      "description": "EOF in numeric character reference state",
+      "input": "a&#",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","AbsenceOfDigitsInNumericCharacterReference",3,3],
+        ["Character","a&#",0,3]
+      ]
+    },
+    {
+      "description": "EOF in hexadecimal character reference start state",
+      "input": "a&#x",
+      "naively_switch_states": false,
+      "expected_tokens": [
+        ["Error","AbsenceOfDigitsInNumericCharacterReference",4,4],
+        ["Character","a&#x",0,4]
+      ]
+    }
+  ]
+}
