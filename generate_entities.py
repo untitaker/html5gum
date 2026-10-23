@@ -11,9 +11,13 @@ for key, value in key_and_value:
     assert key[0] == "&"
     key = key[1:]
     first_char = key[0]
-    key = key[1:]
+    second_char = key[1]
+    # The tokenizer consumes the second character before it tries the rest of the name, which
+    # relies on it being alphanumeric.
+    assert second_char.isascii() and second_char.isalnum()
+    key = key[2:]
 
-    match_arms.setdefault(first_char, []).append((key, value))
+    match_arms.setdefault(first_char, {}).setdefault(second_char, []).append((key, value))
 
 with open("src/entities.rs", "w") as f:
     f.write(
@@ -23,46 +27,50 @@ with open("src/entities.rs", "w") as f:
 // curl https://html.spec.whatwg.org/entities.json | python generate_entities.py
 
 pub(crate) struct CharRef {
-    /// Name as it appears escaped in HTML
+    /// Name as it appears escaped in HTML, without its first two characters
     pub(crate) name: &'static str,
     /// Unescaped character codepoints
     pub(crate) characters: &'static str,
 }
 
-pub(crate) fn try_read_character_reference<E>(first_char: char, try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
+pub(crate) fn try_read_character_reference<E>(first_char: char, second_char: char, try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
     match first_char {
 """
     )
 
-    for first_char, if_statements in sorted(match_arms.items()):
+    for first_char, second_char_arms in sorted(match_arms.items()):
         # Write each branch of the match stmt as its own function such that
         # compilation is faster.
         f.write(
             """
         '%(first_char)s' => {
             #[allow(non_snake_case)]
-            fn branch_%(first_char)s<E>(mut try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
-                for (other_chars, characters) in &[
+            fn branch_%(first_char)s<E>(second_char: char, mut try_read: impl FnMut(&str) -> Result<bool, E>) -> Result<Option<CharRef>, E> {
+                let candidates: &[(&str, &str)] = match second_char {
         """
             % {"first_char": first_char}
         )
 
-        for other_chars, value in if_statements:
-            characters = ""
-            for c in value["codepoints"]:
-                characters += r"\u{" + hex(c)[2:] + r"}"
+        for second_char, if_statements in sorted(second_char_arms.items()):
+            f.write("'%s' => &[" % second_char)
 
-            f.write(
-                """
-                    ("%(other_chars)s", "%(characters)s"),
-            """
-                % {"other_chars": other_chars, "characters": characters}
-            )
+            for other_chars, value in if_statements:
+                characters = ""
+                for c in value["codepoints"]:
+                    characters += r"\u{" + hex(c)[2:] + r"}"
 
+                f.write('("%s", "%s"),' % (other_chars, characters))
+
+            f.write("],\n")
+
+        # Both characters have been consumed already, so a name that ends with them (`&lt`) always
+        # matches. It is the shortest name of its group and therefore tried last.
         f.write(
-            """
-                ] {
-                    if try_read(other_chars)? {
+            """                    _ => &[],
+                };
+
+                for (other_chars, characters) in candidates {
+                    if other_chars.is_empty() || try_read(other_chars)? {
                         return Ok(Some(CharRef { name: other_chars, characters }));
                     }
                 }
@@ -70,7 +78,7 @@ pub(crate) fn try_read_character_reference<E>(first_char: char, try_read: impl F
                 Ok(None)
             }
 
-            branch_%(first_char)s(try_read)
+            branch_%(first_char)s(second_char, try_read)
 
         }
         """

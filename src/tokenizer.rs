@@ -95,6 +95,30 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
     }
 
     #[inline(always)]
+    pub(crate) fn peek_byte(&mut self) -> Result<Option<u8>, R::Error> {
+        let res = self.reader.peek_byte()?;
+
+        crate::utils::trace_log!("peek_byte = {:?}", res.map(|x| x as char));
+
+        Ok(res)
+    }
+
+    #[inline(always)]
+    pub(crate) fn read_peeked_byte(&mut self) -> Result<Option<u8>, R::Error> {
+        let res = self
+            .reader
+            .read_peeked_byte(&mut self.validator, &mut self.emitter)?;
+
+        crate::utils::trace_log!("read_peeked_byte = {:?}", res.map(|x| x as char));
+
+        if res.is_some() {
+            self.emitter.move_position(1);
+        }
+
+        Ok(res)
+    }
+
+    #[inline(always)]
     pub(crate) fn unread_byte(&mut self, c: Option<u8>) {
         if c.is_some() {
             self.emitter.move_position(-1);
