@@ -65,7 +65,7 @@ feature, html5gum can be integrated with `html5ever` and `scraper`. See [the
 ## Other features
 
 * No unsafe Rust
-* Only dependency is `jetscii`, and can be disabled via crate features (see `Cargo.toml`)
+* No dependencies by default (`jetscii` is optional, see `Cargo.toml`)
 
 ## Alternative HTML parsers
 
