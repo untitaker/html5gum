@@ -1,12 +1,14 @@
-# Unreleased
+# 0.9.0
 
 - Change types around `Token::Doctype` so that `.value` is no longer necessary. [PR 139](https://github.com/untitaker/html5gum/pull/139)
+- Make the `tree-builder` emitter convert directly to html5ever's `Tendril`/`LocalName` instead of allocating intermediate `String`s. [PR 140](https://github.com/untitaker/html5gum/pull/140)
 - Stop formatting internal trace messages while trace logging is off. This made builds with debug assertions, such as the dev profile of downstream crates, slow and allocate in proportion to the input. [PR 147](https://github.com/untitaker/html5gum/pull/147)
 - Fix `CallbackEmitter` reporting unquoted attribute value spans that start one byte late. [PR 146](https://github.com/untitaker/html5gum/pull/146)
 - Fix spans of text that ends at EOF in the RCDATA, RAWTEXT, script data and character reference states, which ended one byte early. [PR 148](https://github.com/untitaker/html5gum/pull/148)
-- Speed up named character references such as `&amp;` by only trying names that start with the same two characters. [PR 150](https://github.com/untitaker/html5gum/pull/150)
-- Pass reconsumed characters to the next state by value instead of through the reader. This simplifies the reader and lets some states handle the reconsumed character without a round-trip through the state machine.
-- Search for delimiters with a portable SWAR implementation, which processes 8 bytes at a time, and make `jetscii` an optional feature that is disabled by default. The new search is faster than jetscii except when SSE4.2 is enabled at compile time.
+- Declare the minimum supported Rust version (1.82) via `rust-version` and test it in CI. [PR 152](https://github.com/untitaker/html5gum/pull/152)
+- Speed up named character references such as `&amp;` by only trying names that start with the same two characters. [PR 154](https://github.com/untitaker/html5gum/pull/154)
+- Pass reconsumed characters to the next state by value instead of through the reader. This simplifies the reader and lets some states handle the reconsumed character without a round-trip through the state machine. [PR 155](https://github.com/untitaker/html5gum/pull/155)
+- Search for delimiters with a portable SWAR implementation, which processes 8 bytes at a time, and make `jetscii` an optional feature that is disabled by default. The new search is faster than jetscii except when SSE4.2 is enabled at compile time. If you want to keep using jetscii, enable it with `features = ["jetscii"]`. [PR 156](https://github.com/untitaker/html5gum/pull/156)
 
 # 0.8.4
 
