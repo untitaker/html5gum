@@ -174,10 +174,10 @@ pub(crate) mod states {
                     slf.emitter.init_start_tag();
                     reconsume_in_inline!(slf, Some(x), TagName)
                 }
-                c @ Some(b'?') => {
-                    error!(slf, Error::UnexpectedQuestionMarkInsteadOfTagName);
-                    slf.emitter.init_comment();
-                    reconsume_in!(slf, c, BogusComment)
+                Some(b'?') => {
+                    slf.machine_helper.temporary_buffer.clear();
+                    slf.emitter.init_processing_instruction();
+                    switch_to!(slf, ProcessingInstructionOpen)
                 }
                 None => {
                     error!(slf, Error::EofBeforeTagName);
@@ -1943,6 +1943,126 @@ pub(crate) mod states {
                 c => {
                     slf.emitter.emit_string(b"]]");
                     reconsume_in!(slf, c, CdataSection)
+                }
+            }
+        )
+    });
+
+    define_state!(ProcessingInstructionOpen, slf, reconsume_char, {
+        slow_read_byte!(
+            slf,
+            reconsume_char,
+            match c {
+                c @ Some(b'_' | b'a'..=b'z' | b'A'..=b'Z') => {
+                    reconsume_in!(slf, c, ProcessingInstructionTarget)
+                }
+                None => {
+                    error!(slf, Error::EofInProcessingInstruction);
+                    eof!()
+                }
+                c => {
+                    error!(
+                        slf,
+                        Error::InvalidFirstCharacterOfProcessingInstructionTarget
+                    );
+                    slf.machine_helper
+                        .convert_temporary_buffer_to_comment(&mut slf.emitter);
+                    reconsume_in!(slf, c, BogusComment)
+                }
+            }
+        )
+    });
+
+    define_state!(ProcessingInstructionTarget, slf, reconsume_char, {
+        slow_read_byte!(
+            slf,
+            reconsume_char,
+            match c {
+                c @ Some(b'\t' | b'\x0A' | b'\x0C' | b' ' | b'?' | b'>') => {
+                    let target = &slf.machine_helper.temporary_buffer;
+                    if target.eq_ignore_ascii_case(b"xml")
+                        || target.eq_ignore_ascii_case(b"xml-stylesheet")
+                    {
+                        error!(slf, Error::DisallowedProcessingInstructionTarget);
+                        slf.machine_helper
+                            .convert_temporary_buffer_to_comment(&mut slf.emitter);
+                        reconsume_in!(slf, c, BogusComment)
+                    } else {
+                        slf.emitter.push_processing_instruction_target(target);
+                        reconsume_in!(slf, c, AfterProcessingInstructionTarget)
+                    }
+                }
+                Some(c @ (b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z' | b'-' | b'_')) => {
+                    slf.machine_helper.temporary_buffer.push(c);
+                    cont!()
+                }
+                None => {
+                    error!(slf, Error::EofInProcessingInstruction);
+                    eof!()
+                }
+                c => {
+                    error!(slf, Error::InvalidProcessingInstructionTarget);
+                    slf.machine_helper
+                        .convert_temporary_buffer_to_comment(&mut slf.emitter);
+                    reconsume_in!(slf, c, BogusComment)
+                }
+            }
+        )
+    });
+
+    define_state!(AfterProcessingInstructionTarget, slf, reconsume_char, {
+        slow_read_byte!(
+            slf,
+            reconsume_char,
+            match c {
+                Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
+                c => {
+                    reconsume_in!(slf, c, ProcessingInstructionData)
+                }
+            }
+        )
+    });
+
+    define_state!(ProcessingInstructionData, slf, reconsume_char, {
+        slow_read_byte!(
+            slf,
+            reconsume_char,
+            match c {
+                Some(b'?') => {
+                    switch_to!(slf, ProcessingInstructionQuestionable)
+                }
+                Some(b'>') => {
+                    slf.emitter.emit_current_processing_instruction();
+                    switch_to!(slf, Data)
+                }
+                None => {
+                    error!(slf, Error::EofInProcessingInstruction);
+                    eof!()
+                }
+                Some(c) => {
+                    slf.emitter.push_processing_instruction_data(&[c]);
+                    cont!()
+                }
+            }
+        )
+    });
+
+    define_state!(ProcessingInstructionQuestionable, slf, reconsume_char, {
+        slow_read_byte!(
+            slf,
+            reconsume_char,
+            match c {
+                Some(b'>') => {
+                    slf.emitter.emit_current_processing_instruction();
+                    switch_to!(slf, Data)
+                }
+                None => {
+                    error!(slf, Error::EofInProcessingInstruction);
+                    eof!()
+                }
+                c => {
+                    slf.emitter.push_processing_instruction_data(b"?");
+                    reconsume_in!(slf, c, ProcessingInstructionData)
                 }
             }
         )

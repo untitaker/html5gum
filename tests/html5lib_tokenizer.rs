@@ -1,8 +1,8 @@
 use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path};
 
 use html5gum::{
-    Doctype, EndTag, Error, IoReader, Readable, Reader, Span, Spanned, StartTag, State, Token,
-    Tokenizer,
+    Doctype, EndTag, Error, IoReader, ProcessingInstruction, Readable, Reader, Span, Spanned,
+    StartTag, State, Token, Tokenizer,
 };
 
 use html5gum::testutils::{trace_log, SlowReader};
@@ -42,6 +42,7 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
         def_const!("StartTag", StartTagConst);
         def_const!("EndTag", EndTagConst);
         def_const!("Comment", CommentConst);
+        def_const!("ProcessingInstruction", ProcessingInstructionConst);
         def_const!("Character", CharacterConst);
 
         type Attributes = BTreeMap<HtmlString, HtmlString>;
@@ -64,6 +65,8 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
             EndTag(EndTagConst, HtmlString),
             // "Comment", data
             Comment(CommentConst, HtmlString),
+            // "ProcessingInstruction", target, data
+            ProcessingInstruction(ProcessingInstructionConst, HtmlString, HtmlString),
             // "Character", data
             Character(CharacterConst, HtmlString),
         }
@@ -129,6 +132,13 @@ impl<'de> Deserialize<'de> for ExpectedOutputTokens {
                         value: data.0.into(),
                         span: Span::DUMMY,
                     }),
+                    OutputToken::ProcessingInstruction(_, target, data) => {
+                        Token::ProcessingInstruction(ProcessingInstruction {
+                            target: target.0.into(),
+                            data: data.0.into(),
+                            span: Span::DUMMY,
+                        })
+                    }
                     OutputToken::Character(_, data) => Token::String(Spanned {
                         value: data.0.into(),
                         span: Span::DUMMY,
