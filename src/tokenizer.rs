@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 
 use crate::char_validator::CharValidator;
-use crate::machine_helper::{ControlToken, MachineHelper};
+use crate::machine_helper::{ControlToken, MachineHelper, Reconsume};
 use crate::read_helper::ReadHelper;
 use crate::State;
 use crate::{DefaultEmitter, Emitter, Readable, Reader};
@@ -14,6 +14,9 @@ pub struct Tokenizer<R: Reader, E: Emitter = DefaultEmitter<()>> {
     pub(crate) emitter: E,
     pub(crate) reader: ReadHelper<R>,
     pub(crate) machine_helper: MachineHelper<R, E>,
+    /// A character that the current state has to consume first, see `Reconsume`. Kept here between
+    /// calls to `next`, as the user may switch states in between.
+    reconsume: Reconsume,
 }
 
 impl<R: Reader> Tokenizer<R, DefaultEmitter<()>> {
@@ -44,6 +47,7 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
             emitter,
             reader: ReadHelper::new(input.to_reader()),
             machine_helper: MachineHelper::default(),
+            reconsume: None,
         }
     }
 
@@ -94,12 +98,31 @@ impl<R: Reader, E: Emitter> Tokenizer<R, E> {
         Ok(res)
     }
 
+    /// See `ReadHelper::read_raw_byte`.
     #[inline(always)]
-    pub(crate) fn unread_byte(&mut self, c: Option<u8>) {
-        if c.is_some() {
-            self.emitter.move_position(-1);
+    pub(crate) fn read_raw_byte(&mut self) -> Result<Option<u8>, R::Error> {
+        let res = self.reader.read_raw_byte()?;
+
+        crate::utils::trace_log!("read_raw_byte = {:?}", res.map(|x| x as char));
+
+        Ok(res)
+    }
+
+    /// Consume a byte returned by `read_raw_byte`, which then is the same as if it had been read
+    /// with `read_byte`.
+    #[inline(always)]
+    pub(crate) fn consume_raw_byte(&mut self, c: Option<u8>) -> Result<Option<u8>, R::Error> {
+        let res = self
+            .reader
+            .consume_raw_byte(c, &mut self.validator, &mut self.emitter)?;
+
+        crate::utils::trace_log!("consume_raw_byte = {:?}", res.map(|x| x as char));
+
+        if res.is_some() {
+            self.emitter.move_position(1);
         }
-        self.reader.unread_byte(c);
+
+        Ok(res)
     }
 
     #[inline(always)]
@@ -169,10 +192,12 @@ impl<R: Reader, E: Emitter> Iterator for Tokenizer<R, E> {
             if let Some(token) = self.emitter.pop_token() {
                 break Some(Ok(token));
             } else if !self.eof {
-                match (self.machine_helper.state.function)(self) {
+                let reconsume = self.reconsume.take();
+                match (self.machine_helper.state.function)(self, reconsume) {
                     Ok(ControlToken::Continue) => (),
-                    Ok(ControlToken::SwitchTo(next_state)) => {
+                    Ok(ControlToken::SwitchTo(next_state, reconsume)) => {
                         self.machine_helper.switch_to(next_state);
+                        self.reconsume = reconsume;
                     }
                     Ok(ControlToken::Eof) => {
                         self.validator.flush_character_error(&mut self.emitter);
