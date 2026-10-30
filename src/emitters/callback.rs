@@ -527,7 +527,7 @@ where
         self.callback_state.emit_event(
             CallbackEvent::ProcessingInstruction {
                 target: &self.emitter_state.processing_instruction_target,
-                data: &self.emitter_state.processing_instruction_data
+                data: &self.emitter_state.processing_instruction_data,
             },
             Span {
                 start: self.emitter_state.current_taglike_span,
@@ -623,7 +623,9 @@ where
     }
 
     fn push_processing_instruction_target(&mut self, value: &[u8]) {
-        self.emitter_state.processing_instruction_target.extend(value);
+        self.emitter_state
+            .processing_instruction_target
+            .extend(value);
     }
 
     fn push_processing_instruction_data(&mut self, value: &[u8]) {

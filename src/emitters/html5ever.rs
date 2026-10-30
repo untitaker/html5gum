@@ -134,6 +134,14 @@ impl<'a, S: TokenSink> Callback<Infallible, ()> for OurCallback<'a, S> {
                     force_quirks,
                 }));
             }
+            CallbackEvent::ProcessingInstruction { target, data } => {
+                // html5ever doesn't support processing instructions for now, so interpret them as comments
+                let mut comment = Vec::from(b"?");
+                comment.extend(target);
+                comment.extend(b" ");
+                comment.extend(data);
+                self.sink_token(Html5everToken::CommentToken(to_tendril(&comment)));
+            }
             CallbackEvent::Error(error) => {
                 self.sink_token(Html5everToken::ParseError(error.as_str().into()));
             }

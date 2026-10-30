@@ -88,11 +88,13 @@ impl<S: SpanBound> Callback<Token<S>, S> for OurCallback<S> {
                 system_identifier: system_identifier.map(|x| x.to_owned().into()),
                 span,
             })),
-            CallbackEvent::ProcessingInstruction { target, data } => Some(Token::ProcessingInstruction(ProcessingInstruction {
-                target: target.to_owned().into(),
-                data: data.to_owned().into(),
-                span
-            })),
+            CallbackEvent::ProcessingInstruction { target, data } => {
+                Some(Token::ProcessingInstruction(ProcessingInstruction {
+                    target: target.to_owned().into(),
+                    data: data.to_owned().into(),
+                    span,
+                }))
+            }
             CallbackEvent::Error(error) => Some(Token::Error(Spanned { value: error, span })),
         }
     }

@@ -23,7 +23,7 @@ macro_rules! define_state {
 }
 
 pub(crate) mod states {
-use super::*;
+    use super::*;
 
     define_state!(Data, slf, {
         slf.emitter.init_string();
@@ -1879,16 +1879,20 @@ use super::*;
             match c {
                 c @ Some(b'_' | b'a'..=b'z' | b'A'..=b'Z') => {
                     reconsume_in!(slf, c, ProcessingInstructionTarget)
-                },
+                }
                 None => {
+                    error!(slf, Error::EofInProcessingInstruction);
                     eof!()
-                },
+                }
                 c => {
-                    error!(slf, Error::InvalidFirstCharacterOfProcessingInstructionTarget);
-                    slf.machine_helper.convert_temporary_buffer_to_comment(&mut slf.emitter);
+                    error!(
+                        slf,
+                        Error::InvalidFirstCharacterOfProcessingInstructionTarget
+                    );
+                    slf.machine_helper
+                        .convert_temporary_buffer_to_comment(&mut slf.emitter);
                     reconsume_in!(slf, c, BogusComment)
                 }
-
             }
         )
     });
@@ -1899,32 +1903,32 @@ use super::*;
             match c {
                 c @ Some(b'\t' | b'\x0A' | b'\x0C' | b' ' | b'?' | b'>') => {
                     let target = &slf.machine_helper.temporary_buffer;
-                    if 
-                        target.to_ascii_lowercase() == b"xml" ||
-                        target.to_ascii_lowercase() == b"xml-stylesheet"
+                    if target.eq_ignore_ascii_case(b"xml")
+                        || target.eq_ignore_ascii_case(b"xml-stylesheet")
                     {
                         error!(slf, Error::DisallowedProcessingInstructionTarget);
-                        slf.machine_helper.convert_temporary_buffer_to_comment(&mut slf.emitter);
+                        slf.machine_helper
+                            .convert_temporary_buffer_to_comment(&mut slf.emitter);
                         reconsume_in!(slf, c, BogusComment)
                     } else {
                         slf.emitter.push_processing_instruction_target(target);
                         reconsume_in!(slf, c, AfterProcessingInstructionTarget)
                     }
-                },
-                Some(c @ (b'0'..=b'9' | b'A'..=b'F' | b'a'..=b'f' | b'-' | b'_')) => {
+                }
+                Some(c @ (b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z' | b'-' | b'_')) => {
                     slf.machine_helper.temporary_buffer.push(c);
                     cont!()
-                },
+                }
                 None => {
                     error!(slf, Error::EofInProcessingInstruction);
                     eof!()
-                },
+                }
                 c => {
                     error!(slf, Error::InvalidProcessingInstructionTarget);
-                    slf.machine_helper.convert_temporary_buffer_to_comment(&mut slf.emitter);
+                    slf.machine_helper
+                        .convert_temporary_buffer_to_comment(&mut slf.emitter);
                     reconsume_in!(slf, c, BogusComment)
                 }
-
             }
         )
     });
@@ -1947,14 +1951,15 @@ use super::*;
             match c {
                 Some(b'?') => {
                     switch_to!(slf, ProcessingInstructionQuestionable)
-                },
+                }
                 Some(b'>') => {
+                    slf.emitter.emit_current_processing_instruction();
                     switch_to!(slf, Data)
-                },
+                }
                 None => {
                     error!(slf, Error::EofInProcessingInstruction);
                     eof!()
-                },
+                }
                 Some(c) => {
                     slf.emitter.push_processing_instruction_data(&[c]);
                     cont!()
@@ -1968,12 +1973,13 @@ use super::*;
             slf,
             match c {
                 Some(b'>') => {
-                    switch_to!(slf, ProcessingInstructionQuestionable)
-                },
+                    slf.emitter.emit_current_processing_instruction();
+                    switch_to!(slf, Data)
+                }
                 None => {
                     error!(slf, Error::EofInProcessingInstruction);
                     eof!()
-                },
+                }
                 c => {
                     slf.emitter.push_processing_instruction_data(b"?");
                     reconsume_in!(slf, c, ProcessingInstructionData)
