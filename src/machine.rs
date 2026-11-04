@@ -918,7 +918,9 @@ pub(crate) mod states {
                 Some(b'\t' | b'\x0A' | b'\x0C' | b' ') => cont!(),
                 Some(b'"') => {
                     slf.emitter.init_attribute_value();
-                    switch_to!(slf, AttributeValueDoubleQuoted)?.inline_next_state(slf)
+                    // Not inline_next_state: AttributeValueDoubleQuoted inlines its way back to
+                    // this state, so the stack would grow with every attribute.
+                    switch_to!(slf, AttributeValueDoubleQuoted)
                 }
                 Some(b'\'') => {
                     slf.emitter.init_attribute_value();
