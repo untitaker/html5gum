@@ -166,9 +166,8 @@
       "naively_switch_states": false,
       "expected_tokens": [
         ["Error","AbsenceOfDigitsInNumericCharacterReference",3,3],
-        ["Error","UnexpectedQuestionMarkInsteadOfTagName",4,4],
         ["Character","&#",0,2],
-        ["Comment","?",2,4]
+        ["Error","EofInProcessingInstruction",4,4]
       ]
     },
     {
@@ -177,9 +176,8 @@
       "naively_switch_states": false,
       "expected_tokens": [
         ["Error","AbsenceOfDigitsInNumericCharacterReference",4,4],
-        ["Error","UnexpectedQuestionMarkInsteadOfTagName",5,5],
         ["Character","&#x",0,3],
-        ["Comment","?",3,5]
+        ["Error","EofInProcessingInstruction",5,5]
       ]
     },
     {
