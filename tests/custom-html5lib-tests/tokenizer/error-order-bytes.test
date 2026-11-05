@@ -101,6 +101,18 @@
     {"code": "missing-whitespace-between-attributes", "line": 1, "col": 9},
     {"code": "noncharacter-in-input-stream", "line": 1, "col": 10},
     {"code": "eof-in-tag", "line": 1, "col": 10}
+]},
+
+{"description": "surrogate after attribute value",
+"doubleEscaped": true,
+"input": "<a 0=\"\\uD800\"\\uDFFF\\uDBFF",
+"output": [],
+"errors": [
+    {"code": "surrogate-in-input-stream", "line": 1, "col": 7},
+    {"code": "surrogate-in-input-stream", "line": 1, "col": 9},
+    {"code": "missing-whitespace-between-attributes", "line": 1, "col": 9},
+    {"code": "surrogate-in-input-stream", "line": 1, "col": 10},
+    {"code": "eof-in-tag", "line": 1, "col": 10}
 ]}
 
 ]}

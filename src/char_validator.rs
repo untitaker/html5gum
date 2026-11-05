@@ -104,6 +104,12 @@ impl CharValidator {
                 emitter.emit_error(Error::ControlCharacterInInputStream);
                 self.flush_character_error(emitter);
             }
+            // U+D800 to U+DFFF in the generalized UTF-8 encoding (as produced by e.g. WTF-8 or
+            // CESU-8). These are not valid UTF-8, but html5gum reads arbitrary bytes.
+            0x00ed_a080..=0x00ed_bfbf => {
+                emitter.emit_error(Error::SurrogateInInputStream);
+                self.flush_character_error(emitter);
+            }
 
             _ => (),
         }

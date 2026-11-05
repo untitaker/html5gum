@@ -327,10 +327,11 @@ fn unescape(data: &[u8]) -> Vec<u8> {
             let char_len = c.encode_utf8(&mut rv[orig_len..]).len();
             rv.truncate(orig_len + char_len);
         } else if (0xD800..=0xDFFF).contains(&c) {
-            // a surrogate
-            for b in &c.to_be_bytes()[2..] {
-                rv.push(*b);
-            }
+            // a surrogate, which char can't represent. Encode it the way it would show up in
+            // a byte stream: as a three-byte sequence like any other code point in this range.
+            rv.push(0xE0 | (c >> 12) as u8);
+            rv.push(0x80 | ((c >> 6) & 0x3F) as u8);
+            rv.push(0x80 | (c & 0x3F) as u8);
         }
     }
 
@@ -344,8 +345,6 @@ fn produce_testcases_from_file(tests: &mut Vec<Trial>, path: &Path) {
         fname,
         // We don't implement "Coercing an HTML DOM into an infoset" section
         "xmlViolation.test"
-        // We don't detect surrogates
-        | "unicodeCharsProblematic.test"
     ) {
         return;
     }
