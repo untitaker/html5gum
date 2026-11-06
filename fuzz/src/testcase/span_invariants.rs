@@ -212,6 +212,52 @@ fn validate_token_span(
                 );
             }
         }
+        Token::ProcessingInstruction(pi) => {
+            validate_span(&pi.span, input, "ProcessingInstruction", last_end);
+
+            // Processing instructions must have non-empty spans
+            assert!(
+                pi.span.start < pi.span.end,
+                "ProcessingInstruction has empty span: {}..{}",
+                pi.span.start,
+                pi.span.end
+            );
+
+            // Verify processing instruction span starts with '<?' and ends with '?>' or '>'
+            if pi.span.end <= input.len() {
+                let content = &input[pi.span.start..pi.span.end];
+                assert!(
+                    content.starts_with(b"<?"),
+                    "ProcessingInstruction span does not start with '<?': {:?} at {}..{}",
+                    String::from_utf8_lossy(content),
+                    pi.span.start,
+                    pi.span.end
+                );
+
+                let target = String::from_utf8_lossy(&pi.target);
+                let data = String::from_utf8_lossy(&pi.data);
+                let content = String::from_utf8_lossy(content);
+                // The target should appear in the content
+                assert!(
+                    content.contains(&*target),
+                    "ProcessingInstruction span does not contain target '{}': {:?} at {}..{}",
+                    target,
+                    content,
+                    pi.span.start,
+                    pi.span.end
+                );
+
+                // The data should appear in the content
+                assert!(
+                    content.contains(&*data),
+                    "ProcessingInstruction span does not contain data '{}': {:?} at {}..{}",
+                    data,
+                    content,
+                    pi.span.start,
+                    pi.span.end
+                );
+            }
+        }
         Token::Error(e) => {
             // do not pass last_end to Error. Errors can overlap with any other span, including
             // other errors

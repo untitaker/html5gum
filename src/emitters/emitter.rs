@@ -192,6 +192,11 @@ pub trait Emitter {
     /// If the current token is not a doctype, this method may panic.
     fn emit_current_doctype(&mut self)
 
+    /// Emit the _current token_, assuming it is a processing instruction.
+    ///
+    /// If the current token is not a processing instruction, this method may panic.
+    fn emit_current_processing_instruction(&mut self)
+
     /// Assuming the _current token_ is a start tag, set the self-closing flag.
     ///
     /// If the current token is not a start or end tag, this method may panic.
@@ -227,6 +232,9 @@ pub trait Emitter {
     /// * the "system identifier" should be null (different from empty)
     /// * the "force quirks" flag should be `false`
     fn init_doctype(&mut self)
+
+    /// Set the _current token_ to a new processing instruction token.
+    fn init_processing_instruction(&mut self)
 
     /// Set the _current attribute_ to a new one, starting with empty name and value strings.
     ///
@@ -275,6 +283,17 @@ pub trait Emitter {
     ///
     /// If the current token is not a doctype, this method may panic.
     fn push_doctype_system_identifier(&mut self, s: &[u8])
+
+
+    /// Assuming the _current token_ is a processing instruction, append a string to its "target".
+    ///
+    /// If the current token is not a doctype, this method may panic.
+    fn push_processing_instruction_target(&mut self, value: &[u8])
+
+    /// Assuming the _current token_ is a processing instruction, append a string to its "data".
+    ///
+    /// If the current token is not a doctype, this method may panic.
+    fn push_processing_instruction_data(&mut self, value: &[u8])
 
     /// Start a new tag/comment or something starting with `<`.
     fn start_open_tag(&mut self) {

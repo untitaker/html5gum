@@ -120,6 +120,10 @@ impl Emitter for LinkExtractor {
     fn set_doctype_public_identifier(&mut self, _: &[u8]) {}
     fn set_doctype_system_identifier(&mut self, _: &[u8]) {}
     fn set_force_quirks(&mut self) {}
+    fn init_processing_instruction(&mut self) {}
+    fn push_processing_instruction_target(&mut self, _: &[u8]) {}
+    fn push_processing_instruction_data(&mut self, _: &[u8]) {}
+    fn emit_current_processing_instruction(&mut self) {}
 }
 
 fn main() {
