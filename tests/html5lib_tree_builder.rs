@@ -299,7 +299,7 @@ fn main() {
         produce_testcases_from_file(&mut tests, &entry.unwrap());
     }
 
-    for entry in glob("tests/html5lib-tests/tree-construction/*.dat").unwrap() {
+    for entry in glob("tests/wpt/html/syntax/parsing/resources/*.dat").unwrap() {
         produce_testcases_from_file(&mut tests, &entry.unwrap());
     }
 

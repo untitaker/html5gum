@@ -80,6 +80,13 @@ fn token_to_json(token: &Token<usize>) -> serde_json::Value {
             c.span.start,
             c.span.end
         ]),
+        Token::ProcessingInstruction(c) => serde_json::json!([
+            "ProcessingInstruction",
+            String::from_utf8_lossy(&c.target),
+            String::from_utf8_lossy(&c.data),
+            c.span.start,
+            c.span.end
+        ]),
         Token::Error(e) => {
             serde_json::json!(["Error", format!("{:?}", e.value), e.span.start, e.span.end])
         }

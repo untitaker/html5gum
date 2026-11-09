@@ -56,7 +56,9 @@ mod utils;
 #[doc(hidden)]
 pub mod testutils;
 
-pub use emitters::default::{DefaultEmitter, Doctype, EndTag, StartTag, Token};
+pub use emitters::default::{
+    DefaultEmitter, Doctype, EndTag, ProcessingInstruction, StartTag, Token,
+};
 pub use emitters::{naive_next_state, Emitter, ForwardingEmitter};
 pub use error::Error;
 pub use htmlstring::HtmlString;
