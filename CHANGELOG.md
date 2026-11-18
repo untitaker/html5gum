@@ -1,3 +1,7 @@
+# 0.9.2
+
+- Add support for processing instructions from the HTML spec. [PR 145](https://github.com/untitaker/html5gum/pull/145)
+
 # 0.9.1
 
 - Fix a stack overflow on start tags with many double-quoted attributes. About 20,000 attributes were enough to overflow an 8 MiB stack. [PR 158](https://github.com/untitaker/html5gum/pull/158)
